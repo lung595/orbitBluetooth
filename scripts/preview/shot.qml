@@ -7,7 +7,7 @@ import "../../components"
 // Offscreen renders for the README, with mock devices and services.
 // Usage: QT_QPA_PLATFORM=offscreen qml -I imports shot.qml -- <mode> <out.png>
 // Modes: orbit, zoom, orbitfocus, desktop, desktopfocus, ancfocus,
-//        hole, holetess, hiddencard, hiddenempty, connecting, menu, feed
+//        buds, budsdock, hole, holetess, hiddencard, hiddenempty, connecting, menu, feed
 Window {
     id: win
     readonly property var args: Qt.application.arguments
@@ -15,7 +15,7 @@ Window {
     readonly property string out: args[args.length - 1]
     readonly property bool glass: mode.startsWith("desktop")
     // Control Center sized shots for the black hole, menu and comet
-    readonly property bool compact: ["hole", "holetess", "hiddencard", "hiddenempty", "connecting", "menu", "feed"].indexOf(mode) >= 0
+    readonly property bool compact: ["buds", "budsdock", "hole", "holetess", "hiddencard", "hiddenempty", "connecting", "menu", "feed"].indexOf(mode) >= 0
     width: glass ? 760 : (mode === "zoom" ? 900 : compact ? 540 : 560)
     height: glass ? 560 : (mode === "zoom" ? 700 : mode === "ancfocus" || compact ? 354 : 480)
     visible: true
@@ -30,6 +30,7 @@ Window {
         { address: "D4:1A:88:10:5B:77", name: "MX Master 3S", connected: false, paired: true, bonded: true, blocked: false, batteryAvailable: false, battery: 0, icon: "input-mouse" },
         { address: "6C:4A:85:9E:03:21", name: "AirPods Pro", connected: false, paired: false, bonded: false, blocked: false, batteryAvailable: false, battery: 0, icon: "audio-headset" },
         { address: "F0:65:AE:31:9C:40", name: "Galaxy Buds3", connected: false, paired: false, bonded: false, blocked: false, batteryAvailable: false, battery: 0, icon: "audio-headset" },
+        { address: "00:11:22:33:44:55", name: "HUAWEI FreeBuds Pro", connected: true, paired: true, bonded: true, blocked: false, batteryAvailable: true, battery: 0.92, icon: "audio-headset" },
         { address: "3C:8D:20:54:AB:12", name: "Keychron K3", connected: false, paired: true, bonded: true, blocked: false, batteryAvailable: false, battery: 0, icon: "input-keyboard" }
     ]
 
@@ -55,6 +56,15 @@ Window {
                         "status": "ready", "live": true, "model": "",
                         "features": { "modes": ["nc", "ambient", "off", "adaptive"], "ambientMax": 20, "levelMode": "ambient", "voice": true, "chat": true },
                         "state": { "mode": mode === "ancfocus" ? "ambient" : "nc", "ambient": 14, "voice": true, "chat": false, "battery": {} }
+                    },
+                    // Mock earbuds: case charging; in "budsdock" both buds charge in it
+                    "00:11:22:33:44:55": {
+                        "status": "ready", "live": true, "model": "",
+                        "features": { "modes": ["nc", "adaptive", "ambient", "off"], "ambientMax": 0, "levelMode": "ambient", "voice": true, "chat": false },
+                        "state": { "mode": "nc", "ambient": null, "voice": false, "chat": null, "battery": {
+                            "left": { "level": mode === "budsdock" ? 64 : 94, "charging": mode === "budsdock" },
+                            "right": { "level": mode === "budsdock" ? 58 : 100, "charging": mode === "budsdock" },
+                            "case": { "level": 60, "charging": mode !== "budsdock" } } }
                     }
                 }
             }
@@ -101,7 +111,10 @@ Window {
         running: true
         onTriggered: {
             const find = a => scene.world.children.find(c => c.address === a);
-            if (win.mode.endsWith("focus")) {
+            if (win.mode.startsWith("buds")) {
+                const b = find("00:11:22:33:44:55");
+                if (b) scene.focusOn(b);
+            } else if (win.mode.endsWith("focus")) {
                 const b = find("58:18:62:3D:72:95");
                 if (b) scene.focusOn(b);
             } else if (win.mode === "hiddencard" || win.mode === "hiddenempty") {
@@ -119,7 +132,7 @@ Window {
                     scene.updateDrag(Qt.point(scene.holeX + 26, scene.holeY - 22));
                 }
             }
-            grabTimer.interval = win.mode.endsWith("focus") || win.mode.startsWith("hidden") ? 1800 : win.mode === "connecting" ? 700 : win.mode === "feed" || win.mode === "menu" ? 900 : 50;
+            grabTimer.interval = win.mode.startsWith("buds") ? 2600 : win.mode.endsWith("focus") || win.mode.startsWith("hidden") ? 1800 : win.mode === "connecting" ? 700 : win.mode === "feed" || win.mode === "menu" ? 900 : 50;
             grabTimer.start();
         }
     }

@@ -21,7 +21,7 @@ var rules = [
     // Premium / studio over-ear
     [/airpods\s*max|sonos\s*ace|\bpx[78]\b|bathys|\bmw75\b|\bmw65\b|dyson\s*zone/i, "headphonesPremium"],
     // Stem earbuds
-    [/airpods|earpods|nothing\s*ear|cmf\s*buds|freebuds(?!\s*(studio|pro\s*[1-9]?\s*$))|(xiaomi|redmi)\s*buds|oneplus\s*buds|liberty\s*[34]|soundpeats\s*air/i, "earbudsStem"],
+    [/airpods|earpods|nothing\s*ear|cmf\s*buds|freebuds(?!\s*studio)|honor\s*earbuds|(xiaomi|redmi)\s*buds|oneplus\s*buds|liberty\s*[34]|soundpeats\s*air/i, "earbudsStem"],
     // Round earbuds
     [/\bwf-|galaxy\s*buds|pixel\s*buds|jabra\s*elite|linkbuds|beats\s*(fit|studio\s*buds|solo\s*buds|flex)|powerbeats|momentum\s*(true\s*wireless|tw)|\bmtw\d|bose.*earbuds|qc\s*earbuds|ultra\s*open|sport\s*earbuds|\btws\b|earbuds?|\bbuds\b|earphones?|ecouteurs?|écouteurs?/i, "earbudsRound"],
     // Gaming headsets (before gaming mice: Logitech reuses the G prefix)

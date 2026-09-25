@@ -339,9 +339,8 @@ Item {
     }
 
     // --- Charging: an energy beam from the host to the device --------------
-    // White-hot core line, a soft colored glow, an iridescent shimmer and
-    // sparkles riding toward the device. Everything is static geometry moved
-    // by render-thread animators, which only run while someone is looking.
+    // A softly waving beam (EnergyBeam) with a flare where it leaves the host.
+    // Its animation runs on the render thread, only while someone is looking.
     Item {
         id: chargeFlow
         // Above the host's halo, below every device
@@ -364,50 +363,16 @@ Item {
             }
         }
 
-        // Soft outer glow
-        Rectangle {
+        // The beam itself: waving light strands with pulses flowing toward
+        // the device (shaders/beam.frag), animated only while visible
+        EnergyBeam {
             x: chargeFlow.start
             y: -height / 2
             width: chargeFlow.span
-            height: 20
-            gradient: Gradient {
-                GradientStop {
-                    position: 0
-                    color: Qt.rgba(0, 0, 0, 0)
-                }
-                GradientStop {
-                    position: 0.5
-                    color: Theme.withAlpha(chargeFlow.glow, 0.4)
-                }
-                GradientStop {
-                    position: 1
-                    color: Qt.rgba(0, 0, 0, 0)
-                }
-            }
-        }
-
-        // White-hot core, brightest at the source
-        Rectangle {
-            x: chargeFlow.start
-            y: -height / 2
-            width: chargeFlow.span
-            height: 2
-            radius: 1
-            gradient: Gradient {
-                orientation: Gradient.Horizontal
-                GradientStop {
-                    position: 0
-                    color: Qt.rgba(1, 1, 1, 0.95)
-                }
-                GradientStop {
-                    position: 0.7
-                    color: Qt.rgba(1, 1, 1, 0.7)
-                }
-                GradientStop {
-                    position: 1
-                    color: Theme.withAlpha(chargeFlow.glow, 0.5)
-                }
-            }
+            height: 24
+            amplitude: 3
+            wavelength: 38
+            running: chargeFlow.running
         }
 
         // Source flare where the beam leaves the host
@@ -424,111 +389,6 @@ Item {
                 height: 4
                 radius: 2
                 color: "white"
-            }
-        }
-
-        // Moving parts, clipped to the beam's length
-        Item {
-            x: chargeFlow.start
-            y: -8
-            width: chargeFlow.span
-            height: 16
-            clip: true
-
-            // Iridescent shimmer
-            Rectangle {
-                id: prism
-                width: Math.max(18, chargeFlow.span * 0.45)
-                height: 3
-                y: 6.5
-                x: -width
-                radius: 1.5
-                opacity: 0.75
-                gradient: Gradient {
-                    orientation: Gradient.Horizontal
-                    GradientStop {
-                        position: 0
-                        color: Qt.rgba(1, 0.3, 0.4, 0)
-                    }
-                    GradientStop {
-                        position: 0.25
-                        color: Qt.rgba(1, 0.75, 0.3, 0.8)
-                    }
-                    GradientStop {
-                        position: 0.5
-                        color: Qt.rgba(0.45, 1, 0.6, 0.85)
-                    }
-                    GradientStop {
-                        position: 0.75
-                        color: Qt.rgba(0.35, 0.75, 1, 0.8)
-                    }
-                    GradientStop {
-                        position: 1
-                        color: Qt.rgba(0.75, 0.45, 1, 0)
-                    }
-                }
-                XAnimator on x {
-                    running: chargeFlow.running
-                    from: -prism.width
-                    to: chargeFlow.span
-                    duration: 2200
-                    loops: Animation.Infinite
-                }
-            }
-
-            // Energy pulse
-            Rectangle {
-                id: pulse
-                width: Math.max(14, chargeFlow.span * 0.3)
-                height: 3.5
-                y: 6.25
-                x: -width
-                radius: 1.75
-                gradient: Gradient {
-                    orientation: Gradient.Horizontal
-                    GradientStop {
-                        position: 0
-                        color: Qt.rgba(1, 1, 1, 0)
-                    }
-                    GradientStop {
-                        position: 0.85
-                        color: Qt.rgba(1, 1, 1, 0.95)
-                    }
-                    GradientStop {
-                        position: 1
-                        color: Qt.rgba(1, 1, 1, 0)
-                    }
-                }
-                XAnimator on x {
-                    running: chargeFlow.running
-                    from: -pulse.width
-                    to: chargeFlow.span
-                    duration: 1300
-                    easing.type: Easing.InQuad
-                    loops: Animation.Infinite
-                }
-            }
-
-            // Sparkles drifting along
-            Repeater {
-                model: 5
-                Rectangle {
-                    id: spark
-                    width: index % 2 ? 1.6 : 2.2
-                    height: width
-                    radius: width / 2
-                    y: 8 + (index % 2 ? -1 : 1) * (1.5 + index) - height / 2
-                    x: chargeFlow.span * index / 5
-                    color: "white"
-                    opacity: 0.8
-                    XAnimator on x {
-                        running: chargeFlow.running
-                        from: -2 - index * chargeFlow.span * 0.2
-                        to: chargeFlow.span
-                        duration: 1700 + index * 260
-                        loops: Animation.Infinite
-                    }
-                }
             }
         }
     }

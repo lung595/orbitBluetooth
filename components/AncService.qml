@@ -46,9 +46,12 @@ Item {
         return device ? Anc.family(device.name || device.deviceName || "") : "";
     }
 
+    // Only paired, connected headsets: opening a vendor channel to an
+    // unpaired device makes BlueZ bring up a temporary link on its own,
+    // which then drops again (seen with FreeBuds that were never paired)
     function supported(address) {
         const d = deviceFor(address);
-        return enabled && !!d && d.connected && familyFor(d) !== "";
+        return enabled && !!d && d.connected && (d.paired || d.bonded) && familyFor(d) !== "";
     }
 
     function _setState(address, value) {
