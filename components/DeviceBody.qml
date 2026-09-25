@@ -4,6 +4,7 @@ import qs.Common
 import qs.Widgets
 import "DeviceCatalog.js" as Catalog
 import "Charge.js" as Charge
+import "Endurance.js" as Endurance
 
 // One orbiting device. Purely presentational + input: the owning OrbitScene
 // integrates physics for every body in a single pass per frame and writes
@@ -22,7 +23,9 @@ Item {
     readonly property bool paired: (device?.paired || device?.bonded) ?? false
     readonly property var power: scene.powerFor(address)
     readonly property int battery: device?.batteryAvailable ? Math.round(device.battery * 100) : connected ? (power?.percentage ?? -1) : -1
-    readonly property var charge: connected && battery >= 0 ? Charge.analyze(scene.batteryLogFor(address), battery, power, scene.now) : null
+    readonly property var charge: connected && battery >= 0 ? Charge.analyze(scene.batteryLogFor(address), battery, power, scene.now, Endurance.ratedHours(name, kind, ancMode)) : null
+    // Time until empty, when discharging and known ("≈" unless the system says it)
+    readonly property real minutesLeft: charge && !charging ? charge.minutesLeft : 0
     readonly property bool charging: charge?.state === "charging"
     // Noise control, when the headset speaks a known vendor protocol
     readonly property bool ancCapable: scene.ancCapable(body)
@@ -945,9 +948,20 @@ Item {
             font.pixelSize: Math.max(8, Math.round(body.diameter * 0.17))
         }
 
+        // On battery: "83% · ≈ 24h" until empty, in place of the connection
+        // timer (which stays in the detail card)
         StyledText {
             anchors.horizontalCenter: parent.horizontalCenter
-            visible: !body.charging && body.connected && body.scene.sinceFor(body.address) > 0
+            visible: !body.charging && body.minutesLeft > 0
+            text: body.battery + "% · " + (body.charge?.source === "system" ? "" : "≈ ") + Charge.formatShort(body.minutesLeft)
+            color: Theme.withAlpha(Theme.primary, 0.75)
+            font.family: "monospace"
+            font.pixelSize: Math.max(8, Math.round(body.diameter * 0.17))
+        }
+
+        StyledText {
+            anchors.horizontalCenter: parent.horizontalCenter
+            visible: !body.charging && !(body.minutesLeft > 0) && body.connected && body.scene.sinceFor(body.address) > 0
             text: Catalog.formatDuration(body.scene.now - body.scene.sinceFor(body.address))
             color: Theme.withAlpha(Theme.primary, 0.75)
             font.family: "monospace"
