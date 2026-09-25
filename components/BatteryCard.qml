@@ -3,8 +3,8 @@ import qs.Common
 import qs.Widgets
 import "Charge.js" as Charge
 
-// Battery card: status line, a readout ("72%   25 min left"),
-// a matte pill gauge colored by the aurora ramp (red -> aqua) with
+// Battery card: status line, the level with the time left under it
+// beside a matte pill gauge colored by the aurora ramp (red -> aqua) with
 // light-speed streaks, a session sparkline and a row of stat tiles.
 // While charging the streaks flow like a warp jump. Only render-thread
 // animators are used, and they stop whenever `animate` is false.
@@ -85,147 +85,150 @@ Rectangle {
             font.weight: Font.Medium
         }
 
-        // Readout: "72%   25 min left" (level in its ramp color)
+        // Level on the left with the time left under it, gauge on the right
         Row {
+            id: meter
             width: parent.width
-            spacing: Math.round(root.width * 0.06)
+            spacing: Math.round(root.width * 0.045)
             visible: root.hasLevel
 
-            StyledText {
-                id: bigLevel
-                text: Math.round(root.level) + "%"
-                color: root.levelColor
-                font.pixelSize: root.bigFontPx
-                font.weight: Font.DemiBold
-            }
-            StyledText {
-                anchors.baseline: bigLevel.baseline
-                visible: root.timeValue !== ""
-                text: root.timeValue + (root.timeSuffix ? " " + root.timeSuffix : "")
-                color: root.ink
-                font.pixelSize: root.bigFontPx
-                font.weight: Font.Medium
-                elide: Text.ElideRight
-                width: Math.min(implicitWidth, parent.width - bigLevel.width - parent.spacing)
-            }
-        }
-
-        // Gauge band: taller than the bar so streaks can run above and below
-        Item {
-            id: gauge
-            width: parent.width
-            height: Math.round(bar.height * 1.9)
-            visible: root.hasLevel
-            clip: true
-
-            Item {
-                id: bar
-                width: parent.width
-                height: Math.max(14, Math.round(width * root.gaugeRatio))
+            Column {
+                id: readout
                 anchors.verticalCenter: parent.verticalCenter
+                spacing: 0
 
-                Rectangle {
-                    anchors.fill: parent
-                    radius: height / 2
-                    color: Qt.rgba(1, 1, 1, 0.055)
+                StyledText {
+                    id: bigLevel
+                    text: Math.round(root.level) + "%"
+                    color: root.levelColor
+                    font.pixelSize: root.bigFontPx
+                    font.weight: Font.DemiBold
                 }
-
-                // Faint vertical hairlines
-                Repeater {
-                    model: [0.2, 0.46, 0.63, 0.88]
-                    Rectangle {
-                        x: bar.width * modelData
-                        y: bar.height * 0.2
-                        width: 1
-                        height: bar.height * 0.6
-                        color: Qt.rgba(1, 1, 1, 0.08)
-                    }
+                StyledText {
+                    visible: root.timeValue !== ""
+                    text: root.timeValue + (root.timeSuffix ? " " + root.timeSuffix : "")
+                    color: root.muted
+                    font.pixelSize: Theme.fontSizeSmall - 1
                 }
+            }
 
-                // 80% mark while charging (where charging slows down)
-                Rectangle {
-                    visible: root.charging
-                    x: bar.width * 0.8
-                    y: bar.height * 0.14
-                    width: 1.5
-                    height: bar.height * 0.72
-                    radius: 1
-                    color: Theme.withAlpha(root.levelColor, 0.5)
-                }
+            // Gauge band: taller than the bar so streaks can run above and below
+            Item {
+                id: gauge
+                width: meter.width - readout.width - meter.spacing
+                height: Math.round(bar.height * 1.9)
+                anchors.verticalCenter: parent.verticalCenter
+                clip: true
 
-                // Matte fill: rounded start, flat leading edge (full pill at 100%)
                 Item {
-                    id: fillClip
-                    width: root.frac >= 1 ? bar.width : Math.max(bar.height / 2, bar.width * root.frac)
-                    height: bar.height
-                    clip: true
+                    id: bar
+                    width: parent.width
+                    height: Math.max(14, Math.round(width * root.gaugeRatio))
+                    anchors.verticalCenter: parent.verticalCenter
 
-                    Behavior on width {
-                        NumberAnimation {
-                            duration: 700
-                            easing.type: Easing.OutCubic
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: height / 2
+                        color: Qt.rgba(1, 1, 1, 0.055)
+                    }
+
+                    // Faint vertical hairlines
+                    Repeater {
+                        model: [0.2, 0.46, 0.63, 0.88]
+                        Rectangle {
+                            x: bar.width * modelData
+                            y: bar.height * 0.2
+                            width: 1
+                            height: bar.height * 0.6
+                            color: Qt.rgba(1, 1, 1, 0.08)
                         }
                     }
 
+                    // 80% mark while charging (where charging slows down)
                     Rectangle {
-                        width: root.frac >= 1 ? bar.width : fillClip.width + bar.height
+                        visible: root.charging
+                        x: bar.width * 0.8
+                        y: bar.height * 0.14
+                        width: 1.5
+                        height: bar.height * 0.72
+                        radius: 1
+                        color: Theme.withAlpha(root.levelColor, 0.5)
+                    }
+
+                    // Matte fill: rounded start, flat leading edge (full pill at 100%)
+                    Item {
+                        id: fillClip
+                        width: root.frac >= 1 ? bar.width : Math.max(bar.height / 2, bar.width * root.frac)
                         height: bar.height
-                        radius: bar.height / 2
+                        clip: true
+
+                        Behavior on width {
+                            NumberAnimation {
+                                duration: 700
+                                easing.type: Easing.OutCubic
+                            }
+                        }
+
+                        Rectangle {
+                            width: root.frac >= 1 ? bar.width : fillClip.width + bar.height
+                            height: bar.height
+                            radius: bar.height / 2
+                            gradient: Gradient {
+                                orientation: Gradient.Horizontal
+                                GradientStop {
+                                    position: 0
+                                    color: Qt.darker(root.levelColor, 1.15)
+                                }
+                                GradientStop {
+                                    position: 0.75
+                                    color: root.levelColor
+                                }
+                                GradientStop {
+                                    position: 1
+                                    color: Qt.lighter(root.levelColor, 1.05)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Streaks: static accents at rest, a warp flow while charging.
+                // [y (band fraction), x, length (width fractions), alpha, thickness]
+                Repeater {
+                    model: [[0.07, 0.12, 0.3, 0.3, 2], [0.3, 0.1, 0.18, 0.55, 2], [0.42, 0.34, 0.26, 0.4, 1.5], [0.5, 0.03, 0.1, 0.3, 1.5], [0.58, 0.22, 0.34, 0.45, 2], [0.66, 0.66, 0.14, 0.3, 1.5], [0.8, 0.52, 0.2, 0.4, 2], [0.94, 0.26, 0.42, 0.26, 2.5], [0.22, 0.74, 0.12, 0.25, 1.5]]
+
+                    Rectangle {
+                        id: streak
+                        readonly property real len: gauge.width * modelData[2]
+                        x: gauge.width * modelData[1]
+                        y: gauge.height * modelData[0] - height / 2
+                        width: len
+                        height: modelData[4]
+                        radius: height / 2
+                        opacity: modelData[3]
                         gradient: Gradient {
                             orientation: Gradient.Horizontal
                             GradientStop {
                                 position: 0
-                                color: Qt.darker(root.levelColor, 1.15)
+                                color: Qt.rgba(1, 1, 1, 0)
                             }
                             GradientStop {
-                                position: 0.75
-                                color: root.levelColor
+                                position: 0.6
+                                color: Qt.lighter(root.levelColor, 1.35)
                             }
                             GradientStop {
                                 position: 1
-                                color: Qt.lighter(root.levelColor, 1.05)
+                                color: Qt.rgba(1, 1, 1, 0)
                             }
                         }
-                    }
-                }
-            }
 
-            // Streaks: static accents at rest, a warp flow while charging.
-            // [y (band fraction), x, length (width fractions), alpha, thickness]
-            Repeater {
-                model: [[0.07, 0.12, 0.3, 0.3, 2], [0.3, 0.1, 0.18, 0.55, 2], [0.42, 0.34, 0.26, 0.4, 1.5], [0.5, 0.03, 0.1, 0.3, 1.5], [0.58, 0.22, 0.34, 0.45, 2], [0.66, 0.66, 0.14, 0.3, 1.5], [0.8, 0.52, 0.2, 0.4, 2], [0.94, 0.26, 0.42, 0.26, 2.5], [0.22, 0.74, 0.12, 0.25, 1.5]]
-
-                Rectangle {
-                    id: streak
-                    readonly property real len: gauge.width * modelData[2]
-                    x: gauge.width * modelData[1]
-                    y: gauge.height * modelData[0] - height / 2
-                    width: len
-                    height: modelData[4]
-                    radius: height / 2
-                    opacity: modelData[3]
-                    gradient: Gradient {
-                        orientation: Gradient.Horizontal
-                        GradientStop {
-                            position: 0
-                            color: Qt.rgba(1, 1, 1, 0)
+                        XAnimator on x {
+                            running: root.running
+                            from: -streak.len
+                            to: gauge.width
+                            duration: 1100 + (index % 4) * 380
+                            loops: Animation.Infinite
                         }
-                        GradientStop {
-                            position: 0.6
-                            color: Qt.lighter(root.levelColor, 1.35)
-                        }
-                        GradientStop {
-                            position: 1
-                            color: Qt.rgba(1, 1, 1, 0)
-                        }
-                    }
-
-                    XAnimator on x {
-                        running: root.running
-                        from: -streak.len
-                        to: gauge.width
-                        duration: 1100 + (index % 4) * 380
-                        loops: Animation.Infinite
                     }
                 }
             }
