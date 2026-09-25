@@ -35,11 +35,13 @@ Item {
     readonly property real rx: Math.max(40, width / 2 - bodySize * 0.8)
     readonly property real ry: Math.max(30, height / 2 - bodySize * 1.25)
     readonly property real innerNorm: 0.56     // connected orbit
-    // Perspective: the far half of the tilted ring looks shorter than the
-    // near half, and reaches the host core's edge, so devices on the far
-    // side pass behind it
+    // Perspective: a tilted circle is still an ellipse, just shifted. The
+    // connected ring keeps its near (bottom) edge and its far (top) edge
+    // reaches the host core's edge, so devices on the far side pass behind it
     readonly property real innerFrontRy: ry * innerNorm
     readonly property real innerBackRy: Math.min(innerFrontRy, coreSize * 0.5)
+    readonly property real ringRy: (innerFrontRy + innerBackRy) / 2
+    readonly property real ringCy: cy + (innerFrontRy - innerBackRy) / 2
     readonly property real outerMinNorm: 0.8  // strongest signal
     readonly property real snapNorm: 0.7      // magnet engages inside this
     readonly property real detachNorm: 0.8   // pulling a connected device past this disconnects
@@ -664,9 +666,9 @@ Item {
                 zeta = 0.85;
                 const nrm = norm(dragX, dragY);
                 // Nearest point on the connected ring, at the pointer's angle
-                const ang = Math.atan2((dragY - cy) / ry, (dragX - cx) / rx);
+                const ang = Math.atan2((dragY - ringCy) / ringRy, (dragX - cx) / (rx * innerNorm));
                 const sx = cx + Math.cos(ang) * rx * innerNorm;
-                const sy = cy + Math.sin(ang) * ry * innerNorm;
+                const sy = ringCy + Math.sin(ang) * ringRy;
                 let pull = 0;
                 if (b.holding) {
                     // Elastic resistance: gravity holds it until it tears free
@@ -691,7 +693,7 @@ Item {
                 const i = inner.indexOf(b);
                 const a = innerPhase + (i / Math.max(1, inner.length)) * Math.PI * 2;
                 tx = cx + Math.cos(a) * rx * innerNorm;
-                ty = cy + Math.sin(a) * (Math.sin(a) < 0 ? innerBackRy : innerFrontRy);
+                ty = ringCy + Math.sin(a) * ringRy;
                 b.depth = Math.sin(a);
                 k = 80;
                 zeta = 0.7;
@@ -792,7 +794,9 @@ Item {
         id: wave
         property bool busy: anim.running
         property bool outward: true
-        anchors.fill: parent
+        // Centered on the ring (not the scene), so it grows from the ring's middle
+        width: parent.width
+        height: scene.ringCy * 2
         preferredRendererType: Shape.CurveRenderer
         opacity: 0
         transformOrigin: Item.Center
@@ -808,9 +812,9 @@ Item {
             fillColor: "transparent"
             PathAngleArc {
                 centerX: scene.cx
-                centerY: scene.cy
+                centerY: scene.ringCy
                 radiusX: scene.rx * scene.innerNorm
-                radiusY: scene.ry * scene.innerNorm
+                radiusY: scene.ringRy
                 startAngle: 0
                 sweepAngle: 360
             }
@@ -976,23 +980,13 @@ Item {
                 strokeColor: innerRing.armedIn ? Theme.withAlpha(Theme.primary, 0.85) : innerRing.guiding ? Theme.withAlpha(Theme.primary, 0.45) : Qt.rgba(1, 1, 1, 0.1)
                 strokeWidth: innerRing.armedIn ? 1.8 : 1
                 fillColor: innerRing.armedIn ? Theme.withAlpha(Theme.primary, 0.05) : "transparent"
-                // Near half (bottom), then the shorter far half (top)
                 PathAngleArc {
                     centerX: scene.cx
-                    centerY: scene.cy
+                    centerY: scene.ringCy
                     radiusX: scene.rx * scene.innerNorm
-                    radiusY: scene.innerFrontRy
+                    radiusY: scene.ringRy
                     startAngle: 0
-                    sweepAngle: 180
-                }
-                PathAngleArc {
-                    moveToStart: false
-                    centerX: scene.cx
-                    centerY: scene.cy
-                    radiusX: scene.rx * scene.innerNorm
-                    radiusY: scene.innerBackRy
-                    startAngle: 180
-                    sweepAngle: 180
+                    sweepAngle: 360
                 }
             }
         }
