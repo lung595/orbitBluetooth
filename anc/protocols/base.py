@@ -26,11 +26,18 @@ MODES = ("off", "nc", "ambient", "adaptive")
 
 
 class Protocol:
-    # ("rfcomm", [service uuids], fallback channel) or ("l2cap", psm)
+    # ("rfcomm", [service uuids], fallback channel(s)) or ("l2cap", psm)
     transport = None
+    # Headsets that never answer about noise control still show their
+    # battery: after this many seconds without a mode, the session is ready
+    # anyway (with no modes). None = the brand decides on its own.
+    ready_timeout = None
 
-    def __init__(self, send):
+    def __init__(self, send, name=""):
         self._send = send
+        # The Bluetooth name, for brands whose capabilities depend on the model
+        self.name = name
+        self._started_at = None
         self.buffer = bytearray()
         self.ready = False
         # "set" commands received before the handshake finished
@@ -70,8 +77,18 @@ class Protocol:
     def refresh(self):
         """Asks the headset for its current state again."""
 
+    def wants_tick(self):
+        """True while a retry or timeout is pending: the runner then keeps
+        calling tick() every quarter second instead of sleeping until the
+        next packet."""
+        return False
+
     def tick(self, now):
         """Called after every event, for retries or timeouts."""
+        if self._started_at is None:
+            self._started_at = now
+        elif not self.ready and self.ready_timeout and now - self._started_at > self.ready_timeout:
+            self.mark_ready()
 
     # --- shared plumbing ---------------------------------------------------
 

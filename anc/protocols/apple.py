@@ -73,8 +73,8 @@ def parse_battery(payload):
 class Apple(Protocol):
     transport = ("l2cap", PSM)
 
-    def __init__(self, send):
-        super().__init__(send)
+    def __init__(self, send, name=""):
+        super().__init__(send, name)
         self.features["levelMode"] = "adaptive"
         self._step = 0
         self._step_at = None

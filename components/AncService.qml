@@ -68,7 +68,7 @@ Item {
             return _sessions[address] || null;
         const proc = sessionComponent.createObject(root, {
             "address": address,
-            "command": ["python3", _helper, address, familyFor(deviceFor(address))]
+            "command": ["python3", _helper, address, familyFor(deviceFor(address)), deviceFor(address).name || deviceFor(address).deviceName || ""]
         });
         const next = Object.assign({}, _sessions);
         next[address] = proc;

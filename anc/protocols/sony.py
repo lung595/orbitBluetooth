@@ -67,8 +67,8 @@ def decode(escaped):
 class Sony(Protocol):
     transport = ("rfcomm", [UUID_V2, UUID_V1], None)
 
-    def __init__(self, send):
-        super().__init__(send)
+    def __init__(self, send, name=""):
+        super().__init__(send, name)
         self.version = 0          # 1 or 2 once the headset answered the init
         self.seq = 0              # our sequence number, flipped by each ACK
         self.queue = []           # payloads waiting for the one in flight
@@ -96,6 +96,9 @@ class Sony(Protocol):
             self.send(encode(T_DATA, self.seq, payload))
             self.inflight = (payload, now, 1)
         self.awaiting = len(self.queue) + (1 if self.inflight else 0)
+
+    def wants_tick(self):
+        return self.inflight is not None
 
     def tick(self, now):
         if not self.inflight:

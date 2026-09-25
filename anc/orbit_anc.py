@@ -3,7 +3,7 @@
 
 Started by OrbitBluetoothDaemon.qml, never by itself:
 
-    python3 orbit_anc.py <address> <family>
+    python3 orbit_anc.py <address> <family> [name]
 
 - stdin: one command per line: "get", "set <key> <value>".
 - stdout: one JSON object per line, whenever something changes:
@@ -69,20 +69,36 @@ def open_socket(address, transport):
         sock = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
         target = (address, transport[1])
     else:
-        # ("rfcomm", [uuid, ...], fallback channel or None)
-        channel = None
+        # ("rfcomm", [uuid, ...], fallback channel, list of channels or None)
+        channels = []
         for service in transport[1]:
             try:
                 channel = sdp.find_rfcomm_channel(address, service)
             except OSError:
                 channel = None
             if channel:
+                channels.append(channel)
                 break
-        channel = channel or transport[2]
-        if not channel:
+        fallback = transport[2]
+        for channel in fallback if isinstance(fallback, (list, tuple)) else [fallback]:
+            if channel and channel not in channels:
+                channels.append(channel)
+        if not channels:
             raise OSError("vendor service not found")
-        sock = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
-        target = (address, channel)
+        # The same service sits on different channels on different models
+        error = None
+        for channel in channels:
+            sock = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
+            sock.settimeout(CONNECT_TIMEOUT)
+            try:
+                sock.connect((address, channel))
+            except OSError as err:
+                sock.close()
+                error = err
+                continue
+            sock.setblocking(False)
+            return sock
+        raise error
     sock.settimeout(CONNECT_TIMEOUT)
     sock.connect(target)
     sock.setblocking(False)
@@ -113,7 +129,7 @@ def handle_command(proto, command):
         proto.pending.append(command[1:])
 
 
-def run(address, family):
+def run(address, family, name=""):
     factory = FAMILIES.get(family)
     if not factory:
         emit({"status": "error", "error": "unsupported"})
@@ -129,7 +145,7 @@ def run(address, family):
         trace(">>", data)
         sock.sendall(data)
 
-    proto = factory(send)
+    proto = factory(send, name)
     selector = selectors.DefaultSelector()
     selector.register(sock, selectors.EVENT_READ, "socket")
     selector.register(sys.stdin, selectors.EVENT_READ, "stdin")
@@ -149,7 +165,7 @@ def run(address, family):
             if not proto.ready and now - started > HANDSHAKE_TIMEOUT:
                 raise TimeoutError("timed out")
             settling = ready_at is not None and now - ready_at < SETTLE_SECONDS
-            timeout = HANDSHAKE_POLL if settling or not proto.ready else None
+            timeout = HANDSHAKE_POLL if settling or not proto.ready or proto.wants_tick() else None
             if deadline is not None:
                 timeout = min(timeout or deadline - now, deadline - now)
             for key, _ in selector.select(timeout):
@@ -194,7 +210,7 @@ def run(address, family):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) not in (3, 4):
         sys.stderr.write(__doc__)
         sys.exit(2)
-    sys.exit(run(sys.argv[1], sys.argv[2]))
+    sys.exit(run(*sys.argv[1:]))
