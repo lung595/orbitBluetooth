@@ -300,6 +300,14 @@ Item {
                 }
             }
 
+            // With noise control, the stats stay with the battery, above the
+            // ANC panel (without it they are part of the battery card)
+            StatTiles {
+                width: parent.width
+                topPadding: Theme.spacingS
+                stats: card.ancShown ? card.statItems : []
+            }
+
             Loader {
                 width: parent.width
                 active: card.ancShown
@@ -310,13 +318,6 @@ Item {
                     scene: card.scene
                     address: card.body?.address ?? ""
                 }
-            }
-
-            // With noise control, the stats sit under the ANC panel
-            StatTiles {
-                width: parent.width
-                topPadding: Theme.spacingM
-                stats: card.ancShown ? card.statItems : []
             }
 
             // Glyph picker
