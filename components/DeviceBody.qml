@@ -24,6 +24,9 @@ Item {
     readonly property int battery: device?.batteryAvailable ? Math.round(device.battery * 100) : connected ? (power?.percentage ?? -1) : -1
     readonly property var charge: connected && battery >= 0 ? Charge.analyze(scene.batteryLogFor(address), battery, power, scene.now) : null
     readonly property bool charging: charge?.state === "charging"
+    // Noise control, when the headset speaks a known vendor protocol
+    readonly property bool ancCapable: scene.ancCapable(body)
+    readonly property string ancMode: ancCapable ? (scene.ancFor(address)?.state?.mode ?? "") : ""
     readonly property real rawSignal: (device?.signalStrength ?? 0) > 0 ? device.signalStrength / 100 : 0
     // Only remembered devices can be out of range; discovered ones are nearby
     readonly property bool dormant: !connected && paired && rawSignal <= 0
@@ -522,6 +525,56 @@ Item {
             }
         }
 
+        // Noise-control halo: solid = cancelling, dashed = ambient,
+        // double = adaptive; nothing when off or unknown. Static art, it only
+        // fades when the mode changes.
+        Shape {
+            id: ancHalo
+            anchors.centerIn: parent
+            width: parent.width + 17
+            height: width
+            opacity: body.ancMode && body.ancMode !== "off" && !body.focused ? 1 : 0
+            visible: opacity > 0
+            preferredRendererType: Shape.CurveRenderer
+            readonly property real r: width / 2 - 1.5
+            Behavior on opacity {
+                enabled: body.scene.motion
+                NumberAnimation {
+                    duration: 260
+                }
+            }
+
+            ShapePath {
+                strokeColor: Theme.withAlpha(Theme.primary, body.ancMode === "nc" ? 0.75 : 0.6)
+                strokeWidth: 1.5
+                strokeStyle: body.ancMode === "ambient" ? ShapePath.DashLine : ShapePath.SolidLine
+                dashPattern: [1.5, 3]
+                fillColor: "transparent"
+                capStyle: ShapePath.RoundCap
+                PathAngleArc {
+                    centerX: ancHalo.width / 2
+                    centerY: centerX
+                    radiusX: ancHalo.r
+                    radiusY: radiusX
+                    startAngle: 0
+                    sweepAngle: 359.9
+                }
+            }
+            ShapePath {
+                strokeColor: body.ancMode === "adaptive" ? Theme.withAlpha(Theme.primary, 0.35) : "transparent"
+                strokeWidth: 1
+                fillColor: "transparent"
+                PathAngleArc {
+                    centerX: ancHalo.width / 2
+                    centerY: centerX
+                    radiusX: ancHalo.r + 3.5
+                    radiusY: radiusX
+                    startAngle: 0
+                    sweepAngle: 359.9
+                }
+            }
+        }
+
         // Battery arc (connected devices that report a level)
         Shape {
             anchors.centerIn: parent
@@ -814,6 +867,7 @@ Item {
         anchors.fill: parent
         hoverEnabled: true
         preventStealing: true
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
         enabled: !body.leaving && !body.scene.focusBody
         cursorShape: body.dragging ? Qt.ClosedHandCursor : Qt.OpenHandCursor
 
@@ -827,9 +881,14 @@ Item {
         onPressed: m => {
             pressPoint = worldPoint(m);
             pressTime = Date.now();
+            // Right click on a headset: next noise-control mode
+            if (m.button === Qt.RightButton && body.ancCapable) {
+                body.scene.ancCycle(body.address);
+                body.pop();
+            }
         }
         onPositionChanged: m => {
-            if (!pressed)
+            if (!pressed || pressedButtons & Qt.RightButton)
                 return;
             const p = worldPoint(m);
             if (!body.dragging && Math.hypot(p.x - pressPoint.x, p.y - pressPoint.y) > 5)
@@ -837,7 +896,9 @@ Item {
             if (body.dragging)
                 body.scene.updateDrag(p);
         }
-        onReleased: {
+        onReleased: m => {
+            if (m.button === Qt.RightButton)
+                return;
             if (body.dragging)
                 body.scene.endDrag();
             else if (Date.now() - pressTime < 450)

@@ -4,11 +4,15 @@ import Quickshell.Bluetooth
 import Quickshell.Io
 import Quickshell.Services.UPower
 import qs.Services
+import "components"
+import "components/Anc.js" as Anc
 
 // Event-driven bookkeeping shared by every surface. BlueZ exposes neither a
 // connection timestamp, a charging state nor a discharge rate, so we record
 // them ourselves and merge what UPower knows.
-// No timers and no processes: everything reacts to D-Bus property changes.
+// No timers: everything reacts to D-Bus property changes. The only process
+// is the noise-control helper (see AncService), and only while a supported
+// headset is connected and being controlled.
 // Privacy: all data stays in memory for the current session; nothing is
 // written to disk or sent anywhere.
 Item {
@@ -25,6 +29,54 @@ Item {
     property var power: ({})
 
     readonly property int maxSamples: 64
+
+    // Noise control (ANC) for headphones: address -> helper snapshot
+    Prefs {
+        id: prefs
+    }
+
+    readonly property alias anc: ancService
+
+    AncService {
+        id: ancService
+        enabled: prefs.ancEnabled
+        engine: prefs.ancEngine
+        publish: map => root._publish("anc", map)
+    }
+
+    // dms ipc call orbitBluetooth anc nc | ambient | off | adaptive
+    IpcHandler {
+        target: "orbitBluetooth"
+
+        function anc(mode: string): string {
+            const address = ancService.primary();
+            if (!address)
+                return "No supported headset connected";
+            if (Anc.ORDER.indexOf(mode) < 0)
+                return "Modes: " + Anc.ORDER.join(", ");
+            ancService.send(address, "mode", mode);
+            return "OK";
+        }
+
+        // Next mode on the first connected headset (off is skipped when possible)
+        function ancCycle(): string {
+            const address = ancService.primary();
+            if (!address)
+                return "No supported headset connected";
+            ancService.cycle(address);
+            return "OK";
+        }
+
+        function ancStatus(): string {
+            const address = ancService.primary();
+            const s = ancService.states[address];
+            if (!address)
+                return "No supported headset connected";
+            if (!s || !s.state)
+                return "Unknown (open the headset card once, or use the always-connected engine)";
+            return JSON.stringify(s.state);
+        }
+    }
 
     function _publish(name, value) {
         PluginService.setGlobalVar(pluginId, name, value);
