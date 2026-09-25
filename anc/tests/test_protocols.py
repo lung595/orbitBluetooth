@@ -36,6 +36,15 @@ class Sony(unittest.TestCase):
         proto._data(h("69 19 01 01 00 00 14 00 00"))   # notifications are exact
         self.assertEqual(proto.state["mode"], "nc")
 
+    def test_xm6_charging_flag_is_a_bit(self):
+        # Real WH-1000XM6 replies: 23 00 50 00 on battery, 23 00 4f 03 charging
+        proto = FAMILIES["sony"](lambda d: None, "WH-1000XM6")
+        proto.version = 2
+        proto._data(h("23 00 50 00"))
+        self.assertEqual(proto.state["battery"]["single"], {"level": 80, "charging": False})
+        proto._data(h("23 00 4f 03"))
+        self.assertEqual(proto.state["battery"]["single"], {"level": 79, "charging": True})
+
     def test_frames_ack_every_data_frame(self):
         sent = []
         proto = FAMILIES["sony"](sent.append)

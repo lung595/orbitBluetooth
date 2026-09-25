@@ -21,7 +21,22 @@ Item {
     readonly property string kind: Catalog.resolve(device, scene.prefs.glyphOverrides)
     readonly property bool connected: device?.connected ?? false
     readonly property bool paired: (device?.paired || device?.bonded) ?? false
-    readonly property var power: scene.powerFor(address)
+    // The headset's own battery report (noise-control helper), trusted while
+    // its session is live or for ten minutes after: UPower often has no
+    // charging state for headphones, and waiting for the level to rise is slow
+    readonly property var ancInfo: scene.ancFor(address)
+    readonly property bool headsetCharging: {
+        const info = ancInfo, parts = info?.state?.battery;
+        if (!parts || !(info.live || scene.now - (info.at || 0) < 600000))
+            return false;
+        return Object.keys(parts).some(k => parts[k].charging);
+    }
+    readonly property var power: {
+        const p = scene.powerFor(address);
+        return headsetCharging ? Object.assign({}, p || {}, {
+            "state": 1      // UPower's "charging"
+        }) : p;
+    }
     readonly property int battery: device?.batteryAvailable ? Math.round(device.battery * 100) : connected ? (power?.percentage ?? -1) : -1
     // Rated life depends only on the model and mode: looked up once, not on every clock tick
     readonly property real ratedHours: Endurance.ratedHours(name, kind, ancMode)

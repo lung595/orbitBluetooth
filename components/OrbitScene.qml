@@ -133,6 +133,14 @@ Item {
     function ancWatch(address, on) {
         _ancService?.watch(address, on);
     }
+    // Fresh battery and charging state from supported headsets when a view opens
+    function ancPeekAll() {
+        for (let i = 0; i < bodies.count; i++) {
+            const b = bodies.itemAt(i);
+            if (b && b.ancCapable)
+                _ancService?.peek(b.address);
+        }
+    }
 
     clip: true
     focus: active
@@ -157,7 +165,9 @@ Item {
         wake();
         refresh();
         updateScan();
-        if (!active)
+        if (active)
+            ancPeekAll();
+        else
             dismiss();
     }
 
@@ -292,6 +302,8 @@ Item {
     Component.onCompleted: {
         refresh();
         updateScan();
+        if (active)
+            Qt.callLater(ancPeekAll);   // bodies exist once the model is filled
     }
     Component.onDestruction: stopScan()
 

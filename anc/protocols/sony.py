@@ -244,17 +244,19 @@ class Sony(Protocol):
         self.mark_ready()
 
     def _on_battery(self, p):
+        # The status byte is a bit field: bit 0 = charging. Older models send
+        # 01, the WH-1000XM6 sends 03 while charging (seen on real hardware)
         kind, v = p[1], p[2:]
         if kind in (0x00, 0x08) and len(v) >= 2:
-            self.set_battery("single", v[0], v[1] == 1)
+            self.set_battery("single", v[0], v[1] & 0x01)
         elif kind in (0x01, 0x09) and len(v) >= 4:
             # A level of 0 means that earbud is not connected
             if v[0]:
-                self.set_battery("left", v[0], v[1] == 1)
+                self.set_battery("left", v[0], v[1] & 0x01)
             if v[2]:
-                self.set_battery("right", v[2], v[3] == 1)
+                self.set_battery("right", v[2], v[3] & 0x01)
         elif kind in (0x02, 0x0A) and len(v) >= 2:
-            self.set_battery("case", v[0], v[1] == 1)
+            self.set_battery("case", v[0], v[1] & 0x01)
 
     def _on_speak_to_chat(self, p):
         if self.version == 2 and p[1] == 0x0C and len(p) >= 3:
