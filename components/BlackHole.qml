@@ -6,8 +6,9 @@ import qs.Widgets
 // Devices dragged into it disappear from the orbit (they stay connected);
 // clicking it lists them so they can be brought back.
 //
-// The look is one fragment shader (shaders/blackhole.frag) that lenses the
-// starfield behind it. Cost: the sky patch is re-sampled only when the stars
+// The look is one fragment shader that lenses the starfield behind it, in
+// one of two styles picked in the settings: shaders/gargantua.frag
+// (realistic, with an accretion disk) or shaders/tesseract.frag. Cost: the sky patch is re-sampled only when the stars
 // change, and the tesseract only turns while the scene is awake, so a still
 // scene renders nothing.
 Item {
@@ -54,7 +55,8 @@ Item {
         // see-through (redrawing it would leave a grey disc), so it is off there
         readonly property real lens: hole.scene.glass ? 0 : 1
         readonly property color backdrop: "#06070b"
-        fragmentShader: Qt.resolvedUrl("../shaders/blackhole.frag.qsb")
+        // Both shaders share one uniform block: switching style is just this
+        fragmentShader: hole.scene.prefs.holeStyle === "tesseract" ? Qt.resolvedUrl("../shaders/tesseract.frag.qsb") : Qt.resolvedUrl("../shaders/gargantua.frag.qsb")
 
         Behavior on horizon {
             enabled: hole.scene.motion

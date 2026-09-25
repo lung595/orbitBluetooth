@@ -7,7 +7,7 @@ import "../../components"
 // Offscreen renders for the README, with mock devices and services.
 // Usage: QT_QPA_PLATFORM=offscreen qml -I imports shot.qml -- <mode> <out.png>
 // Modes: orbit, zoom, orbitfocus, desktop, desktopfocus, ancfocus,
-//        hole, hiddencard, hiddenempty, connecting, menu, feed
+//        hole, holetess, hiddencard, hiddenempty, connecting, menu, feed
 Window {
     id: win
     readonly property var args: Qt.application.arguments
@@ -15,7 +15,7 @@ Window {
     readonly property string out: args[args.length - 1]
     readonly property bool glass: mode.startsWith("desktop")
     // Control Center sized shots for the black hole, menu and comet
-    readonly property bool compact: ["hole", "hiddencard", "hiddenempty", "connecting", "menu", "feed"].indexOf(mode) >= 0
+    readonly property bool compact: ["hole", "holetess", "hiddencard", "hiddenempty", "connecting", "menu", "feed"].indexOf(mode) >= 0
     width: glass ? 760 : (mode === "zoom" ? 900 : compact ? 540 : 560)
     height: glass ? 560 : (mode === "zoom" ? 700 : mode === "ancfocus" || compact ? 354 : 480)
     visible: true
@@ -37,7 +37,8 @@ Window {
         // Two made-up devices already swallowed by the black hole
         if (mode !== "hiddenempty")
             SettingsData.pluginSettings = Object.assign({}, SettingsData.pluginSettings, {
-                "hiddenDevices": { "3C:8D:20:54:AB:12": "Keychron K3", "E8:07:BF:6A:19:D4": "JBL Flip 6" }
+                "hiddenDevices": { "3C:8D:20:54:AB:12": "Keychron K3", "E8:07:BF:6A:19:D4": "JBL Flip 6" },
+                "holeStyle": mode === "holetess" ? "tesseract" : "blackhole"
             });
         BluetoothService.discovering = mode === "orbit";
         PluginService.globalVars = {
@@ -124,6 +125,10 @@ Window {
     }
     Timer {
         id: grabTimer
-        onTriggered: win.contentItem.grabToImage(r => { r.saveToFile(win.out); Qt.quit(); })
+        onTriggered: {
+            // Where the drifting black hole ended up (to crop close-ups)
+            console.info("hole", scene.holeX + frame.x, scene.holeY + frame.y);
+            win.contentItem.grabToImage(r => { r.saveToFile(win.out); Qt.quit(); });
+        }
     }
 }
