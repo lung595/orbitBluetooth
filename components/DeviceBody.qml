@@ -1,0 +1,850 @@
+import QtQuick
+import QtQuick.Shapes
+import qs.Common
+import qs.Widgets
+import "DeviceCatalog.js" as Catalog
+import "Charge.js" as Charge
+
+// One orbiting device. Purely presentational + input: the owning OrbitScene
+// integrates physics for every body in a single pass per frame and writes
+// px/py/vx/vy directly, so there is no per-body timer or animation driver.
+Item {
+    id: body
+
+    required property var scene
+    required property string address
+    required property bool leaving
+
+    readonly property var device: scene.deviceMap[address] ?? null
+    readonly property string name: Catalog.deviceName(device) || address
+    readonly property string kind: Catalog.resolve(device, scene.prefs.glyphOverrides)
+    readonly property bool connected: device?.connected ?? false
+    readonly property bool paired: (device?.paired || device?.bonded) ?? false
+    readonly property var power: scene.powerFor(address)
+    readonly property int battery: device?.batteryAvailable ? Math.round(device.battery * 100) : connected ? (power?.percentage ?? -1) : -1
+    readonly property var charge: connected && battery >= 0 ? Charge.analyze(scene.batteryLogFor(address), battery, power, scene.now) : null
+    readonly property bool charging: charge?.state === "charging"
+    readonly property real rawSignal: (device?.signalStrength ?? 0) > 0 ? device.signalStrength / 100 : 0
+    // Only remembered devices can be out of range; discovered ones are nearby
+    readonly property bool dormant: !connected && paired && rawSignal <= 0
+
+    // "idle" | "connecting" | "disconnecting"
+    property string phase: "idle"
+    readonly property bool inSlot: (connected && phase !== "disconnecting") || phase === "connecting"
+    // Held by the host's gravity: connected, or on its way to be
+    readonly property bool holding: connected || phase === "connecting"
+    property double cancelledAt: 0
+
+    // Physics state (scene coordinates of the body center)
+    property real px: 0
+    property real py: 0
+    property real vx: 0
+    property real vy: 0
+    property bool spawned: false
+    property real homeHash: Catalog.hash01(address)
+
+    // Smoothed signal so distance/size glide instead of jumping on each RSSI update
+    property real signal: rawSignal > 0 ? rawSignal : (paired ? 0.12 : 0.2)
+    Behavior on signal {
+        NumberAnimation {
+            duration: 900
+            easing.type: Easing.OutCubic
+        }
+    }
+
+    property bool dragging: false
+    property bool armed: false          // inside the snap/detach zone while dragging
+    property real depth: 0              // -1 (behind) .. 1 (front), for orbiting bodies
+    property real popScale: 1
+    property real shakeX: 0
+
+    // Focus mode: the glyph flies to the card and grows, breaking out of its
+    // frame. Driven by explicit animations (not a Behavior) so leaving focus
+    // always lands back on exactly 1.
+    readonly property bool focused: scene.focusBody === body
+    property real focusScale: 1
+    onFocusedChanged: {
+        focusGrow.stop();
+        focusShrink.stop();
+        (focused ? focusGrow : focusShrink).restart();
+    }
+    SequentialAnimation {
+        id: focusGrow
+        PauseAnimation {
+            duration: 140
+        }
+        NumberAnimation {
+            target: body
+            property: "focusScale"
+            to: body.scene.focusGlyphScale
+            duration: 520
+            easing.type: Easing.OutBack
+            easing.overshoot: 1.1
+        }
+    }
+    NumberAnimation {
+        id: focusShrink
+        target: body
+        property: "focusScale"
+        to: 1
+        duration: 340
+        easing.type: Easing.OutCubic
+    }
+    Connections {
+        target: body.scene
+        enabled: body.focused
+        function onFocusGlyphScaleChanged() {
+            if (!focusGrow.running)
+                body.focusScale = body.scene.focusGlyphScale;
+        }
+    }
+
+    // Scale = orbit placement x hover x pop x focus. Only the discrete
+    // transitions are smoothed; per-frame depth changes stay unanimated.
+    property real slotMix: inSlot ? 1 : 0
+    Behavior on slotMix {
+        NumberAnimation {
+            duration: 320
+            easing.type: Easing.OutCubic
+        }
+    }
+    property real hoverScale: hovered || dragging ? 1.07 : 1
+    Behavior on hoverScale {
+        NumberAnimation {
+            duration: 180
+            easing.type: Easing.OutCubic
+        }
+    }
+
+    readonly property real diameter: scene.bodySize
+    readonly property real baseScale: focused ? 1 : slotMix * (1 + 0.07 * depth) + (1 - slotMix) * (0.66 + 0.34 * signal)
+    readonly property bool hovered: mouse.containsMouse && !scene.focusBody
+
+    width: diameter
+    height: diameter
+    x: px - width / 2 + shakeX
+    y: py - height / 2
+    z: focused ? 20000 : dragging ? 10000 : 100 + py
+    opacity: leaving ? 0 : (spawned ? 1 : 0) * (scene.focusBody && scene.focusBody !== body ? 0.1 : 1) * (inSlot ? 1 : dormant ? 0.5 : 0.6 + 0.4 * signal)
+
+    Behavior on opacity {
+        NumberAnimation {
+            id: fadeAnim
+            duration: 380
+            easing.type: Easing.OutCubic
+        }
+    }
+
+    onLeavingChanged: if (leaving)
+        removeTimer.start()
+    Timer {
+        id: removeTimer
+        interval: 420
+        onTriggered: body.scene.finalizeRemoval(body.address)
+    }
+
+    onConnectedChanged: scene.onBodyConnectionChanged(body, connected)
+
+    function pop() {
+        popAnim.restart();
+    }
+    function celebrate() {
+        lockAnim.restart();
+    }
+    function release() {
+        releaseAnim.restart();
+    }
+    function shake() {
+        shakeAnim.restart();
+    }
+
+    SequentialAnimation {
+        id: popAnim
+        NumberAnimation {
+            target: body
+            property: "popScale"
+            to: 1.14
+            duration: 110
+            easing.type: Easing.OutQuad
+        }
+        NumberAnimation {
+            target: body
+            property: "popScale"
+            to: 1
+            duration: 420
+            easing.type: Easing.OutBack
+            easing.overshoot: 2.2
+        }
+    }
+
+    SequentialAnimation {
+        id: shakeAnim
+        loops: 1
+        NumberAnimation {
+            target: body
+            property: "shakeX"
+            to: -6
+            duration: 50
+        }
+        NumberAnimation {
+            target: body
+            property: "shakeX"
+            to: 5
+            duration: 70
+        }
+        NumberAnimation {
+            target: body
+            property: "shakeX"
+            to: -3
+            duration: 70
+        }
+        NumberAnimation {
+            target: body
+            property: "shakeX"
+            to: 0
+            duration: 90
+        }
+    }
+
+    // --- Tether to the host core (lives in the scene's tether layer) ---------
+    Item {
+        id: tetherRoot
+        parent: body.scene.tetherLayer
+        visible: opacity > 0.01
+        x: body.scene.cx
+        y: body.scene.cy
+        rotation: Math.atan2(body.py - body.scene.cy, body.px - body.scene.cx) * 180 / Math.PI
+        opacity: body.leaving || body.focused ? 0 : tetherAlpha * (body.scene.focusBody ? 0.15 : 1)
+
+        readonly property real dist: Math.hypot(body.px - body.scene.cx, body.py - body.scene.cy)
+        readonly property real tetherAlpha: {
+            if (body.dragging && body.holding)
+                return body.armed ? 0.25 : 0.7;
+            if (body.phase === "connecting")
+                return 0.35 + 0.35 * Math.abs(Math.sin(body.scene.clock * 4));
+            if (body.connected)
+                return body.charging ? 0 : 0.4;   // the energy beam replaces it
+            return 0;
+        }
+        property real reach: 1   // animated to retract / extend
+        property real thickness: 1.5
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 260
+            }
+        }
+
+        Rectangle {
+            x: body.scene.coreSize / 2
+            y: -height / 2
+            height: tetherRoot.thickness * (body.dragging && body.holding ? Math.max(0.4, 1.4 - (tetherRoot.dist / (body.scene.rx * body.scene.innerNorm) - 1) * 1.2) : 1)
+            width: Math.max(0, (tetherRoot.dist - body.scene.coreSize / 2 - body.diameter * body.baseScale / 2) * tetherRoot.reach)
+            radius: height / 2
+            gradient: Gradient {
+                orientation: Gradient.Horizontal
+                GradientStop {
+                    position: 0
+                    color: body.armed && body.holding ? Theme.withAlpha(Theme.error, 0.9) : Theme.withAlpha(Theme.primary, 0.9)
+                }
+                GradientStop {
+                    position: 1
+                    color: body.armed && body.holding ? Theme.withAlpha(Theme.error, 0.15) : Theme.withAlpha(Theme.primary, 0.2)
+                }
+            }
+        }
+    }
+
+    // --- Charging: an energy beam from the host to the device --------------
+    // White-hot core line, a soft colored glow, an iridescent shimmer and
+    // sparkles riding toward the device. Everything is static geometry moved
+    // by render-thread animators, which only run while someone is looking.
+    Item {
+        id: chargeFlow
+        // Above the host's halo, below every device
+        parent: body.scene.world
+        z: 60
+        x: body.scene.cx
+        y: body.scene.cy
+        rotation: tetherRoot.rotation
+        opacity: body.charging && !body.leaving && !body.focused ? (body.scene.focusBody ? 0.15 : 1) : 0
+        visible: opacity > 0.01
+
+        readonly property real start: body.scene.coreSize / 2
+        readonly property real span: Math.max(0, tetherRoot.dist - start - body.diameter * body.baseScale / 2)
+        readonly property bool running: visible && body.scene.awake && body.scene.motion
+        readonly property color glow: Theme.primary
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 500
+            }
+        }
+
+        // Soft outer glow
+        Rectangle {
+            x: chargeFlow.start
+            y: -height / 2
+            width: chargeFlow.span
+            height: 20
+            gradient: Gradient {
+                GradientStop {
+                    position: 0
+                    color: Qt.rgba(0, 0, 0, 0)
+                }
+                GradientStop {
+                    position: 0.5
+                    color: Theme.withAlpha(chargeFlow.glow, 0.4)
+                }
+                GradientStop {
+                    position: 1
+                    color: Qt.rgba(0, 0, 0, 0)
+                }
+            }
+        }
+
+        // White-hot core, brightest at the source
+        Rectangle {
+            x: chargeFlow.start
+            y: -height / 2
+            width: chargeFlow.span
+            height: 2
+            radius: 1
+            gradient: Gradient {
+                orientation: Gradient.Horizontal
+                GradientStop {
+                    position: 0
+                    color: Qt.rgba(1, 1, 1, 0.95)
+                }
+                GradientStop {
+                    position: 0.7
+                    color: Qt.rgba(1, 1, 1, 0.7)
+                }
+                GradientStop {
+                    position: 1
+                    color: Theme.withAlpha(chargeFlow.glow, 0.5)
+                }
+            }
+        }
+
+        // Source flare where the beam leaves the host
+        Rectangle {
+            x: chargeFlow.start - width / 2
+            y: -height / 2
+            width: 12
+            height: width
+            radius: width / 2
+            color: Theme.withAlpha(chargeFlow.glow, 0.35)
+            Rectangle {
+                anchors.centerIn: parent
+                width: 4
+                height: 4
+                radius: 2
+                color: "white"
+            }
+        }
+
+        // Moving parts, clipped to the beam's length
+        Item {
+            x: chargeFlow.start
+            y: -8
+            width: chargeFlow.span
+            height: 16
+            clip: true
+
+            // Iridescent shimmer
+            Rectangle {
+                id: prism
+                width: Math.max(18, chargeFlow.span * 0.45)
+                height: 3
+                y: 6.5
+                x: -width
+                radius: 1.5
+                opacity: 0.75
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop {
+                        position: 0
+                        color: Qt.rgba(1, 0.3, 0.4, 0)
+                    }
+                    GradientStop {
+                        position: 0.25
+                        color: Qt.rgba(1, 0.75, 0.3, 0.8)
+                    }
+                    GradientStop {
+                        position: 0.5
+                        color: Qt.rgba(0.45, 1, 0.6, 0.85)
+                    }
+                    GradientStop {
+                        position: 0.75
+                        color: Qt.rgba(0.35, 0.75, 1, 0.8)
+                    }
+                    GradientStop {
+                        position: 1
+                        color: Qt.rgba(0.75, 0.45, 1, 0)
+                    }
+                }
+                XAnimator on x {
+                    running: chargeFlow.running
+                    from: -prism.width
+                    to: chargeFlow.span
+                    duration: 2200
+                    loops: Animation.Infinite
+                }
+            }
+
+            // Energy pulse
+            Rectangle {
+                id: pulse
+                width: Math.max(14, chargeFlow.span * 0.3)
+                height: 3.5
+                y: 6.25
+                x: -width
+                radius: 1.75
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop {
+                        position: 0
+                        color: Qt.rgba(1, 1, 1, 0)
+                    }
+                    GradientStop {
+                        position: 0.85
+                        color: Qt.rgba(1, 1, 1, 0.95)
+                    }
+                    GradientStop {
+                        position: 1
+                        color: Qt.rgba(1, 1, 1, 0)
+                    }
+                }
+                XAnimator on x {
+                    running: chargeFlow.running
+                    from: -pulse.width
+                    to: chargeFlow.span
+                    duration: 1300
+                    easing.type: Easing.InQuad
+                    loops: Animation.Infinite
+                }
+            }
+
+            // Sparkles drifting along
+            Repeater {
+                model: 5
+                Rectangle {
+                    id: spark
+                    width: index % 2 ? 1.6 : 2.2
+                    height: width
+                    radius: width / 2
+                    y: 8 + (index % 2 ? -1 : 1) * (1.5 + index) - height / 2
+                    x: chargeFlow.span * index / 5
+                    color: "white"
+                    opacity: 0.8
+                    XAnimator on x {
+                        running: chargeFlow.running
+                        from: -2 - index * chargeFlow.span * 0.2
+                        to: chargeFlow.span
+                        duration: 1700 + index * 260
+                        loops: Animation.Infinite
+                    }
+                }
+            }
+        }
+    }
+
+    // --- Visual ---------------------------------------------------------------
+    Item {
+        id: visual
+        anchors.fill: parent
+        scale: body.baseScale * body.popScale * body.focusScale * body.hoverScale
+
+        // Halo for connected devices
+        Rectangle {
+            anchors.centerIn: parent
+            width: parent.width * 1.55
+            height: width
+            radius: width / 2
+            color: Theme.withAlpha(Theme.primary, 0.07)
+            opacity: body.connected && !body.focused ? 1 : 0
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 500
+                }
+            }
+        }
+
+        // Soft glow behind the glyph while it floats above the focus card
+        Rectangle {
+            anchors.centerIn: parent
+            width: parent.width * 0.9
+            height: width
+            radius: width / 2
+            color: Theme.withAlpha(Theme.primary, 0.05)
+            opacity: body.focused ? 1 : 0
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 400
+                }
+            }
+        }
+
+        Rectangle {
+            id: disc
+            anchors.fill: parent
+            radius: width / 2
+            opacity: body.focused ? 0 : 1
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 260
+                }
+            }
+            color: body.connected ? Qt.tint(Qt.rgba(0.06, 0.07, 0.09, 0.92), Theme.withAlpha(Theme.primary, 0.16)) : Qt.rgba(1, 1, 1, body.dormant ? 0.035 : 0.07)
+            border.width: 1
+            border.color: body.armed && body.holding ? Theme.withAlpha(Theme.error, 0.8) : body.armed ? Theme.withAlpha(Theme.primary, 0.9) : body.connected ? Theme.withAlpha(Theme.primary, 0.55) : Qt.rgba(1, 1, 1, body.dormant ? 0.08 : 0.14)
+
+            Behavior on color {
+                ColorAnimation {
+                    duration: 350
+                }
+            }
+        }
+
+        DeviceGlyph {
+            anchors.centerIn: parent
+            width: parent.width * 0.52
+            height: width
+            kind: body.kind
+            imageSource: body.scene.prefs.imageFor(body.device)
+            color: body.focused ? "#F2F5EE" : body.connected ? Qt.lighter(Theme.primary, 1.12) : Qt.rgba(1, 1, 1, 0.86)
+            stroke: body.focused ? 1.05 : 1.5
+            Behavior on color {
+                ColorAnimation {
+                    duration: 300
+                }
+            }
+        }
+
+        // Battery arc (connected devices that report a level)
+        Shape {
+            anchors.centerIn: parent
+            width: parent.width + 7
+            height: width
+            visible: body.connected && body.battery >= 0 && !body.focused
+            preferredRendererType: Shape.CurveRenderer
+
+            ShapePath {
+                strokeColor: Qt.rgba(1, 1, 1, 0.08)
+                strokeWidth: 2
+                fillColor: "transparent"
+                capStyle: ShapePath.RoundCap
+                PathAngleArc {
+                    centerX: (body.diameter + 7) / 2
+                    centerY: centerX
+                    radiusX: centerX - 1
+                    radiusY: radiusX
+                    startAngle: -90
+                    sweepAngle: 359.9
+                }
+            }
+            ShapePath {
+                strokeColor: body.battery <= 15 ? Theme.error : Theme.primary
+                strokeWidth: 2
+                fillColor: "transparent"
+                capStyle: ShapePath.RoundCap
+                PathAngleArc {
+                    centerX: (body.diameter + 7) / 2
+                    centerY: centerX
+                    radiusX: centerX - 1
+                    radiusY: radiusX
+                    startAngle: -90
+                    sweepAngle: 360 * Math.max(0.02, body.battery / 100)
+                }
+            }
+        }
+
+        // Charging: the level arc breathes (render-thread animator)
+        Shape {
+            id: chargeGlow
+            anchors.centerIn: parent
+            width: parent.width + 7
+            height: width
+            visible: body.charging && !body.focused
+            preferredRendererType: Shape.CurveRenderer
+
+            ShapePath {
+                strokeColor: Theme.withAlpha(Theme.primary, 0.55)
+                strokeWidth: 5
+                fillColor: "transparent"
+                capStyle: ShapePath.RoundCap
+                PathAngleArc {
+                    centerX: (body.diameter + 7) / 2
+                    centerY: centerX
+                    radiusX: centerX - 1
+                    radiusY: radiusX
+                    startAngle: -90
+                    sweepAngle: 360 * Math.max(0.02, body.battery / 100)
+                }
+            }
+
+            SequentialAnimation on opacity {
+                running: chargeGlow.visible && body.scene.awake && body.scene.motion
+                loops: Animation.Infinite
+                OpacityAnimator {
+                    from: 0.15
+                    to: 1
+                    duration: 900
+                    easing.type: Easing.InOutSine
+                }
+                OpacityAnimator {
+                    from: 1
+                    to: 0.15
+                    duration: 900
+                    easing.type: Easing.InOutSine
+                }
+            }
+        }
+
+        // Charging badge
+        Rectangle {
+            width: Math.round(body.diameter * 0.34)
+            height: width
+            radius: width / 2
+            x: parent.width * 0.86 - width / 2
+            y: parent.height * 0.86 - height / 2
+            color: Theme.primary
+            border.width: 2
+            border.color: Qt.rgba(0.04, 0.045, 0.06, 1)
+            visible: body.charging && !body.focused
+
+            DankIcon {
+                anchors.centerIn: parent
+                name: "bolt"
+                size: parent.width * 0.78
+                color: Theme.primaryText ?? "black"
+            }
+        }
+
+        // Connecting spinner (render-thread animator)
+        Shape {
+            id: spinner
+            anchors.centerIn: parent
+            width: parent.width + 12
+            height: width
+            visible: body.phase === "connecting"
+            preferredRendererType: Shape.CurveRenderer
+
+            ShapePath {
+                strokeColor: Theme.primary
+                strokeWidth: 1.6
+                fillColor: "transparent"
+                capStyle: ShapePath.RoundCap
+                PathAngleArc {
+                    centerX: spinner.width / 2
+                    centerY: centerX
+                    radiusX: centerX - 1
+                    radiusY: radiusX
+                    startAngle: 0
+                    sweepAngle: 80
+                }
+            }
+
+            RotationAnimator on rotation {
+                running: spinner.visible
+                from: 0
+                to: 360
+                duration: 1100
+                loops: Animation.Infinite
+            }
+        }
+
+        // Lock ring: collapses onto the disc when a connection lands
+        Rectangle {
+            id: lockRing
+            anchors.centerIn: parent
+            width: parent.width
+            height: width
+            radius: width / 2
+            color: "transparent"
+            border.width: 1.5
+            border.color: Theme.primary
+            opacity: 0
+        }
+    }
+
+    ParallelAnimation {
+        id: lockAnim
+        NumberAnimation {
+            target: lockRing
+            property: "scale"
+            from: 1.9
+            to: 1
+            duration: 520
+            easing.type: Easing.OutCubic
+        }
+        SequentialAnimation {
+            NumberAnimation {
+                target: lockRing
+                property: "opacity"
+                from: 0
+                to: 0.9
+                duration: 180
+            }
+            NumberAnimation {
+                target: lockRing
+                property: "opacity"
+                to: 0
+                duration: 520
+                easing.type: Easing.InQuad
+            }
+        }
+        SequentialAnimation {
+            NumberAnimation {
+                target: tetherRoot
+                property: "thickness"
+                to: 3.2
+                duration: 160
+            }
+            NumberAnimation {
+                target: tetherRoot
+                property: "thickness"
+                to: 1.5
+                duration: 600
+                easing.type: Easing.OutCubic
+            }
+        }
+    }
+
+    ParallelAnimation {
+        id: releaseAnim
+        NumberAnimation {
+            target: lockRing
+            property: "scale"
+            from: 1
+            to: 2
+            duration: 560
+            easing.type: Easing.OutCubic
+        }
+        NumberAnimation {
+            target: lockRing
+            property: "opacity"
+            from: 0.8
+            to: 0
+            duration: 560
+            easing.type: Easing.OutQuad
+        }
+    }
+
+    // Name + connection timer. Orbiting bodies in the upper half put their
+    // label above so it never collides with the host core.
+    Column {
+        readonly property bool above: body.inSlot && body.py < body.scene.cy
+        readonly property real gap: body.diameter * body.baseScale / 2 + 5
+        y: above ? body.height / 2 - gap - height : body.height / 2 + gap
+        anchors.horizontalCenter: parent.horizontalCenter
+        spacing: 1
+        visible: body.scene.prefs.showLabels || body.hovered || body.dragging
+        opacity: body.scene.focusBody ? 0 : 1
+
+        StyledText {
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: Math.min(implicitWidth, body.diameter * 2.1)
+            horizontalAlignment: Text.AlignHCenter
+            text: body.name
+            elide: Text.ElideRight
+            color: Qt.rgba(1, 1, 1, body.connected || body.hovered ? 0.88 : 0.5)
+            font.pixelSize: Math.max(9, Math.round(body.diameter * 0.2))
+            font.weight: body.connected ? Font.Medium : Font.Normal
+        }
+
+        // Charging: "67% · 32m" in place of the connection timer
+        StyledText {
+            anchors.horizontalCenter: parent.horizontalCenter
+            visible: body.charging
+            text: body.battery + "%" + (body.charge?.minutesToFull > 0 ? " · " + Charge.formatShort(body.charge.minutesToFull) : "")
+            color: Theme.primary
+            font.family: "monospace"
+            font.pixelSize: Math.max(8, Math.round(body.diameter * 0.17))
+        }
+
+        StyledText {
+            anchors.horizontalCenter: parent.horizontalCenter
+            visible: !body.charging && body.connected && body.scene.sinceFor(body.address) > 0
+            text: Catalog.formatDuration(body.scene.now - body.scene.sinceFor(body.address))
+            color: Theme.withAlpha(Theme.primary, 0.75)
+            font.family: "monospace"
+            font.pixelSize: Math.max(8, Math.round(body.diameter * 0.17))
+        }
+    }
+
+    // Quick disconnect
+    Rectangle {
+        width: Math.round(body.diameter * 0.36)
+        height: width
+        radius: width / 2
+        x: body.width * (0.5 + 0.36 * body.baseScale) - width / 2
+        y: body.height * (0.5 - 0.36 * body.baseScale) - height / 2
+        z: 2
+        color: closeArea.containsMouse ? Theme.error : Qt.rgba(0.1, 0.1, 0.12, 0.95)
+        border.width: 1
+        border.color: Qt.rgba(1, 1, 1, 0.15)
+        opacity: body.connected && (body.hovered || closeArea.containsMouse) && !body.dragging ? 1 : 0
+        visible: opacity > 0
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 160
+            }
+        }
+
+        DankIcon {
+            anchors.centerIn: parent
+            name: "close"
+            size: parent.width * 0.7
+            color: closeArea.containsMouse ? Theme.errorText ?? "white" : Qt.rgba(1, 1, 1, 0.8)
+        }
+
+        MouseArea {
+            id: closeArea
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: body.scene.startDisconnect(body)
+        }
+    }
+
+    MouseArea {
+        id: mouse
+        anchors.fill: parent
+        hoverEnabled: true
+        preventStealing: true
+        enabled: !body.leaving && !body.scene.focusBody
+        cursorShape: body.dragging ? Qt.ClosedHandCursor : Qt.OpenHandCursor
+
+        property point pressPoint
+        property double pressTime: 0
+
+        function worldPoint(m) {
+            return mapToItem(body.scene.world, m.x, m.y);
+        }
+
+        onPressed: m => {
+            pressPoint = worldPoint(m);
+            pressTime = Date.now();
+        }
+        onPositionChanged: m => {
+            if (!pressed)
+                return;
+            const p = worldPoint(m);
+            if (!body.dragging && Math.hypot(p.x - pressPoint.x, p.y - pressPoint.y) > 5)
+                body.scene.beginDrag(body, p);
+            if (body.dragging)
+                body.scene.updateDrag(p);
+        }
+        onReleased: {
+            if (body.dragging)
+                body.scene.endDrag();
+            else if (Date.now() - pressTime < 450)
+                body.scene.focusOn(body);
+        }
+        onCanceled: if (body.dragging)
+            body.scene.endDrag()
+        onContainsMouseChanged: body.scene.wake()
+    }
+}
