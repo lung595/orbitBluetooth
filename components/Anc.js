@@ -13,7 +13,14 @@ var FAMILIES = [
     ["nothing", /^Nothing\b|^Ear ?\((1|2|3|a|stick|open)\)|^CMF |Headphone ?\(1\)/i],
     ["samsung", /Galaxy Buds|^Buds(2|3|\+| Pro| Live| FE| ?Core)/i],
     ["bose", /Bose|QuietComfort|\bQC ?(35|45|Ultra|Earbuds)|\bNC ?700|Noise Cancelling Headphones 700/i],
-    ["soundcore", /Soundcore|Life ?Q\d+|Liberty ?(Air|4|3|2)|Space ?(Q45|One|A40)|Anker/i]
+    ["soundcore", /Soundcore|Life ?Q\d+|Liberty ?(Air|4|3|2)|Space ?(Q45|One|A40)|Anker/i],
+    ["huawei", /^(HUAWEI )?Free(Buds|Lace|Clip)\b|^HONOR Earbuds/i],
+    ["oppo", /^OPPO Enco|^realme Buds|^OnePlus Buds/i],
+    ["xiaomi", /Redmi Buds|^Xiaomi Buds/i],
+    ["earfun", /^EarFun (Air Pro 4|Air S|Free Pro 3)/i],
+    ["moondrop", /Space Travel 2/i],
+    ["haylou", /^(HAYLOU )?S35 ANC/i],
+    ["onemore", /^1MORE SonoFlow/i]
 ];
 
 // Returns the protocol family for a device name, or "" when unknown.
