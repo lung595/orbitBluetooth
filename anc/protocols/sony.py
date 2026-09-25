@@ -152,7 +152,7 @@ class Sony(Protocol):
         elif op == 0x07 and self.version == 2:
             self._on_functions(p)
         elif op in (0x67, 0x69):
-            self._on_noise(p)
+            self._on_noise(p, reply=op == 0x67)
         elif op in (0x23, 0x25) and self.version == 2 or op in (0x11, 0x13) and self.version == 1:
             self._on_battery(p)
         elif op in (0xF7, 0xF9):
@@ -199,7 +199,7 @@ class Sony(Protocol):
             else:
                 self.mark_ready()  # no noise control at all
 
-    def _on_noise(self, p):
+    def _on_noise(self, p, reply=False):
         kind, v = p[1], p[2:]
         if self.version == 1 and kind == 0x02 and len(v) >= 6:
             effect, nc_setting, nc_value, _asm, voice, level = v[:6]
@@ -218,6 +218,13 @@ class Sony(Protocol):
                 self.auto, self.sensitivity = v[5], v[6]
                 modes.append("adaptive")
             mode = "off" if not on else "nc" if nc_or_amb == 0 else "adaptive" if kind == 0x19 and self.auto else "ambient"
+            if kind == 0x19 and reply:
+                # WH-1000XM6 quirk (seen on real hardware): the reply to a
+                # query always carries on/off = 0, so "noise cancelling" and
+                # "off" read the same. Only notifications are exact. Ambient
+                # still shows through its own byte; otherwise the mode is
+                # left unknown and the UI keeps the last one it saw.
+                mode = ("adaptive" if self.auto else "ambient") if nc_or_amb else None
             self.nc_type = kind
             self._apply(modes, mode, voice, level)
         elif kind == 0x22 and len(v) >= 4:

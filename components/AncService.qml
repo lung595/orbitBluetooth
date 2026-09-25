@@ -155,9 +155,17 @@ Item {
             return;
         }
         const prev = states[address] || {};
-        _setState(address, Object.assign({}, prev, msg, {
+        const next = Object.assign({}, prev, msg, {
             "live": msg.status !== "error"
-        }));
+        });
+        // Some headsets cannot report every mode when asked (the XM6 reads
+        // "noise cancelling" and "off" alike): an unknown mode keeps the
+        // last one we set or were notified of.
+        if (msg.state && msg.state.mode === null && prev.state && prev.state.mode)
+            next.state = Object.assign({}, msg.state, {
+                "mode": prev.state.mode
+            });
+        _setState(address, next);
     }
 
     function _onExit(proc) {

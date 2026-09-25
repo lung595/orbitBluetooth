@@ -44,7 +44,8 @@ Column {
         color: panel.muted
         font.pixelSize: Theme.fontSizeSmall
         text: {
-            if (!panel.info || panel.info.status === "connecting")
+            // A known state stays on screen while a new session reconnects
+            if (!panel.info || (panel.info.status === "connecting" && !panel.modes.length))
                 return "Reaching noise control…";
             if (panel.info.status === "error")
                 return Anc.errorText(panel.info.error);
