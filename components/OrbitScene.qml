@@ -150,11 +150,8 @@ Item {
         wake();
         refresh();
         updateScan();
-        if (!active) {
-            clearFocus();
-            closeHidden();
-            menu.close();
-        }
+        if (!active)
+            dismiss();
     }
 
     // --- Device list -----------------------------------------------------------
@@ -541,6 +538,15 @@ Item {
             return;
         hiddenOpen = false;
         wake();
+    }
+
+    readonly property bool menuOpen: menu.open
+
+    // Closes whatever overlay is open (detail card, hidden list, menu)
+    function dismiss() {
+        menu.close();
+        closeHidden();
+        clearFocus();
     }
 
     function openMenu(b, point) {
