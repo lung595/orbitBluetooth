@@ -62,8 +62,21 @@ Column {
         visible: panel.modes.length > 0
         readonly property real segW: width / Math.max(1, panel.modes.length)
         readonly property int current: panel.modes.indexOf(panel.st.mode ?? "")
-        // Width of the active mode's icon + label, reported by its delegate
-        property real activeContent: 0
+        // Width of the active mode's icon + label. Measured on a hidden twin
+        // of the label rather than reported by the delegates: a Binding
+        // restores a stale value when the old delegate lets go, which made
+        // the pill jump (e.g. from "Off" to "Silence").
+        readonly property real iconSize: 17
+        readonly property real gap: 6
+        readonly property real activeContent: iconSize + gap + activeLabel.implicitWidth
+
+        StyledText {
+            id: activeLabel
+            visible: false
+            text: Anc.SHORT[panel.st.mode ?? ""] ?? ""
+            font.pixelSize: Theme.fontSizeSmall
+            font.weight: Font.DemiBold
+        }
 
         Rectangle {
             anchors.fill: parent
@@ -114,16 +127,15 @@ Column {
                     height: segments.height
 
                     Row {
-                        id: content
                         anchors.centerIn: parent
                         // The active content follows the pill when it is pushed
                         // off-center near the track's ends
                         anchors.horizontalCenterOffset: on ? pill.x + pill.width / 2 - (index + 0.5) * segments.segW : 0
-                        spacing: 6
+                        spacing: segments.gap
                         DankIcon {
                             anchors.verticalCenter: parent.verticalCenter
                             name: Anc.ICONS[modelData]
-                            size: 17
+                            size: segments.iconSize
                             color: on ? Theme.primary : Qt.rgba(1, 1, 1, 0.7)
                         }
                         StyledText {
@@ -134,12 +146,6 @@ Column {
                             font.pixelSize: Theme.fontSizeSmall
                             font.weight: on ? Font.DemiBold : Font.Normal
                         }
-                    }
-                    Binding {
-                        target: segments
-                        property: "activeContent"
-                        value: content.implicitWidth
-                        when: on
                     }
                     MouseArea {
                         anchors.fill: parent

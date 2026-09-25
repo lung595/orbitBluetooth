@@ -165,6 +165,17 @@ Item {
             next.state = Object.assign({}, msg.state, {
                 "mode": prev.state.mode
             });
+        // A command waiting for the next session: the closing one has not
+        // seen it, so its settings are stale and must not undo what the UI
+        // already shows (the mode would flash back, e.g. Silence -> Off ->
+        // Silence). Its battery readings are still fresh.
+        if ((_queue[address] || []).length && msg.state && prev.state)
+            next.state = Object.assign({}, msg.state, {
+                "mode": prev.state.mode,
+                "ambient": prev.state.ambient,
+                "voice": prev.state.voice,
+                "chat": prev.state.chat
+            });
         _setState(address, next);
     }
 

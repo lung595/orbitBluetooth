@@ -206,6 +206,11 @@ def run(address, family, name=""):
         return 1
     finally:
         sock.close()
+    # A session can end inside the settle window (on demand: the command is
+    # confirmed within a fraction of a second): the last state still goes out
+    snapshot = proto.snapshot()
+    if snapshot != last:
+        emit(snapshot)
     return 0
 
 
