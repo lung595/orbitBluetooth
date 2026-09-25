@@ -110,10 +110,19 @@ connected. Click the black hole to see what it holds and click **Show** to
 spit a device back out. With nothing hidden, clicking it explains what it is
 for.
 
-The black hole bends the starfield around it like a gravitational lens, and
-a wireframe tesseract turns inside (a nod to the hypercube in *Adventure
-Time*). It only turns while the scene is already animating, so it costs
-nothing at rest. On the desktop widget the lens is off because the sky there
+The black hole bends the starfield around it like a gravitational lens. Pick
+its look in the settings (**Black hole style**):
+
+- **Black hole** (default): a realistic one in the spirit of *Interstellar*,
+  with a thin accretion disk seen almost edge-on, the far side of the disk
+  bent over the shadow, a brighter approaching side and a photon ring,
+  tinted by your theme.
+- **Three-dimensional shadow of a four-dimensional bubble**: a wireframe
+  tesseract turning inside the horizon (a nod to the hypercube in
+  *Adventure Time*).
+
+Both are a single small shader and only move while the scene is already
+animating, so they cost nothing at rest. On the desktop widget the lens is off because the sky there
 is see-through.
 
 | ![Hidden devices listed by the black hole](screenshots/hidden.png) | ![Right-click menu of a headset](screenshots/menu.png) |
@@ -257,8 +266,8 @@ replaced by `_`.
 - Discovery runs only while a view is open and stops after the configured delay.
 - The device list polls only while someone is looking or discovery runs.
 - Sounds load the multimedia backend only when enabled.
-- The black hole is a single fragment shader. Its sky patch is re-sampled only
-  when the stars change, and its tesseract only turns while the scene is awake.
+- The black hole is one small fragment shader (either style). Its sky patch is re-sampled only
+  when the stars change, and it only turns while the scene is awake.
 - Honors DMS **Reduce motion**.
 
 ## Troubleshooting
@@ -292,13 +301,13 @@ orbitBluetooth/
 │   ├── OrbitScene.qml           # the scene: physics, drag, focus, chrome
 │   ├── DeviceBody.qml           # one orbiting device, charging beam
 │   ├── FocusCard.qml            # detail card
-│   ├── BlackHole.qml            # the "Hidden" black hole (shader wrapper)
+│   ├── BlackHole.qml            # the "Hidden" black hole (picks one of two shaders)
 │   ├── HiddenCard.qml           # list of hidden devices
 │   ├── OrbitMenu.qml            # right-click menu
 │   ├── BatteryCard.qml          # gauge, chart and stat tiles
 │   ├── Charge.js                # charge analysis and color ramp (pure)
 │   ├── Starfield.qml, Vignette.qml, DeviceGlyph.qml, …
-├── shaders/                     # blackhole.frag + compiled .qsb, build.sh
+├── shaders/                     # gargantua.frag, tesseract.frag + compiled .qsb, build.sh
 ├── scripts/
 │   ├── gen_sounds.py            # synthesizes sounds/*.wav (stdlib only)
 │   └── preview/                 # offscreen renderer with mock services
@@ -315,7 +324,7 @@ scripts/preview/record.sh          # all GIFs
 scripts/preview/record.sh beam     # one of: beam, gauge, focus, connect
 ```
 
-Recompile the shader after editing `shaders/blackhole.frag` (needs Qt's
+Recompile the shaders after editing a `shaders/*.frag` file (needs Qt's
 `qsb`):
 
 ```sh

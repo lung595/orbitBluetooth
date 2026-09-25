@@ -1,6 +1,7 @@
 #version 440
 
-// The "Hidden" black hole, drawn in one pass:
+// "Three-dimensional shadow of a four-dimensional bubble": the Hidden
+// black hole in its tesseract style, drawn in one pass:
 //  1. gravitational lensing: the starfield behind is sampled through a thin
 //     lens (beta = theta - E^2 / theta), so stars smear into an Einstein ring
 //     and a mirrored inner image, and fade back to undistorted at the edge;

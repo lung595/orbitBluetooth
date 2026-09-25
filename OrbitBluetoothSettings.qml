@@ -136,6 +136,23 @@ PluginSettings {
         color: Theme.surfaceText
     }
 
+    SelectionSetting {
+        settingKey: "holeStyle"
+        label: "Black hole style"
+        description: "The black hole that keeps hidden devices"
+        options: [
+            {
+                label: "Black hole",
+                value: "blackhole"
+            },
+            {
+                label: "Three-dimensional shadow of a four-dimensional bubble",
+                value: "tesseract"
+            }
+        ]
+        defaultValue: "blackhole"
+    }
+
     ToggleSetting {
         settingKey: "shootingStars"
         label: "Shooting stars"

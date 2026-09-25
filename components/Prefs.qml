@@ -34,6 +34,8 @@ QtObject {
     // Devices swallowed by the black hole: address -> name (the name keeps
     // the list readable when the device is out of range)
     readonly property var hiddenDevices: _get("hiddenDevices", ({}))
+    // Look of the black hole: "blackhole" (realistic) or "tesseract"
+    readonly property string holeStyle: _get("holeStyle", "blackhole")
 
     readonly property bool reduceMotion: SettingsData.reduceMotion
 
