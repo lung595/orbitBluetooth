@@ -99,8 +99,8 @@ field. Named devices are ranked before devices that only expose a MAC address.
 ### Example: connecting new headphones
 
 1. Put the headphones in pairing mode.
-2. Open the orbit view. Discovery starts on its own, and the chip reads
-   **Scanning**.
+2. Open the orbit view. Discovery starts on its own (click **Scan** if
+   *Scan automatically* is off), and the chip reads **Scanning**.
 3. The headphones appear in the outer field. Drag them toward the center;
    the ring lights up and pulls them in.
 4. Release. They pair, connect, and settle on the inner ring with their
@@ -171,7 +171,8 @@ The card's footnote always says which source is in use.
 | Devices in orbit | 8 | Connected devices are always shown; the rest are ranked by pairing and name |
 | Show unnamed devices | off | Devices that only expose a MAC address |
 | Always show names | on | Otherwise names appear on hover |
-| Scan duration | 45 s | Discovery starts when a view opens and stops after this delay (or *While open*) |
+| Scan automatically | on | Start discovery when a view opens; when off, scan only from the center or the **Scan** chip |
+| Scan duration | 45 s | Discovery stops after this delay or when the view closes (or *While open*) |
 | Center device | Automatic | Icon of this machine (laptop or desktop is detected) |
 | Custom images folder | — | PNG files that replace built-in icons |
 | Shooting stars | on | Occasional meteor in the background |
