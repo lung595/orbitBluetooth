@@ -264,14 +264,18 @@ Item {
         _ownsDiscovery = false;
     }
 
+    // With the autoScan preference off, only the center or the Scan chip start
+    // discovery; a manual scan is still stopped when the view closes.
     function updateScan() {
-        if (active && autoScan && btOn)
+        if (active && btOn && autoScan && prefs.autoScan)
             startScan();
-        else
+        else if (!active || !btOn || !autoScan)
             stopScan();
     }
 
     onAutoScanChanged: updateScan()
+    readonly property bool _autoScanPref: prefs.autoScan
+    on_AutoScanPrefChanged: updateScan()
 
     Timer {
         id: scanStopTimer

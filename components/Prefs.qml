@@ -18,6 +18,7 @@ QtObject {
     readonly property bool showUnnamed: _get("showUnnamed", false)
     readonly property bool showLabels: _get("showLabels", true)
     readonly property int maxDevices: parseInt(_get("maxDevices", "8"))
+    readonly property bool autoScan: _get("autoScan", true)
     readonly property int scanSeconds: parseInt(_get("scanSeconds", "45"))
     readonly property bool sounds: _get("sounds", false)
     readonly property real soundVolume: _get("soundVolume", 60) / 100

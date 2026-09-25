@@ -38,10 +38,17 @@ PluginSettings {
         defaultValue: true
     }
 
+    ToggleSetting {
+        settingKey: "autoScan"
+        label: "Scan automatically"
+        description: "Start discovery when a view opens; otherwise scan only from the center or the Scan chip"
+        defaultValue: true
+    }
+
     SelectionSetting {
         settingKey: "scanSeconds"
         label: "Scan duration"
-        description: "Discovery starts when the panel opens and stops after this delay or when it closes"
+        description: "Discovery stops after this delay or when the panel closes"
         options: [
             {
                 label: "20 seconds",
