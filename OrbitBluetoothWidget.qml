@@ -34,7 +34,7 @@ PluginComponent {
         return n + " devices";
     }
     ccWidgetIsActive: BluetoothService.enabled
-    ccDetailHeight: 440
+    ccDetailHeight: 314   // 440 / 1.4: compact when the Control Center opens
 
     onCcWidgetToggled: BluetoothService.toggleBluetooth()
 
