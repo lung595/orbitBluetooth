@@ -216,4 +216,27 @@ PluginSettings {
             onClicked: root.saveValue("glyphOverrides", ({}))
         }
     }
+
+    // Recovery path when the black hole is out of sight (e.g. a tiny widget)
+    Rectangle {
+        width: unhideText.implicitWidth + Theme.spacingL * 2
+        height: 34
+        radius: Theme.cornerRadius
+        color: unhideArea.containsMouse ? Theme.surfaceContainerHighest : Theme.surfaceContainerHigh
+
+        StyledText {
+            id: unhideText
+            anchors.centerIn: parent
+            text: "Show all hidden devices"
+            color: Theme.surfaceText
+            font.pixelSize: Theme.fontSizeSmall
+        }
+        MouseArea {
+            id: unhideArea
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: root.saveValue("hiddenDevices", ({}))
+        }
+    }
 }

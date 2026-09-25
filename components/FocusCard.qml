@@ -105,6 +105,11 @@ Item {
                     card.scene.startConnect(card.body);
             }
         }
+        // Into the black hole: gone from the orbit, still connected
+        CardButton {
+            icon: "visibility_off"
+            onClicked: card.scene.hideBody(card.body)
+        }
         CardButton {
             visible: card.body?.paired ?? false
             icon: card.confirmForget ? "delete_forever" : "delete"

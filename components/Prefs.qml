@@ -31,6 +31,9 @@ QtObject {
     readonly property var glyphOverrides: _get("glyphOverrides", ({}))
     readonly property bool ancEnabled: _get("ancEnabled", true)
     readonly property string ancEngine: _get("ancEngine", "demand")
+    // Devices swallowed by the black hole: address -> name (the name keeps
+    // the list readable when the device is out of range)
+    readonly property var hiddenDevices: _get("hiddenDevices", ({}))
 
     readonly property bool reduceMotion: SettingsData.reduceMotion
 
@@ -45,6 +48,19 @@ QtObject {
         else
             next[address] = kind;
         set("glyphOverrides", next);
+    }
+
+    function isHidden(address) {
+        return !!address && hiddenDevices[address] !== undefined;
+    }
+
+    function setHidden(address, name, hidden) {
+        const next = Object.assign({}, hiddenDevices);
+        if (hidden)
+            next[address] = name || address;
+        else
+            delete next[address];
+        set("hiddenDevices", next);
     }
 
     function imageFor(device) {

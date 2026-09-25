@@ -45,6 +45,7 @@ Item {
     }
 
     // dms ipc call orbitBluetooth anc nc | ambient | off | adaptive
+    // dms ipc call orbitBluetooth hidden | unhideAll
     IpcHandler {
         target: "orbitBluetooth"
 
@@ -64,6 +65,19 @@ Item {
             if (!address)
                 return "No supported headset connected";
             ancService.cycle(address);
+            return "OK";
+        }
+
+        // Names of the devices hidden in the black hole, one per line
+        function hidden(): string {
+            const map = prefs.hiddenDevices;
+            const names = Object.keys(map).map(a => map[a] + " (" + a + ")");
+            return names.length ? names.join("\n") : "No hidden devices";
+        }
+
+        // Brings every hidden device back into the orbit
+        function unhideAll(): string {
+            prefs.set("hiddenDevices", ({}));
             return "OK";
         }
 

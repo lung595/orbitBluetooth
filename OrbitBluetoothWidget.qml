@@ -12,9 +12,11 @@ import "components/DeviceCatalog.js" as Catalog
 PluginComponent {
     id: root
 
+    // Devices hidden in the black hole are left out here too
+    readonly property var hiddenDevices: pluginData.hiddenDevices ?? ({})
     readonly property var connectedDevices: {
         const all = BluetoothService.adapter?.devices?.values ?? [];
-        return all.filter(d => d && d.connected);
+        return all.filter(d => d && d.connected && hiddenDevices[d.address] === undefined);
     }
     readonly property var overrides: pluginData.glyphOverrides ?? ({})
 

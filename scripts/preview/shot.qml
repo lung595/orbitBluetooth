@@ -1,19 +1,23 @@
 import QtQuick
 import QtQuick.Window
+import qs.Common
 import qs.Services
 import "../../components"
 
 // Offscreen renders for the README, with mock devices and services.
 // Usage: QT_QPA_PLATFORM=offscreen qml -I imports shot.qml -- <mode> <out.png>
-// Modes: orbit, zoom, orbitfocus, desktop, desktopfocus
+// Modes: orbit, zoom, orbitfocus, desktop, desktopfocus, ancfocus,
+//        hole, hiddencard, hiddenempty, connecting, menu, feed
 Window {
     id: win
     readonly property var args: Qt.application.arguments
     readonly property string mode: args[args.length - 2]
     readonly property string out: args[args.length - 1]
     readonly property bool glass: mode.startsWith("desktop")
-    width: glass ? 760 : (mode === "zoom" ? 900 : 560)
-    height: glass ? 560 : (mode === "zoom" ? 700 : mode === "ancfocus" ? 314 : 480)
+    // Control Center sized shots for the black hole, menu and comet
+    readonly property bool compact: ["hole", "hiddencard", "hiddenempty", "connecting", "menu", "feed"].indexOf(mode) >= 0
+    width: glass ? 760 : (mode === "zoom" ? 900 : compact ? 540 : 560)
+    height: glass ? 560 : (mode === "zoom" ? 700 : mode === "ancfocus" || compact ? 354 : 480)
     visible: true
     color: "#101114"
 
@@ -30,6 +34,11 @@ Window {
     ]
 
     Component.onCompleted: {
+        // Two made-up devices already swallowed by the black hole
+        if (mode !== "hiddenempty")
+            SettingsData.pluginSettings = Object.assign({}, SettingsData.pluginSettings, {
+                "hiddenDevices": { "3C:8D:20:54:AB:12": "Keychron K3", "E8:07:BF:6A:19:D4": "JBL Flip 6" }
+            });
         BluetoothService.discovering = mode === "orbit";
         PluginService.globalVars = {
             "orbitBluetooth": {
@@ -90,13 +99,26 @@ Window {
         interval: win.mode === "zoom" ? 14000 : 2600
         running: true
         onTriggered: {
+            const find = a => scene.world.children.find(c => c.address === a);
             if (win.mode.endsWith("focus")) {
-                for (let i = 0; i < 64; i++) {
-                    const b = scene.world.children.find(c => c.address === "58:18:62:3D:72:95");
-                    if (b) { scene.focusOn(b); break; }
+                const b = find("58:18:62:3D:72:95");
+                if (b) scene.focusOn(b);
+            } else if (win.mode === "hiddencard" || win.mode === "hiddenempty") {
+                scene.openHidden();
+            } else if (win.mode === "connecting") {
+                const b = find("6C:4A:85:9E:03:21");
+                if (b) b.phase = "connecting";
+            } else if (win.mode === "menu") {
+                const b = find("58:18:62:3D:72:95");
+                if (b) scene.openMenu(b, Qt.point(b.px + 14, b.py + 6));
+            } else if (win.mode === "feed") {
+                const b = find("D4:1A:88:10:5B:77");
+                if (b) {
+                    scene.beginDrag(b, Qt.point(b.px, b.py));
+                    scene.updateDrag(Qt.point(scene.holeX + 26, scene.holeY - 22));
                 }
             }
-            grabTimer.interval = win.mode.endsWith("focus") ? 1800 : 50;
+            grabTimer.interval = win.mode.endsWith("focus") || win.mode.startsWith("hidden") ? 1800 : win.mode === "connecting" ? 700 : win.mode === "feed" || win.mode === "menu" ? 900 : 50;
             grabTimer.start();
         }
     }
