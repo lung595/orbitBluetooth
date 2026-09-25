@@ -4,6 +4,7 @@ import qs.Common
 import qs.Services
 import qs.Widgets
 import "DeviceCatalog.js" as Catalog
+import "Anc.js" as Anc
 
 // The planetary Bluetooth scene shared by the Control Center panel, the bar
 // popout and the desktop widget.
@@ -83,6 +84,26 @@ Item {
     function powerFor(address) {
         const p = _globals.power || {};
         return address ? (p[address] || null) : null;
+    }
+
+    // --- Noise control (the daemon runs the helper, see AncService) ----------
+    readonly property var _ancService: PluginService.pluginDaemonInstances[prefs.pluginId]?.anc ?? null
+
+    function ancFor(address) {
+        const a = _globals.anc || {};
+        return address ? (a[address] || null) : null;
+    }
+    function ancCapable(body) {
+        return prefs.ancEnabled && !!body && body.connected && Anc.family(body.name) !== "";
+    }
+    function ancSend(address, key, value) {
+        _ancService?.send(address, key, value);
+    }
+    function ancCycle(address) {
+        _ancService?.cycle(address);
+    }
+    function ancWatch(address, on) {
+        _ancService?.watch(address, on);
     }
 
     clip: true

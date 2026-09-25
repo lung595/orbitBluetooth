@@ -29,6 +29,8 @@ QtObject {
     readonly property string hostGlyph: _get("hostGlyph", "auto")
     readonly property string imageFolder: _get("imageFolder", "")
     readonly property var glyphOverrides: _get("glyphOverrides", ({}))
+    readonly property bool ancEnabled: _get("ancEnabled", true)
+    readonly property string ancEngine: _get("ancEngine", "demand")
 
     readonly property bool reduceMotion: SettingsData.reduceMotion
 
