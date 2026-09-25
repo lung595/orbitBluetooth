@@ -90,11 +90,34 @@ resize it like any other widget (default 440 × 380).
 | Drag a connected device outward | Elastic tether; release to disconnect |
 | Hover a connected device, click × | Disconnect |
 | Click a device | It flies onto a detail card |
+| Right-click a device | Menu: connect or disconnect, noise-control modes, hide |
+| Drag a device into the black hole | It is swallowed and hidden (it stays connected) |
+| Click the black hole | List of hidden devices, with **Show** to bring one back |
 | Click the center, or the **Scan** chip | Start discovery |
 | Esc, click outside, or ← | Leave the detail card |
 
 Connected devices orbit on the inner ring, the others float in the outer
-field. Named devices are ranked before devices that only expose a MAC address.
+field. Connected devices are drawn 15% smaller so the ring stays airy. While
+a connection is being made, a small comet circles the device. Named devices
+are ranked before devices that only expose a MAC address.
+
+### Hiding devices: the black hole
+
+A small black hole drifts in the outer field with the unpaired devices.
+Drag a device you never use into it (or right-click it and pick **Hide**)
+and it spirals in and disappears from the orbit and the bar. It stays
+connected. Click the black hole to see what it holds and click **Show** to
+spit a device back out. With nothing hidden, clicking it explains what it is
+for.
+
+The black hole bends the starfield around it like a gravitational lens, and
+a wireframe tesseract turns inside (a nod to the hypercube in *Adventure
+Time*). It only turns while the scene is already animating, so it costs
+nothing at rest. On the desktop widget the lens is off because the sky there
+is see-through.
+
+| ![Hidden devices listed by the black hole](screenshots/hidden.png) | ![Right-click menu of a headset](screenshots/menu.png) |
+| --- | --- |
 
 ### Example: connecting new headphones
 
@@ -118,7 +141,7 @@ The card shows:
 
 - name, type and state (connected, paired, available)
 - connection time and battery level
-- actions: change icon, connect or disconnect, forget (asks twice)
+- actions: change icon, connect or disconnect, hide, forget (asks twice)
 - battery gauge, session chart and stats (next section)
 
 ## Charging and battery data
@@ -163,6 +186,15 @@ sources:
    estimate appears.
 
 The card's footnote always says which source is in use.
+
+## Keyboard shortcuts (IPC)
+
+Bind these to keys in your compositor:
+
+```sh
+dms ipc call orbitBluetooth hidden       # list hidden devices
+dms ipc call orbitBluetooth unhideAll    # bring every hidden device back
+```
 
 ## Settings
 
@@ -212,8 +244,8 @@ replaced by `_`.
   session only. They are never written to disk.
 - The only files read are the sysfs `uevent` of kernel batteries, once each,
   to match them to a Bluetooth address.
-- Settings (your choices, custom icon picks) are stored by DMS with your other
-  plugin settings.
+- Settings (your choices, custom icon picks, the addresses and names of
+  hidden devices) are stored by DMS with your other plugin settings.
 
 ## Performance
 
@@ -225,6 +257,8 @@ replaced by `_`.
 - Discovery runs only while a view is open and stops after the configured delay.
 - The device list polls only while someone is looking or discovery runs.
 - Sounds load the multimedia backend only when enabled.
+- The black hole is a single fragment shader. Its sky patch is re-sampled only
+  when the stars change, and its tesseract only turns while the scene is awake.
 - Honors DMS **Reduce motion**.
 
 ## Troubleshooting
@@ -236,6 +270,10 @@ devices** is on, and the orbit keeps at most **Devices in orbit** entries.
 **A device charges but shows no lightning.** It reports no charging state and
 its level has not risen yet. The estimate starts after the first level
 increase.
+
+**A device vanished.** It may be in the black hole: click it, or use
+**Show all hidden devices** in the settings, or
+`dms ipc call orbitBluetooth unhideAll`.
 
 **The time to full looks off.** Estimates rely on the device's level steps.
 Some headsets report in 10% steps, so the first minutes are rough and improve
@@ -254,9 +292,13 @@ orbitBluetooth/
 │   ├── OrbitScene.qml           # the scene: physics, drag, focus, chrome
 │   ├── DeviceBody.qml           # one orbiting device, charging beam
 │   ├── FocusCard.qml            # detail card
+│   ├── BlackHole.qml            # the "Hidden" black hole (shader wrapper)
+│   ├── HiddenCard.qml           # list of hidden devices
+│   ├── OrbitMenu.qml            # right-click menu
 │   ├── BatteryCard.qml          # gauge, chart and stat tiles
 │   ├── Charge.js                # charge analysis and color ramp (pure)
 │   ├── Starfield.qml, Vignette.qml, DeviceGlyph.qml, …
+├── shaders/                     # blackhole.frag + compiled .qsb, build.sh
 ├── scripts/
 │   ├── gen_sounds.py            # synthesizes sounds/*.wav (stdlib only)
 │   └── preview/                 # offscreen renderer with mock services
@@ -271,6 +313,13 @@ need `ffmpeg`):
 scripts/preview/render.sh          # PNG screenshots
 scripts/preview/record.sh          # all GIFs
 scripts/preview/record.sh beam     # one of: beam, gauge, focus, connect
+```
+
+Recompile the shader after editing `shaders/blackhole.frag` (needs Qt's
+`qsb`):
+
+```sh
+shaders/build.sh
 ```
 
 Regenerate the sounds:

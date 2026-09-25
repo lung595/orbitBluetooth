@@ -57,6 +57,16 @@ Item {
 
     property bool dragging: false
     property bool armed: false          // inside the snap/detach zone while dragging
+    property bool hideArmed: false      // dragged over the black hole: release hides it
+    property bool swallowing: false     // falling into the black hole
+    property real swallowScale: 1
+    property real hideMix: hideArmed ? 0.7 : 1
+    Behavior on hideMix {
+        NumberAnimation {
+            duration: 180
+            easing.type: Easing.OutCubic
+        }
+    }
     property real depth: 0              // -1 (behind) .. 1 (front), for orbiting bodies
     property real popScale: 1
     property real shakeX: 0
@@ -119,16 +129,25 @@ Item {
         }
     }
 
+    // Connected devices shrink by 15%: the ring stays airy with several of them
+    property real connectedMix: connected ? 0.85 : 1
+    Behavior on connectedMix {
+        NumberAnimation {
+            duration: 420
+            easing.type: Easing.OutCubic
+        }
+    }
+
     readonly property real diameter: scene.bodySize
-    readonly property real baseScale: focused ? 1 : slotMix * (1 + 0.07 * depth) + (1 - slotMix) * (0.66 + 0.34 * signal)
-    readonly property bool hovered: mouse.containsMouse && !scene.focusBody
+    readonly property real baseScale: focused ? 1 : (slotMix * (1 + 0.07 * depth) + (1 - slotMix) * (0.66 + 0.34 * signal)) * connectedMix
+    readonly property bool hovered: mouse.containsMouse && !scene.focusBody && !scene.hiddenOpen
 
     width: diameter
     height: diameter
     x: px - width / 2 + shakeX
     y: py - height / 2
     z: focused ? 20000 : dragging ? 10000 : 100 + py
-    opacity: leaving ? 0 : (spawned ? 1 : 0) * (scene.focusBody && scene.focusBody !== body ? 0.1 : 1) * (inSlot ? 1 : dormant ? 0.5 : 0.6 + 0.4 * signal)
+    opacity: leaving ? 0 : (spawned ? 1 : 0) * ((scene.focusBody && scene.focusBody !== body) || scene.hiddenOpen ? 0.1 : 1) * (inSlot ? 1 : dormant ? 0.5 : 0.6 + 0.4 * signal)
 
     Behavior on opacity {
         NumberAnimation {
@@ -159,6 +178,31 @@ Item {
     }
     function shake() {
         shakeAnim.restart();
+    }
+    // Spirals into the black hole, then the scene hides it for good
+    function swallow() {
+        swallowing = true;
+        swallowAnim.restart();
+    }
+
+    ParallelAnimation {
+        id: swallowAnim
+        readonly property int duration: body.scene.motion ? 560 : 200
+        NumberAnimation {
+            target: body
+            property: "swallowScale"
+            to: 0
+            duration: swallowAnim.duration
+            easing.type: Easing.InCubic
+        }
+        NumberAnimation {
+            target: visual
+            property: "rotation"
+            to: body.scene.motion ? 420 : 0
+            duration: swallowAnim.duration
+            easing.type: Easing.InCubic
+        }
+        onFinished: body.scene.finishHide(body)
     }
 
     SequentialAnimation {
@@ -217,7 +261,7 @@ Item {
         x: body.scene.cx
         y: body.scene.cy
         rotation: Math.atan2(body.py - body.scene.cy, body.px - body.scene.cx) * 180 / Math.PI
-        opacity: body.leaving || body.focused ? 0 : tetherAlpha * (body.scene.focusBody ? 0.15 : 1)
+        opacity: body.leaving || body.focused || body.swallowing ? 0 : tetherAlpha * (body.scene.focusBody || body.scene.hiddenOpen ? 0.15 : 1)
 
         readonly property real dist: Math.hypot(body.px - body.scene.cx, body.py - body.scene.cy)
         readonly property real tetherAlpha: {
@@ -457,7 +501,7 @@ Item {
     Item {
         id: visual
         anchors.fill: parent
-        scale: body.baseScale * body.popScale * body.focusScale * body.hoverScale
+        scale: body.baseScale * body.popScale * body.focusScale * body.hoverScale * body.hideMix * body.swallowScale
 
         // Halo for connected devices
         Rectangle {
@@ -675,36 +719,112 @@ Item {
             }
         }
 
-        // Connecting spinner (render-thread animator)
-        Shape {
-            id: spinner
+        // Connecting: a comet circles the device. Its tapered tail is static
+        // geometry (rebuilt only on resize); two render-thread animators turn
+        // it: a steady orbit plus a slow sway, so it speeds up and eases off
+        // like a breath. Nothing runs outside a connection attempt.
+        Item {
+            id: comet
             anchors.centerIn: parent
-            width: parent.width + 12
+            width: parent.width + 14
             height: width
             visible: body.phase === "connecting"
-            preferredRendererType: Shape.CurveRenderer
-
-            ShapePath {
-                strokeColor: Theme.primary
-                strokeWidth: 1.6
-                fillColor: "transparent"
-                capStyle: ShapePath.RoundCap
-                PathAngleArc {
-                    centerX: spinner.width / 2
-                    centerY: centerX
-                    radiusX: centerX - 1
-                    radiusY: radiusX
-                    startAngle: 0
-                    sweepAngle: 80
-                }
-            }
+            readonly property real r: width / 2 - 2.5
+            readonly property real span: 200 * Math.PI / 180   // tail length, radians
 
             RotationAnimator on rotation {
-                running: spinner.visible
+                running: comet.visible
                 from: 0
                 to: 360
-                duration: 1100
+                duration: 1500
                 loops: Animation.Infinite
+            }
+
+            Item {
+                id: sway
+                anchors.fill: parent
+
+                SequentialAnimation {
+                    running: comet.visible && body.scene.motion
+                    loops: Animation.Infinite
+                    RotationAnimator {
+                        target: sway
+                        from: -22
+                        to: 22
+                        duration: 900
+                        easing.type: Easing.InOutSine
+                    }
+                    RotationAnimator {
+                        target: sway
+                        from: 22
+                        to: -22
+                        duration: 900
+                        easing.type: Easing.InOutSine
+                    }
+                }
+
+                // Tail: a crescent that thins to nothing, brightest at the head
+                Shape {
+                    anchors.fill: parent
+                    preferredRendererType: Shape.CurveRenderer
+
+                    ShapePath {
+                        strokeWidth: -1
+                        fillGradient: ConicalGradient {
+                            centerX: comet.width / 2
+                            centerY: comet.height / 2
+                            angle: 0
+                            GradientStop {
+                                position: 0
+                                color: Theme.withAlpha(Theme.primary, 0.95)
+                            }
+                            GradientStop {
+                                position: 0.3
+                                color: Theme.withAlpha(Theme.primary, 0.4)
+                            }
+                            GradientStop {
+                                position: 0.56
+                                color: Theme.withAlpha(Theme.primary, 0)
+                            }
+                            GradientStop {
+                                position: 1
+                                color: Theme.withAlpha(Theme.primary, 0)
+                            }
+                        }
+                        PathPolyline {
+                            path: {
+                                const c = comet.width / 2, r = comet.r, n = 28;
+                                const outer = [], inner = [];
+                                for (let i = 0; i <= n; i++) {
+                                    const t = i / n;
+                                    const a = -t * comet.span;           // behind the head
+                                    const w = 2.6 * Math.pow(1 - t, 1.3) + 0.05;
+                                    outer.push(Qt.point(c + Math.cos(a) * (r + w / 2), c + Math.sin(a) * (r + w / 2)));
+                                    inner.push(Qt.point(c + Math.cos(a) * (r - w / 2), c + Math.sin(a) * (r - w / 2)));
+                                }
+                                return outer.concat(inner.reverse());
+                            }
+                        }
+                    }
+                }
+
+                // Head: a bright core in a soft glow
+                Rectangle {
+                    width: 10
+                    height: 10
+                    radius: 5
+                    x: comet.width / 2 + comet.r - width / 2
+                    y: comet.height / 2 - height / 2
+                    color: Theme.withAlpha(Theme.primary, 0.28)
+                }
+                Rectangle {
+                    width: 4.2
+                    height: 4.2
+                    radius: 2.1
+                    x: comet.width / 2 + comet.r - width / 2
+                    y: comet.height / 2 - height / 2
+                    color: Qt.lighter(Theme.primary, 1.6)
+                }
             }
         }
 
@@ -794,7 +914,7 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         spacing: 1
         visible: body.scene.prefs.showLabels || body.hovered || body.dragging
-        opacity: body.scene.focusBody ? 0 : 1
+        opacity: body.scene.focusBody || body.scene.hiddenOpen || body.swallowing || body.hideArmed ? 0 : 1
 
         StyledText {
             anchors.horizontalCenter: parent.horizontalCenter
@@ -868,7 +988,7 @@ Item {
         hoverEnabled: true
         preventStealing: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton
-        enabled: !body.leaving && !body.scene.focusBody
+        enabled: !body.leaving && !body.swallowing && !body.scene.focusBody && !body.scene.hiddenOpen
         cursorShape: body.dragging ? Qt.ClosedHandCursor : Qt.OpenHandCursor
 
         property point pressPoint
@@ -881,11 +1001,9 @@ Item {
         onPressed: m => {
             pressPoint = worldPoint(m);
             pressTime = Date.now();
-            // Right click on a headset: next noise-control mode
-            if (m.button === Qt.RightButton && body.ancCapable) {
-                body.scene.ancCycle(body.address);
-                body.pop();
-            }
+            // Right click: the device menu (connect, noise control, hide)
+            if (m.button === Qt.RightButton)
+                body.scene.openMenu(body, mapToItem(body.scene, m.x, m.y));
         }
         onPositionChanged: m => {
             if (!pressed || pressedButtons & Qt.RightButton)

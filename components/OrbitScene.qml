@@ -62,6 +62,27 @@ Item {
     readonly property alias world: worldItem
     readonly property alias tetherLayer: tetherLayerItem
 
+    // --- Black hole ("Hidden") -----------------------------------------------
+    // It drifts in the outer belt like a device nobody paired: it takes a
+    // slot there and step() moves it with the same spring as the bodies.
+    property real holeX: cx
+    property real holeY: cy + ry
+    readonly property var _hole: ({
+            "px": 0,
+            "py": 0,
+            "vx": 0,
+            "vy": 0,
+            "spawned": false,
+            "homeHash": 0.62
+        })
+    readonly property real holeHorizon: blackHole.horizon
+    property bool hiddenOpen: false
+    property real holeFeed: 0      // 0..1, how close the dragged device is
+    property real holeSpin: 0      // tesseract phase (0 = the classic cube-in-cube), advanced by step()
+    // address -> {x, y}: where a device reappears (spat out of the hole)
+    property var spawnFrom: ({})
+    readonly property int hiddenCount: Object.keys(prefs.hiddenDevices).length
+
     readonly property var adapter: BluetoothService.adapter
     readonly property bool btOn: BluetoothService.enabled
     readonly property bool discovering: BluetoothService.discovering
@@ -129,8 +150,11 @@ Item {
         wake();
         refresh();
         updateScan();
-        if (!active)
+        if (!active) {
             clearFocus();
+            closeHidden();
+            menu.close();
+        }
     }
 
     // --- Device list -----------------------------------------------------------
@@ -145,7 +169,7 @@ Item {
         let list = [];
         for (let i = 0; i < all.length; i++) {
             const d = all[i];
-            if (!d || d.blocked)
+            if (!d || d.blocked || prefs.isHidden(d.address))
                 continue;
             if (!prefs.showUnnamed && Catalog.isUnnamed(d) && !d.connected)
                 continue;
@@ -232,6 +256,9 @@ Item {
             scene.refresh();
         }
         function onMaxDevicesChanged() {
+            scene.refresh();
+        }
+        function onHiddenDevicesChanged() {
             scene.refresh();
         }
     }
@@ -427,8 +454,13 @@ Item {
             return;
         const n = norm(p.x, p.y);
         const wasArmed = b.armed;
-        b.armed = b.holding ? n > detachNorm : n < snapNorm;
-        if (b.armed && !wasArmed && !b.holding) {
+        // Over the black hole: it wins over connecting or disconnecting
+        const hd = Math.hypot(p.x - holeX, p.y - holeY);
+        const wasHide = b.hideArmed;
+        b.hideArmed = hd < Math.max(holeHorizon * 2.4, bodySize * 0.75);
+        holeFeed = Math.max(0, Math.min(1, 1 - (hd - bodySize * 0.6) / (bodySize * 1.6)));
+        b.armed = b.hideArmed ? false : b.holding ? n > detachNorm : n < snapNorm;
+        if ((b.armed && !wasArmed && !b.holding) || (b.hideArmed && !wasHide)) {
             b.pop();
             sounds.play("snap");
         }
@@ -441,7 +473,11 @@ Item {
         if (!b)
             return;
         b.dragging = false;
-        if (b.armed) {
+        holeFeed = 0;
+        if (b.hideArmed) {
+            b.hideArmed = false;
+            hideBody(b);
+        } else if (b.armed) {
             if (b.connected)
                 startDisconnect(b);
             else if (b.phase === "connecting")
@@ -451,6 +487,66 @@ Item {
         }
         b.armed = false;
         wake();
+    }
+
+    // --- Hiding (the black hole) ---------------------------------------------------
+    // The device spirals into the hole; once it vanished it is saved as hidden
+    // (it stays connected, it just leaves the orbit).
+    function hideBody(b) {
+        if (!b || b.swallowing || b.leaving)
+            return;
+        if (focusBody === b)
+            clearFocus();
+        if (b.phase === "connecting")
+            cancelConnect(b);
+        b.swallow();
+        sounds.play("disconnect");
+        wake();
+    }
+
+    function finishHide(b) {
+        prefs.setHidden(b.address, b.name, true);
+        refresh();
+    }
+
+    function unhide(address) {
+        const next = Object.assign({}, spawnFrom);
+        next[address] = Qt.point(holeX, holeY);
+        spawnFrom = next;
+        prefs.setHidden(address, "", false);
+        if (hiddenCount <= 1)
+            closeHidden();
+        wake();
+    }
+
+    function unhideAll() {
+        const next = Object.assign({}, spawnFrom);
+        for (const a in prefs.hiddenDevices)
+            next[a] = Qt.point(holeX, holeY);
+        spawnFrom = next;
+        prefs.set("hiddenDevices", ({}));
+        closeHidden();
+        wake();
+    }
+
+    function openHidden() {
+        clearFocus();
+        hiddenOpen = true;
+        wake();
+        scene.forceActiveFocus();
+    }
+
+    function closeHidden() {
+        if (!hiddenOpen)
+            return;
+        hiddenOpen = false;
+        wake();
+    }
+
+    function openMenu(b, point) {
+        if (!b || b.swallowing || focusBody)
+            return;
+        menu.popup(b, point);
     }
 
     // --- Focus -----------------------------------------------------------------
@@ -470,7 +566,13 @@ Item {
     }
 
     Keys.onEscapePressed: event => {
-        if (focusBody) {
+        if (menu.open) {
+            menu.close();
+            event.accepted = true;
+        } else if (hiddenOpen) {
+            closeHidden();
+            event.accepted = true;
+        } else if (focusBody) {
             clearFocus();
             event.accepted = true;
         } else {
@@ -496,8 +598,10 @@ Item {
     function step(dt) {
         dt = Math.min(dt, 1 / 30);
         clock += dt;
-        if (motion)
+        if (motion) {
             orbitTime += dt;
+            holeSpin += dt * (0.32 + 1.8 * holeFeed);
+        }
 
         const n = bodies.count;
         const all = [];
@@ -509,7 +613,7 @@ Item {
 
         // Slot assignment: connected ring and outer field, both address-sorted for stability
         const inner = all.filter(b => b.inSlot && !b.leaving).sort((a, b) => a.address < b.address ? -1 : 1);
-        const outer = all.filter(b => !b.inSlot && !b.leaving).sort((a, b) => a.homeHash - b.homeHash);
+        const outer = all.filter(b => !b.inSlot && !b.leaving && !b.swallowing).concat([_hole]).sort((a, b) => a.homeHash - b.homeHash);
         const innerPhase = orbitTime * 0.11 - Math.PI / 2;
         const outerPhase = orbitTime * 0.018 - Math.PI / 2;
         const floatAmp = motion ? (dragBody ? 7 : 3.5) : 0;
@@ -520,9 +624,20 @@ Item {
             let tx, ty, k = 70, zeta = 0.58;
 
             if (!b.spawned) {
-                const a = b.homeHash * Math.PI * 2;
-                b.px = cx + Math.cos(a) * rx * 1.25;
-                b.py = cy + Math.sin(a) * ry * 1.25;
+                const from = spawnFrom[b.address];
+                if (from) {
+                    // Spat back out of the black hole
+                    b.px = from.x;
+                    b.py = from.y;
+                    const next = Object.assign({}, spawnFrom);
+                    delete next[b.address];
+                    spawnFrom = next;
+                    b.pop();
+                } else {
+                    const a = b.homeHash * Math.PI * 2;
+                    b.px = cx + Math.cos(a) * rx * 1.25;
+                    b.py = cy + Math.sin(a) * ry * 1.25;
+                }
                 b.spawned = true;
             }
 
@@ -554,6 +669,13 @@ Item {
                 }
                 tx += (sx - tx) * pull;
                 ty += (sy - ty) * pull;
+                // The black hole pulls it in, over any ring attraction
+                if (b.hideArmed) {
+                    tx += (holeX - tx) * 0.55;
+                    ty += (holeY - ty) * 0.55;
+                    k = 420;
+                    zeta = 0.7;
+                }
             } else if (b.inSlot) {
                 const i = inner.indexOf(b);
                 const a = innerPhase + (i / Math.max(1, inner.length)) * Math.PI * 2;
@@ -572,7 +694,12 @@ Item {
                 b.depth = 0;
             }
 
-            if (b.leaving) {
+            if (b.swallowing) {
+                tx = holeX;
+                ty = holeY;
+                k = 260;
+                zeta = 0.9;
+            } else if (b.leaving) {
                 const a = Math.atan2(b.py - cy, b.px - cx);
                 tx = cx + Math.cos(a) * rx * 1.3;
                 ty = cy + Math.sin(a) * ry * 1.3;
@@ -580,7 +707,7 @@ Item {
             }
 
             // Gentle repulsion from the dragged body + soft collisions
-            if (!b.dragging && !b.focused) {
+            if (!b.dragging && !b.focused && !b.swallowing) {
                 for (const o of all) {
                     if (o === b || o.leaving)
                         continue;
@@ -600,6 +727,13 @@ Item {
                     tx = cx + (tx - cx) / cd * minD;
                     ty = cy + (ty - cy) / cd * minD;
                 }
+                // ... and of the black hole, which only takes what is dropped in
+                const hd = Math.max(0.001, Math.hypot(tx - holeX, ty - holeY));
+                const holeD = holeHorizon * 2.2 + bodySize * 0.6;
+                if (hd < holeD && !focusBody) {
+                    tx = holeX + (tx - holeX) / hd * holeD;
+                    ty = holeY + (ty - holeY) / hd * holeD;
+                }
             }
 
             if (!motion && !b.dragging)
@@ -608,6 +742,27 @@ Item {
             _spring(b, tx, ty, k, zeta, dt);
 
             if (Math.abs(b.vx) + Math.abs(b.vy) > 0.6 || Math.abs(tx - b.px) + Math.abs(ty - b.py) > 0.6)
+                moving = true;
+        }
+
+        // The black hole: an outer-belt slot, floating like the others
+        {
+            const h = _hole;
+            const i = outer.indexOf(h);
+            const a = outerPhase + ((i + 0.5) / outer.length) * Math.PI * 2 + (h.homeHash - 0.5) * 0.35;
+            const r = 1 - (1 - outerMinNorm) * 0.2;
+            const ph = h.homeHash * 40;
+            const tx = cx + Math.cos(a) * rx * r + Math.sin(clock * 0.8 + ph) * floatAmp;
+            const ty = cy + Math.sin(a) * ry * r + Math.cos(clock * 0.63 + ph) * floatAmp * 0.8;
+            if (!h.spawned) {
+                h.px = tx;
+                h.py = ty;
+                h.spawned = true;
+            }
+            _spring(h, tx, ty, motion ? 70 : 120, motion ? 0.58 : 1, dt);
+            holeX = h.px;
+            holeY = h.py;
+            if (Math.abs(h.vx) + Math.abs(h.vy) > 0.6 || Math.abs(tx - h.px) + Math.abs(ty - h.py) > 0.6)
                 moving = true;
         }
 
@@ -714,10 +869,28 @@ Item {
         }
     }
 
+    BlackHole {
+        id: blackHole
+        scene: orbitRoot
+        sky: stars
+        x: scene.holeX - width / 2
+        y: scene.holeY - height / 2
+        count: scene.hiddenCount
+        feed: scene.holeFeed
+        spin: scene.holeSpin
+        visible: scene.btOn && scene.width > 0
+        onClicked: scene.hiddenOpen ? scene.closeHidden() : scene.openHidden()
+        Behavior on feed {
+            NumberAnimation {
+                duration: 200
+            }
+        }
+    }
+
     // Dims the backdrop in focus mode (elliptical on glass: no hard edge)
     Item {
         anchors.fill: parent
-        opacity: scene.focusBody ? 1 : 0
+        opacity: scene.focusBody || scene.hiddenOpen ? 1 : 0
         visible: opacity > 0.01
         Behavior on opacity {
             NumberAnimation {
@@ -741,8 +914,11 @@ Item {
     // Click on empty space leaves focus mode
     MouseArea {
         anchors.fill: parent
-        enabled: !!scene.focusBody
-        onClicked: scene.clearFocus()
+        enabled: !!scene.focusBody || scene.hiddenOpen
+        onClicked: {
+            scene.clearFocus();
+            scene.closeHidden();
+        }
     }
 
     // --- World -------------------------------------------------------------------
@@ -750,7 +926,7 @@ Item {
         id: worldItem
         anchors.fill: parent
 
-        readonly property real dim: scene.focusBody ? 0.12 : 1
+        readonly property real dim: scene.focusBody || scene.hiddenOpen ? 0.12 : 1
 
         // Outer field: dotted orbit
         Repeater {
@@ -855,7 +1031,7 @@ Item {
             width: scene.coreSize
             height: width
             z: 50
-            opacity: scene.focusBody ? 0.15 : scene.btOn ? 1 : 0.45
+            opacity: scene.focusBody || scene.hiddenOpen ? 0.15 : scene.btOn ? 1 : 0.45
             scale: (scene.motion ? 1 + 0.018 * Math.sin(scene.clock * 1.3) : 1) * corePulse.value
 
             Behavior on opacity {
@@ -957,6 +1133,30 @@ Item {
             }
         }
 
+        // Black hole contents, slides up like the focus card
+        HiddenCard {
+            scene: orbitRoot
+            z: 15000
+            width: scene.focusCardWidth
+            height: Math.min(implicitHeight, scene.height - Theme.spacingM * 2)
+            x: (scene.width - width) / 2
+            y: scene.hiddenOpen ? scene.height - height - Theme.spacingM : scene.height + 20
+            opacity: scene.hiddenOpen ? 1 : 0
+            visible: opacity > 0.01
+
+            Behavior on y {
+                NumberAnimation {
+                    duration: 420
+                    easing.type: Easing.OutCubic
+                }
+            }
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 260
+                }
+            }
+        }
+
         // Focus card (bodies are siblings, so the focused glyph can sit above it)
         FocusCard {
             id: focusCard
@@ -989,12 +1189,14 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: scene.glass ? Math.round(scene.height * 0.1) : Theme.spacingS
-        opacity: scene.focusBody ? 0 : text ? 0.6 : 0
+        opacity: scene.focusBody || scene.hiddenOpen ? 0 : text ? 0.6 : 0
         color: "white"
         font.pixelSize: Theme.fontSizeSmall - 1
         font.letterSpacing: 0.4
         text: {
             const b = scene.dragBody;
+            if (b && b.hideArmed)
+                return "Release to hide";
             if (b) {
                 if (b.phase === "connecting")
                     return b.armed ? "Release to cancel" : "Pull away to cancel";
@@ -1029,7 +1231,7 @@ Item {
         color: scene.glass ? (chipArea.containsMouse ? Qt.rgba(0.1, 0.11, 0.14, 0.78) : Qt.rgba(0.04, 0.045, 0.06, 0.6)) : chipArea.containsMouse ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(1, 1, 1, 0.06)
         border.width: scene.glass ? 1 : 0
         border.color: Qt.rgba(1, 1, 1, 0.08)
-        readonly property bool shown: scene.btOn && !scene.focusBody && (!scene.glass || scene.interacting || scene.discovering)
+        readonly property bool shown: scene.btOn && !scene.focusBody && !scene.hiddenOpen && (!scene.glass || scene.interacting || scene.discovering)
         opacity: shown ? 1 : 0
         visible: opacity > 0.01
         Behavior on opacity {
@@ -1113,5 +1315,12 @@ Item {
                 onClicked: BluetoothService.setBluetoothEnabled(true)
             }
         }
+    }
+
+    // Right-click menu, above everything else
+    OrbitMenu {
+        id: menu
+        scene: orbitRoot
+        z: 30000
     }
 }
