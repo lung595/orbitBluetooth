@@ -39,6 +39,7 @@ disconnect it. Charging devices receive a beam of energy from the core.
 | Quickshell | 0.3 or newer (ships with DMS) |
 | BlueZ | any recent version, adapter powered on |
 | UPower | optional, gives real charging states for devices that report one |
+| Python 3 | optional, standard library only: headphone noise control |
 
 ## Installation
 
@@ -151,7 +152,53 @@ The card shows:
 - name, type and state (connected, paired, available)
 - connection time and battery level
 - actions: change icon, connect or disconnect, hide, forget (asks twice)
-- battery gauge, session chart and stats (next section)
+- battery gauge, session chart and stats (see below)
+- noise control, for supported headphones (next section)
+
+## Noise control
+
+Supported headphones get a mode selector in their detail card, a halo in
+the orbit (solid: cancelling, dotted: ambient) and the modes in their
+right-click menu. Only what the model supports is shown: noise cancelling,
+adaptive, ambient (transparency) and off, the ambient level, voice focus,
+conversation detection and the left/right/case batteries.
+
+![Noise control in the detail card](screenshots/noise-control.png)
+
+| Brand | Models | Tested on hardware |
+| --- | --- | --- |
+| Sony | WH-1000XM3 to XM6, WF-1000XM3 to XM5, LinkBuds, WH-CH720N, ULT WEAR… | Yes (WH-1000XM6) |
+| Apple | AirPods Pro, AirPods 4, AirPods Max, Beats with noise control | No (untested) |
+| Samsung | Galaxy Buds, Buds+, Live, Pro, Buds2 to Buds4 (Pro, FE, Core) | No (untested) |
+| Bose | QC35 / QC35 II, NC700, QC45, QC Ultra, QC Headphones | No (untested) |
+| Nothing / CMF | Ear (1), (2), (3), (a), Headphone (1), CMF Buds and Headphone Pro | No (untested) |
+| Anker Soundcore | Life Q30/Q35, Liberty Air 2 Pro, Space Q45, others with the common layout | No (untested) |
+| Huawei / Honor | FreeBuds 4i to 6i, Pro to Pro 5, SE 4, Studio, FreeLace Pro, FreeClip, Honor Earbuds 2 | No (untested) |
+| Oppo / OnePlus / realme | realme Buds T200 and Air6 Pro; other Enco/realme/OnePlus models are probed | No (untested) |
+| Xiaomi | Redmi Buds 3 Pro, 4 Active, 5 Pro, 6 (Pro, Lite, Active), 8 Active | No (untested) |
+| EarFun | Air Pro 4, Air S, Free Pro 3 | No (untested) |
+| Moondrop | Space Travel 2, Space Travel 2 Ultra | No (untested) |
+| Haylou | S35 ANC (mode can be set, not read) | No (untested) |
+| 1MORE | SonoFlow, SonoFlow SE | No (untested) |
+
+Untested brands follow their protocol documentation byte for byte and are
+covered by unit tests, but have not met a real headset yet. If yours does
+not answer, it simply shows no noise control; reports are welcome. Not
+supported (no reliable public documentation): Jabra, JBL, Sennheiser,
+Marshall, Google Pixel Buds.
+
+How it works: QML cannot open a Bluetooth socket, so a small helper
+(`anc/orbit_anc.py`, Python standard library only) talks to the headset.
+The **Engine** setting decides when it runs:
+
+- **On demand** (default): only while a headset card or menu is open, or for
+  the second it takes to apply a command. Nothing runs otherwise.
+- **Always connected**: one session per connected headset, so changes made
+  with the headset's own buttons show up live (a small idle process).
+
+Some headsets cannot report every mode when asked (the WH-1000XM6 reads
+"noise cancelling" and "off" the same way); Orbit then keeps the last mode
+it set or saw.
 
 ## Charging and battery data
 
@@ -201,6 +248,9 @@ The card's footnote always says which source is in use.
 Bind these to keys in your compositor:
 
 ```sh
+dms ipc call orbitBluetooth anc nc       # nc, ambient, off or adaptive (first supported headset)
+dms ipc call orbitBluetooth ancCycle     # next noise-control mode
+dms ipc call orbitBluetooth ancStatus    # current noise-control state (JSON)
 dms ipc call orbitBluetooth hidden       # list hidden devices
 dms ipc call orbitBluetooth unhideAll    # bring every hidden device back
 ```
@@ -220,6 +270,9 @@ dms ipc call orbitBluetooth unhideAll    # bring every hidden device back
 | Star density | Normal | Low, Normal or High |
 | Desktop backdrop | 72% | Depth of the veil behind the desktop widget |
 | Ambient motion on desktop | off | Keep orbits moving when the pointer is away |
+| Black hole style | Black hole | Realistic, or "Three-dimensional shadow of a four-dimensional bubble" (tesseract) |
+| Headphone noise control | on | Controls supported headphones (needs Python 3) |
+| Engine | On demand | When the noise-control helper runs (see *Noise control*) |
 | Sounds | off | Short cues on snap, connect and disconnect |
 | Sound volume | 60% | |
 
@@ -248,7 +301,11 @@ replaced by `_`.
 
 ## Privacy
 
-- No network access, no telemetry, no external processes.
+- No network access, no telemetry.
+- The only process is the noise-control helper (Python, standard library):
+  it opens a local Bluetooth socket to your headset and nothing else, only
+  while needed (see *Noise control*). Set `ORBIT_ANC_DEBUG=1` to see its raw
+  packets on stderr; nothing is ever logged to a file.
 - Connection times and battery history live in memory for the current
   session only. They are never written to disk.
 - The only files read are the sysfs `uevent` of kernel batteries, once each,
@@ -280,6 +337,11 @@ devices** is on, and the orbit keeps at most **Devices in orbit** entries.
 its level has not risen yet. The estimate starts after the first level
 increase.
 
+**Noise control does not appear.** The headset must be connected and its
+brand supported (see *Noise control*); Python 3 must be installed. Close and
+reopen the card to retry: after an error the helper stays quiet instead of
+retrying in a loop.
+
 **A device vanished.** It may be in the black hole: click it, or use
 **Show all hidden devices** in the settings, or
 `dms ipc call orbitBluetooth unhideAll`.
@@ -306,7 +368,15 @@ orbitBluetooth/
 │   ├── OrbitMenu.qml            # right-click menu
 │   ├── BatteryCard.qml          # gauge, chart and stat tiles
 │   ├── Charge.js                # charge analysis and color ramp (pure)
+│   ├── Endurance.js             # rated battery life per model (time-left estimate)
+│   ├── AncService.qml, AncPanel.qml, Anc.js   # noise control (runs the helper)
 │   ├── Starfield.qml, Vignette.qml, DeviceGlyph.qml, …
+├── anc/
+│   ├── orbit_anc.py             # noise-control helper (stdin/stdout JSON session)
+│   ├── sdp.py                   # minimal SDP client (finds RFCOMM channels)
+│   ├── protocols/               # one module per brand + shared checksums
+│   └── tests/                   # unittest: frames, checksums, each brand
+├── tests/anc.test.js            # gjs: brand detection, modes, time left
 ├── shaders/                     # gargantua.frag, tesseract.frag + compiled .qsb, build.sh
 ├── scripts/
 │   ├── gen_sounds.py            # synthesizes sounds/*.wav (stdlib only)
@@ -331,11 +401,27 @@ Recompile the shaders after editing a `shaders/*.frag` file (needs Qt's
 shaders/build.sh
 ```
 
+Run the tests:
+
+```sh
+(cd anc && python3 -m unittest discover -s tests -t .)
+gjs tests/anc.test.js
+```
+
 Regenerate the sounds:
 
 ```sh
 python3 scripts/gen_sounds.py
 ```
+
+## Credits
+
+The noise-control protocols were written from the public documentation and
+reverse-engineering notes of these projects (protocols reimplemented, no
+code copied): Gadgetbridge, SonyHeadphonesClient (mos9527), XMDeck,
+LibrePods, MagicPodsCore, GalaxyBudsClient, based-connect, bosectl,
+OpenSCQ30, OpenFreebuds, EarA-linux, earctl and cmfctl. SAFER+ follows the
+Bluetooth Core specification.
 
 ## License
 

@@ -106,7 +106,7 @@ PluginSettings {
     ToggleSetting {
         settingKey: "ancEnabled"
         label: "Headphone noise control"
-        description: "Noise cancelling, ambient sound and more for Sony, AirPods/Beats, Nothing, Galaxy Buds, Bose and Soundcore (needs python3)"
+        description: "Noise cancelling, ambient sound and more for Sony, AirPods/Beats, Galaxy Buds, Bose, Nothing, Soundcore, Huawei/Honor, Oppo/OnePlus/realme, Redmi, EarFun, Moondrop, Haylou and 1MORE (needs python3)"
         defaultValue: true
     }
 
