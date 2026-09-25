@@ -14,7 +14,8 @@ Started by OrbitBluetoothDaemon.qml, never by itself:
   headset stays connected ("always connected" engine setting).
 
 Privacy: it only opens a local Bluetooth socket to the given address. No
-network, no files, no logging beyond stderr.
+network, no files, no logging beyond stderr (raw packets only when
+ORBIT_ANC_DEBUG=1).
 """
 
 import json
@@ -38,6 +39,22 @@ HANDSHAKE_TIMEOUT = 10.0
 # While shaking hands the protocol may need tick() for retries; once ready,
 # the loop blocks until the headset or the daemon says something.
 HANDSHAKE_POLL = 0.25
+# Right after the handshake the first answers (battery, Speak-to-Chat...)
+# arrive one by one, some after their acknowledgement; they are held back
+# this long and sent as one update so the detail card settles once instead
+# of growing in steps.
+SETTLE_SECONDS = 0.5
+
+
+# ORBIT_ANC_DEBUG=1 prints every raw packet to stderr (never to a file), to
+# compare a headset's behaviour with a protocol spec.
+DEBUG = os.environ.get("ORBIT_ANC_DEBUG") == "1"
+
+
+def trace(direction, data):
+    if DEBUG:
+        sys.stderr.write("%s %s\n" % (direction, data.hex(" ")))
+        sys.stderr.flush()
 
 
 def emit(message):
@@ -108,7 +125,11 @@ def run(address, family):
         emit({"status": "error", "error": str(err) or "connection failed"})
         return 1
 
-    proto = factory(lambda data: sock.sendall(data))
+    def send(data):
+        trace(">>", data)
+        sock.sendall(data)
+
+    proto = factory(send)
     selector = selectors.DefaultSelector()
     selector.register(sock, selectors.EVENT_READ, "socket")
     selector.register(sys.stdin, selectors.EVENT_READ, "stdin")
@@ -116,9 +137,10 @@ def run(address, family):
     stdin_open = True
     pending_input = b""
     deadline = None
-    last = None
+    last = {"status": "connecting"}  # already announced above
     proto.start()
     started = time.monotonic()
+    ready_at = None
     try:
         while True:
             now = time.monotonic()
@@ -126,7 +148,8 @@ def run(address, family):
                 break
             if not proto.ready and now - started > HANDSHAKE_TIMEOUT:
                 raise TimeoutError("timed out")
-            timeout = None if proto.ready else HANDSHAKE_POLL
+            settling = ready_at is not None and now - ready_at < SETTLE_SECONDS
+            timeout = HANDSHAKE_POLL if settling or not proto.ready else None
             if deadline is not None:
                 timeout = min(timeout or deadline - now, deadline - now)
             for key, _ in selector.select(timeout):
@@ -134,6 +157,7 @@ def run(address, family):
                     data = sock.recv(4096)
                     if not data:
                         raise ConnectionError("headset closed the connection")
+                    trace("<<", data)
                     proto.receive(data)
                 else:
                     # Raw reads: buffered readline() could hide lines from select()
@@ -150,8 +174,12 @@ def run(address, family):
                         line, pending_input = pending_input.split(b"\n", 1)
                         handle_command(proto, parse_command(line.decode("utf-8", "ignore")))
             proto.tick(time.monotonic())
+            now = time.monotonic()
+            if proto.ready and ready_at is None:
+                ready_at = now
+            settling = ready_at is not None and now - ready_at < SETTLE_SECONDS
             snapshot = proto.snapshot()
-            if snapshot != last:
+            if snapshot != last and not (settling and snapshot["status"] == "ready"):
                 last = snapshot
                 emit(snapshot)
             if not stdin_open and proto.ready and not proto.pending and not proto.awaiting:

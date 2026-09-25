@@ -107,9 +107,14 @@ class Protocol:
             self.state["battery"][part] = {"level": level, "charging": bool(charging)}
 
     def snapshot(self):
+        # Half-built features/state are never sent: they would briefly wipe
+        # what the UI already shows (the mode selector and the halo would
+        # vanish, then come back when the handshake completes).
+        if not self.ready:
+            return {"status": "connecting"}
         # Deep copy: the runner compares snapshots to print only changes
         return copy.deepcopy({
-            "status": "ready" if self.ready else "connecting",
+            "status": "ready",
             "model": self.model,
             "features": self.features,
             "state": self.state,
