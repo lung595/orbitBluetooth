@@ -34,10 +34,12 @@ function _risingRun(samples) {
     return run.length >= 2 && run[run.length - 1][1] > run[0][1] ? run : null;
 }
 
-function analyze(samples, level, up, now) {
+// `ratedHours` (optional): the device's rated life on a full charge, used
+// for a first time-left estimate until the real drain can be measured.
+function analyze(samples, level, up, now, ratedHours) {
     const out = {
         state: "unknown",       // "charging" | "full" | "discharging" | "unknown"
-        source: "none",         // "system" | "estimated" | "none"
+        source: "none",         // "system" | "estimated" | "rated" | "none"
         minutesToFull: 0,
         minutesLeft: 0,
         fullAt: 0,              // epoch ms
@@ -111,11 +113,23 @@ function analyze(samples, level, up, now) {
             if (drop >= 2 && minutes >= 3) {
                 out.ratePerHour = -drop / minutes * 60;
                 out.minutesLeft = level / (drop / minutes);
+                // Coarse steps (10% on many headsets) make a short measure
+                // unreliable: lean on the rated life for the first 90 min
+                if (ratedHours > 0) {
+                    const w = Math.min(1, minutes / 90);
+                    out.minutesLeft = w * out.minutesLeft + (1 - w) * level / 100 * ratedHours * 60;
+                }
                 if (out.source === "none") {
                     out.source = "estimated";
                     out.state = "discharging";
                 }
             }
+        }
+        // Nothing measured yet: level x rated life (always shown with "≈")
+        if (!(out.minutesLeft > 0) && ratedHours > 0 && level > 0 && out.state !== "charging") {
+            out.minutesLeft = level / 100 * ratedHours * 60;
+            if (out.source === "none")
+                out.source = "rated";
         }
     }
     return out;
@@ -135,6 +149,9 @@ function formatMinutes(m) {
 function formatShort(m) {
     if (!(m > 0) || !isFinite(m))
         return "";
+    // Days for long-lasting devices (mice, controllers): "3d"
+    if (m >= 48 * 60)
+        return Math.round(m / 1440) + "d";
     if (m < 60)
         return Math.max(1, Math.round(m)) + "m";
     const h = Math.floor(m / 60), r = Math.round(m % 60);

@@ -190,7 +190,7 @@ Item {
 
                     readonly property var c: card.body?.charge ?? null
                     readonly property real since: card.scene.sinceFor(card.body?.address)
-                    readonly property string approx: c && c.source === "estimated" ? "≈ " : ""
+                    readonly property string approx: c && (c.source === "estimated" || c.source === "rated") ? "≈ " : ""
 
                     level: card.body?.connected ? card.body.battery : -1
                     charging: card.body?.charging ?? false
@@ -207,6 +207,8 @@ Item {
                             return "Reported by the device";
                         if (charging || c.state === "full")
                             return "Estimated from level changes · refines as it charges";
+                        if (c.source === "rated")
+                            return "From the rated battery life · refines as it drains";
                         return c.source === "estimated" ? "Estimated from level changes" : "";
                     }
                     statusIcon: {
