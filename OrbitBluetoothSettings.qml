@@ -97,6 +97,39 @@ PluginSettings {
     StyledText {
         width: parent.width
         topPadding: Theme.spacingM
+        text: "Noise control"
+        font.pixelSize: Theme.fontSizeLarge
+        font.weight: Font.Bold
+        color: Theme.surfaceText
+    }
+
+    ToggleSetting {
+        settingKey: "ancEnabled"
+        label: "Headphone noise control"
+        description: "Noise cancelling, ambient sound and more for Sony, AirPods/Beats, Nothing, Galaxy Buds, Bose and Soundcore (needs python3)"
+        defaultValue: true
+    }
+
+    SelectionSetting {
+        settingKey: "ancEngine"
+        label: "Engine"
+        description: "On demand: the helper runs only while a headset card is open or a command is sent. Always connected: it stays connected to supported headsets, so button presses on the headset show up live (a small idle process)"
+        options: [
+            {
+                label: "On demand",
+                value: "demand"
+            },
+            {
+                label: "Always connected",
+                value: "live"
+            }
+        ]
+        defaultValue: "demand"
+    }
+
+    StyledText {
+        width: parent.width
+        topPadding: Theme.spacingM
         text: "Look & feel"
         font.pixelSize: Theme.fontSizeLarge
         font.weight: Font.Bold
