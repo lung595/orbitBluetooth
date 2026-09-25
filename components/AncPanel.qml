@@ -201,11 +201,16 @@ Column {
         }
     }
 
-    // Feature chips
+    // Feature chips. The row's visibility comes from these flags, not from
+    // the chips' own `visible`: a child of a hidden item reports itself
+    // hidden, so the row could never come back once hidden.
+    readonly property bool showVoice: (features?.voice ?? false) && st.mode === "ambient"
+    readonly property bool showChat: features?.chat ?? false
+
     Row {
         anchors.horizontalCenter: parent.horizontalCenter
         spacing: Theme.spacingS
-        visible: voiceChip.visible || chatChip.visible
+        visible: panel.showVoice || panel.showChat
 
         component Chip: Rectangle {
             id: chip
@@ -245,7 +250,7 @@ Column {
 
         Chip {
             id: voiceChip
-            visible: (panel.features?.voice ?? false) && panel.st.mode === "ambient"
+            visible: panel.showVoice
             icon: "record_voice_over"
             label: "Voice focus"
             checked: panel.st.voice === true
@@ -253,7 +258,7 @@ Column {
         }
         Chip {
             id: chatChip
-            visible: panel.features?.chat ?? false
+            visible: panel.showChat
             icon: "forum"
             label: "Conversation"
             checked: panel.st.chat === true
