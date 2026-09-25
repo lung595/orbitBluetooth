@@ -139,14 +139,18 @@ Item {
     }
 
     readonly property real diameter: scene.bodySize
-    readonly property real baseScale: focused ? 1 : (slotMix * (1 + 0.07 * depth) + (1 - slotMix) * (0.66 + 0.34 * signal)) * connectedMix
+    // On the connected ring, depth runs from -1 (behind the host) to 1 (in
+    // front): full size in front, half size behind, for a sense of depth
+    readonly property real depthScale: 0.75 + 0.25 * depth
+    readonly property real baseScale: focused ? 1 : (slotMix * depthScale + (1 - slotMix) * (0.66 + 0.34 * signal)) * connectedMix
     readonly property bool hovered: mouse.containsMouse && !scene.focusBody && !scene.hiddenOpen
 
     width: diameter
     height: diameter
     x: px - width / 2 + shakeX
     y: py - height / 2
-    z: focused ? 20000 : dragging ? 10000 : 100 + py
+    // Bodies on the far side of the ring pass behind the host core (z 50)
+    z: focused ? 20000 : dragging ? 10000 : inSlot && depth < 0 ? 10 + py * 0.01 : 100 + py
     opacity: leaving ? 0 : (spawned ? 1 : 0) * ((scene.focusBody && scene.focusBody !== body) || scene.hiddenOpen ? 0.1 : 1) * (inSlot ? 1 : dormant ? 0.5 : 0.6 + 0.4 * signal)
 
     Behavior on opacity {
@@ -502,6 +506,10 @@ Item {
         id: visual
         anchors.fill: parent
         scale: body.baseScale * body.popScale * body.focusScale * body.hoverScale * body.hideMix * body.swallowScale
+        // Slightly dimmer on the far side. Changes every frame, so it lives
+        // here and not in the body's opacity (whose Behavior would restart
+        // endlessly and never finish fading in)
+        opacity: body.inSlot && !body.focused ? 0.8 + 0.2 * body.depthScale : 1
 
         // Halo for connected devices
         Rectangle {
