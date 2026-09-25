@@ -26,24 +26,25 @@ DesktopPluginComponent {
             lingering = true;
         } else {
             lingerTimer.restart();
-            if (scene.focusBody)
+            if (scene.focusBody || scene.hiddenOpen || scene.menuOpen)
                 dismissTimer.restart();
         }
     }
 
-    // A desktop layer never sees clicks made elsewhere, so the detail card
-    // closes when the pointer leaves for good or another window takes focus.
+    // A desktop layer never sees clicks made elsewhere, so the detail card,
+    // the black hole's list and the device menu close when the pointer
+    // leaves for good or another window takes focus.
     Timer {
         id: dismissTimer
         interval: 1200
-        onTriggered: scene.clearFocus()
+        onTriggered: scene.dismiss()
     }
 
     Connections {
         target: ToplevelManager
         function onActiveToplevelChanged() {
             if (ToplevelManager.activeToplevel)
-                scene.clearFocus();
+                scene.dismiss();
         }
     }
 
