@@ -23,6 +23,51 @@ Item {
     readonly property color ink: "#F2F5EE"
     readonly property color muted: Qt.rgba(1, 1, 1, 0.42)
 
+    // Charging / drain stats, shown in the battery card, or under the noise
+    // control panel for headsets with ANC
+    readonly property var statItems: {
+        const c = body?.charge ?? null;
+        const charging = body?.charging ?? false;
+        const approx = c && (c.source === "estimated" || c.source === "rated") ? "≈ " : "";
+        if (!c || !card.body?.connected)
+            return [];
+        const out = [];
+        if (charging) {
+            out.push({
+                "label": "READY AT",
+                "value": c.fullAt > 0 ? approx + Charge.formatClock(c.fullAt) : "Measuring…"
+            });
+            out.push(c.watts > 0 ? {
+                "label": "POWER",
+                "value": c.watts.toFixed(1) + " W"
+            } : {
+                "label": "SPEED",
+                "value": c.ratePerHour > 0 ? "+" + Math.round(c.ratePerHour) + " %/h" : "—"
+            });
+            out.push({
+                "label": c.gained > 0 ? "+" + c.gained + "% IN" : "CHARGING FOR",
+                "value": c.since > 0 ? (Charge.formatMinutes((card.scene.now - c.since) / 60000) || "< 1 min") : "—"
+            });
+        } else if (c.state !== "full") {
+            if (c.minutesLeft > 0)
+                out.push({
+                    "label": "EMPTY AT",
+                    "value": approx + Charge.formatClock(card.scene.now + c.minutesLeft * 60000)
+                });
+            if (c.ratePerHour < 0)
+                out.push({
+                    "label": "DRAIN",
+                    "value": Math.round(-c.ratePerHour) + " %/h"
+                });
+        }
+        if (c.health > 0)
+            out.push({
+                "label": "HEALTH",
+                "value": c.health + "%"
+            });
+        return out;
+    }
+
     implicitHeight: frameContent.implicitHeight + scene.focusOverlap + Theme.spacingL
 
     onBodyChanged: {
@@ -251,45 +296,7 @@ Item {
                         const sig = card.body.rawSignal;
                         return sig > 0 ? "Signal " + Math.round(sig * 100) + "%" : "Out of range";
                     }
-                    stats: {
-                        if (!c || !card.body?.connected || card.ancShown)
-                            return [];
-                        const out = [];
-                        if (charging) {
-                            out.push({
-                                "label": "READY AT",
-                                "value": c.fullAt > 0 ? approx + Charge.formatClock(c.fullAt) : "Measuring…"
-                            });
-                            out.push(c.watts > 0 ? {
-                                "label": "POWER",
-                                "value": c.watts.toFixed(1) + " W"
-                            } : {
-                                "label": "SPEED",
-                                "value": c.ratePerHour > 0 ? "+" + Math.round(c.ratePerHour) + " %/h" : "—"
-                            });
-                            out.push({
-                                "label": c.gained > 0 ? "+" + c.gained + "% IN" : "CHARGING FOR",
-                                "value": c.since > 0 ? (Charge.formatMinutes((card.scene.now - c.since) / 60000) || "< 1 min") : "—"
-                            });
-                        } else if (c.state !== "full") {
-                            if (c.minutesLeft > 0)
-                                out.push({
-                                    "label": "EMPTY AT",
-                                    "value": approx + Charge.formatClock(card.scene.now + c.minutesLeft * 60000)
-                                });
-                            if (c.ratePerHour < 0)
-                                out.push({
-                                    "label": "DRAIN",
-                                    "value": Math.round(-c.ratePerHour) + " %/h"
-                                });
-                        }
-                        if (c.health > 0)
-                            out.push({
-                                "label": "HEALTH",
-                                "value": c.health + "%"
-                            });
-                        return out;
-                    }
+                    stats: card.ancShown ? [] : card.statItems
                 }
             }
 
@@ -303,6 +310,13 @@ Item {
                     scene: card.scene
                     address: card.body?.address ?? ""
                 }
+            }
+
+            // With noise control, the stats sit under the ANC panel
+            StatTiles {
+                width: parent.width
+                topPadding: Theme.spacingM
+                stats: card.ancShown ? card.statItems : []
             }
 
             // Glyph picker
