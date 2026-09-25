@@ -35,6 +35,11 @@ Item {
     readonly property real rx: Math.max(40, width / 2 - bodySize * 0.8)
     readonly property real ry: Math.max(30, height / 2 - bodySize * 1.25)
     readonly property real innerNorm: 0.56     // connected orbit
+    // Perspective: the far half of the tilted ring looks shorter than the
+    // near half, and reaches the host core's edge, so devices on the far
+    // side pass behind it
+    readonly property real innerFrontRy: ry * innerNorm
+    readonly property real innerBackRy: Math.min(innerFrontRy, coreSize * 0.5)
     readonly property real outerMinNorm: 0.8  // strongest signal
     readonly property real snapNorm: 0.7      // magnet engages inside this
     readonly property real detachNorm: 0.8   // pulling a connected device past this disconnects
@@ -686,7 +691,7 @@ Item {
                 const i = inner.indexOf(b);
                 const a = innerPhase + (i / Math.max(1, inner.length)) * Math.PI * 2;
                 tx = cx + Math.cos(a) * rx * innerNorm;
-                ty = cy + Math.sin(a) * ry * innerNorm;
+                ty = cy + Math.sin(a) * (Math.sin(a) < 0 ? innerBackRy : innerFrontRy);
                 b.depth = Math.sin(a);
                 k = 80;
                 zeta = 0.7;
@@ -726,10 +731,10 @@ Item {
                         ty += dy / d * push;
                     }
                 }
-                // Keep clear of the host core
+                // Keep clear of the host core (the ring may pass behind it)
                 const cd = Math.max(0.001, Math.hypot(tx - cx, ty - cy));
                 const minD = coreSize * 0.5 + bodySize * 0.55;
-                if (cd < minD && !focusBody) {
+                if (cd < minD && !focusBody && !b.inSlot) {
                     tx = cx + (tx - cx) / cd * minD;
                     ty = cy + (ty - cy) / cd * minD;
                 }
@@ -971,13 +976,23 @@ Item {
                 strokeColor: innerRing.armedIn ? Theme.withAlpha(Theme.primary, 0.85) : innerRing.guiding ? Theme.withAlpha(Theme.primary, 0.45) : Qt.rgba(1, 1, 1, 0.1)
                 strokeWidth: innerRing.armedIn ? 1.8 : 1
                 fillColor: innerRing.armedIn ? Theme.withAlpha(Theme.primary, 0.05) : "transparent"
+                // Near half (bottom), then the shorter far half (top)
                 PathAngleArc {
                     centerX: scene.cx
                     centerY: scene.cy
                     radiusX: scene.rx * scene.innerNorm
-                    radiusY: scene.ry * scene.innerNorm
+                    radiusY: scene.innerFrontRy
                     startAngle: 0
-                    sweepAngle: 360
+                    sweepAngle: 180
+                }
+                PathAngleArc {
+                    moveToStart: false
+                    centerX: scene.cx
+                    centerY: scene.cy
+                    radiusX: scene.rx * scene.innerNorm
+                    radiusY: scene.innerBackRy
+                    startAngle: 180
+                    sweepAngle: 180
                 }
             }
         }
