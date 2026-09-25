@@ -24,6 +24,7 @@ Rectangle {
     property var stats: []              // [{ label, value }], up to 3 shown
     property var history: []            // [[epochMs, percent], ...] for the sparkline
     property string footnote: ""
+    property bool compact: false        // hides the status line (detail card with ANC)
 
     readonly property bool hasLevel: level >= 0
     readonly property real frac: Math.max(0, Math.min(1, level / 100))
@@ -55,6 +56,7 @@ Rectangle {
         spacing: Math.round(root.width * 0.01)
 
         Row {
+            visible: !root.compact
             spacing: Theme.spacingXS
             DankIcon {
                 name: root.statusIcon

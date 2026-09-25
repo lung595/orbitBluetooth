@@ -17,6 +17,8 @@ Item {
     readonly property var device: body ? body.device : null
     property bool picking: false
     property bool confirmForget: false
+    // Headsets with noise control trade the battery graph for the ANC panel
+    readonly property bool ancShown: !picking && scene.ancCapable(body)
 
     readonly property color ink: "#F2F5EE"
     readonly property color muted: Qt.rgba(1, 1, 1, 0.42)
@@ -150,7 +152,7 @@ Item {
 
         Item {
             width: 1
-            height: Theme.spacingM
+            height: card.ancShown ? Theme.spacingXS : Theme.spacingM
         }
 
         Loader {
@@ -160,7 +162,8 @@ Item {
             sourceComponent: BatteryCard {
                 width: parent ? parent.width : 0
                 framed: false
-                gaugeRatio: 0.1
+                gaugeRatio: card.ancShown ? 0.035 : 0.1
+                compact: card.ancShown && level >= 0
                 timeValue: {
                     if (!c || level < 0)
                         return "";
@@ -178,11 +181,13 @@ Item {
                 level: card.body?.connected ? card.body.battery : -1
                 charging: card.body?.charging ?? false
                 history: {
+                    if (card.ancShown)
+                        return [];
                     const log = card.scene.batteryLogFor(card.body?.address);
                     return log.length && level >= 0 ? log.concat([[card.scene.now, level]]) : [];
                 }
                 footnote: {
-                    if (!c || !card.body?.connected || level < 0)
+                    if (!c || !card.body?.connected || level < 0 || card.ancShown)
                         return "";
                     if (c.source === "system")
                         return "Reported by the device";
@@ -229,7 +234,7 @@ Item {
                     return sig > 0 ? "Signal " + Math.round(sig * 100) + "%" : "Out of range";
                 }
                 stats: {
-                    if (!c || !card.body?.connected)
+                    if (!c || !card.body?.connected || card.ancShown)
                         return [];
                     const out = [];
                     if (charging) {
@@ -267,6 +272,18 @@ Item {
                         });
                     return out;
                 }
+            }
+        }
+
+        Loader {
+            width: parent.width
+            active: card.ancShown
+            visible: active
+            sourceComponent: AncPanel {
+                width: parent ? parent.width : 0
+                topPadding: Theme.spacingS
+                scene: card.scene
+                address: card.body?.address ?? ""
             }
         }
 

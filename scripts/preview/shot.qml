@@ -13,7 +13,7 @@ Window {
     readonly property string out: args[args.length - 1]
     readonly property bool glass: mode.startsWith("desktop")
     width: glass ? 760 : (mode === "zoom" ? 900 : 560)
-    height: glass ? 560 : (mode === "zoom" ? 700 : 480)
+    height: glass ? 560 : (mode === "zoom" ? 700 : mode === "ancfocus" ? 440 : 480)
     visible: true
     color: "#101114"
 
@@ -38,7 +38,15 @@ Window {
                     "58:18:62:3D:72:95": [[t - 34 * m, 38], [t - 24 * m, 43], [t - 14 * m, 48], [t - 4 * m, 53], [t - 1 * m, 54]],
                     "98:7A:14:22:C1:0E": [[t - 95 * m, 81], [t - 60 * m, 77], [t - 20 * m, 73], [t - 5 * m, 72]]
                 },
-                "power": {}
+                "power": {},
+                // Mock noise-control state for the demo headset
+                "anc": {
+                    "58:18:62:3D:72:95": {
+                        "status": "ready", "live": true, "model": "",
+                        "features": { "modes": ["nc", "ambient", "off", "adaptive"], "ambientMax": 20, "levelMode": "ambient", "voice": true, "chat": true },
+                        "state": { "mode": mode === "ancfocus" ? "ambient" : "nc", "ambient": 14, "voice": true, "chat": false, "battery": {} }
+                    }
+                }
             }
         };
     }
