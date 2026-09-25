@@ -44,6 +44,22 @@ Item {
         publish: map => root._publish("anc", map)
     }
 
+    // Pairing prompts. DMS only shows its pairing dialog from the native
+    // Bluetooth panel, which Orbit replaces: without this, a headset asking
+    // for a passkey confirmation (e.g. FreeBuds) waits in vain, gives up and
+    // retries every few seconds, which looks like random disconnects. The
+    // user still accepts or declines in DMS's own dialog.
+    Connections {
+        target: DMSService
+
+        function onBluetoothPairingRequest(data) {
+            const modal = PopoutService.ensureBluetoothPairingModal();
+            if (!modal || modal.token === data.token)
+                return;
+            modal.show(data);
+        }
+    }
+
     // dms ipc call orbitBluetooth anc nc | ambient | off | adaptive
     // dms ipc call orbitBluetooth hidden | unhideAll
     IpcHandler {
