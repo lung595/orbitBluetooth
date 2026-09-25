@@ -21,7 +21,8 @@ Column {
     readonly property color ink: "#F2F5EE"
     readonly property color muted: Qt.rgba(1, 1, 1, 0.42)
 
-    spacing: Theme.spacingXS
+    // Same gap between every row of the panel
+    spacing: Theme.spacingS
 
     property string _watched: ""
     function _rewatch() {
@@ -61,23 +62,39 @@ Column {
         visible: panel.modes.length > 0
         readonly property real segW: width / Math.max(1, panel.modes.length)
         readonly property int current: panel.modes.indexOf(panel.st.mode ?? "")
+        // Width of the active mode's icon + label, reported by its delegate
+        property real activeContent: 0
 
         Rectangle {
             anchors.fill: parent
             radius: height / 2
             color: Qt.rgba(1, 1, 1, 0.05)
         }
+        // The highlight hugs the active mode's content with equal padding on
+        // both sides, centered on its segment and kept 4 px inside the track
+        // (the same inset as top and bottom, so it sits concentric)
         Rectangle {
+            id: pill
             visible: segments.current >= 0
-            x: segments.current * segments.segW + 3
-            y: 3
-            width: segments.segW - 6
-            height: parent.height - 6
+            readonly property real inset: 4
+            readonly property real pad: 12
+            readonly property real center: (segments.current + 0.5) * segments.segW
+            width: Math.min(segments.width - inset * 2, segments.activeContent + pad * 2)
+            x: Math.max(inset, Math.min(segments.width - inset - width, center - width / 2))
+            y: inset
+            height: parent.height - inset * 2
             radius: height / 2
             color: Theme.withAlpha(Theme.primary, 0.22)
             border.width: 1
             border.color: Theme.withAlpha(Theme.primary, 0.5)
             Behavior on x {
+                enabled: panel.scene.motion
+                NumberAnimation {
+                    duration: 220
+                    easing.type: Easing.OutCubic
+                }
+            }
+            Behavior on width {
                 enabled: panel.scene.motion
                 NumberAnimation {
                     duration: 220
@@ -97,7 +114,11 @@ Column {
                     height: segments.height
 
                     Row {
+                        id: content
                         anchors.centerIn: parent
+                        // The active content follows the pill when it is pushed
+                        // off-center near the track's ends
+                        anchors.horizontalCenterOffset: on ? pill.x + pill.width / 2 - (index + 0.5) * segments.segW : 0
                         spacing: 6
                         DankIcon {
                             anchors.verticalCenter: parent.verticalCenter
@@ -113,6 +134,12 @@ Column {
                             font.pixelSize: Theme.fontSizeSmall
                             font.weight: on ? Font.DemiBold : Font.Normal
                         }
+                    }
+                    Binding {
+                        target: segments
+                        property: "activeContent"
+                        value: content.implicitWidth
+                        when: on
                     }
                     MouseArea {
                         anchors.fill: parent

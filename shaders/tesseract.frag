@@ -38,12 +38,13 @@ float bit(float i, float k) {
     return mod(floor(i / exp2(k)), 2.0);
 }
 
-// Tesseract vertex i (bits = sign of x, y, z, w), rotated and projected to px
-vec2 vertex(float i, float s, float scale) {
+// Tesseract vertex i (bits = sign of x, y, z, w), rotated and projected to
+// px. rot = (cos, sin) of the XW angle, then (cos, sin) of the YZ angle,
+// computed once per pixel by the caller rather than for every vertex.
+vec2 vertex(float i, vec4 rot, float scale) {
     vec4 v = vec4(bit(i, 0.0), bit(i, 1.0), bit(i, 2.0), bit(i, 3.0)) * 2.0 - 1.0;
     // Rotations in the XW and YZ planes turn the hypercube "inside out"
-    float c1 = cos(s), s1 = sin(s);
-    float c2 = cos(s * 0.45), s2 = sin(s * 0.45);
+    float c1 = rot.x, s1 = rot.y, c2 = rot.z, s2 = rot.w;
     v = vec4(c1 * v.x - s1 * v.w, v.y, v.z, s1 * v.x + c1 * v.w);
     v = vec4(v.x, c2 * v.y - s2 * v.z, s2 * v.y + c2 * v.z, v.w);
     // Fixed tilt (about Y, then X) so the nested cubes read in depth
@@ -95,15 +96,16 @@ void main() {
     // 4. Tesseract, only inside the horizon
     if (r < rs) {
         float scale = rs * 2.7;
+        vec4 rot = vec4(cos(ubuf.spin), sin(ubuf.spin), cos(ubuf.spin * 0.45), sin(ubuf.spin * 0.45));
         // 32 edges: each vertex links to the ones differing in one bit
         float d = 1e3;
         for (int i = 0; i < 16; i++) {
             float fi = float(i);
-            vec2 a = vertex(fi, ubuf.spin, scale);
+            vec2 a = vertex(fi, rot, scale);
             for (int k = 0; k < 4; k++) {
                 float fk = float(k);
                 if (bit(fi, fk) < 0.5)
-                    d = min(d, segment(p, a, vertex(fi + exp2(fk), ubuf.spin, scale)));
+                    d = min(d, segment(p, a, vertex(fi + exp2(fk), rot, scale)));
             }
         }
         float line = 1.0 - smoothstep(0.2, 0.9, d);

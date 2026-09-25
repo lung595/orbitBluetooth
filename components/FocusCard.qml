@@ -130,7 +130,8 @@ Item {
         x: Theme.spacingL
         y: card.scene.focusOverlap
         width: parent.width - Theme.spacingL * 2
-        height: parent.height - y - Theme.spacingS
+        // Bottom margin equals the side margins (and matches implicitHeight)
+        height: parent.height - y - Theme.spacingL
         contentHeight: frameContent.implicitHeight
         interactive: contentHeight > height
         boundsBehavior: Flickable.StopAtBounds
@@ -164,9 +165,10 @@ Item {
                 font.pixelSize: Theme.fontSizeSmall
             }
 
+            // One gap between the title block, the battery and the controls
             Item {
                 width: 1
-                height: card.ancShown ? Theme.spacingXS : Theme.spacingM
+                height: Theme.spacingM
             }
 
             Loader {
@@ -297,7 +299,7 @@ Item {
                 visible: active
                 sourceComponent: AncPanel {
                     width: parent ? parent.width : 0
-                    topPadding: Theme.spacingS
+                    topPadding: Theme.spacingM
                     scene: card.scene
                     address: card.body?.address ?? ""
                 }
