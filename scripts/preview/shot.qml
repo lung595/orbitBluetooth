@@ -13,7 +13,7 @@ Window {
     readonly property string out: args[args.length - 1]
     readonly property bool glass: mode.startsWith("desktop")
     width: glass ? 760 : (mode === "zoom" ? 900 : 560)
-    height: glass ? 560 : (mode === "zoom" ? 700 : mode === "ancfocus" ? 440 : 480)
+    height: glass ? 560 : (mode === "zoom" ? 700 : mode === "ancfocus" ? 314 : 480)
     visible: true
     color: "#101114"
 
