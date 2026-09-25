@@ -298,21 +298,4 @@ Column {
             onToggled: panel.scene.ancSend(panel.address, "chat", checked ? "off" : "on")
         }
     }
-
-    // Per-part batteries (earbuds and case), when the protocol reports them
-    Row {
-        anchors.horizontalCenter: parent.horizontalCenter
-        spacing: Theme.spacingM
-        readonly property var parts: Anc.batteryParts(panel.st.battery).filter(p => p.part !== "single")
-        visible: parts.length > 0
-        Repeater {
-            model: parent.parts
-            StyledText {
-                required property var modelData
-                text: modelData.label + " " + modelData.level + "%" + (modelData.charging ? " ⚡" : "")
-                color: modelData.level <= 15 ? Theme.error : panel.muted
-                font.pixelSize: Theme.fontSizeSmall
-            }
-        }
-    }
 }

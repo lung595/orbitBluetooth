@@ -25,6 +25,7 @@ Rectangle {
     property var history: []            // [[epochMs, percent], ...] for the sparkline
     property string footnote: ""
     property bool compact: false        // hides the status line (detail card with ANC)
+    property bool showMeter: true       // false when the earbuds trio shows the levels
 
     readonly property bool hasLevel: level >= 0
     readonly property real frac: Math.max(0, Math.min(1, level / 100))
@@ -90,7 +91,7 @@ Rectangle {
             id: meter
             width: parent.width
             spacing: Math.round(root.width * 0.045)
-            visible: root.hasLevel
+            visible: root.hasLevel && root.showMeter
 
             Column {
                 id: readout

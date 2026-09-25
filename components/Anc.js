@@ -79,25 +79,6 @@ function nextMode(modes, current) {
     return loop[(i + 1) % loop.length];
 }
 
-// Battery parts in reading order, with short labels
-var PARTS = [["left", "L"], ["right", "R"], ["case", "Case"], ["single", ""]];
-
-function batteryParts(battery) {
-    var out = [];
-    for (var i = 0; i < PARTS.length; i++) {
-        var b = battery ? battery[PARTS[i][0]] : null;
-        if (b && b.level >= 0)
-            out.push({
-                "part": PARTS[i][0],
-                "label": PARTS[i][1],
-                "level": b.level,
-                "charging": !!b.charging
-            });
-    }
-    return out;
-}
-
-// Human text for a helper error line
 function errorText(error) {
     if (!error)
         return "";

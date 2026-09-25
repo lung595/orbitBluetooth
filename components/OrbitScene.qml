@@ -122,7 +122,7 @@ Item {
         return address ? (a[address] || null) : null;
     }
     function ancCapable(body) {
-        return prefs.ancEnabled && !!body && body.connected && Anc.family(body.name) !== "";
+        return prefs.ancEnabled && !!body && body.connected && body.paired && Anc.family(body.name) !== "";
     }
     function ancSend(address, key, value) {
         _ancService?.send(address, key, value);

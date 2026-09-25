@@ -75,6 +75,13 @@ QtObject {
         return "file://" + folder + "/" + name + ".png";
     }
 
+    // "<name> case.png", "<name> left.png", "<name> right.png" in the images
+    // folder (EarbudArt falls back to the left picture mirrored)
+    function partImageFor(device, part) {
+        const base = imageFor(device);
+        return base ? base.replace(/\.png$/, " " + part + ".png") : "";
+    }
+
     property Connections _watch: Connections {
         target: PluginService
         function onPluginDataChanged(changedId) {

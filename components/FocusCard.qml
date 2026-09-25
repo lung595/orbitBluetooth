@@ -23,6 +23,22 @@ Item {
     readonly property color ink: "#F2F5EE"
     readonly property color muted: Qt.rgba(1, 1, 1, 0.42)
 
+    // Time to full / time left, e.g. "≈ 2 h 08" + "to full"
+    readonly property string timeValue: {
+        const c = body?.charge ?? null;
+        if (!c || !(body?.connected) || (body?.battery ?? -1) < 0)
+            return "";
+        const approx = c.source === "estimated" || c.source === "rated" ? "≈ " : "";
+        if (body.charging)
+            return c.minutesToFull > 0 ? approx + Charge.formatMinutes(c.minutesToFull) : "Measuring…";
+        return c.minutesLeft > 0 ? approx + Charge.formatMinutes(c.minutesLeft) : "";
+    }
+    readonly property string timeSuffix: timeValue === "" || timeValue === "Measuring…" ? "" : body?.charging ? "to full" : "left"
+
+    // Per-part batteries reported by the headset (earbuds and case)
+    readonly property var parts: body?.ancFresh ? (body.ancInfo?.state?.battery ?? null) : null
+    readonly property bool trioShown: !picking && !!parts && !!(parts.left || parts.right || parts.case)
+
     // Charging / drain stats, shown in the battery card, or under the noise
     // control panel for headsets with ANC
     readonly property var statItems: {
@@ -216,6 +232,23 @@ Item {
                 height: Theme.spacingM
             }
 
+            // Earbuds with a case: case, left and right with a bar each
+            Loader {
+                width: parent.width
+                active: card.trioShown
+                visible: active
+                sourceComponent: EarbudsTrio {
+                    width: parent ? parent.width : 0
+                    parts: card.parts
+                    name: card.body?.name ?? ""
+                    caption: card.timeValue + (card.timeSuffix ? " " + card.timeSuffix : "")
+                    animate: card.scene.awake && card.scene.motion
+                    caseImage: card.scene.prefs.partImageFor(card.device, "case")
+                    leftImage: card.scene.prefs.partImageFor(card.device, "left")
+                    rightImage: card.scene.prefs.partImageFor(card.device, "right")
+                }
+            }
+
             Loader {
                 width: parent.width
                 active: !card.picking
@@ -225,14 +258,9 @@ Item {
                     framed: false
                     gaugeRatio: card.ancShown ? 0.035 : 0.1
                     compact: card.ancShown && level >= 0
-                    timeValue: {
-                        if (!c || level < 0)
-                            return "";
-                        if (charging)
-                            return c.minutesToFull > 0 ? approx + Charge.formatMinutes(c.minutesToFull) : "Measuring…";
-                        return c.minutesLeft > 0 ? approx + Charge.formatMinutes(c.minutesLeft) : "";
-                    }
-                    timeSuffix: timeValue === "" || timeValue === "Measuring…" ? "" : charging ? "to full" : "left"
+                    timeValue: card.timeValue
+                    timeSuffix: card.timeSuffix
+                    showMeter: !card.trioShown
                     animate: card.scene.awake && card.scene.motion
 
                     readonly property var c: card.body?.charge ?? null
