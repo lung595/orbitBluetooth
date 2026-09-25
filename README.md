@@ -385,8 +385,13 @@ orbitBluetooth/
 └── sounds/
 ```
 
+DMS reloads QML on save, but Qt keeps `components/` and `.js` files cached
+in the running shell: run `dms restart` after changing them before judging
+the result. Set `ORBIT_ANC_DEBUG=1` in the shell's environment to see the
+noise-control packets.
+
 Regenerate the screenshots and GIFs (mock devices, no real data; the GIFs
-need `ffmpeg`):
+need `ffmpeg`; the shader needs the OpenGL backend, which `render.sh` sets):
 
 ```sh
 scripts/preview/render.sh          # PNG screenshots
