@@ -23,7 +23,9 @@ Item {
     readonly property bool paired: (device?.paired || device?.bonded) ?? false
     readonly property var power: scene.powerFor(address)
     readonly property int battery: device?.batteryAvailable ? Math.round(device.battery * 100) : connected ? (power?.percentage ?? -1) : -1
-    readonly property var charge: connected && battery >= 0 ? Charge.analyze(scene.batteryLogFor(address), battery, power, scene.now, Endurance.ratedHours(name, kind, ancMode)) : null
+    // Rated life depends only on the model and mode: looked up once, not on every clock tick
+    readonly property real ratedHours: Endurance.ratedHours(name, kind, ancMode)
+    readonly property var charge: connected && battery >= 0 ? Charge.analyze(scene.batteryLogFor(address), battery, power, scene.now, ratedHours) : null
     // Time until empty, when discharging and known ("≈" unless the system says it)
     readonly property real minutesLeft: charge && !charging ? charge.minutesLeft : 0
     readonly property bool charging: charge?.state === "charging"
