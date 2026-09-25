@@ -166,6 +166,15 @@ class Huawei(unittest.TestCase):
         proto.set_mode("ambient")
         self.assertEqual(huawei.parse_params(sent[0][6:-2])[1], h("02 ff"))
 
+    def test_nc_asks_for_the_normal_level(self):
+        # Real FreeBuds Pro: off (00 00), then "nc" came back as dynamic (03 01)
+        proto, sent = make("huawei", "HUAWEI FreeBuds Pro")
+        proto.receive(huawei.encode(h("2b 2a"), [(1, h("00 00"))]))
+        sent.clear()
+        proto.set_mode("nc")
+        values = [huawei.parse_params(f[6:-2]).get(1) for f in sent if f[4:6] == h("2b 04")]
+        self.assertEqual(values, [h("01 ff"), h("01 00")])
+
     def test_charging_per_part(self):
         proto, _ = make("huawei", "HUAWEI FreeBuds Pro 3")
         proto.receive(huawei.encode(h("01 27"), [(2, h("50 4b 1e")), (3, h("00 00 01"))]))
