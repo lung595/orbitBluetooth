@@ -17,3 +17,4 @@ run desktopfocus desktop-detail.png
 run hiddencard hidden.png
 run menu menu.png
 run connecting connecting.png
+run ancfocus noise-control.png
