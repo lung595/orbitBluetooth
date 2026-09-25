@@ -166,6 +166,12 @@ class Huawei(unittest.TestCase):
         proto.set_mode("ambient")
         self.assertEqual(huawei.parse_params(sent[0][6:-2])[1], h("02 ff"))
 
+    def test_charging_per_part(self):
+        proto, _ = make("huawei", "HUAWEI FreeBuds Pro 3")
+        proto.receive(huawei.encode(h("01 27"), [(2, h("50 4b 1e")), (3, h("00 00 01"))]))
+        self.assertFalse(proto.state["battery"]["left"]["charging"])
+        self.assertTrue(proto.state["battery"]["case"]["charging"])
+
     def test_crc_checked(self):
         proto, _ = make("huawei", "HUAWEI FreeBuds 5i")
         bad = bytearray(huawei.encode(h("2b 2a"), [(1, h("00 02"))]))

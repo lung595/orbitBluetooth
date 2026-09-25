@@ -111,14 +111,17 @@ class Huawei(Protocol):
             self._on_battery(params)
 
     def _on_battery(self, params):
-        charging = b"\x01" in params.get(3, b"")
+        # Parameter 3 holds one charging byte per part (left, right, case)
+        # on earbuds, a single one otherwise: 01 = charging
+        flags = params.get(3, b"")
         both = params.get(2, b"")
         if len(both) == 3 and not NO_TWS.search(self.name):
-            for part, level in zip(("left", "right", "case"), both):
+            for i, (part, level) in enumerate(zip(("left", "right", "case"), both)):
+                charging = flags[i] == 1 if len(flags) == 3 else b"\x01" in flags
                 if level:
                     self.set_battery(part, level, charging)
         elif len(params.get(1, b"")) == 1:
-            self.set_battery("single", params[1][0], charging)
+            self.set_battery("single", params[1][0], b"\x01" in flags)
 
     def _set(self, value):
         self.send(encode(ANC_SET, [(1, bytes(value))]))

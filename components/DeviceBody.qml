@@ -25,11 +25,23 @@ Item {
     // its session is live or for ten minutes after: UPower often has no
     // charging state for headphones, and waiting for the level to rise is slow
     readonly property var ancInfo: scene.ancFor(address)
+    readonly property bool ancFresh: !!ancInfo && (ancInfo.live || scene.now - (ancInfo.at || 0) < 600000)
+    // The headset itself or an earbud charging (a charging case alone does
+    // not make the earbuds "charging")
     readonly property bool headsetCharging: {
-        const info = ancInfo, parts = info?.state?.battery;
-        if (!parts || !(info.live || scene.now - (info.at || 0) < 600000))
-            return false;
-        return Object.keys(parts).some(k => parts[k].charging);
+        const parts = ancFresh ? ancInfo.state?.battery : null;
+        return !!parts && ["single", "left", "right"].some(k => parts[k]?.charging);
+    }
+    // Level from the headset's report when BlueZ has none (e.g. some earbuds):
+    // the headphones, or the lower earbud
+    readonly property int ancLevel: {
+        const parts = ancFresh ? ancInfo.state?.battery : null;
+        if (!parts)
+            return -1;
+        if (parts.single)
+            return parts.single.level;
+        const buds = [parts.left, parts.right].filter(p => p);
+        return buds.length ? Math.min(...buds.map(p => p.level)) : -1;
     }
     readonly property var power: {
         const p = scene.powerFor(address);
@@ -37,7 +49,7 @@ Item {
             "state": 1      // UPower's "charging"
         }) : p;
     }
-    readonly property int battery: device?.batteryAvailable ? Math.round(device.battery * 100) : connected ? (power?.percentage ?? -1) : -1
+    readonly property int battery: device?.batteryAvailable ? Math.round(device.battery * 100) : connected ? (power?.percentage ?? ancLevel) : -1
     // Rated life depends only on the model and mode: looked up once, not on every clock tick
     readonly property real ratedHours: Endurance.ratedHours(name, kind, ancMode)
     readonly property var charge: connected && battery >= 0 ? Charge.analyze(scene.batteryLogFor(address), battery, power, scene.now, ratedHours) : null
