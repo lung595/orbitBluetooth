@@ -28,6 +28,9 @@ Item {
     property var _sessions: ({})
     // address -> commands sent while a session was closing, replayed after it
     property var _queue: ({})
+    // address -> when peek() last asked the headset (rate limit)
+    property var _peekedAt: ({})
+    readonly property int peekInterval: 60000
 
     readonly property string _helper: decodeURIComponent(Qt.resolvedUrl("../anc/orbit_anc.py").toString().replace(/^file:\/\//, ""))
 
@@ -138,6 +141,19 @@ Item {
         return !!proc;
     }
 
+    // A quick read when someone opens a view (battery, charging, mode), at
+    // most once a minute per headset: nothing runs while nobody looks
+    function peek(address) {
+        const now = Date.now();
+        if (!supported(address) || _sessions[address] || now - (_peekedAt[address] || 0) < peekInterval)
+            return;
+        const next = Object.assign({}, _peekedAt);
+        next[address] = now;
+        _peekedAt = next;
+        _open(address);
+        _release(address);
+    }
+
     // First connected headset that can be controlled (for IPC)
     function primary() {
         const list = Bluetooth.devices.values;
@@ -156,7 +172,8 @@ Item {
         }
         const prev = states[address] || {};
         const next = Object.assign({}, prev, msg, {
-            "live": msg.status !== "error"
+            "live": msg.status !== "error",
+            "at": Date.now()      // freshness of battery/charging readings
         });
         // Some headsets cannot report every mode when asked (the XM6 reads
         // "noise cancelling" and "off" alike): an unknown mode keeps the
