@@ -938,30 +938,38 @@ Item {
             font.weight: body.connected ? Font.Medium : Font.Normal
         }
 
-        // Charging: "67% · 32m" in place of the connection timer
-        StyledText {
+        // Time left under the name: a bolt and the time to full while
+        // charging, an hourglass and the time to empty on battery (the
+        // level itself is the arc around the device). Replaces the
+        // connection timer, which stays in the detail card.
+        Row {
             anchors.horizontalCenter: parent.horizontalCenter
-            visible: body.charging
-            text: body.battery + "%" + (body.charge?.minutesToFull > 0 ? " · " + Charge.formatShort(body.charge.minutesToFull) : "")
-            color: Theme.primary
-            font.family: "monospace"
-            font.pixelSize: Math.max(8, Math.round(body.diameter * 0.17))
+            spacing: 2
+            readonly property real minutes: body.charging ? (body.charge?.minutesToFull ?? 0) : body.minutesLeft
+            visible: minutes > 0
+
+            DankIcon {
+                anchors.verticalCenter: parent.verticalCenter
+                name: body.charging ? "bolt" : "hourglass_bottom"
+                size: timeText.font.pixelSize + 1
+                color: Theme.withAlpha(Theme.primary, 0.8)
+            }
+            StyledText {
+                id: timeText
+                anchors.verticalCenter: parent.verticalCenter
+                text: Charge.formatShort(parent.minutes)
+                color: Theme.withAlpha(Theme.primary, 0.8)
+                font.pixelSize: Math.max(8, Math.round(body.diameter * 0.18))
+                font.weight: Font.Medium
+                font.features: {
+                    "tnum": 1
+                }
+            }
         }
 
-        // On battery: "83% · ≈ 24h" until empty, in place of the connection
-        // timer (which stays in the detail card)
         StyledText {
             anchors.horizontalCenter: parent.horizontalCenter
-            visible: !body.charging && body.minutesLeft > 0
-            text: body.battery + "% · " + (body.charge?.source === "system" ? "" : "≈ ") + Charge.formatShort(body.minutesLeft)
-            color: Theme.withAlpha(Theme.primary, 0.75)
-            font.family: "monospace"
-            font.pixelSize: Math.max(8, Math.round(body.diameter * 0.17))
-        }
-
-        StyledText {
-            anchors.horizontalCenter: parent.horizontalCenter
-            visible: !body.charging && !(body.minutesLeft > 0) && body.connected && body.scene.sinceFor(body.address) > 0
+            visible: !body.charging && !(body.minutesLeft > 0) && body.connected && body.scene.sinceFor(body.address) > 0 && !(body.charge?.minutesToFull > 0)
             text: Catalog.formatDuration(body.scene.now - body.scene.sinceFor(body.address))
             color: Theme.withAlpha(Theme.primary, 0.75)
             font.family: "monospace"
