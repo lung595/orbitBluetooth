@@ -77,6 +77,8 @@ Item {
     property real dragY: 0
     property real clock: 0
     property real fxTime: 0
+    // When the black hole last swallowed a shooting star (effects clock)
+    property real holeFlashAt: -10
     property real orbitTime: 0
     property bool settled: false
     property double now: Date.now()
@@ -113,9 +115,6 @@ Item {
     // Time-driven motion (orbits, float, twinkles) runs only while awake;
     // otherwise the clock stops as soon as every body has settled.
     readonly property bool awake: active && visible && width > 0 && !screenAsleep && (!freezeWhenIdle || interacting || prefs.desktopAmbient || !!dragBody || !!focusBody)
-    // Awake only for the desktop's ambient motion (nobody interacting): slow
-    // drift, so half the frame rate looks the same at half the cost
-    readonly property bool ambientOnly: freezeWhenIdle && !interacting && !dragBody && !focusBody
     readonly property Item orbitRoot: scene
 
     readonly property var _globals: PluginService.globalVars[prefs.pluginId] || ({})
@@ -709,7 +708,7 @@ Item {
         const floatAmp = timeDriven ? (dragBody ? 7 : 3.5) : 0;
 
         let moving = !!dragBody;
-        let maxSpeed = 0;   // px/s, fastest body this step
+        let maxLag = 0;     // px, farthest any body is from where it should be
 
         for (const b of all) {
             let tx, ty, k = 70, zeta = 0.58;
@@ -831,7 +830,8 @@ Item {
                 zeta = 1;
 
             _spring(b, tx, ty, k, zeta, dt);
-            maxSpeed = Math.max(maxSpeed, Math.hypot(b.vx, b.vy));
+            if (!b.dragging)
+                maxLag = Math.max(maxLag, Math.hypot(tx - b.px, ty - b.py));
 
             if (Math.abs(b.vx) + Math.abs(b.vy) > 0.6 || Math.abs(tx - b.px) + Math.abs(ty - b.py) > 0.6)
                 moving = true;
@@ -858,11 +858,13 @@ Item {
                 moving = true;
         }
 
-        // Fast motion (above the few px/s of the ambient drift) switches to
-        // display-synced frames; back to the timer after 0.25 s of calm
-        if (maxSpeed > 60)
+        // A body far from its place (released, snapping, flying to a card)
+        // switches to display-synced frames; back to the timer after 0.25 s
+        // with every body tracking its place (a few px of lag while orbiting,
+        // whatever the orbit speed or the view size)
+        if (maxLag > 24)
             _kick();
-        else if (_lively && !dragBody && maxSpeed < 20) {
+        else if (_lively && !dragBody && maxLag < 6) {
             _calmFor += dt;
             if (_calmFor > 0.25)
                 _lively = false;
@@ -873,14 +875,21 @@ Item {
         // Visible effects keep the steps coming: a comet while connecting (even
         // with Reduce motion, it is the progress indicator), the rest only
         // with motion on
-        let fx = false;
+        let fx = false, comet = false;
         if (awake) {
             fx = (discovering && motion) || (!!focusBody && motion);
             for (const b of all) {
-                if (b.phase === "connecting" || (b.charging && motion))
+                if (b.phase === "connecting")
+                    comet = true;
+                if (b.charging && motion)
                     fx = true;
             }
+            fx = fx || comet;
         }
+        // 60 Hz for the fast effects (comet, an open card), 30 Hz otherwise
+        const fast = comet || !!focusBody;
+        if (_fxFast !== fast)
+            _fxFast = fast;
 
         if (!moving && !timeDriven && !fx) {
             settled = true;
@@ -910,10 +919,11 @@ Item {
         running: scene._stepping && scene._fullRate
         onTriggered: scene.step(frameTime)
     }
-    // Otherwise 60 Hz (a view open, the desktop hovered or showing a card),
-    // 30 Hz for the desktop's ambient drift nobody is interacting with
+    // Otherwise a 30 Hz drift (slow: more frames would not show), 60 Hz
+    // while a fast effect runs (a comet, an open card)
+    property bool _fxFast: false
     Timer {
-        interval: scene.ambientOnly ? 33 : 16
+        interval: scene._fxFast ? 16 : 33
         repeat: true
         running: scene._stepping && !scene._fullRate
         property double last: 0
@@ -1005,6 +1015,11 @@ Item {
         vignette: scene.glass
         radius: scene.cornerRadius
         inset: 12
+        // The black hole, in the starfield's coordinates, for passing stars
+        holeX: scene.holeX - x
+        holeY: scene.holeY - y
+        holeR: blackHole.visible ? scene.holeHorizon : 0
+        onSwallowed: scene.holeFlashAt = scene.fxTime
         Behavior on x {
             NumberAnimation {
                 duration: 500
@@ -1028,6 +1043,8 @@ Item {
         count: scene.hiddenCount
         feed: scene.holeFeed
         spin: scene.holeSpin
+        // Brief brightening of the ring after swallowing a shooting star
+        flash: Math.max(0, 1 - (scene.fxTime - scene.holeFlashAt) / 0.6) * 0.8
         visible: scene.btOn && scene.width > 0
         onClicked: scene.hiddenOpen ? scene.closeHidden() : scene.openHidden()
         Behavior on feed {

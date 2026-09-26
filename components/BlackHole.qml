@@ -22,6 +22,8 @@ Item {
     // 0 .. 1: how close a dragged device is (the hole "feeds" on it)
     property real feed: 0
     property real spin: 0
+    // 0 .. 1: brief glow after swallowing a shooting star
+    property real flash: 0
 
     readonly property real horizon: Math.round(scene.bodySize * 0.2)
     readonly property real lensRadius: horizon * 3
@@ -48,7 +50,7 @@ Item {
         readonly property var source: patch
         readonly property real sizePx: hole.width
         property real horizon: hole.horizon * (hole.hovered ? 1.06 : 1) * (1 + 0.12 * hole.feed)
-        readonly property real strength: 1 + 0.45 * hole.feed + (hole.hovered ? 0.1 : 0)
+        readonly property real strength: 1 + 0.45 * hole.feed + (hole.hovered ? 0.1 : 0) + 0.6 * hole.flash
         readonly property real spin: hole.spin
         readonly property color rimA: hole.night.primary
         readonly property color rimB: hole.night.tertiary
