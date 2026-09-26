@@ -89,10 +89,21 @@ function familyFromBluezIcon(icon) {
     return "";
 }
 
+// Name shown to the user: the one they gave the device (BlueZ alias), or
+// the device's own name.
 function deviceName(device) {
     if (!device)
         return "";
     return device.name || device.deviceName || "";
+}
+
+// The name the device reports itself, which a rename does not change. Used
+// to recognize it (icon, noise control, earbuds look, rated battery life),
+// so renaming "WH-1000XM6" to "My headset" keeps everything working.
+function modelName(device) {
+    if (!device)
+        return "";
+    return device.deviceName || device.name || "";
 }
 
 // A device is "unnamed" when BlueZ only knows its address.
@@ -124,7 +135,7 @@ function resolve(device, overrides) {
     const o = overrides ? overrides[device.address] : undefined;
     if (o && o !== "auto")
         return o;
-    return kindFor(deviceName(device), device.icon);
+    return kindFor(modelName(device), device.icon);
 }
 
 // Stable 0..1 pseudo-random value derived from a string (the MAC address).

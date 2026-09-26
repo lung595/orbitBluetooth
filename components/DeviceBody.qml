@@ -20,6 +20,8 @@ Item {
 
     readonly property var device: scene.deviceMap[address] ?? null
     readonly property string name: Catalog.deviceName(device) || address
+    // Recognition only (see Catalog.modelName): never changes on rename
+    readonly property string model: Catalog.modelName(device) || address
     readonly property string kind: Catalog.resolve(device, scene.prefs.glyphOverrides)
     readonly property bool connected: device?.connected ?? false
     readonly property bool paired: (device?.paired || device?.bonded) ?? false
@@ -53,7 +55,7 @@ Item {
     }
     readonly property int battery: device?.batteryAvailable ? Math.round(device.battery * 100) : connected ? (power?.percentage ?? ancLevel) : -1
     // Rated life depends only on the model and mode: looked up once, not on every clock tick
-    readonly property real ratedHours: Endurance.ratedHours(name, kind, ancMode)
+    readonly property real ratedHours: Endurance.ratedHours(model, kind, ancMode)
     readonly property var charge: connected && battery >= 0 ? Charge.analyze(scene.batteryLogFor(address), battery, power, scene.now, ratedHours) : null
     // Time until empty, when discharging and known ("≈" unless the system says it)
     readonly property real minutesLeft: charge && !charging ? charge.minutesLeft : 0

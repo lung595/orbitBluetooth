@@ -16,6 +16,9 @@ DesktopPluginComponent {
     property real defaultHeight: 380
 
     readonly property bool hot: hover.hovered
+    // A desktop layer gets no keyboard by default. While the detail card is
+    // open it may take it on click (DMS: OnDemand), so the name can be typed.
+    readonly property bool acceptsKeyboardFocus: !!scene.focusBody
     // Keeps discovery alive a little after the pointer leaves
     property bool lingering: false
 
@@ -37,7 +40,11 @@ DesktopPluginComponent {
     Timer {
         id: dismissTimer
         interval: 1200
-        onTriggered: scene.dismiss()
+        onTriggered: {
+            // Typing a new name: the pointer may be elsewhere
+            if (!scene.renaming)
+                scene.dismiss();
+        }
     }
 
     Connections {
