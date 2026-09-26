@@ -3,7 +3,7 @@
     "id": "orbitBluetooth",
     "name": "Orbit Bluetooth",
     "description": "A planetary Bluetooth manager: devices float in orbit around your machine, drag one to the center to connect. Headphone noise control, battery time left. Control Center, bar and desktop.",
-    "version": "1.3.0",
+    "version": "1.3.1",
     "author": "lung595",
     "license": "MIT",
     "icon": "bluetooth",
