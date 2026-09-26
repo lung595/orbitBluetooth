@@ -609,6 +609,17 @@ Item {
         menu.popup(b, point);
     }
 
+    // A device drawn under this scene point, if any (devices passing behind
+    // the core still get their clicks)
+    function bodyAt(x, y) {
+        for (let i = 0; i < bodies.count; i++) {
+            const b = bodies.itemAt(i);
+            if (b && !b.leaving && Math.hypot(x - b.px, y - b.py) < b.diameter * b.baseScale / 2)
+                return b;
+        }
+        return null;
+    }
+
     // --- Focus -----------------------------------------------------------------
     function focusOn(b) {
         if (!b || b.leaving)
@@ -625,18 +636,20 @@ Item {
         wake();
     }
 
-    Keys.onEscapePressed: event => {
-        if (menu.open) {
-            menu.close();
-            event.accepted = true;
-        } else if (hiddenOpen) {
-            closeHidden();
-            event.accepted = true;
-        } else if (focusBody) {
-            clearFocus();
-            event.accepted = true;
-        } else {
-            event.accepted = false;
+    // Escape steps back one level (menu, hidden list, detail card) before it
+    // may close the host. A Shortcut runs before the host's own key handler
+    // (the bar popout and Control Center keep keyboard focus for themselves),
+    // and it is only enabled while there is something to step back from.
+    Shortcut {
+        sequence: "Escape"
+        enabled: scene.active && (scene.menuOpen || scene.hiddenOpen || !!scene.focusBody)
+        onActivated: {
+            if (scene.menuOpen)
+                menu.close();
+            else if (scene.hiddenOpen)
+                scene.closeHidden();
+            else
+                scene.clearFocus();
         }
     }
 
@@ -1165,10 +1178,16 @@ Item {
                 stroke: 1.4
             }
 
+            // Only the inner 70% starts a scan, and never over a device
             MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
                 enabled: scene.btOn && !scene.focusBody
+                onPressed: mouse => {
+                    const inner = Math.hypot(mouse.x - width / 2, mouse.y - height / 2) < width * 0.35;
+                    const p = mapToItem(scene, mouse.x, mouse.y);
+                    mouse.accepted = inner && !scene.bodyAt(p.x, p.y);
+                }
                 onClicked: {
                     scene.startScan();
                     scene.emitWave(true);
