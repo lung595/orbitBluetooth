@@ -22,6 +22,8 @@ Item {
     property string rightImage: ""
     property string caption: ""           // e.g. "≈ 4 h 12 left"
     property bool animate: true
+    // Effects clock of the scene (seconds): drives the float and the beams
+    property real time: 0
 
     readonly property var look: Earbuds.style(name)
     readonly property real caseSize: Math.round(width * 0.196)   // kept small so the card stays light
@@ -105,6 +107,7 @@ Item {
             color: Theme.primary
             whiteCore: trio.paper.light ? 0 : 1
             running: trio.animate
+            time: trio.time
         }
     }
 
@@ -173,7 +176,8 @@ Item {
         Item {
             id: floater
             anchors.horizontalCenter: parent.horizontalCenter
-            y: trio.cy - piece.size / 2
+            // Floats 4 px up and back, one way per `piece.period` (effects clock)
+            y: trio.cy - piece.size / 2 - (trio.animate ? 2 - 2 * Math.cos(trio.time * 1000 * Math.PI / piece.period) : 0)
             width: piece.size
             height: piece.size
             opacity: piece.info ? 1 : 0.35
@@ -184,25 +188,6 @@ Item {
                 look: trio.look
                 imageSource: piece.imageSource
                 fallbackSource: piece.part === "right" ? trio.leftImage : ""
-            }
-
-            SequentialAnimation {
-                running: trio.animate
-                loops: Animation.Infinite
-                YAnimator {
-                    target: floater
-                    from: trio.cy - piece.size / 2
-                    to: trio.cy - piece.size / 2 - 4
-                    duration: piece.period
-                    easing.type: Easing.InOutSine
-                }
-                YAnimator {
-                    target: floater
-                    from: trio.cy - piece.size / 2 - 4
-                    to: trio.cy - piece.size / 2
-                    duration: piece.period
-                    easing.type: Easing.InOutSine
-                }
             }
         }
 
