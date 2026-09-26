@@ -3,7 +3,7 @@ import qs.Common
 
 // Deep-space backdrop. The nebula and static stars are painted once into a
 // Canvas (re-painted only on resize/theme change); twinkles and shooting
-// stars are a few cheap items driven by the scene clock.
+// stars are a few cheap items driven by the scene clock and a timer.
 Item {
     id: root
     readonly property NightColors night: NightColors {}
@@ -173,44 +173,41 @@ Item {
         }
     }
 
-    ParallelAnimation {
+    // Shooting star flight, driven by a plain 60 Hz timer rather than a QML
+    // animation: a running animation makes every shell window (bars,
+    // wallpaper) redraw at the display rate, a timer only repaints this one.
+    // Same curves as before: InQuad travel, fade in over 160 ms, hold, fade
+    // out over the last 320 ms.
+    Timer {
         id: meteorAnim
         property real sx: 0
         property real sy: 0
+        property double t0: 0
         readonly property real travel: root.vignette ? 0.28 : 0.45
-        NumberAnimation {
-            target: meteor
-            property: "x"
-            from: meteorAnim.sx
-            to: meteorAnim.sx + root.width * meteorAnim.travel
-            duration: 900
-            easing.type: Easing.InQuad
+        readonly property int duration: 900
+        interval: 16
+        repeat: true
+
+        function launch() {
+            t0 = Date.now();
+            tick();
+            restart();
         }
-        NumberAnimation {
-            target: meteor
-            property: "y"
-            from: meteorAnim.sy
-            to: meteorAnim.sy + root.width * meteorAnim.travel * Math.tan(24 * Math.PI / 180)
-            duration: 900
-            easing.type: Easing.InQuad
-        }
-        SequentialAnimation {
-            NumberAnimation {
-                target: meteor
-                property: "opacity"
-                to: 0.9
-                duration: 160
-            }
-            PauseAnimation {
-                duration: 420
-            }
-            NumberAnimation {
-                target: meteor
-                property: "opacity"
-                to: 0
-                duration: 320
+
+        function tick() {
+            const ms = Math.min(duration, Date.now() - t0);
+            const e = (ms / duration) * (ms / duration);
+            const dist = root.width * travel;
+            meteor.x = sx + dist * e;
+            meteor.y = sy + dist * Math.tan(24 * Math.PI / 180) * e;
+            meteor.opacity = ms < 160 ? 0.9 * ms / 160 : ms < 580 ? 0.9 : 0.9 * Math.max(0, 1 - (ms - 580) / 320);
+            if (ms >= duration) {
+                meteor.opacity = 0;
+                stop();
             }
         }
+
+        onTriggered: tick()
     }
 
     Timer {
@@ -226,7 +223,7 @@ Item {
                 meteorAnim.sx = Math.random() * root.width * 0.6 - meteor.width;
                 meteorAnim.sy = Math.random() * root.height * 0.45 - 10;
             }
-            meteorAnim.restart();
+            meteorAnim.launch();
         }
     }
 }
