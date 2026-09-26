@@ -306,8 +306,11 @@ Item {
         readonly property real tetherAlpha: {
             if (body.dragging && body.holding)
                 return body.armed ? 0.25 : 0.7;
+            // Connecting: steady here, the pulse is on the line below (a
+            // per-step value under this Behavior would restart it every step,
+            // a never-ending animation that redraws the whole shell)
             if (body.phase === "connecting")
-                return 0.35 + 0.35 * Math.abs(Math.sin(body.scene.clock * 4));
+                return 0.7;
             if (body.connected)
                 return body.charging ? 0 : 0.4;   // the energy beam replaces it
             return 0;
@@ -324,6 +327,8 @@ Item {
         Rectangle {
             x: body.scene.coreSize / 2
             y: -height / 2
+            // Connecting: pulses between half and full (0.35 to 0.7 overall)
+            opacity: body.phase === "connecting" ? 0.5 + 0.5 * Math.abs(Math.sin(body.scene.clock * 4)) : 1
             height: tetherRoot.thickness * (body.dragging && body.holding ? Math.max(0.4, 1.4 - (tetherRoot.dist / (body.scene.rx * body.scene.innerNorm) - 1) * 1.2) : 1)
             width: Math.max(0, (tetherRoot.dist - body.scene.coreSize / 2 - body.diameter * body.baseScale / 2) * tetherRoot.reach)
             radius: height / 2
@@ -343,7 +348,7 @@ Item {
 
     // --- Charging: an energy beam from the host to the device --------------
     // A softly waving beam (EnergyBeam) with a flare where it leaves the host.
-    // Its animation runs on the render thread, only while someone is looking.
+    // It follows the scene's effects clock, only while someone is looking.
     Item {
         id: chargeFlow
         // Above the host's halo, below every device
