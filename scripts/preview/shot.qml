@@ -11,7 +11,10 @@ import "../../components"
 Window {
     id: win
     readonly property var args: Qt.application.arguments
-    readonly property string mode: args[args.length - 2]
+    // A "-light" suffix renders with a light theme's accent colors
+    readonly property string rawMode: args[args.length - 2]
+    readonly property bool light: rawMode.endsWith("-light")
+    readonly property string mode: rawMode.replace(/-light$/, "")
     readonly property string out: args[args.length - 1]
     readonly property bool glass: mode.startsWith("desktop")
     // Control Center sized shots for the black hole, menu and comet
@@ -35,6 +38,15 @@ Window {
     ]
 
     Component.onCompleted: {
+        if (light) {
+            // Accent colors like DMS generates for a light theme
+            Theme.isLightMode = true;
+            Theme.primary = "#4B6818";
+            Theme.primaryText = "#FFFFFF";
+            Theme.tertiary = "#386A60";
+            Theme.error = "#BA1A1A";
+            Theme.errorText = "#FFFFFF";
+        }
         // Two made-up devices already swallowed by the black hole
         if (mode !== "hiddenempty")
             SettingsData.pluginSettings = Object.assign({}, SettingsData.pluginSettings, {

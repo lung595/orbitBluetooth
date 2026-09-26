@@ -13,6 +13,7 @@ import qs.Widgets
 // scene renders nothing.
 Item {
     id: hole
+    readonly property NightColors night: NightColors {}
 
     required property var scene
     // The starfield item to bend (a sibling below this one)
@@ -49,8 +50,8 @@ Item {
         property real horizon: hole.horizon * (hole.hovered ? 1.06 : 1) * (1 + 0.12 * hole.feed)
         readonly property real strength: 1 + 0.45 * hole.feed + (hole.hovered ? 0.1 : 0)
         readonly property real spin: hole.spin
-        readonly property color rimA: Theme.primary
-        readonly property color rimB: Theme.tertiary
+        readonly property color rimA: hole.night.primary
+        readonly property color rimB: hole.night.tertiary
         // Lensing needs an opaque sky to redraw; the desktop's sky is
         // see-through (redrawing it would leave a grey disc), so it is off there
         readonly property real lens: hole.scene.glass ? 0 : 1

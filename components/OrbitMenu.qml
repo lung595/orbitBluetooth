@@ -9,6 +9,7 @@ import "Anc.js" as Anc
 // a click elsewhere or Escape.
 Item {
     id: menu
+    readonly property NightColors night: NightColors {}
 
     required property var scene
     property var body: null
@@ -149,14 +150,14 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         name: modelData.icon
                         size: 16
-                        color: modelData.checked ? Theme.primary : Qt.rgba(1, 1, 1, 0.75)
+                        color: modelData.checked ? menu.night.primary : Qt.rgba(1, 1, 1, 0.75)
                     }
                     StyledText {
                         anchors.left: icon.right
                         anchors.leftMargin: 9
                         anchors.verticalCenter: parent.verticalCenter
                         text: modelData.label
-                        color: modelData.checked ? Theme.primary : "#F2F5EE"
+                        color: modelData.checked ? menu.night.primary : "#F2F5EE"
                         font.pixelSize: Theme.fontSizeSmall
                         font.weight: modelData.checked ? Font.DemiBold : Font.Normal
                     }
@@ -167,7 +168,7 @@ Item {
                         visible: modelData.checked ?? false
                         name: "check"
                         size: 14
-                        color: Theme.primary
+                        color: menu.night.primary
                     }
                     MouseArea {
                         id: itemArea

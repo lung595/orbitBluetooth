@@ -9,6 +9,7 @@ import "Anc.js" as Anc
 // helper in the "on demand" engine.
 Column {
     id: panel
+    readonly property NightColors night: NightColors {}
 
     required property var scene
     required property string address
@@ -97,9 +98,9 @@ Column {
             y: inset
             height: parent.height - inset * 2
             radius: height / 2
-            color: Theme.withAlpha(Theme.primary, 0.22)
+            color: Theme.withAlpha(panel.night.primary, 0.22)
             border.width: 1
-            border.color: Theme.withAlpha(Theme.primary, 0.5)
+            border.color: Theme.withAlpha(panel.night.primary, 0.5)
             Behavior on x {
                 enabled: panel.scene.motion
                 NumberAnimation {
@@ -136,7 +137,7 @@ Column {
                             anchors.verticalCenter: parent.verticalCenter
                             name: Anc.ICONS[modelData]
                             size: segments.iconSize
-                            color: on ? Theme.primary : Qt.rgba(1, 1, 1, 0.7)
+                            color: on ? panel.night.primary : Qt.rgba(1, 1, 1, 0.7)
                         }
                         StyledText {
                             anchors.verticalCenter: parent.verticalCenter
@@ -205,7 +206,7 @@ Column {
                 width: parent.width * track.frac
                 height: 4
                 radius: 2
-                color: Theme.primary
+                color: panel.night.primary
             }
             Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
@@ -254,9 +255,9 @@ Column {
             width: chipRow.implicitWidth + 20
             height: 28
             radius: 14
-            color: checked ? Theme.withAlpha(Theme.primary, 0.22) : Qt.rgba(1, 1, 1, 0.05)
+            color: checked ? Theme.withAlpha(panel.night.primary, 0.22) : Qt.rgba(1, 1, 1, 0.05)
             border.width: checked ? 1 : 0
-            border.color: Theme.withAlpha(Theme.primary, 0.5)
+            border.color: Theme.withAlpha(panel.night.primary, 0.5)
             Row {
                 id: chipRow
                 anchors.centerIn: parent
@@ -265,7 +266,7 @@ Column {
                     anchors.verticalCenter: parent.verticalCenter
                     name: chip.icon
                     size: 15
-                    color: chip.checked ? Theme.primary : Qt.rgba(1, 1, 1, 0.7)
+                    color: chip.checked ? panel.night.primary : Qt.rgba(1, 1, 1, 0.7)
                 }
                 StyledText {
                     anchors.verticalCenter: parent.verticalCenter

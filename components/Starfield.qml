@@ -6,13 +6,14 @@ import qs.Common
 // stars are a few cheap items driven by the scene clock.
 Item {
     id: root
+    readonly property NightColors night: NightColors {}
 
     property real clock: 0
     property bool animate: true
     property bool shootingStars: true
     property string density: "normal"
-    property color tint: Theme.primary
-    property color tint2: Theme.tertiary
+    property color tint: root.night.primary
+    property color tint2: root.night.tertiary
     // Desktop glass: no opaque fill, everything fades out toward the edges
     property bool vignette: false
     // Rounded frame: the visible area sits `inset` px inside (parallax margin)
