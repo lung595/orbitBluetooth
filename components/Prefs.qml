@@ -19,6 +19,8 @@ QtObject {
     readonly property bool showLabels: _get("showLabels", true)
     readonly property int maxDevices: parseInt(_get("maxDevices", "8"))
     readonly property bool autoScan: _get("autoScan", true)
+    // Hover × on connected devices; off by default (drag away or right-click instead)
+    readonly property bool quickDisconnect: _get("quickDisconnect", false)
     readonly property int scanSeconds: parseInt(_get("scanSeconds", "45"))
     readonly property bool sounds: _get("sounds", false)
     readonly property real soundVolume: _get("soundVolume", 60) / 100

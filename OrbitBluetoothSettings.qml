@@ -39,6 +39,13 @@ PluginSettings {
     }
 
     ToggleSetting {
+        settingKey: "quickDisconnect"
+        label: "Quick disconnect button"
+        description: "An × on connected devices when hovered"
+        defaultValue: false
+    }
+
+    ToggleSetting {
         settingKey: "autoScan"
         label: "Scan automatically"
         description: "Start discovery when a view opens; otherwise scan only from the center or the Scan chip"

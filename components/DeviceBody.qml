@@ -878,7 +878,7 @@ Item {
         color: closeArea.containsMouse ? Theme.error : Qt.rgba(0.1, 0.1, 0.12, 0.95)
         border.width: 1
         border.color: Qt.rgba(1, 1, 1, 0.15)
-        opacity: body.connected && (body.hovered || closeArea.containsMouse) && !body.dragging ? 1 : 0
+        opacity: body.scene.prefs.quickDisconnect && body.connected && (body.hovered || closeArea.containsMouse) && !body.dragging ? 1 : 0
         visible: opacity > 0
         Behavior on opacity {
             NumberAnimation {
