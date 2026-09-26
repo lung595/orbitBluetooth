@@ -22,24 +22,19 @@ disconnect it. Charging devices receive a beam of energy from the core.
 
 **New in 1.3.2:** as light in the Control Center and the bar as on the desktop (an open view costs about the same as the shell alone), and rare shooting stars that the black hole bends or swallows. See the [changelog](#changelog) and the [roadmap](#roadmap).
 
-## Gallery
+**Contents:** [Install](#install) · [Quick start](#quick-start) · [Using the orbit](#using-the-orbit) · [Noise control](#noise-control) · [Settings](#settings) · [Privacy](#privacy) · [Troubleshooting](#troubleshooting) · [Changelog](#changelog) · [Roadmap](#roadmap)
 
-| Charging in orbit | Charging details |
-| --- | --- |
-| ![An energy beam flowing from the host to a charging headset](screenshots/charging.png) | ![Detail card with gauge, ETA and stats](screenshots/detail-charging.png) |
+## Install
 
-| Desktop widget | Desktop widget, detail card |
-| --- | --- |
-| ![Frameless orbit dissolving into the wallpaper](screenshots/desktop.png) | ![Detail card on the desktop](screenshots/desktop-detail.png) |
+From the DMS plugin browser: **Settings → Plugins**, search for **Orbit Bluetooth**, install and enable it. Or from a terminal:
 
-| Earbuds trio | Buds charging in their case |
-| --- | --- |
-| ![Case between the two earbuds, one battery bar each](screenshots/earbuds.png) | ![Both earbuds docked, beams flowing from the case](screenshots/earbuds-dock.png) |
+```sh
+dms plugins install orbitBluetooth
+```
 
-*Screenshots and animations are rendered from mock data with
-`scripts/preview/render.sh` and `scripts/preview/record.sh`.*
+Manual install: clone [the repository](https://github.com/lung595/orbitBluetooth) into `~/.config/DankMaterialShell/plugins/orbitBluetooth`, then enable it in **Settings → Plugins**. No restart is needed.
 
-## Requirements
+### Requirements
 
 | | |
 | --- | --- |
@@ -49,17 +44,12 @@ disconnect it. Charging devices receive a beam of energy from the core.
 | UPower | optional, gives real charging states for devices that report one |
 | Python 3 | optional, standard library only: headphone noise control |
 
-## Installation
+## Quick start
 
-1. Put this folder in your DMS plugin directory, named `orbitBluetooth`:
+1. **Pick where it lives**: the Bluetooth tile in the Control Center, the bar, or a desktop widget (see [Surfaces](#surfaces)).
+2. **Drag a device into the inner ring** to connect it; drag it back out to disconnect.
+3. **Click a device** for its detail card (battery, charging, noise control); **right-click** it for a menu; **drop it into the black hole** to hide it.
 
-   ```sh
-   cd ~/.config/DankMaterialShell/plugins
-   git clone <repository-url> orbitBluetooth
-   ```
-
-2. Open **Settings → Plugins**, enable **Orbit Bluetooth**.
-3. Add the surfaces you want (next section). No restart is needed.
 
 ## Surfaces
 
@@ -181,6 +171,23 @@ case, white or graphite). To use your own photos, put them in the
 **Custom images folder** as `<name> case.png`, `<name> left.png` and
 `<name> right.png` (the left picture is mirrored when there is no right one).
 
+## Gallery
+
+| Charging in orbit | Charging details |
+| --- | --- |
+| ![An energy beam flowing from the host to a charging headset](screenshots/charging.png) | ![Detail card with gauge, ETA and stats](screenshots/detail-charging.png) |
+
+| Desktop widget | Desktop widget, detail card |
+| --- | --- |
+| ![Frameless orbit dissolving into the wallpaper](screenshots/desktop.png) | ![Detail card on the desktop](screenshots/desktop-detail.png) |
+
+| Earbuds trio | Buds charging in their case |
+| --- | --- |
+| ![Case between the two earbuds, one battery bar each](screenshots/earbuds.png) | ![Both earbuds docked, beams flowing from the case](screenshots/earbuds-dock.png) |
+
+*Screenshots and animations are rendered from mock data with
+`scripts/preview/render.sh` and `scripts/preview/record.sh`.*
+
 ## Noise control
 
 Supported headphones get a mode selector in their detail card, a halo in
@@ -292,17 +299,28 @@ unchanged.
 | --- | --- |
 | ![White devices on the night sky](screenshots/light.png) | ![Soft off-white detail card](screenshots/light-detail.png) |
 
-## Keyboard shortcuts (IPC)
+## Device icons
 
-Bind these to keys in your compositor:
+Icons are matched by name patterns, for example every `WH-1000XMx`,
+`AirPods Max`, `MX Master`, `Galaxy Buds`, `G703` or `DualSense`. The BlueZ
+device class breaks ties, so a `G733` headset is never drawn as a mouse.
 
-```sh
-dms ipc call orbitBluetooth anc nc       # nc, ambient, off or adaptive (first supported headset)
-dms ipc call orbitBluetooth ancCycle     # next noise-control mode
-dms ipc call orbitBluetooth ancStatus    # current noise-control state (JSON)
-dms ipc call orbitBluetooth hidden       # list hidden devices
-dms ipc call orbitBluetooth unhideAll    # bring every hidden device back
+To change one, open its detail card and click the palette button. Your
+choice is remembered per device. **Reset device icons** in the
+settings clears all choices.
+
+To use your own artwork, set **Custom images folder** and add PNGs named
+exactly like the devices:
+
 ```
+~/Pictures/bluetooth/
+├── WH-1000XM6.png
+├── Xbox Wireless Controller.png
+└── MX Master 3S.png
+```
+
+Characters that are not allowed in file names (`/ \ : * ? " < > |`) are
+replaced by `_`.
 
 ## Settings
 
@@ -332,28 +350,17 @@ Grouped by what they change; options marked ⚡ use more battery.
 Two buttons at the end reset custom device icons and bring back every
 hidden device.
 
-## Device icons
+## Keyboard shortcuts (IPC)
 
-Icons are matched by name patterns, for example every `WH-1000XMx`,
-`AirPods Max`, `MX Master`, `Galaxy Buds`, `G703` or `DualSense`. The BlueZ
-device class breaks ties, so a `G733` headset is never drawn as a mouse.
+Bind these to keys in your compositor:
 
-To change one, open its detail card and click the palette button. Your
-choice is remembered per device. **Reset device icons** in the
-settings clears all choices.
-
-To use your own artwork, set **Custom images folder** and add PNGs named
-exactly like the devices:
-
+```sh
+dms ipc call orbitBluetooth anc nc       # nc, ambient, off or adaptive (first supported headset)
+dms ipc call orbitBluetooth ancCycle     # next noise-control mode
+dms ipc call orbitBluetooth ancStatus    # current noise-control state (JSON)
+dms ipc call orbitBluetooth hidden       # list hidden devices
+dms ipc call orbitBluetooth unhideAll    # bring every hidden device back
 ```
-~/Pictures/bluetooth/
-├── WH-1000XM6.png
-├── Xbox Wireless Controller.png
-└── MX Master 3S.png
-```
-
-Characters that are not allowed in file names (`/ \ : * ? " < > |`) are
-replaced by `_`.
 
 ## Privacy
 
@@ -423,6 +430,64 @@ retrying in a loop.
 **The time to full looks off.** Estimates rely on the device's level steps.
 Some headsets report in 10% steps, so the first minutes are rough and improve
 over time.
+
+## Changelog
+
+### 1.3.2 (2026-09-26)
+- The Control Center and the bar popout are now as light as the desktop: nothing loops as a QML animation anywhere, the drift runs on a 30 Hz timer, and display-synced frames are only used while you drag a device (and until it settles). An open view at rest costs about 5–6 % of one core for the whole shell, which idles at 2–3 % on its own.
+- A connection attempt no longer makes the whole shell redraw at the display rate.
+- Shooting stars are rarer (every 12–32 s), always cross from the top left to the bottom right on a random path, and bend toward the black hole when they pass near it, or get swallowed and light up its ring.
+
+### 1.3.1 (2026-09-26)
+- Desktop widget truly at rest: from about 65 % of a core to about 1 % (about 3.5 % with *Ambient motion*).
+- Dragging stays smooth to the very end of the motion.
+- Everything pauses while the session is locked or the monitors are off; connection timers pause when nobody is looking.
+
+### 1.3.0 (2026-09-26)
+- Light theme support: the sky stays night, devices turn white, cards use a soft white.
+
+### 1.2.2 (2026-09-26)
+- Esc steps back one level (menu, hidden list, card) before closing the view.
+- The quick-disconnect × is now an option, off by default: pull a device away or right-click it instead.
+- Clicking the center only reacts on its inner 70 %, never over a device.
+- Settings grouped into short sections, with a note on the options that use more battery.
+- Pick the screens of the desktop widget from Orbit's settings.
+- The machine in the center is 15 % smaller.
+
+### 1.2.1 (2026-09-26)
+- Charging beam redrawn as thin magnetic field lines.
+- Charging earbuds move closer to the case, with their battery bar.
+
+### 1.2.0 (2026-09-26)
+- Earbuds trio: the case and both buds in their own mini orbit, each with its battery, and a beam to the bud that charges.
+- Live charging state while a view is open (headset session instead of a one-off read).
+- DMS's pairing dialog is shown for devices that ask for a code (fixes endless disconnects).
+- The Control Center tile grows to the exact height of the open card.
+
+### 1.1.1 (2026-09-26)
+- Detail card polish: symmetric spacing, a mode pill that hugs its content.
+- Noise control no longer loses the final state or flashes back to the previous mode.
+
+### 1.1.0 (2026-09-26)
+- Noise control for 13 headphone brands (tested on Sony and Huawei).
+- The black hole: drag a device into it to hide it, click it to list and bring devices back; two looks, realistic or the three-dimensional shadow of a four-dimensional bubble (a nod to *Adventure Time*).
+- Right-click menu, a comet while a device connects, depth on the ring of connected devices.
+- Battery time left from the moment a device connects.
+
+### 1.0.0 (2026-09-25)
+- First release: the planetary scene, drag to connect, the detail card, Control Center + bar + desktop, 28 device icons, sounds, and an option to scan only on demand.
+
+## Roadmap
+
+Ideas, not promises, and no dates. Anything that would need the network or send data somewhere is out of scope.
+
+- **French interface**, following the system language (the UI is English only for now).
+- **Easier to read code**: split the largest files (`OrbitScene.qml`, `DeviceBody.qml`) by role, without changing behavior.
+- **More headphones tested on real hardware**: only Sony and Huawei have been tested so far; reports for other brands are welcome.
+- **Distance from the signal strength**, once Quickshell exposes it (it does not in 0.3.1).
+- **Device management from the orbit** (rename, refresh details), to be defined. Firmware updates are not planned: they usually need the vendor's app and the network.
+
+Known limits: some Sony headsets do not report charging, or drop Bluetooth while charging; this is a hardware limit.
 
 ## Development
 
@@ -496,64 +561,6 @@ Regenerate the sounds:
 ```sh
 python3 scripts/gen_sounds.py
 ```
-
-## Changelog
-
-### 1.3.2 (2026-09-26)
-- The Control Center and the bar popout are now as light as the desktop: nothing loops as a QML animation anywhere, the drift runs on a 30 Hz timer, and display-synced frames are only used while you drag a device (and until it settles). An open view at rest costs about 5–6 % of one core for the whole shell, which idles at 2–3 % on its own.
-- A connection attempt no longer makes the whole shell redraw at the display rate.
-- Shooting stars are rarer (every 12–32 s), always cross from the top left to the bottom right on a random path, and bend toward the black hole when they pass near it, or get swallowed and light up its ring.
-
-### 1.3.1 (2026-09-26)
-- Desktop widget truly at rest: from about 65 % of a core to about 1 % (about 3.5 % with *Ambient motion*).
-- Dragging stays smooth to the very end of the motion.
-- Everything pauses while the session is locked or the monitors are off; connection timers pause when nobody is looking.
-
-### 1.3.0 (2026-09-26)
-- Light theme support: the sky stays night, devices turn white, cards use a soft white.
-
-### 1.2.2 (2026-09-26)
-- Esc steps back one level (menu, hidden list, card) before closing the view.
-- The quick-disconnect × is now an option, off by default: pull a device away or right-click it instead.
-- Clicking the center only reacts on its inner 70 %, never over a device.
-- Settings grouped into short sections, with a note on the options that use more battery.
-- Pick the screens of the desktop widget from Orbit's settings.
-- The machine in the center is 15 % smaller.
-
-### 1.2.1 (2026-09-26)
-- Charging beam redrawn as thin magnetic field lines.
-- Charging earbuds move closer to the case, with their battery bar.
-
-### 1.2.0 (2026-09-26)
-- Earbuds trio: the case and both buds in their own mini orbit, each with its battery, and a beam to the bud that charges.
-- Live charging state while a view is open (headset session instead of a one-off read).
-- DMS's pairing dialog is shown for devices that ask for a code (fixes endless disconnects).
-- The Control Center tile grows to the exact height of the open card.
-
-### 1.1.1 (2026-09-26)
-- Detail card polish: symmetric spacing, a mode pill that hugs its content.
-- Noise control no longer loses the final state or flashes back to the previous mode.
-
-### 1.1.0 (2026-09-26)
-- Noise control for 13 headphone brands (tested on Sony and Huawei).
-- The black hole: drag a device into it to hide it, click it to list and bring devices back; two looks, realistic or the three-dimensional shadow of a four-dimensional bubble (a nod to *Adventure Time*).
-- Right-click menu, a comet while a device connects, depth on the ring of connected devices.
-- Battery time left from the moment a device connects.
-
-### 1.0.0 (2026-09-25)
-- First release: the planetary scene, drag to connect, the detail card, Control Center + bar + desktop, 28 device icons, sounds, and an option to scan only on demand.
-
-## Roadmap
-
-Ideas, not promises, and no dates. Anything that would need the network or send data somewhere is out of scope.
-
-- **French interface**, following the system language (the UI is English only for now).
-- **Easier to read code**: split the largest files (`OrbitScene.qml`, `DeviceBody.qml`) by role, without changing behavior.
-- **More headphones tested on real hardware**: only Sony and Huawei have been tested so far; reports for other brands are welcome.
-- **Distance from the signal strength**, once Quickshell exposes it (it does not in 0.3.1).
-- **Device management from the orbit** (rename, refresh details), to be defined. Firmware updates are not planned: they usually need the vendor's app and the network.
-
-Known limits: some Sony headsets do not report charging, or drop Bluetooth while charging; this is a hardware limit.
 
 ## Credits
 
