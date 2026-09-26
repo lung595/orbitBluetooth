@@ -53,7 +53,9 @@ Item {
 
     // A bud charging in its case glides toward it, then a beam appears
     readonly property bool caseHere: !!parts.case
-    readonly property real dockSpread: caseSize * 0.5 + budSize * 0.5 + 22
+    // Close to the case, but its battery bar (which follows it) never meets
+    // the case's label, even on a narrow card
+    readonly property real dockSpread: Math.max(caseSize * 0.5 + budSize * 0.5 + 16, 78)
     readonly property bool leftDocked: caseHere && (parts.left?.charging ?? false)
     readonly property bool rightDocked: caseHere && (parts.right?.charging ?? false)
     property real leftSpread: leftDocked ? dockSpread : spread
@@ -79,8 +81,8 @@ Item {
         property real side: 1             // -1 left, 1 right
         property real spreadNow: 0
         property bool docked: false
-        readonly property real from: trio.caseSize * 0.44
-        readonly property real len: Math.max(0, spreadNow - from - trio.budSize * 0.36)
+        readonly property real from: trio.caseSize * 0.4
+        readonly property real len: Math.max(0, spreadNow - from - trio.budSize * 0.18)
         x: trio.cx
         y: trio.cy
         rotation: side < 0 ? 180 : 0
@@ -96,8 +98,8 @@ Item {
             x: beam.from
             y: -height / 2
             width: beam.len
-            height: 16
-            amplitude: 2.2
+            height: 26
+            amplitude: 1.4
             wavelength: 14
             running: trio.animate
         }

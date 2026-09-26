@@ -1,8 +1,8 @@
 import QtQuick
 import qs.Common
 
-// A charging beam along the item's width (see shaders/beam.frag): waving
-// light strands with pulses flowing toward the far end. The wave phase is
+// A charging beam along the item's width (see shaders/beam.frag): faint
+// magnetic field lines fanning out between both ends, pulses flowing along. The wave phase is
 // animated on the render thread, only while `running` and visible.
 ShaderEffect {
     id: beam
