@@ -20,6 +20,8 @@ disconnect it. Charging devices receive a beam of energy from the core.
 - Follows light and dark DMS themes, the sky always stays night
 - Idle scenes use no frames at all; nothing leaves your machine
 
+**New in 1.3.2:** as light in the Control Center and the bar as on the desktop (an open view costs about the same as the shell alone), and rare shooting stars that the black hole bends or swallows. See the [changelog](#changelog) and the [roadmap](#roadmap).
+
 ## Gallery
 
 | Charging in orbit | Charging details |
@@ -494,6 +496,64 @@ Regenerate the sounds:
 ```sh
 python3 scripts/gen_sounds.py
 ```
+
+## Changelog
+
+### 1.3.2 (2026-09-26)
+- The Control Center and the bar popout are now as light as the desktop: nothing loops as a QML animation anywhere, the drift runs on a 30 Hz timer, and display-synced frames are only used while you drag a device (and until it settles). An open view at rest costs about 5–6 % of one core for the whole shell, which idles at 2–3 % on its own.
+- A connection attempt no longer makes the whole shell redraw at the display rate.
+- Shooting stars are rarer (every 12–32 s), always cross from the top left to the bottom right on a random path, and bend toward the black hole when they pass near it, or get swallowed and light up its ring.
+
+### 1.3.1 (2026-09-26)
+- Desktop widget truly at rest: from about 65 % of a core to about 1 % (about 3.5 % with *Ambient motion*).
+- Dragging stays smooth to the very end of the motion.
+- Everything pauses while the session is locked or the monitors are off; connection timers pause when nobody is looking.
+
+### 1.3.0 (2026-09-26)
+- Light theme support: the sky stays night, devices turn white, cards use a soft white.
+
+### 1.2.2 (2026-09-26)
+- Esc steps back one level (menu, hidden list, card) before closing the view.
+- The quick-disconnect × is now an option, off by default: pull a device away or right-click it instead.
+- Clicking the center only reacts on its inner 70 %, never over a device.
+- Settings grouped into short sections, with a note on the options that use more battery.
+- Pick the screens of the desktop widget from Orbit's settings.
+- The machine in the center is 15 % smaller.
+
+### 1.2.1 (2026-09-26)
+- Charging beam redrawn as thin magnetic field lines.
+- Charging earbuds move closer to the case, with their battery bar.
+
+### 1.2.0 (2026-09-26)
+- Earbuds trio: the case and both buds in their own mini orbit, each with its battery, and a beam to the bud that charges.
+- Live charging state while a view is open (headset session instead of a one-off read).
+- DMS's pairing dialog is shown for devices that ask for a code (fixes endless disconnects).
+- The Control Center tile grows to the exact height of the open card.
+
+### 1.1.1 (2026-09-26)
+- Detail card polish: symmetric spacing, a mode pill that hugs its content.
+- Noise control no longer loses the final state or flashes back to the previous mode.
+
+### 1.1.0 (2026-09-26)
+- Noise control for 13 headphone brands (tested on Sony and Huawei).
+- The black hole: drag a device into it to hide it, click it to list and bring devices back; two looks, realistic or tesseract.
+- Right-click menu, a comet while a device connects, depth on the ring of connected devices.
+- Battery time left from the moment a device connects.
+
+### 1.0.0 (2026-09-25)
+- First release: the planetary scene, drag to connect, the detail card, Control Center + bar + desktop, 28 device icons, sounds, and an option to scan only on demand.
+
+## Roadmap
+
+Ideas, not promises, and no dates. Anything that would need the network or send data somewhere is out of scope.
+
+- **French interface**, following the system language (the UI is English only for now).
+- **Easier to read code**: split the largest files (`OrbitScene.qml`, `DeviceBody.qml`) by role, without changing behavior.
+- **More headphones tested on real hardware**: only Sony and Huawei have been tested so far; reports for other brands are welcome.
+- **Distance from the signal strength**, once Quickshell exposes it (it does not in 0.3.1).
+- **Device management from the orbit** (rename, refresh details), to be defined. Firmware updates are not planned: they usually need the vendor's app and the network.
+
+Known limits: some Sony headsets do not report charging, or drop Bluetooth while charging; this is a hardware limit.
 
 ## Credits
 
