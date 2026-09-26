@@ -23,8 +23,8 @@ Item {
     property bool animate: true
 
     readonly property var look: Earbuds.style(name)
-    readonly property real caseSize: Math.round(width * 0.28)
-    readonly property real budSize: Math.round(width * 0.19)
+    readonly property real caseSize: Math.round(width * 0.196)   // kept small so the card stays light
+    readonly property real budSize: Math.round(width * 0.133)
     readonly property real spread: width * 0.39              // bud distance from the middle, at rest
     readonly property real stageH: caseSize + 16
     readonly property real cx: width / 2
