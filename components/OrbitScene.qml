@@ -858,18 +858,21 @@ Item {
     }
 
     readonly property bool _stepping: active && visible && width > 0 && !settled
-    // Full rate while someone interacts: a FrameAnimation synced to the display.
+    // Display-synced steps only where they are felt: dragging a device (and
+    // outside the desktop). A running QML animation keeps every shell window
+    // (bars, wallpaper...) redrawing at the display rate, a plain timer only
+    // repaints what actually changed.
+    readonly property bool _fullRate: !!dragBody || !freezeWhenIdle
     FrameAnimation {
-        running: scene._stepping && !scene.ambientOnly
+        running: scene._stepping && scene._fullRate
         onTriggered: scene.step(frameTime)
     }
-    // Ambient-only drift: a plain 30 Hz timer. A running QML animation keeps
-    // every shell window (bars, wallpaper...) redrawing at the display rate,
-    // a timer only repaints what actually changed.
+    // Desktop without a drag: 60 Hz while hovered or showing a card, 30 Hz
+    // for the ambient drift nobody is interacting with
     Timer {
-        interval: 33
+        interval: scene.ambientOnly ? 33 : 16
         repeat: true
-        running: scene._stepping && scene.ambientOnly
+        running: scene._stepping && !scene._fullRate
         property double last: 0
         onRunningChanged: last = Date.now()
         onTriggered: {

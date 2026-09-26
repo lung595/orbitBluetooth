@@ -377,8 +377,10 @@ replaced by `_`.
 - *Ambient motion* on the desktop runs on a plain 30 Hz timer instead of a
   frame-synced animation: in Qt, any running animation makes every shell
   window (bars, wallpaper) redraw at the display rate. Measured on a 240 Hz
-  screen: about 65 % of a core with a frame-synced loop, about 9 % with the
-  timer (the whole shell included).
+  screen: about 65 % of a core with a frame-synced loop, about 2.5 % with the
+  timer, the whole shell included (the shell alone idles at about 2.8 %).
+- For the same reason, shooting stars and hovering the desktop widget run on
+  plain timers (60 Hz); display-synced frames are kept for dragging a device.
 - Everything pauses while the session is locked or the monitors are off.
 - Backgrounds (stars, nebulae, veil) are painted once. Charging effects only
   move fixed geometry, mostly with render-thread animators.
