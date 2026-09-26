@@ -20,7 +20,7 @@ disconnect it. Charging devices receive a beam of energy from the core.
 - Follows light and dark DMS themes, the sky always stays night
 - Idle scenes use no frames at all; nothing leaves your machine
 
-**New in 1.3.2:** as light in the Control Center and the bar as on the desktop (an open view costs about the same as the shell alone), and rare shooting stars that the black hole bends or swallows. See the [changelog](#changelog) and the [roadmap](#roadmap).
+**New in 1.4.0:** rename a device: click its name in the detail card. See the [changelog](#changelog) and the [roadmap](#roadmap).
 
 **Contents:** [Install](#install) · [Quick start](#quick-start) · [Using the orbit](#using-the-orbit) · [Noise control](#noise-control) · [Settings](#settings) · [Privacy](#privacy) · [Troubleshooting](#troubleshooting) · [Changelog](#changelog) · [Roadmap](#roadmap)
 
@@ -150,7 +150,11 @@ Click any device to open it: its glyph flies onto the card.
 
 The card shows:
 
-- name, type and state (connected, paired, available)
+- name, type and state (connected, paired, available). **Click the name to
+  rename** a paired device: Enter saves, Escape cancels, and an empty name
+  gives the device its own name back. The new name is the Bluetooth alias,
+  so every app on the system shows it; the icon, noise control and battery
+  estimates still follow the device's own name.
 - connection time and battery level
 - actions: change icon, connect or disconnect, hide, forget (asks twice)
 - battery gauge, session chart and stats (see below)
@@ -310,7 +314,7 @@ choice is remembered per device. **Reset device icons** in the
 settings clears all choices.
 
 To use your own artwork, set **Custom images folder** and add PNGs named
-exactly like the devices:
+after each device's own name (a rename does not change it):
 
 ```
 ~/Pictures/bluetooth/
@@ -375,6 +379,9 @@ dms ipc call orbitBluetooth unhideAll    # bring every hidden device back
   to match them to a Bluetooth address.
 - Settings (your choices, custom icon picks, the addresses and names of
   hidden devices) are stored by DMS with your other plugin settings.
+- A device name you set is stored by BlueZ, like any Bluetooth alias, not by
+  Orbit. On the desktop, the widget only takes the keyboard while a detail
+  card is open, so you can type a name.
 
 ## Performance
 
@@ -433,6 +440,10 @@ over time.
 
 ## Changelog
 
+### 1.4.0 (2026-09-26)
+- Rename a device: click its name in the detail card. Enter saves, Escape cancels, an empty name restores the device's own name.
+- A renamed device keeps its icon, noise control, earbuds look, battery estimate and custom pictures: they follow the name the device reports itself.
+
 ### 1.3.2 (2026-09-26)
 - The Control Center and the bar popout are now as light as the desktop: nothing loops as a QML animation anywhere, the drift runs on a 30 Hz timer, and display-synced frames are only used while you drag a device (and until it settles). An open view at rest costs about 5–6 % of one core for the whole shell, which idles at 2–3 % on its own.
 - A connection attempt no longer makes the whole shell redraw at the display rate.
@@ -484,7 +495,7 @@ Ideas, not promises, and no dates. Anything that would need the network or send 
 - **Easier to read code**: split the largest files (`OrbitScene.qml`, `DeviceBody.qml`) by role, without changing behavior.
 - **More headphones tested on real hardware**: only Sony and Huawei have been tested so far; reports for other brands are welcome.
 - **Distance from the signal strength**, once Quickshell exposes it (it does not in 0.3.1).
-- **Rename a device** from the orbit (the name shown everywhere on the system). Firmware updates are not planned: they usually need the vendor's app and the network.
+- Firmware updates are not planned: they usually need the vendor's app and the network.
 
 Known limits: some Sony headsets do not report charging, or drop Bluetooth while charging; this is a hardware limit.
 
