@@ -484,7 +484,7 @@ Ideas, not promises, and no dates. Anything that would need the network or send 
 - **Easier to read code**: split the largest files (`OrbitScene.qml`, `DeviceBody.qml`) by role, without changing behavior.
 - **More headphones tested on real hardware**: only Sony and Huawei have been tested so far; reports for other brands are welcome.
 - **Distance from the signal strength**, once Quickshell exposes it (it does not in 0.3.1).
-- **Device management from the orbit** (rename, refresh details), to be defined. Firmware updates are not planned: they usually need the vendor's app and the network.
+- **Rename a device** from the orbit (the name shown everywhere on the system). Firmware updates are not planned: they usually need the vendor's app and the network.
 
 Known limits: some Sony headsets do not report charging, or drop Bluetooth while charging; this is a hardware limit.
 
