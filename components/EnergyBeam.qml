@@ -13,6 +13,8 @@ ShaderEffect {
     property real wavelength: 38
     property real phase: 0
     property color color: beam.night.primary
+    // White-hot lines on dark backgrounds; deepened on light cards
+    property real whiteCore: 1
     readonly property real lengthPx: width
     readonly property real heightPx: height
 

@@ -9,7 +9,7 @@ import "Anc.js" as Anc
 // a click elsewhere or Escape.
 Item {
     id: menu
-    readonly property NightColors night: NightColors {}
+    readonly property PaperColors paper: PaperColors {}
 
     required property var scene
     property var body: null
@@ -104,9 +104,9 @@ Item {
         width: 168
         height: menu.entries.length * 32 + 10   // known before layout, for placement
         radius: 14
-        color: Qt.rgba(0.075, 0.08, 0.095, 0.95)
+        color: menu.paper.fill(0.95)
         border.width: 1
-        border.color: Qt.rgba(1, 1, 1, 0.08)
+        border.color: menu.paper.fg(0.08)
         transformOrigin: Item.TopLeft
         scale: menu.open ? 1 : 0.92
         opacity: menu.open ? 1 : 0
@@ -134,7 +134,7 @@ Item {
                     width: col.width
                     height: 32
                     radius: 10
-                    color: itemArea.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
+                    color: itemArea.containsMouse ? menu.paper.fg(0.08) : "transparent"
 
                     // A hairline before "Hide" and before the first mode
                     Rectangle {
@@ -142,7 +142,7 @@ Item {
                         x: 8
                         width: parent.width - 16
                         height: 1
-                        color: Qt.rgba(1, 1, 1, 0.07)
+                        color: menu.paper.fg(0.07)
                     }
                     DankIcon {
                         id: icon
@@ -150,14 +150,14 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         name: modelData.icon
                         size: 16
-                        color: modelData.checked ? menu.night.primary : Qt.rgba(1, 1, 1, 0.75)
+                        color: modelData.checked ? Theme.primary : menu.paper.fg(0.75)
                     }
                     StyledText {
                         anchors.left: icon.right
                         anchors.leftMargin: 9
                         anchors.verticalCenter: parent.verticalCenter
                         text: modelData.label
-                        color: modelData.checked ? menu.night.primary : "#F2F5EE"
+                        color: modelData.checked ? Theme.primary : menu.paper.ink
                         font.pixelSize: Theme.fontSizeSmall
                         font.weight: modelData.checked ? Font.DemiBold : Font.Normal
                     }
@@ -168,7 +168,7 @@ Item {
                         visible: modelData.checked ?? false
                         name: "check"
                         size: 14
-                        color: menu.night.primary
+                        color: Theme.primary
                     }
                     MouseArea {
                         id: itemArea

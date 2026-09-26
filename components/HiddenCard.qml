@@ -7,14 +7,14 @@ import "DeviceCatalog.js" as Catalog
 // that spits it back into the orbit. Empty, it explains what the hole is for.
 Item {
     id: card
-    readonly property NightColors night: NightColors {}
+    readonly property PaperColors paper: PaperColors {}
 
     required property var scene
     readonly property var hidden: scene.prefs.hiddenDevices
     readonly property var addresses: Object.keys(hidden).sort((a, b) => card.nameOf(a).localeCompare(card.nameOf(b)))
 
-    readonly property color ink: "#F2F5EE"
-    readonly property color muted: Qt.rgba(1, 1, 1, 0.42)
+    readonly property color ink: card.paper.ink
+    readonly property color muted: card.paper.fg(0.42)
 
     implicitHeight: content.implicitHeight + Theme.spacingL * 2
 
@@ -37,9 +37,9 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: Math.round(width * 0.075)
-        color: Qt.rgba(0.075, 0.08, 0.095, 0.86)
+        color: card.paper.fill(0.86)
         border.width: 1
-        border.color: Qt.rgba(1, 1, 1, 0.07)
+        border.color: card.paper.fg(0.07)
     }
 
     Flickable {
@@ -83,7 +83,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     visible: card.addresses.length > 1
                     text: "Show all"
-                    color: allArea.containsMouse ? card.night.primary : Theme.withAlpha(card.night.primary, 0.8)
+                    color: allArea.containsMouse ? Theme.primary : Theme.withAlpha(Theme.primary, 0.8)
                     font.pixelSize: Theme.fontSizeSmall
                     font.weight: Font.Medium
                     MouseArea {
@@ -102,12 +102,12 @@ Item {
                     width: 26
                     height: 26
                     radius: 13
-                    color: closeArea.containsMouse ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(1, 1, 1, 0.05)
+                    color: closeArea.containsMouse ? card.paper.fg(0.12) : card.paper.fg(0.05)
                     DankIcon {
                         anchors.centerIn: parent
                         name: "close"
                         size: 15
-                        color: Qt.rgba(1, 1, 1, 0.8)
+                        color: card.paper.fg(0.8)
                     }
                     MouseArea {
                         id: closeArea
@@ -145,7 +145,7 @@ Item {
                     width: content.width
                     height: 44
                     radius: 14
-                    color: rowArea.containsMouse ? Qt.rgba(1, 1, 1, 0.06) : Qt.rgba(1, 1, 1, 0.03)
+                    color: rowArea.containsMouse ? card.paper.fg(0.06) : card.paper.fg(0.03)
 
                     MouseArea {
                         id: rowArea
@@ -160,7 +160,7 @@ Item {
                         width: 22
                         height: 22
                         kind: Catalog.resolve(row.device, card.scene.prefs.glyphOverrides)
-                        color: row.connected ? Qt.lighter(card.night.primary, 1.12) : Qt.rgba(1, 1, 1, 0.75)
+                        color: row.connected ? Qt.lighter(Theme.primary, 1.12) : card.paper.fg(0.75)
                         stroke: 1.4
                     }
                     Column {
@@ -178,7 +178,7 @@ Item {
                         }
                         StyledText {
                             text: row.connected ? "Connected" : row.device ? "Nearby" : "Out of range"
-                            color: row.connected ? Theme.withAlpha(card.night.primary, 0.85) : card.muted
+                            color: row.connected ? Theme.withAlpha(Theme.primary, 0.85) : card.muted
                             font.pixelSize: Theme.fontSizeSmall - 1
                         }
                     }
@@ -190,7 +190,7 @@ Item {
                         width: showRow.implicitWidth + 20
                         height: 28
                         radius: 14
-                        color: showArea.containsMouse ? Theme.withAlpha(card.night.primary, 0.32) : Theme.withAlpha(card.night.primary, 0.16)
+                        color: showArea.containsMouse ? Theme.withAlpha(Theme.primary, 0.32) : Theme.withAlpha(Theme.primary, 0.16)
                         Row {
                             id: showRow
                             anchors.centerIn: parent
@@ -199,12 +199,12 @@ Item {
                                 anchors.verticalCenter: parent.verticalCenter
                                 name: "visibility"
                                 size: 15
-                                color: card.night.primary
+                                color: Theme.primary
                             }
                             StyledText {
                                 anchors.verticalCenter: parent.verticalCenter
                                 text: "Show"
-                                color: card.night.primary
+                                color: Theme.primary
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.weight: Font.Medium
                             }
