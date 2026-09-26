@@ -7,8 +7,8 @@ import "Anc.js" as Anc
 // vendor protocol, and publishes what it reports to every surface.
 //
 // Two engines, chosen in the settings:
-// - "demand" (default): a session exists only while someone looks at the
-//   headset's detail card, or for the second it takes to apply a command.
+// - "demand" (default): a session exists only while an Orbit view showing
+//   the headset is open, or for the second it takes to apply a command.
 // - "live": one session per connected supported headset, so changes made
 //   with the headset's own buttons show up immediately.
 // Nothing runs while no supported headset is connected.
@@ -28,9 +28,6 @@ Item {
     property var _sessions: ({})
     // address -> commands sent while a session was closing, replayed after it
     property var _queue: ({})
-    // address -> when peek() last asked the headset (rate limit)
-    property var _peekedAt: ({})
-    readonly property int peekInterval: 60000
 
     readonly property string _helper: decodeURIComponent(Qt.resolvedUrl("../anc/orbit_anc.py").toString().replace(/^file:\/\//, ""))
 
@@ -142,19 +139,6 @@ Item {
         const proc = _open(address);
         _release(address);
         return !!proc;
-    }
-
-    // A quick read when someone opens a view (battery, charging, mode), at
-    // most once a minute per headset: nothing runs while nobody looks
-    function peek(address) {
-        const now = Date.now();
-        if (!supported(address) || _sessions[address] || now - (_peekedAt[address] || 0) < peekInterval)
-            return;
-        const next = Object.assign({}, _peekedAt);
-        next[address] = now;
-        _peekedAt = next;
-        _open(address);
-        _release(address);
     }
 
     // First connected headset that can be controlled (for IPC)
