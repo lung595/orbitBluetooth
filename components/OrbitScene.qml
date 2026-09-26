@@ -55,6 +55,17 @@ Item {
     readonly property real focusGlyphScale: focusGlyphSize / bodySize
     readonly property real focusGlyphLift: focusGlyphSize * 0.2      // glyph center relative to card top
     readonly property real focusOverlap: focusGlyphLift + focusGlyphSize * 0.5 + 8
+    // Scene height at which the open detail card fits without scrolling (0
+    // when none is open): card content, glyph overlap and margins, with the
+    // glyph at its width-bound size. It does not depend on the scene's own
+    // height, so a host can grow to it without a binding loop.
+    readonly property real focusFitHeight: {
+        if (!focusBody)
+            return 0;
+        const glyph = focusCardWidth * 0.28;
+        const content = focusCard.implicitHeight - focusOverlap - Theme.spacingL;
+        return content + glyph * 0.7 + 8 + Theme.spacingL + glyph * 0.35 + Theme.spacingM;
+    }
 
     // --- State -----------------------------------------------------------------
     property var deviceMap: ({})
