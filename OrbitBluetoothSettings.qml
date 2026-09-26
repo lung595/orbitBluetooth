@@ -2,60 +2,120 @@ import QtQuick
 import qs.Common
 import qs.Widgets
 import qs.Modules.Plugins
+import qs.Modules.Settings.Widgets
 import "components/Glyphs.js" as Glyphs
 
+// Plugin settings, grouped by what they change. Every option works out of
+// the box; descriptions stay one short line, and options that cost battery
+// say so ("⚡ Uses more battery").
 PluginSettings {
     id: root
     pluginId: "orbitBluetooth"
 
-    StyledText {
-        width: parent.width
-        text: "Devices"
+    readonly property string batteryNote: "⚡ Uses more battery"
+
+    // Section title with air above it: hierarchy from size and weight only
+    component Section: StyledText {
+        width: parent ? parent.width : 0
+        topPadding: Theme.spacingXL
+        bottomPadding: Theme.spacingXS
         font.pixelSize: Theme.fontSizeLarge
         font.weight: Font.Bold
         color: Theme.surfaceText
     }
 
+    component ActionButton: Rectangle {
+        id: action
+        property string text: ""
+        signal clicked
+
+        width: actionText.implicitWidth + Theme.spacingL * 2
+        height: 34
+        radius: Theme.cornerRadius
+        color: actionArea.containsMouse ? Theme.surfaceContainerHighest : Theme.surfaceContainerHigh
+
+        StyledText {
+            id: actionText
+            anchors.centerIn: parent
+            text: action.text
+            color: Theme.surfaceText
+            font.pixelSize: Theme.fontSizeSmall
+        }
+        MouseArea {
+            id: actionArea
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: action.clicked()
+        }
+    }
+
+    // --- Orbit -----------------------------------------------------------------
+    Section {
+        topPadding: 0
+        text: "Orbit"
+    }
+
     SelectionSetting {
         settingKey: "maxDevices"
         label: "Devices in orbit"
-        description: "Connected devices are always shown; the rest are ranked by pairing and name"
+        description: "Connected devices always show"
         options: ["4", "6", "8", "10", "12"]
         defaultValue: "8"
     }
 
     ToggleSetting {
-        settingKey: "showUnnamed"
-        label: "Show unnamed devices"
-        description: "Devices that only expose a MAC address"
-        defaultValue: false
+        settingKey: "showLabels"
+        label: "Always show names"
+        description: "Otherwise on hover"
+        defaultValue: true
     }
 
     ToggleSetting {
-        settingKey: "showLabels"
-        label: "Always show names"
-        description: "Otherwise names appear on hover"
-        defaultValue: true
+        settingKey: "showUnnamed"
+        label: "Show unnamed devices"
+        description: "Devices with only an address"
+        defaultValue: false
     }
 
     ToggleSetting {
         settingKey: "quickDisconnect"
         label: "Quick disconnect button"
-        description: "An × on connected devices when hovered"
+        description: "An × on connected devices, on hover"
         defaultValue: false
+    }
+
+    SelectionSetting {
+        settingKey: "hostGlyph"
+        label: "Center device"
+        options: [
+            {
+                label: "Automatic",
+                value: "auto"
+            }
+        ].concat(Glyphs.order.map(k => ({
+                    label: Glyphs.label(k),
+                    value: k
+                })))
+        defaultValue: "auto"
+    }
+
+    // --- Scanning ----------------------------------------------------------------
+    Section {
+        text: "Scanning"
     }
 
     ToggleSetting {
         settingKey: "autoScan"
         label: "Scan automatically"
-        description: "Start discovery when a view opens; otherwise scan only from the center or the Scan chip"
+        description: "When a view opens; otherwise click the center"
         defaultValue: true
     }
 
     SelectionSetting {
         settingKey: "scanSeconds"
         label: "Scan duration"
-        description: "Discovery stops after this delay or when the panel closes"
+        description: "\"While open\": " + root.batteryNote
         options: [
             {
                 label: "20 seconds",
@@ -77,50 +137,22 @@ PluginSettings {
         defaultValue: "45"
     }
 
-    SelectionSetting {
-        settingKey: "hostGlyph"
-        label: "Center device"
-        description: "Icon of this machine"
-        options: [
-            {
-                label: "Automatic",
-                value: "auto"
-            }
-        ].concat(Glyphs.order.map(k => ({
-                    label: Glyphs.label(k),
-                    value: k
-                })))
-        defaultValue: "auto"
-    }
-
-    StringSetting {
-        settingKey: "imageFolder"
-        label: "Custom images folder (optional)"
-        description: "PNG files named after the device (e.g. \"WH-1000XM6.png\") replace the built-in icon"
-        placeholder: "~/Pictures/bluetooth"
-        defaultValue: ""
-    }
-
-    StyledText {
-        width: parent.width
-        topPadding: Theme.spacingM
-        text: "Noise control"
-        font.pixelSize: Theme.fontSizeLarge
-        font.weight: Font.Bold
-        color: Theme.surfaceText
+    // --- Headphones --------------------------------------------------------------
+    Section {
+        text: "Headphones"
     }
 
     ToggleSetting {
         settingKey: "ancEnabled"
-        label: "Headphone noise control"
-        description: "Noise cancelling, ambient sound and more for Sony, AirPods/Beats, Galaxy Buds, Bose, Nothing, Soundcore, Huawei/Honor, Oppo/OnePlus/realme, Redmi, EarFun, Moondrop, Haylou and 1MORE (needs python3)"
+        label: "Noise control"
+        description: "Supported headphones, 13 brands (needs python3)"
         defaultValue: true
     }
 
     SelectionSetting {
         settingKey: "ancEngine"
         label: "Engine"
-        description: "On demand: the helper runs only while a headset card is open or a command is sent. Always connected: it stays connected to supported headsets, so button presses on the headset show up live (a small idle process)"
+        description: "\"Always connected\" shows headset button presses live · " + root.batteryNote
         options: [
             {
                 label: "On demand",
@@ -134,26 +166,65 @@ PluginSettings {
         defaultValue: "demand"
     }
 
+    // --- Desktop -----------------------------------------------------------------
+    Section {
+        text: "Desktop widget"
+    }
+
+    // The desktop widget's own instance (Settings → Desktop Widgets): its
+    // display choice is edited here with DMS's native picker
+    readonly property var desktopInstance: (SettingsData.desktopWidgetInstances || []).find(w => w.widgetType === root.pluginId) ?? null
+
+    SettingsDisplayPicker {
+        visible: !!root.desktopInstance
+        displayPreferences: root.desktopInstance?.config?.displayPreferences ?? ["all"]
+        onPreferencesChanged: prefs => SettingsData.updateDesktopWidgetInstanceConfig(root.desktopInstance.id, {
+                "displayPreferences": prefs
+            })
+    }
+
     StyledText {
         width: parent.width
-        topPadding: Theme.spacingM
-        text: "Look & feel"
-        font.pixelSize: Theme.fontSizeLarge
-        font.weight: Font.Bold
-        color: Theme.surfaceText
+        visible: !root.desktopInstance
+        text: "Add Orbit Bluetooth in Settings → Desktop Widgets to choose its displays"
+        wrapMode: Text.WordWrap
+        color: Theme.surfaceVariantText
+        font.pixelSize: Theme.fontSizeSmall
+    }
+
+    SliderSetting {
+        settingKey: "desktopBackdrop"
+        label: "Backdrop"
+        description: "Veil behind the orbit"
+        defaultValue: 72
+        minimum: 0
+        maximum: 100
+        unit: "%"
+    }
+
+    ToggleSetting {
+        settingKey: "desktopAmbient"
+        label: "Ambient motion"
+        description: "Keep moving when the pointer is away · " + root.batteryNote
+        defaultValue: false
+    }
+
+    // --- Look --------------------------------------------------------------------
+    Section {
+        text: "Look"
     }
 
     SelectionSetting {
         settingKey: "holeStyle"
-        label: "Black hole style"
-        description: "The black hole that keeps hidden devices"
+        label: "Black hole"
+        description: "Where hidden devices go"
         options: [
             {
                 label: "Black hole",
                 value: "blackhole"
             },
             {
-                label: "Three-dimensional shadow of a four-dimensional bubble",
+                label: "Tesseract",
                 value: "tesseract"
             }
         ]
@@ -168,7 +239,7 @@ PluginSettings {
 
     SelectionSetting {
         settingKey: "starDensity"
-        label: "Star density"
+        label: "Stars"
         options: [
             {
                 label: "Low",
@@ -186,80 +257,50 @@ PluginSettings {
         defaultValue: "normal"
     }
 
-    SliderSetting {
-        settingKey: "desktopBackdrop"
-        label: "Desktop backdrop"
-        description: "Depth of the smoky veil behind the desktop orbit; it always fades out at the edges"
-        defaultValue: 72
-        minimum: 0
-        maximum: 100
-        unit: "%"
+    StringSetting {
+        settingKey: "imageFolder"
+        label: "Custom images folder"
+        description: "PNGs named after devices replace their icons"
+        placeholder: "~/Pictures/bluetooth"
+        defaultValue: ""
     }
 
-    ToggleSetting {
-        settingKey: "desktopAmbient"
-        label: "Ambient motion on desktop"
-        description: "Keep orbits moving when the pointer is away (uses a little more power)"
-        defaultValue: false
+    // --- Sounds ------------------------------------------------------------------
+    Section {
+        text: "Sounds"
     }
 
     ToggleSetting {
         settingKey: "sounds"
         label: "Sounds"
-        description: "Short cues on snap, connect and disconnect"
+        description: "On snap, connect and disconnect"
         defaultValue: false
     }
 
     SliderSetting {
         settingKey: "soundVolume"
-        label: "Sound volume"
+        label: "Volume"
         defaultValue: 60
         minimum: 0
         maximum: 100
         unit: "%"
     }
 
-    Rectangle {
-        width: resetText.implicitWidth + Theme.spacingL * 2
-        height: 34
-        radius: Theme.cornerRadius
-        color: resetArea.containsMouse ? Theme.surfaceContainerHighest : Theme.surfaceContainerHigh
-
-        StyledText {
-            id: resetText
-            anchors.centerIn: parent
-            text: "Reset custom device icons"
-            color: Theme.surfaceText
-            font.pixelSize: Theme.fontSizeSmall
-        }
-        MouseArea {
-            id: resetArea
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: root.saveValue("glyphOverrides", ({}))
-        }
+    // --- Reset -------------------------------------------------------------------
+    Section {
+        text: "Reset"
     }
 
-    // Recovery path when the black hole is out of sight (e.g. a tiny widget)
-    Rectangle {
-        width: unhideText.implicitWidth + Theme.spacingL * 2
-        height: 34
-        radius: Theme.cornerRadius
-        color: unhideArea.containsMouse ? Theme.surfaceContainerHighest : Theme.surfaceContainerHigh
+    Row {
+        spacing: Theme.spacingS
 
-        StyledText {
-            id: unhideText
-            anchors.centerIn: parent
-            text: "Show all hidden devices"
-            color: Theme.surfaceText
-            font.pixelSize: Theme.fontSizeSmall
+        ActionButton {
+            text: "Reset device icons"
+            onClicked: root.saveValue("glyphOverrides", ({}))
         }
-        MouseArea {
-            id: unhideArea
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
+        // Recovery path when the black hole is out of sight (e.g. a tiny widget)
+        ActionButton {
+            text: "Show hidden devices"
             onClicked: root.saveValue("hiddenDevices", ({}))
         }
     }

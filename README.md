@@ -97,13 +97,13 @@ resize it like any other widget (default 440 × 380).
 | --- | --- |
 | Drag a device inside the inner ring | Magnet snap; release to pair and connect |
 | Drag a connected device outward | Elastic tether; release to disconnect |
-| Hover a connected device, click × | Disconnect |
+| Hover a connected device, click × | Disconnect (when *Quick disconnect button* is on) |
 | Click a device | It flies onto a detail card |
 | Right-click a device | Menu: connect or disconnect, noise-control modes, hide |
 | Drag a device into the black hole | It is swallowed and hidden (it stays connected) |
 | Click the black hole | List of hidden devices, with **Show** to bring one back |
 | Click the center, or the **Scan** chip | Start discovery |
-| Esc, click outside, or ← | Leave the detail card |
+| Esc, click outside, or ← | Leave the detail card (Esc also closes the menu and the hidden list first) |
 
 Connected devices orbit on the inner ring, the others float in the outer
 field. Connected devices are drawn 15% smaller so the ring stays airy. While
@@ -291,24 +291,31 @@ dms ipc call orbitBluetooth unhideAll    # bring every hidden device back
 
 ## Settings
 
-| Setting | Default | Description |
-| --- | --- | --- |
-| Devices in orbit | 8 | Connected devices are always shown; the rest are ranked by pairing and name |
-| Show unnamed devices | off | Devices that only expose a MAC address |
-| Always show names | on | Otherwise names appear on hover |
-| Scan automatically | on | Start discovery when a view opens; when off, scan only from the center or the **Scan** chip |
-| Scan duration | 45 s | Discovery stops after this delay or when the view closes (or *While open*) |
-| Center device | Automatic | Icon of this machine (laptop or desktop is detected) |
-| Custom images folder | — | PNG files that replace built-in icons |
-| Shooting stars | on | Occasional meteor in the background |
-| Star density | Normal | Low, Normal or High |
-| Desktop backdrop | 72% | Depth of the veil behind the desktop widget |
-| Ambient motion on desktop | off | Keep orbits moving when the pointer is away |
-| Black hole style | Black hole | Realistic, or "Three-dimensional shadow of a four-dimensional bubble" (tesseract) |
-| Headphone noise control | on | Controls supported headphones (needs Python 3) |
-| Engine | On demand | When the noise-control helper runs (see *Noise control*) |
-| Sounds | off | Short cues on snap, connect and disconnect |
-| Sound volume | 60% | |
+Grouped by what they change; options marked ⚡ use more battery.
+
+| Section | Setting | Default | Description |
+| --- | --- | --- | --- |
+| Orbit | Devices in orbit | 8 | Connected devices always show; the rest are ranked by pairing and name |
+| | Always show names | on | Otherwise names appear on hover |
+| | Show unnamed devices | off | Devices that only expose a MAC address |
+| | Quick disconnect button | off | An × on connected devices, on hover (otherwise drag away or right-click) |
+| | Center device | Automatic | Icon of this machine (laptop or desktop is detected) |
+| Scanning | Scan automatically | on | Start discovery when a view opens; otherwise click the center |
+| | Scan duration | 45 s | 20 s, 45 s, 90 s or *While open* ⚡ |
+| Headphones | Noise control | on | Supported headphones (needs Python 3) |
+| | Engine | On demand | *Always connected* ⚡ shows headset button presses live (see *Noise control*) |
+| Desktop widget | Displays | All | Which displays show the desktop widget (DMS's own picker) |
+| | Backdrop | 72% | Depth of the veil behind the orbit |
+| | Ambient motion | off | Keep orbits moving when the pointer is away ⚡ |
+| Look | Black hole | Black hole | Realistic, or tesseract |
+| | Shooting stars | on | Occasional meteor in the background |
+| | Stars | Normal | Low, Normal or High |
+| | Custom images folder | — | PNG files that replace built-in icons |
+| Sounds | Sounds | off | Short cues on snap, connect and disconnect |
+| | Volume | 60% | |
+
+Two buttons at the end reset custom device icons and bring back every
+hidden device.
 
 ## Device icons
 
@@ -317,7 +324,7 @@ Icons are matched by name patterns, for example every `WH-1000XMx`,
 device class breaks ties, so a `G733` headset is never drawn as a mouse.
 
 To change one, open its detail card and click the palette button. Your
-choice is remembered per device. **Reset custom device icons** in the
+choice is remembered per device. **Reset device icons** in the
 settings clears all choices.
 
 To use your own artwork, set **Custom images folder** and add PNGs named
