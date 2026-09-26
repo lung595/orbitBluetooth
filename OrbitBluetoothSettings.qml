@@ -224,7 +224,8 @@ PluginSettings {
                 value: "blackhole"
             },
             {
-                label: "Tesseract",
+                // Named after the hypercube in Adventure Time
+                label: "Three-dimensional shadow of a four-dimensional bubble",
                 value: "tesseract"
             }
         ]

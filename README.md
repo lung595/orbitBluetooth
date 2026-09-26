@@ -123,7 +123,7 @@ spit a device back out. With nothing hidden, clicking it explains what it is
 for.
 
 The black hole bends the starfield around it like a gravitational lens. Pick
-its look in the settings (**Black hole style**):
+its look in the settings (**Look → Black hole**):
 
 - **Black hole** (default): a realistic one in the spirit of *Interstellar*,
   with a thin accretion disk seen almost edge-on, the far side of the disk
@@ -322,7 +322,7 @@ Grouped by what they change; options marked ⚡ use more battery.
 | Desktop widget | Displays | All | Which displays show the desktop widget (DMS's own picker) |
 | | Backdrop | 72% | Depth of the veil behind the orbit |
 | | Ambient motion | off | Keep orbits moving when the pointer is away ⚡ |
-| Look | Black hole | Black hole | Realistic, or tesseract |
+| Look | Black hole | Black hole | Realistic, or the three-dimensional shadow of a four-dimensional bubble |
 | | Shooting stars | on | A rare meteor (every 12–32 s) from the top left to the bottom right; one passing the black hole bends toward it, or is swallowed and lights up its ring |
 | | Stars | Normal | Low, Normal or High |
 | | Custom images folder | — | PNG files that replace built-in icons |
@@ -536,7 +536,7 @@ python3 scripts/gen_sounds.py
 
 ### 1.1.0 (2026-09-26)
 - Noise control for 13 headphone brands (tested on Sony and Huawei).
-- The black hole: drag a device into it to hide it, click it to list and bring devices back; two looks, realistic or tesseract.
+- The black hole: drag a device into it to hide it, click it to list and bring devices back; two looks, realistic or the three-dimensional shadow of a four-dimensional bubble (a nod to *Adventure Time*).
 - Right-click menu, a comet while a device connects, depth on the ring of connected devices.
 - Battery time left from the moment a device connects.
 
