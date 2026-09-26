@@ -139,91 +139,174 @@ Item {
         }
     }
 
-    // Shooting star
+    // Shooting star: a head and a tail of short segments laid along its last
+    // positions, so the trail really follows the path when it bends
     Item {
         id: meteor
-        width: 90
-        height: 1.5
-        opacity: 0
-        rotation: 24
-        transformOrigin: Item.Right
+        anchors.fill: parent
+        visible: meteorAnim.running
 
-        Rectangle {
-            anchors.fill: parent
-            radius: height / 2
-            gradient: Gradient {
-                orientation: Gradient.Horizontal
-                GradientStop {
-                    position: 0
-                    color: Qt.rgba(1, 1, 1, 0)
-                }
-                GradientStop {
-                    position: 1
-                    color: Qt.rgba(1, 1, 1, 0.9)
-                }
+        Repeater {
+            id: trail
+            model: meteorAnim.segments
+            Rectangle {
+                transformOrigin: Item.Left
+                height: 1.5
+                radius: 0.75
+                color: "white"
+                opacity: 0
             }
         }
+
         Rectangle {
+            id: meteorHead
             width: 3
             height: 3
             radius: 1.5
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
             color: "white"
+            opacity: 0
         }
     }
+
+    // Where the black hole sits in this item's coordinates (radius 0 = none):
+    // passing stars are pulled in, and swallowed inside the horizon
+    property real holeX: 0
+    property real holeY: 0
+    property real holeR: 0
+    signal swallowed
 
     // Shooting star flight, driven by a plain 60 Hz timer rather than a QML
     // animation: a running animation makes every shell window (bars,
     // wallpaper) redraw at the display rate, a timer only repaints this one.
-    // InQuad travel; the fade (in over the first 18 %, out over the last
-    // 36 %) scales with the flight time.
+    // Always from the top left toward the bottom right (15° to 60° below the
+    // horizontal), with a random start, angle, length and speed; it speeds up along the way
+    // (like the old InQuad), and near the black hole its path bends toward it
+    // (thin-lens gravity, a ∝ 1/r²) or ends inside the horizon.
     Timer {
         id: meteorAnim
-        property real sx: 0
-        property real sy: 0
-        property double t0: 0
-        readonly property real travel: root.vignette ? 0.28 : 0.45
-        readonly property int duration: 643   // 40 % faster than the original 900 ms
+        readonly property int segments: 16
+        property real hx: 0
+        property real hy: 0
+        property real dx: 1        // unit direction of travel
+        property real dy: 0
+        property real base: 0      // px/s, mean speed
+        property real life: 0.64   // s, flight time
+        property real t: 0
+        property double last: 0
+        property bool captured: false
+        property real fade: 1      // envelope once captured or out of view
+        property var pts: []       // head positions, newest first
         interval: 16
         repeat: true
 
         function launch() {
-            t0 = Date.now();
-            tick();
+            const w = root.width, h = root.height;
+            const ang = (15 + Math.random() * 45) * Math.PI / 180;
+            dx = Math.cos(ang);
+            dy = Math.sin(ang);
+            const len = w * (root.vignette ? 0.22 + Math.random() * 0.14 : 0.3 + Math.random() * 0.25);
+            life = 0.5 + Math.random() * 0.3;
+            base = len / life;
+            // About one star in four is aimed past the black hole, at a random
+            // distance from it: some just bend, some are swallowed. The others
+            // start anywhere in the top-left part of the sky.
+            if (root.holeR > 0 && Math.random() < 0.25) {
+                const b = root.holeR * (0.6 + Math.random() * 3) * (Math.random() < 0.5 ? -1 : 1);
+                hx = root.holeX - dy * b - dx * len / 2;
+                hy = root.holeY + dx * b - dy * len / 2;
+            } else {
+                const m = root.vignette ? 0.2 : 0.05;   // desktop: keep to the middle
+                hx = w * (m + Math.random() * (0.55 - m));
+                hy = h * (m + Math.random() * (0.45 - m));
+            }
+            t = 0;
+            captured = false;
+            fade = 1;
+            pts = [];
+            last = Date.now();
+            draw(0);
             restart();
         }
 
         function tick() {
-            const ms = Math.min(duration, Date.now() - t0);
-            const e = (ms / duration) * (ms / duration);
-            const dist = root.width * travel;
-            meteor.x = sx + dist * e;
-            meteor.y = sy + dist * Math.tan(24 * Math.PI / 180) * e;
-            const p = ms / duration;
-            meteor.opacity = p < 0.18 ? 0.9 * p / 0.18 : p < 0.64 ? 0.9 : 0.9 * Math.max(0, 1 - (p - 0.64) / 0.36);
-            if (ms >= duration) {
-                meteor.opacity = 0;
+            const now = Date.now();
+            const dt = Math.min(0.05, (now - last) / 1000);
+            last = now;
+            t += dt;
+            const p = Math.min(1, t / life);
+            if (!captured) {
+                const v = base * (0.5 + p);   // accelerates: 0.5 → 1.5 × mean
+                let vx = dx * v, vy = dy * v;
+                if (root.holeR > 0) {
+                    const rx = root.holeX - hx, ry = root.holeY - hy;
+                    const r2 = rx * rx + ry * ry;
+                    const r = Math.sqrt(r2);
+                    if (r < root.holeR * 1.05) {
+                        captured = true;
+                        root.swallowed();
+                    } else {
+                        // Deflection ≈ 1 rad at one horizon radius, fading as 1/r²
+                        const g = 0.5 * base * base * root.holeR / (r2 + root.holeR * root.holeR * 0.1);
+                        vx += rx / r * g * dt;
+                        vy += ry / r * g * dt;
+                        const n = Math.hypot(vx, vy);
+                        dx = vx / n;
+                        dy = vy / n;
+                    }
+                }
+                if (!captured) {
+                    hx += dx * v * dt;
+                    hy += dy * v * dt;
+                }
+            }
+            if (captured || p >= 1)
+                fade = Math.max(0, fade - dt / (captured ? 0.15 : 0.25));
+            draw(p);
+            if (fade <= 0)
                 stop();
+        }
+
+        function draw(p) {
+            if (!captured)
+                pts = [Qt.point(hx, hy)].concat(pts).slice(0, segments + 1);
+            // Fade in over the first 18 %, then held; out at the end
+            const env = (p < 0.18 ? p / 0.18 : 1) * fade;
+            // A little brighter close to the hole: the light is focused
+            let boost = 1;
+            if (root.holeR > 0) {
+                const d = Math.hypot(hx - root.holeX, hy - root.holeY) / (root.holeR * 3);
+                boost = 1 + 0.5 * Math.exp(-d * d);
+            }
+            meteorHead.x = hx - 1.5;
+            meteorHead.y = hy - 1.5;
+            meteorHead.opacity = captured ? 0 : Math.min(1, 0.95 * env * boost);
+            for (let i = 0; i < segments; i++) {
+                const seg = trail.itemAt(i);
+                if (!seg)
+                    continue;
+                const a = pts[i], b = pts[i + 1];
+                if (!a || !b) {
+                    seg.opacity = 0;
+                    continue;
+                }
+                seg.x = a.x;
+                seg.y = a.y - seg.height / 2;
+                seg.width = Math.hypot(b.x - a.x, b.y - a.y) + 0.5;
+                seg.rotation = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+                seg.opacity = Math.min(1, 0.85 * (1 - i / segments) * env * boost);
             }
         }
 
         onTriggered: tick()
     }
 
+    // Rare: one every 12 to 32 s, only while the scene is awake
     Timer {
         running: root.animate && root.shootingStars && root.visible
         repeat: true
-        interval: 7000
+        interval: 10000
         onTriggered: {
-            interval = 5000 + Math.random() * 9000;
-            if (root.vignette) {
-                meteorAnim.sx = root.width * (0.2 + Math.random() * 0.25);
-                meteorAnim.sy = root.height * (0.24 + Math.random() * 0.18);
-            } else {
-                meteorAnim.sx = Math.random() * root.width * 0.6 - meteor.width;
-                meteorAnim.sy = Math.random() * root.height * 0.45 - 10;
-            }
+            interval = 12000 + Math.random() * 20000;
             meteorAnim.launch();
         }
     }

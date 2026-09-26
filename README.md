@@ -321,7 +321,7 @@ Grouped by what they change; options marked ⚡ use more battery.
 | | Backdrop | 72% | Depth of the veil behind the orbit |
 | | Ambient motion | off | Keep orbits moving when the pointer is away ⚡ |
 | Look | Black hole | Black hole | Realistic, or tesseract |
-| | Shooting stars | on | Occasional meteor in the background |
+| | Shooting stars | on | A rare meteor (every 12–32 s) from the top left to the bottom right; one passing the black hole bends toward it, or is swallowed and lights up its ring |
 | | Stars | Normal | Low, Normal or High |
 | | Custom images folder | — | PNG files that replace built-in icons |
 | Sounds | Sounds | off | Short cues on snap, connect and disconnect |
@@ -380,14 +380,14 @@ replaced by `_`.
   screen: about 65 % of a core with a frame-synced loop, about 2.5 % with the
   timer, the whole shell included (the shell alone idles at about 2.8 %).
 - For the same reason, nothing loops as a QML animation anywhere (Control
-  Center, bar popout, desktop): the drift runs on a 60 Hz timer (30 Hz for the
-  desktop's ambient motion), and every effect (charging glow and beam, comet,
+  Center, bar popout, desktop): the drift runs on a 30 Hz timer (60 Hz while
+  a comet turns or a card is open), and every effect (charging glow and beam, comet,
   earbuds float, gauge streaks, scan ping, shooting stars) is computed from
   one effects clock. Display-synced frames are kept for gestures and until
   their motion has calmed down, so dragging stays smooth to the very end.
 - Everything pauses while the session is locked or the monitors are off.
 - Backgrounds (stars, nebulae, veil) are painted once. Charging effects only
-  move fixed geometry, mostly with render-thread animators.
+  move fixed geometry, from the effects clock.
 - Discovery runs only while a view is open and stops after the configured delay.
 - The device list polls only while someone is looking or discovery runs.
 - Sounds load the multimedia backend only when enabled.
