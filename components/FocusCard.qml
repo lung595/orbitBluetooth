@@ -229,7 +229,7 @@ Item {
             // One gap between the title block, the battery and the controls
             Item {
                 width: 1
-                height: Theme.spacingM
+                height: Theme.spacingS
             }
 
             // Earbuds with a case: case, left and right with a bar each

@@ -125,7 +125,9 @@ PluginComponent {
     pillRightClickAction: () => BluetoothService.toggleBluetooth()
 
     popoutWidth: 520
-    popoutHeight: 440
+    // Grows while a detail card is open, like the Control Center tile
+    property real popCardFit: 0
+    popoutHeight: Math.max(440, Math.ceil(popCardFit))
 
     popoutContent: Component {
         Item {
@@ -145,6 +147,8 @@ PluginComponent {
                     cornerRadius: Theme.cornerRadius
                     // The popout keeps its content loaded; only run while shown
                     active: pop.parentPopout ? pop.parentPopout.shouldBeVisible : true
+                    onFocusFitHeightChanged: root.popCardFit = focusFitHeight
+                    Component.onDestruction: root.popCardFit = 0
                 }
             }
         }

@@ -48,10 +48,11 @@ Item {
     readonly property real coreSize: Math.round(Math.min(width, height) * 0.2)
     readonly property real bodySize: Math.round(Math.max(34, Math.min(width, height) * 0.135))
 
-    // Focus mode layout: a modest glyph (~28% of the card width) peeking
+    // Focus mode layout: a small glyph (~20% of the card width) peeking
     // ~30% above the card's top edge, the rest sitting inside the frame
     readonly property real focusCardWidth: Math.min(width - Theme.spacingL * 2, 360)
-    readonly property real focusGlyphSize: Math.min(focusCardWidth * 0.28, height * 0.26)
+    readonly property real focusGlyphRatio: 0.2
+    readonly property real focusGlyphSize: Math.min(focusCardWidth * focusGlyphRatio, height * 0.26)
     readonly property real focusGlyphScale: focusGlyphSize / bodySize
     readonly property real focusGlyphLift: focusGlyphSize * 0.2      // glyph center relative to card top
     readonly property real focusOverlap: focusGlyphLift + focusGlyphSize * 0.5 + 8
@@ -62,7 +63,7 @@ Item {
     readonly property real focusFitHeight: {
         if (!focusBody)
             return 0;
-        const glyph = focusCardWidth * 0.28;
+        const glyph = focusCardWidth * focusGlyphRatio;
         const content = focusCard.implicitHeight - focusOverlap - Theme.spacingL;
         return content + glyph * 0.7 + 8 + Theme.spacingL + glyph * 0.35 + Theme.spacingM;
     }
