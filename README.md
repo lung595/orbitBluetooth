@@ -481,7 +481,6 @@ over time.
 
 Ideas, not promises, and no dates. Anything that would need the network or send data somewhere is out of scope.
 
-- **French interface**, following the system language (the UI is English only for now).
 - **Easier to read code**: split the largest files (`OrbitScene.qml`, `DeviceBody.qml`) by role, without changing behavior.
 - **More headphones tested on real hardware**: only Sony and Huawei have been tested so far; reports for other brands are welcome.
 - **Distance from the signal strength**, once Quickshell exposes it (it does not in 0.3.1).
