@@ -20,6 +20,7 @@ layout(std140, binding = 0) uniform buf {
     float amplitude;   // wave height of each line, px
     float wavelength;  // px
     vec4 color;        // theme primary
+    float whiteCore;   // 1: lines glow white-hot, 0: they deepen (light cards)
 } ubuf;
 
 const float TAU = 6.28318530718;
@@ -55,6 +56,7 @@ void main() {
     // Brightest where it leaves the charger, softened at the very ends
     float fade = mix(1.0, 0.7, u) * smoothstep(0.0, 6.0, x) * (1.0 - smoothstep(len - 4.0, len, x));
     a = clamp(a * fade, 0.0, 1.0);
-    vec3 rgb = mix(ubuf.color.rgb, vec3(1.0), clamp(core * 0.5, 0.0, 1.0));
+    vec3 hot = mix(ubuf.color.rgb * 0.55, vec3(1.0), ubuf.whiteCore);
+    vec3 rgb = mix(ubuf.color.rgb, hot, clamp(core * 0.5, 0.0, 1.0));
     fragColor = vec4(rgb * a, a) * ubuf.qt_Opacity;
 }

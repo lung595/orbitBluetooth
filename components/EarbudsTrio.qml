@@ -13,7 +13,7 @@ import "Earbuds.js" as Earbuds
 // (detail card open, Reduce motion off).
 Item {
     id: trio
-    readonly property NightColors night: NightColors {}
+    readonly property PaperColors paper: PaperColors {}
 
     property var parts: ({})              // { left, right, case: { level, charging } }
     property string name: ""
@@ -38,7 +38,7 @@ Item {
         anchors.fill: parent
         preferredRendererType: Shape.CurveRenderer
         ShapePath {
-            strokeColor: Qt.rgba(1, 1, 1, 0.09)
+            strokeColor: trio.paper.fg(0.09)
             strokeWidth: 1
             fillColor: "transparent"
             PathAngleArc {
@@ -102,6 +102,8 @@ Item {
             height: 26
             amplitude: 1.4
             wavelength: 14
+            color: Theme.primary
+            whiteCore: trio.paper.light ? 0 : 1
             running: trio.animate
         }
     }
@@ -215,12 +217,12 @@ Item {
                 width: 62
                 height: 6
                 radius: 3
-                color: Qt.rgba(1, 1, 1, 0.07)
+                color: trio.paper.fg(0.07)
                 Rectangle {
                     width: parent.width * Math.max(0, Math.min(1, (piece.info?.level ?? 0) / 100))
                     height: parent.height
                     radius: 3
-                    color: Charge.levelColor(piece.info?.level ?? 0)
+                    color: trio.paper.level(Charge.levelColor(piece.info?.level ?? 0))
                     visible: !!piece.info
                 }
             }
@@ -229,7 +231,7 @@ Item {
                 spacing: 3
                 StyledText {
                     text: piece.label + " " + (piece.info ? piece.info.level + "%" : "—")
-                    color: piece.info ? "#F2F5EE" : Qt.rgba(1, 1, 1, 0.4)
+                    color: piece.info ? trio.paper.ink : trio.paper.fg(0.4)
                     font.pixelSize: Theme.fontSizeSmall - 1
                     font.features: {
                         "tnum": 1
@@ -240,7 +242,7 @@ Item {
                     visible: piece.info?.charging ?? false
                     name: "bolt"
                     size: Theme.fontSizeSmall
-                    color: trio.night.primary
+                    color: Theme.primary
                 }
             }
         }
@@ -276,7 +278,7 @@ Item {
         y: trio.stageH + 44
         visible: text !== ""
         text: trio.caption
-        color: Qt.rgba(1, 1, 1, 0.42)
+        color: trio.paper.fg(0.42)
         font.pixelSize: Theme.fontSizeSmall - 1
     }
 }

@@ -9,7 +9,7 @@ import "Anc.js" as Anc
 // helper in the "on demand" engine.
 Column {
     id: panel
-    readonly property NightColors night: NightColors {}
+    readonly property PaperColors paper: PaperColors {}
 
     required property var scene
     required property string address
@@ -19,8 +19,8 @@ Column {
     readonly property var st: info?.state ?? ({})
     readonly property var modes: Anc.ordered(features?.modes)
     readonly property bool ready: info?.status === "ready"
-    readonly property color ink: "#F2F5EE"
-    readonly property color muted: Qt.rgba(1, 1, 1, 0.42)
+    readonly property color ink: panel.paper.ink
+    readonly property color muted: panel.paper.fg(0.42)
 
     // Same gap between every row of the panel
     spacing: Theme.spacingS
@@ -82,7 +82,7 @@ Column {
         Rectangle {
             anchors.fill: parent
             radius: height / 2
-            color: Qt.rgba(1, 1, 1, 0.05)
+            color: panel.paper.fg(0.05)
         }
         // The highlight hugs the active mode's content with equal padding on
         // both sides, centered on its segment and kept 4 px inside the track
@@ -98,9 +98,9 @@ Column {
             y: inset
             height: parent.height - inset * 2
             radius: height / 2
-            color: Theme.withAlpha(panel.night.primary, 0.22)
+            color: Theme.withAlpha(Theme.primary, 0.22)
             border.width: 1
-            border.color: Theme.withAlpha(panel.night.primary, 0.5)
+            border.color: Theme.withAlpha(Theme.primary, 0.5)
             Behavior on x {
                 enabled: panel.scene.motion
                 NumberAnimation {
@@ -137,13 +137,13 @@ Column {
                             anchors.verticalCenter: parent.verticalCenter
                             name: Anc.ICONS[modelData]
                             size: segments.iconSize
-                            color: on ? panel.night.primary : Qt.rgba(1, 1, 1, 0.7)
+                            color: on ? Theme.primary : panel.paper.fg(0.7)
                         }
                         StyledText {
                             anchors.verticalCenter: parent.verticalCenter
                             visible: panel.modes.length <= 3 || on
                             text: Anc.SHORT[modelData]
-                            color: on ? panel.ink : Qt.rgba(1, 1, 1, 0.7)
+                            color: on ? panel.ink : panel.paper.fg(0.7)
                             font.pixelSize: Theme.fontSizeSmall
                             font.weight: on ? Font.DemiBold : Font.Normal
                         }
@@ -199,14 +199,14 @@ Column {
                 width: parent.width
                 height: 4
                 radius: 2
-                color: Qt.rgba(1, 1, 1, 0.1)
+                color: panel.paper.fg(0.1)
             }
             Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
                 width: parent.width * track.frac
                 height: 4
                 radius: 2
-                color: panel.night.primary
+                color: Theme.primary
             }
             Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
@@ -255,9 +255,9 @@ Column {
             width: chipRow.implicitWidth + 20
             height: 28
             radius: 14
-            color: checked ? Theme.withAlpha(panel.night.primary, 0.22) : Qt.rgba(1, 1, 1, 0.05)
+            color: checked ? Theme.withAlpha(Theme.primary, 0.22) : panel.paper.fg(0.05)
             border.width: checked ? 1 : 0
-            border.color: Theme.withAlpha(panel.night.primary, 0.5)
+            border.color: Theme.withAlpha(Theme.primary, 0.5)
             Row {
                 id: chipRow
                 anchors.centerIn: parent
@@ -266,12 +266,12 @@ Column {
                     anchors.verticalCenter: parent.verticalCenter
                     name: chip.icon
                     size: 15
-                    color: chip.checked ? panel.night.primary : Qt.rgba(1, 1, 1, 0.7)
+                    color: chip.checked ? Theme.primary : panel.paper.fg(0.7)
                 }
                 StyledText {
                     anchors.verticalCenter: parent.verticalCenter
                     text: chip.label
-                    color: chip.checked ? panel.ink : Qt.rgba(1, 1, 1, 0.7)
+                    color: chip.checked ? panel.ink : panel.paper.fg(0.7)
                     font.pixelSize: Theme.fontSizeSmall
                 }
             }

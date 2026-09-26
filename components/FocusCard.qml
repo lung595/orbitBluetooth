@@ -11,7 +11,7 @@ import "Charge.js" as Charge
 // out of the frame (see DeviceBody.focused).
 Item {
     id: card
-    readonly property NightColors night: NightColors {}
+    readonly property PaperColors paper: PaperColors {}
 
     required property var scene
     readonly property var body: scene.focusBody
@@ -21,8 +21,8 @@ Item {
     // Headsets with noise control trade the battery graph for the ANC panel
     readonly property bool ancShown: !picking && scene.ancCapable(body)
 
-    readonly property color ink: "#F2F5EE"
-    readonly property color muted: Qt.rgba(1, 1, 1, 0.42)
+    readonly property color ink: card.paper.ink
+    readonly property color muted: card.paper.fg(0.42)
 
     // Time to full / time left, e.g. "≈ 2 h 08" + "to full"
     readonly property string timeValue: {
@@ -100,9 +100,9 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: Math.round(width * 0.075)
-        color: Qt.rgba(0.075, 0.08, 0.095, 0.86)
+        color: card.paper.fill(0.86)
         border.width: 1
-        border.color: Qt.rgba(1, 1, 1, 0.07)
+        border.color: card.paper.fg(0.07)
     }
 
     // Corner actions
@@ -116,7 +116,7 @@ Item {
         width: 30
         height: 30
         radius: 15
-        color: area.containsMouse ? (danger ? Theme.withAlpha(card.night.error, 0.85) : Qt.rgba(1, 1, 1, 0.12)) : active ? Theme.withAlpha(card.night.primary, 0.22) : Qt.rgba(1, 1, 1, 0.05)
+        color: area.containsMouse ? (danger ? Theme.withAlpha(Theme.error, 0.85) : card.paper.fg(0.12)) : active ? Theme.withAlpha(Theme.primary, 0.22) : card.paper.fg(0.05)
         Behavior on color {
             ColorAnimation {
                 duration: 140
@@ -127,7 +127,7 @@ Item {
             anchors.centerIn: parent
             name: btn.icon
             size: 17
-            color: btn.active ? card.night.primary : Qt.rgba(1, 1, 1, 0.8)
+            color: btn.active ? Theme.primary : card.paper.fg(0.8)
         }
         MouseArea {
             id: area
@@ -366,9 +366,9 @@ Item {
                             height: width
                             radius: width * 0.3
                             readonly property bool selected: parent.current === modelData
-                            color: selected ? Theme.withAlpha(card.night.primary, 0.25) : tileArea.containsMouse ? Qt.rgba(1, 1, 1, 0.1) : Qt.rgba(1, 1, 1, 0.04)
+                            color: selected ? Theme.withAlpha(Theme.primary, 0.25) : tileArea.containsMouse ? card.paper.fg(0.1) : card.paper.fg(0.04)
                             border.width: selected ? 1 : 0
-                            border.color: card.night.primary
+                            border.color: Theme.primary
 
                             DeviceGlyph {
                                 visible: modelData !== "auto"
@@ -377,14 +377,14 @@ Item {
                                 height: width
                                 kind: modelData
                                 stroke: 1.5
-                                color: parent.selected ? card.night.primary : Qt.rgba(1, 1, 1, 0.8)
+                                color: parent.selected ? Theme.primary : card.paper.fg(0.8)
                             }
                             DankIcon {
                                 visible: modelData === "auto"
                                 anchors.centerIn: parent
                                 name: "auto_awesome"
                                 size: parent.width * 0.5
-                                color: parent.selected ? card.night.primary : Qt.rgba(1, 1, 1, 0.8)
+                                color: parent.selected ? Theme.primary : card.paper.fg(0.8)
                             }
                             MouseArea {
                                 id: tileArea

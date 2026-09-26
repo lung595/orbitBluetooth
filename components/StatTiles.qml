@@ -6,11 +6,12 @@ import qs.Widgets
 // "READY AT 18:40 · SPEED +28 %/h · +12% IN 26 min".
 Row {
     id: tiles
+    readonly property PaperColors paper: PaperColors {}
 
     property var stats: []
     readonly property var items: (stats || []).slice(0, 3)
-    readonly property color ink: "#F2F5EE"
-    readonly property color muted: Qt.rgba(1, 1, 1, 0.42)
+    readonly property color ink: tiles.paper.ink
+    readonly property color muted: tiles.paper.fg(0.42)
 
     visible: items.length > 0
     spacing: Theme.spacingXS
@@ -21,9 +22,9 @@ Row {
             width: (tiles.width - tiles.spacing * (tiles.items.length - 1)) / tiles.items.length
             height: tileCol.implicitHeight + 10
             radius: 10
-            color: Qt.rgba(1, 1, 1, 0.045)
+            color: tiles.paper.fg(0.045)
             border.width: 1
-            border.color: Qt.rgba(1, 1, 1, 0.05)
+            border.color: tiles.paper.fg(0.05)
 
             Column {
                 id: tileCol

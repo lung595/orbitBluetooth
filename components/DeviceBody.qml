@@ -12,6 +12,7 @@ import "Endurance.js" as Endurance
 Item {
     id: body
     readonly property NightColors night: NightColors {}
+    readonly property PaperColors paper: PaperColors {}
 
     required property var scene
     required property string address
@@ -462,7 +463,7 @@ Item {
             height: width
             kind: body.kind
             imageSource: body.scene.prefs.imageFor(body.device)
-            color: body.focused ? "#F2F5EE" : body.night.whiteBodies ? (body.connected ? body.night.bodyInk : body.night.bodyMuted) : body.connected ? Qt.lighter(body.night.primary, 1.12) : Qt.rgba(1, 1, 1, 0.86)
+            color: body.focused ? body.paper.ink : body.night.whiteBodies ? (body.connected ? body.night.bodyInk : body.night.bodyMuted) : body.connected ? Qt.lighter(body.night.primary, 1.12) : Qt.rgba(1, 1, 1, 0.86)
             stroke: body.focused ? 1.05 : 1.5
             Behavior on color {
                 ColorAnimation {

@@ -10,6 +10,7 @@ import "Charge.js" as Charge
 // animators are used, and they stop whenever `animate` is false.
 Rectangle {
     id: root
+    readonly property PaperColors paper: PaperColors {}
 
     property real level: -1            // 0..100, negative when unknown
     property string statusIcon: "bluetooth_connected"
@@ -28,9 +29,9 @@ Rectangle {
 
     readonly property bool hasLevel: level >= 0
     readonly property real frac: Math.max(0, Math.min(1, level / 100))
-    readonly property color ink: "#F2F5EE"
-    readonly property color muted: Qt.rgba(1, 1, 1, 0.42)
-    property color levelColor: Charge.levelColor(level)
+    readonly property color ink: root.paper.ink
+    readonly property color muted: root.paper.fg(0.42)
+    property color levelColor: root.paper.level(Charge.levelColor(level))
     readonly property bool running: charging && animate && visible
 
     readonly property int bigFontPx: Math.max(18, Math.round(width * 0.075))
@@ -38,9 +39,9 @@ Rectangle {
 
     implicitHeight: content.implicitHeight + pad * 2
     radius: Math.round(width * 0.09)
-    color: framed ? Qt.rgba(1, 1, 1, 0.055) : "transparent"
+    color: framed ? root.paper.fg(0.055) : "transparent"
     border.width: framed ? 1 : 0
-    border.color: Qt.rgba(1, 1, 1, 0.06)
+    border.color: root.paper.fg(0.06)
 
     Behavior on levelColor {
         ColorAnimation {
@@ -128,7 +129,7 @@ Rectangle {
                     Rectangle {
                         anchors.fill: parent
                         radius: height / 2
-                        color: Qt.rgba(1, 1, 1, 0.055)
+                        color: root.paper.fg(0.055)
                     }
 
                     // Faint vertical hairlines
@@ -139,7 +140,7 @@ Rectangle {
                             y: bar.height * 0.2
                             width: 1
                             height: bar.height * 0.6
-                            color: Qt.rgba(1, 1, 1, 0.08)
+                            color: root.paper.fg(0.08)
                         }
                     }
 
@@ -209,7 +210,7 @@ Rectangle {
                             orientation: Gradient.Horizontal
                             GradientStop {
                                 position: 0
-                                color: Qt.rgba(1, 1, 1, 0)
+                                color: root.paper.fg(0)
                             }
                             GradientStop {
                                 position: 0.6
@@ -217,7 +218,7 @@ Rectangle {
                             }
                             GradientStop {
                                 position: 1
-                                color: Qt.rgba(1, 1, 1, 0)
+                                color: root.paper.fg(0)
                             }
                         }
 
@@ -309,7 +310,7 @@ Rectangle {
             visible: text !== ""
             text: root.footnote
             horizontalAlignment: Text.AlignHCenter
-            color: Qt.rgba(1, 1, 1, 0.3)
+            color: root.paper.fg(0.3)
             font.pixelSize: Math.max(9, Theme.fontSizeSmall - 2)
             elide: Text.ElideRight
         }
