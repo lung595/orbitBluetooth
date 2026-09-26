@@ -324,14 +324,18 @@ Item {
         }
     }
 
-    // Connection timers tick once per second, only when someone can see them
+    // Connection timers tick once per second, only while the scene is awake:
+    // an idle desktop orbit stays frozen (zero frames) and catches up on wake.
     Timer {
         interval: 1000
         repeat: true
-        running: scene.active && scene.btOn && Object.keys(scene._globals.since || {}).length > 0
+        running: scene.awake && scene.btOn && Object.keys(scene._globals.since || {}).length > 0
         triggeredOnStart: true
         onTriggered: scene.now = Date.now()
     }
+    // Fresh clock on every daemon event (connection, battery sample), so the
+    // charge estimates never use a stale time, even while the ticker sleeps.
+    on_GlobalsChanged: now = Date.now()
 
     Component.onCompleted: {
         refresh();
@@ -1327,19 +1331,23 @@ Item {
             anchors.centerIn: parent
             spacing: 5
             Rectangle {
+                id: scanDot
                 width: 6
                 height: 6
                 radius: 3
                 anchors.verticalCenter: parent.verticalCenter
                 color: scene.discovering ? scene.night.primary : Qt.rgba(1, 1, 1, 0.35)
+                // Animators: the blink runs on the render thread
                 SequentialAnimation on opacity {
                     running: scene.discovering && scene.active && scene.motion
                     loops: Animation.Infinite
-                    NumberAnimation {
+                    onRunningChanged: if (!running)
+                        scanDot.opacity = 1
+                    OpacityAnimator {
                         to: 0.25
                         duration: 700
                     }
-                    NumberAnimation {
+                    OpacityAnimator {
                         to: 1
                         duration: 700
                     }

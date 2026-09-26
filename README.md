@@ -371,7 +371,8 @@ replaced by `_`.
 
 - One `FrameAnimation` drives physics, orbits and twinkles. It stops as soon as
   the scene settles or is hidden.
-- The desktop widget renders zero frames while idle.
+- The desktop widget renders zero frames while idle: even the connection
+  timers pause and catch up as soon as the pointer comes back.
 - Backgrounds (stars, nebulae, veil) are painted once. Charging effects only
   move fixed geometry, mostly with render-thread animators.
 - Discovery runs only while a view is open and stops after the configured delay.
