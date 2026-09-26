@@ -17,7 +17,7 @@ Window {
     // Control Center sized shots for the black hole, menu and comet
     readonly property bool compact: ["buds", "budsdock", "hole", "holetess", "hiddencard", "hiddenempty", "connecting", "menu", "feed"].indexOf(mode) >= 0
     width: glass ? 760 : (mode === "zoom" ? 900 : compact ? 540 : 560)
-    height: glass ? 560 : (mode === "zoom" ? 700 : mode.startsWith("buds") ? 400 : mode === "ancfocus" || compact ? 354 : 480)
+    height: glass ? 560 : (mode === "zoom" ? 700 : mode.startsWith("buds") ? 400 : mode === "ancfocus" ? 540 : compact ? 354 : 480)
     visible: true
     color: "#101114"
 

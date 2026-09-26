@@ -133,13 +133,31 @@ Item {
     function ancWatch(address, on) {
         _ancService?.watch(address, on);
     }
-    // Fresh battery and charging state from supported headsets when a view opens
-    function ancPeekAll() {
-        for (let i = 0; i < bodies.count; i++) {
-            const b = bodies.itemAt(i);
-            if (b && b.ancCapable)
-                _ancService?.peek(b.address);
+    // While this view is visible, keep a session with each connected headset:
+    // the helper waits on the socket, so plugging or unplugging the charger
+    // shows up at once without any polling. Closing the view ends them.
+    property var _ancViewing: []
+    function ancSyncViews() {
+        const want = [];
+        if (active) {
+            for (let i = 0; i < bodies.count; i++) {
+                const b = bodies.itemAt(i);
+                if (b && b.ancCapable)
+                    want.push(b.address);
+            }
         }
+        const had = _ancViewing;
+        if (want.length === had.length && want.every(a => had.indexOf(a) >= 0))
+            return;
+        want.forEach(a => {
+            if (had.indexOf(a) < 0)
+                ancWatch(a, true);
+        });
+        had.forEach(a => {
+            if (want.indexOf(a) < 0)
+                ancWatch(a, false);
+        });
+        _ancViewing = want;
     }
 
     clip: true
@@ -165,9 +183,8 @@ Item {
         wake();
         refresh();
         updateScan();
-        if (active)
-            ancPeekAll();
-        else
+        ancSyncViews();
+        if (!active)
             dismiss();
     }
 
@@ -262,6 +279,7 @@ Item {
         target: scene.adapter?.devices ?? null
         function onValuesChanged() {
             scene.refresh();
+            Qt.callLater(scene.ancSyncViews);
         }
     }
     Connections {
@@ -287,7 +305,10 @@ Item {
         interval: 1500
         repeat: true
         running: scene.active && scene.btOn && (scene.awake || scene.discovering)
-        onTriggered: scene.refresh()
+        onTriggered: {
+            scene.refresh();
+            scene.ancSyncViews();
+        }
     }
 
     // Connection timers tick once per second, only when someone can see them
@@ -302,10 +323,12 @@ Item {
     Component.onCompleted: {
         refresh();
         updateScan();
-        if (active)
-            Qt.callLater(ancPeekAll);   // bodies exist once the model is filled
+        Qt.callLater(ancSyncViews);   // bodies exist once the model is filled
     }
-    Component.onDestruction: stopScan()
+    Component.onDestruction: {
+        stopScan();
+        _ancViewing.forEach(a => ancWatch(a, false));
+    }
 
     // --- Discovery -------------------------------------------------------------
     property bool _ownsDiscovery: false

@@ -58,6 +58,7 @@ Item {
     readonly property bool charging: charge?.state === "charging"
     // Noise control, when the headset speaks a known vendor protocol
     readonly property bool ancCapable: scene.ancCapable(body)
+    onAncCapableChanged: Qt.callLater(scene.ancSyncViews)
     readonly property string ancMode: ancCapable ? (scene.ancFor(address)?.state?.mode ?? "") : ""
     readonly property real rawSignal: (device?.signalStrength ?? 0) > 0 ? device.signalStrength / 100 : 0
     // Only remembered devices can be out of range; discovered ones are nearby

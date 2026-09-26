@@ -257,7 +257,6 @@ Item {
                     width: parent ? parent.width : 0
                     framed: false
                     gaugeRatio: card.ancShown ? 0.035 : 0.1
-                    compact: card.ancShown && level >= 0
                     timeValue: card.timeValue
                     timeSuffix: card.timeSuffix
                     showMeter: !card.trioShown
@@ -270,8 +269,6 @@ Item {
                     level: card.body?.connected ? card.body.battery : -1
                     charging: card.body?.charging ?? false
                     history: {
-                        if (card.ancShown)
-                            return [];
                         const log = card.scene.batteryLogFor(card.body?.address);
                         return log.length && level >= 0 ? log.concat([[card.scene.now, level]]) : [];
                     }

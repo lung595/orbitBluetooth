@@ -211,16 +211,16 @@ How it works: QML cannot open a Bluetooth socket, so a small helper
 (`anc/orbit_anc.py`, Python standard library only) talks to the headset.
 The **Engine** setting decides when it runs:
 
-- **On demand** (default): only while a headset card or menu is open, or for
-  the second it takes to apply a command. Nothing runs otherwise.
+- **On demand** (default): only while an Orbit view is open (Control Center,
+  popout, visible desktop widget), or for the second it takes to apply a
+  command. The helper waits for the headset to speak, so plugging in or
+  unplugging the charger shows up at once, with no polling. Nothing runs
+  once the view is closed.
 - **Always connected**: one session per connected headset, so changes made
   with the headset's own buttons show up live (a small idle process).
 
 Noise control only talks to **paired** headsets: opening a channel to a
 device that is connected but not paired would make it drop and reconnect.
-The helper also reads battery and charging state once when a view opens (at
-most once a minute per headset), so a headset you just plugged in shows as
-charging right away.
 
 Some headsets cannot report every mode when asked (the WH-1000XM6 reads
 "noise cancelling" and "off" the same way); Orbit then keeps the last mode
