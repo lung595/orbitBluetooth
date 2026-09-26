@@ -67,6 +67,8 @@ Bluetooth.
 
 - Click the tile icon to turn Bluetooth on or off.
 - Click the arrow to expand the orbit view inline.
+- The view stays compact; it grows while a detail card is open so the whole
+  card fits without scrolling.
 
 ### Bar
 

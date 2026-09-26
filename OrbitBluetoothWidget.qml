@@ -36,7 +36,10 @@ PluginComponent {
         return n + " devices";
     }
     ccWidgetIsActive: BluetoothService.enabled
-    ccDetailHeight: 314   // 440 / 1.4: compact when the Control Center opens
+    // Compact orbit (440 / 1.4) when the Control Center opens; grows while a
+    // detail card is open so the card fits without scrolling
+    property real ccCardFit: 0
+    ccDetailHeight: Math.max(314, Math.ceil(ccCardFit))
 
     onCcWidgetToggled: BluetoothService.toggleBluetooth()
 
@@ -50,6 +53,8 @@ PluginComponent {
                 anchors.fill: parent
                 active: true
                 cornerRadius: Theme.cornerRadius
+                onFocusFitHeightChanged: root.ccCardFit = focusFitHeight
+                Component.onDestruction: root.ccCardFit = 0
             }
         }
     }
