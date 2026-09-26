@@ -705,6 +705,7 @@ Item {
         const floatAmp = timeDriven ? (dragBody ? 7 : 3.5) : 0;
 
         let moving = !!dragBody;
+        let maxSpeed = 0;   // px/s, fastest body this step
 
         for (const b of all) {
             let tx, ty, k = 70, zeta = 0.58;
@@ -826,6 +827,7 @@ Item {
                 zeta = 1;
 
             _spring(b, tx, ty, k, zeta, dt);
+            maxSpeed = Math.max(maxSpeed, Math.hypot(b.vx, b.vy));
 
             if (Math.abs(b.vx) + Math.abs(b.vy) > 0.6 || Math.abs(tx - b.px) + Math.abs(ty - b.py) > 0.6)
                 moving = true;
@@ -852,9 +854,22 @@ Item {
                 moving = true;
         }
 
+        // Fast motion (above the few px/s of the ambient drift) switches to
+        // display-synced frames; back to the timer after 0.25 s of calm
+        if (maxSpeed > 60)
+            _kick();
+        else if (_lively && !dragBody && maxSpeed < 20) {
+            _calmFor += dt;
+            if (_calmFor > 0.25)
+                _lively = false;
+        } else
+            _calmFor = 0;
+
         // Sleep when nothing moves and time-driven motion is off
-        if (!moving && !timeDriven)
+        if (!moving && !timeDriven) {
             settled = true;
+            _lively = false;
+        }
     }
 
     readonly property bool _stepping: active && visible && width > 0 && !settled
@@ -862,7 +877,18 @@ Item {
     // outside the desktop). A running QML animation keeps every shell window
     // (bars, wallpaper...) redrawing at the display rate, a plain timer only
     // repaints what actually changed.
-    readonly property bool _fullRate: !!dragBody || !freezeWhenIdle
+    readonly property bool _fullRate: !!dragBody || _lively || !freezeWhenIdle
+    // Lively: a gesture's aftermath (a device released, snapping into or out
+    // of the ring, flying to its card) stays display-synced until everything
+    // has slowed down, so the motion is smooth to the very end.
+    property bool _lively: false
+    property real _calmFor: 0
+    function _kick() {
+        _lively = true;
+        _calmFor = 0;
+    }
+    onDragBodyChanged: _kick()
+    onFocusBodyChanged: _kick()
     FrameAnimation {
         running: scene._stepping && scene._fullRate
         onTriggered: scene.step(frameTime)
