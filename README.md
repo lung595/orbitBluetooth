@@ -369,10 +369,17 @@ replaced by `_`.
 
 ## Performance
 
-- One `FrameAnimation` drives physics, orbits and twinkles. It stops as soon as
-  the scene settles or is hidden.
-- The desktop widget renders zero frames while idle: even the connection
-  timers pause and catch up as soon as the pointer comes back.
+- One `FrameAnimation` drives physics, orbits and twinkles while you interact.
+  It stops as soon as the scene settles or is hidden.
+- The desktop widget renders zero frames while idle: the orbits hold still,
+  and even the connection timers pause and catch up as soon as the pointer
+  comes back.
+- *Ambient motion* on the desktop runs on a plain 30 Hz timer instead of a
+  frame-synced animation: in Qt, any running animation makes every shell
+  window (bars, wallpaper) redraw at the display rate. Measured on a 240 Hz
+  screen: about 65 % of a core with a frame-synced loop, about 9 % with the
+  timer (the whole shell included).
+- Everything pauses while the session is locked or the monitors are off.
 - Backgrounds (stars, nebulae, veil) are painted once. Charging effects only
   move fixed geometry, mostly with render-thread animators.
 - Discovery runs only while a view is open and stops after the configured delay.
