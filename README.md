@@ -75,6 +75,7 @@ Bluetooth.
 Add **Orbit Bluetooth** to any bar section.
 
 - Left click opens the orbit view in a popout.
+- The popout grows while a detail card is open, so the whole card fits.
 - Right click turns Bluetooth on or off.
 - Connected devices appear as tiny glyphs in the pill.
 
