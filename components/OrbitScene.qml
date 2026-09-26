@@ -45,7 +45,7 @@ Item {
     readonly property real outerMinNorm: 0.8  // strongest signal
     readonly property real snapNorm: 0.7      // magnet engages inside this
     readonly property real detachNorm: 0.8   // pulling a connected device past this disconnects
-    readonly property real coreSize: Math.round(Math.min(width, height) * 0.2)
+    readonly property real coreSize: Math.round(Math.min(width, height) * 0.17)
     readonly property real bodySize: Math.round(Math.max(34, Math.min(width, height) * 0.135))
 
     // Focus mode layout: a small glyph (~20% of the card width) peeking
