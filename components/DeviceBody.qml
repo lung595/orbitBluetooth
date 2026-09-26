@@ -370,8 +370,8 @@ Item {
             x: chargeFlow.start
             y: -height / 2
             width: chargeFlow.span
-            height: 24
-            amplitude: 3
+            height: 44
+            amplitude: 2
             wavelength: 38
             running: chargeFlow.running
         }
