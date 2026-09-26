@@ -107,9 +107,14 @@ Item {
     readonly property bool btOn: BluetoothService.enabled
     readonly property bool discovering: BluetoothService.discovering
     readonly property bool motion: !prefs.reduceMotion
+    // Nobody can see the screen: session locked or monitors powered off
+    readonly property bool screenAsleep: SessionService.locked || IdleService.isShellLocked || IdleService.monitorsOff
     // Time-driven motion (orbits, float, twinkles) runs only while awake;
     // otherwise the clock stops as soon as every body has settled.
-    readonly property bool awake: active && visible && width > 0 && (!freezeWhenIdle || interacting || prefs.desktopAmbient || !!dragBody || !!focusBody)
+    readonly property bool awake: active && visible && width > 0 && !screenAsleep && (!freezeWhenIdle || interacting || prefs.desktopAmbient || !!dragBody || !!focusBody)
+    // Awake only for the desktop's ambient motion (nobody interacting): slow
+    // drift, so half the frame rate looks the same at half the cost
+    readonly property bool ambientOnly: freezeWhenIdle && !interacting && !dragBody && !focusBody
     readonly property Item orbitRoot: scene
 
     readonly property var _globals: PluginService.globalVars[prefs.pluginId] || ({})
@@ -675,8 +680,11 @@ Item {
 
     function step(dt) {
         dt = Math.min(dt, 1 / 30);
-        clock += dt;
-        if (motion) {
+        // Time-driven motion (orbits, float, twinkles) only while awake: asleep,
+        // the targets hold still so the bodies can settle and the loop stops.
+        const timeDriven = motion && awake;
+        if (timeDriven) {
+            clock += dt;
             orbitTime += dt;
             holeSpin += dt * (0.32 + 1.8 * holeFeed);
         }
@@ -694,7 +702,7 @@ Item {
         const outer = all.filter(b => !b.inSlot && !b.leaving && !b.swallowing).concat([_hole]).sort((a, b) => a.homeHash - b.homeHash);
         const innerPhase = orbitTime * 0.11 - Math.PI / 2;
         const outerPhase = orbitTime * 0.018 - Math.PI / 2;
-        const floatAmp = motion ? (dragBody ? 7 : 3.5) : 0;
+        const floatAmp = timeDriven ? (dragBody ? 7 : 3.5) : 0;
 
         let moving = !!dragBody;
 
@@ -845,14 +853,30 @@ Item {
         }
 
         // Sleep when nothing moves and time-driven motion is off
-        const timeDriven = motion && awake;
         if (!moving && !timeDriven)
             settled = true;
     }
 
+    readonly property bool _stepping: active && visible && width > 0 && !settled
+    // Full rate while someone interacts: a FrameAnimation synced to the display.
     FrameAnimation {
-        running: scene.active && scene.visible && scene.width > 0 && !scene.settled
+        running: scene._stepping && !scene.ambientOnly
         onTriggered: scene.step(frameTime)
+    }
+    // Ambient-only drift: a plain 30 Hz timer. A running QML animation keeps
+    // every shell window (bars, wallpaper...) redrawing at the display rate,
+    // a timer only repaints what actually changed.
+    Timer {
+        interval: 33
+        repeat: true
+        running: scene._stepping && scene.ambientOnly
+        property double last: 0
+        onRunningChanged: last = Date.now()
+        onTriggered: {
+            const t = Date.now();
+            scene.step((t - last) / 1000);
+            last = t;
+        }
     }
 
     component Wave: Shape {
