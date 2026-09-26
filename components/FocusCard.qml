@@ -11,6 +11,7 @@ import "Charge.js" as Charge
 // out of the frame (see DeviceBody.focused).
 Item {
     id: card
+    readonly property NightColors night: NightColors {}
 
     required property var scene
     readonly property var body: scene.focusBody
@@ -115,7 +116,7 @@ Item {
         width: 30
         height: 30
         radius: 15
-        color: area.containsMouse ? (danger ? Theme.withAlpha(Theme.error, 0.85) : Qt.rgba(1, 1, 1, 0.12)) : active ? Theme.withAlpha(Theme.primary, 0.22) : Qt.rgba(1, 1, 1, 0.05)
+        color: area.containsMouse ? (danger ? Theme.withAlpha(card.night.error, 0.85) : Qt.rgba(1, 1, 1, 0.12)) : active ? Theme.withAlpha(card.night.primary, 0.22) : Qt.rgba(1, 1, 1, 0.05)
         Behavior on color {
             ColorAnimation {
                 duration: 140
@@ -126,7 +127,7 @@ Item {
             anchors.centerIn: parent
             name: btn.icon
             size: 17
-            color: btn.active ? Theme.primary : Qt.rgba(1, 1, 1, 0.8)
+            color: btn.active ? card.night.primary : Qt.rgba(1, 1, 1, 0.8)
         }
         MouseArea {
             id: area
@@ -365,9 +366,9 @@ Item {
                             height: width
                             radius: width * 0.3
                             readonly property bool selected: parent.current === modelData
-                            color: selected ? Theme.withAlpha(Theme.primary, 0.25) : tileArea.containsMouse ? Qt.rgba(1, 1, 1, 0.1) : Qt.rgba(1, 1, 1, 0.04)
+                            color: selected ? Theme.withAlpha(card.night.primary, 0.25) : tileArea.containsMouse ? Qt.rgba(1, 1, 1, 0.1) : Qt.rgba(1, 1, 1, 0.04)
                             border.width: selected ? 1 : 0
-                            border.color: Theme.primary
+                            border.color: card.night.primary
 
                             DeviceGlyph {
                                 visible: modelData !== "auto"
@@ -376,14 +377,14 @@ Item {
                                 height: width
                                 kind: modelData
                                 stroke: 1.5
-                                color: parent.selected ? Theme.primary : Qt.rgba(1, 1, 1, 0.8)
+                                color: parent.selected ? card.night.primary : Qt.rgba(1, 1, 1, 0.8)
                             }
                             DankIcon {
                                 visible: modelData === "auto"
                                 anchors.centerIn: parent
                                 name: "auto_awesome"
                                 size: parent.width * 0.5
-                                color: parent.selected ? Theme.primary : Qt.rgba(1, 1, 1, 0.8)
+                                color: parent.selected ? card.night.primary : Qt.rgba(1, 1, 1, 0.8)
                             }
                             MouseArea {
                                 id: tileArea

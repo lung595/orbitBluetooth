@@ -1,6 +1,7 @@
 pragma Singleton
 import QtQuick
 QtObject {
+    property bool isLightMode: false
     property color primary: "#C5E66A"
     property color primaryText: "#1B2600"
     property color tertiary: "#9FD3C7"

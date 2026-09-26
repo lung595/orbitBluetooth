@@ -17,6 +17,7 @@ import "Anc.js" as Anc
 //  - discovery only runs while the scene is open and stops on its own.
 Item {
     id: scene
+    readonly property NightColors night: NightColors {}
 
     // --- Inputs ----------------------------------------------------------------
     property bool active: true               // visible to the user right now
@@ -867,7 +868,7 @@ Item {
         }
 
         ShapePath {
-            strokeColor: Theme.primary
+            strokeColor: scene.night.primary
             strokeWidth: 1.6
             fillColor: "transparent"
             PathAngleArc {
@@ -913,7 +914,7 @@ Item {
     // Desktop glass: a theme-tinted smoky veil that dissolves into the wallpaper
     Vignette {
         visible: scene.glass
-        color: Qt.tint("#05060a", Theme.withAlpha(Theme.primary, 0.07))
+        color: Qt.tint("#05060a", Theme.withAlpha(scene.night.primary, 0.07))
         strength: scene.prefs.desktopBackdrop
     }
 
@@ -1037,9 +1038,9 @@ Item {
             }
 
             ShapePath {
-                strokeColor: innerRing.armedIn ? Theme.withAlpha(Theme.primary, 0.85) : innerRing.guiding ? Theme.withAlpha(Theme.primary, 0.45) : Qt.rgba(1, 1, 1, 0.1)
+                strokeColor: innerRing.armedIn ? Theme.withAlpha(scene.night.primary, 0.85) : innerRing.guiding ? Theme.withAlpha(scene.night.primary, 0.45) : Qt.rgba(1, 1, 1, 0.1)
                 strokeWidth: innerRing.armedIn ? 1.8 : 1
-                fillColor: innerRing.armedIn ? Theme.withAlpha(Theme.primary, 0.05) : "transparent"
+                fillColor: innerRing.armedIn ? Theme.withAlpha(scene.night.primary, 0.05) : "transparent"
                 PathAngleArc {
                     centerX: scene.cx
                     centerY: scene.ringCy
@@ -1061,7 +1062,7 @@ Item {
             radius: width / 2
             color: "transparent"
             border.width: 1
-            border.color: Theme.primary
+            border.color: scene.night.primary
             opacity: 0
             visible: scene.discovering && scene.active && scene.motion
 
@@ -1144,14 +1145,14 @@ Item {
                 width: parent.width * 1.9
                 height: width
                 radius: width / 2
-                color: Theme.withAlpha(Theme.primary, scene.btOn ? 0.05 : 0.0)
+                color: Theme.withAlpha(scene.night.primary, scene.btOn ? 0.05 : 0.0)
             }
             Rectangle {
                 anchors.centerIn: parent
                 width: parent.width * 1.4
                 height: width
                 radius: width / 2
-                color: Theme.withAlpha(Theme.primary, scene.btOn ? 0.08 : 0.02)
+                color: Theme.withAlpha(scene.night.primary, scene.btOn ? 0.08 : 0.02)
             }
             Rectangle {
                 anchors.fill: parent
@@ -1159,22 +1160,22 @@ Item {
                 gradient: Gradient {
                     GradientStop {
                         position: 0
-                        color: Qt.tint("#1a1c22", Theme.withAlpha(Theme.primary, 0.22))
+                        color: scene.night.whiteBodies ? Qt.tint("#FFFFFF", Theme.withAlpha(Theme.primary, 0.08)) : Qt.tint("#1a1c22", Theme.withAlpha(scene.night.primary, 0.22))
                     }
                     GradientStop {
                         position: 1
-                        color: Qt.tint("#0b0c10", Theme.withAlpha(Theme.primary, 0.1))
+                        color: scene.night.whiteBodies ? Qt.tint("#E6ECF2", Theme.withAlpha(Theme.primary, 0.16)) : Qt.tint("#0b0c10", Theme.withAlpha(scene.night.primary, 0.1))
                     }
                 }
                 border.width: 1
-                border.color: Theme.withAlpha(Theme.primary, scene.btOn ? 0.4 : 0.12)
+                border.color: Theme.withAlpha(scene.night.primary, scene.btOn ? 0.4 : 0.12)
             }
             DeviceGlyph {
                 anchors.centerIn: parent
                 width: parent.width * 0.5
                 height: width
                 kind: scene.prefs.hostGlyph !== "auto" ? scene.prefs.hostGlyph : (BatteryService.batteryAvailable ? "laptop" : "desktop")
-                color: scene.btOn ? Qt.lighter(Theme.primary, 1.2) : Qt.rgba(1, 1, 1, 0.4)
+                color: scene.btOn ? (scene.night.whiteBodies ? scene.night.bodyInk : Qt.lighter(scene.night.primary, 1.2)) : (scene.night.whiteBodies ? scene.night.bodyMuted : Qt.rgba(1, 1, 1, 0.4))
                 stroke: 1.4
             }
 
@@ -1330,7 +1331,7 @@ Item {
                 height: 6
                 radius: 3
                 anchors.verticalCenter: parent.verticalCenter
-                color: scene.discovering ? Theme.primary : Qt.rgba(1, 1, 1, 0.35)
+                color: scene.discovering ? scene.night.primary : Qt.rgba(1, 1, 1, 0.35)
                 SequentialAnimation on opacity {
                     running: scene.discovering && scene.active && scene.motion
                     loops: Animation.Infinite
@@ -1379,12 +1380,12 @@ Item {
             width: onText.implicitWidth + 28
             height: 30
             radius: 15
-            color: onArea.containsMouse ? Theme.withAlpha(Theme.primary, 0.35) : Theme.withAlpha(Theme.primary, 0.2)
+            color: onArea.containsMouse ? Theme.withAlpha(scene.night.primary, 0.35) : Theme.withAlpha(scene.night.primary, 0.2)
             StyledText {
                 id: onText
                 anchors.centerIn: parent
                 text: "Turn on"
-                color: Theme.primary
+                color: scene.night.primary
                 font.pixelSize: Theme.fontSizeSmall
                 font.weight: Font.Medium
             }

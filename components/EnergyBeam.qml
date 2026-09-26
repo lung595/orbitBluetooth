@@ -6,12 +6,13 @@ import qs.Common
 // animated on the render thread, only while `running` and visible.
 ShaderEffect {
     id: beam
+    readonly property NightColors night: NightColors {}
 
     property bool running: true
     property real amplitude: 3
     property real wavelength: 38
     property real phase: 0
-    property color color: Theme.primary
+    property color color: beam.night.primary
     readonly property real lengthPx: width
     readonly property real heightPx: height
 

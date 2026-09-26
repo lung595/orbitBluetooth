@@ -11,6 +11,7 @@ import "Endurance.js" as Endurance
 // px/py/vx/vy directly, so there is no per-body timer or animation driver.
 Item {
     id: body
+    readonly property NightColors night: NightColors {}
 
     required property var scene
     required property string address
@@ -329,11 +330,11 @@ Item {
                 orientation: Gradient.Horizontal
                 GradientStop {
                     position: 0
-                    color: body.armed && body.holding ? Theme.withAlpha(Theme.error, 0.9) : Theme.withAlpha(Theme.primary, 0.9)
+                    color: body.armed && body.holding ? Theme.withAlpha(body.night.error, 0.9) : Theme.withAlpha(body.night.primary, 0.9)
                 }
                 GradientStop {
                     position: 1
-                    color: body.armed && body.holding ? Theme.withAlpha(Theme.error, 0.15) : Theme.withAlpha(Theme.primary, 0.2)
+                    color: body.armed && body.holding ? Theme.withAlpha(body.night.error, 0.15) : Theme.withAlpha(body.night.primary, 0.2)
                 }
             }
         }
@@ -356,7 +357,7 @@ Item {
         readonly property real start: body.scene.coreSize / 2
         readonly property real span: Math.max(0, tetherRoot.dist - start - body.diameter * body.baseScale / 2)
         readonly property bool running: visible && body.scene.awake && body.scene.motion
-        readonly property color glow: Theme.primary
+        readonly property color glow: body.night.primary
 
         Behavior on opacity {
             NumberAnimation {
@@ -410,7 +411,7 @@ Item {
             width: parent.width * 1.55
             height: width
             radius: width / 2
-            color: Theme.withAlpha(Theme.primary, 0.07)
+            color: Theme.withAlpha(body.night.primary, 0.07)
             opacity: body.connected && !body.focused ? 1 : 0
             Behavior on opacity {
                 NumberAnimation {
@@ -425,7 +426,7 @@ Item {
             width: parent.width * 0.9
             height: width
             radius: width / 2
-            color: Theme.withAlpha(Theme.primary, 0.05)
+            color: Theme.withAlpha(body.night.primary, 0.05)
             opacity: body.focused ? 1 : 0
             Behavior on opacity {
                 NumberAnimation {
@@ -444,9 +445,9 @@ Item {
                     duration: 260
                 }
             }
-            color: body.connected ? Qt.tint(Qt.rgba(0.06, 0.07, 0.09, 0.92), Theme.withAlpha(Theme.primary, 0.16)) : Qt.rgba(1, 1, 1, body.dormant ? 0.035 : 0.07)
+            color: body.night.whiteBodies ? (body.connected ? Qt.tint("#FFFFFF", Theme.withAlpha(Theme.primary, 0.1)) : Qt.rgba(1, 1, 1, body.dormant ? 0.35 : 0.72)) : body.connected ? Qt.tint(Qt.rgba(0.06, 0.07, 0.09, 0.92), Theme.withAlpha(body.night.primary, 0.16)) : Qt.rgba(1, 1, 1, body.dormant ? 0.035 : 0.07)
             border.width: 1
-            border.color: body.armed && body.holding ? Theme.withAlpha(Theme.error, 0.8) : body.armed ? Theme.withAlpha(Theme.primary, 0.9) : body.connected ? Theme.withAlpha(Theme.primary, 0.55) : Qt.rgba(1, 1, 1, body.dormant ? 0.08 : 0.14)
+            border.color: body.armed && body.holding ? Theme.withAlpha(body.night.error, 0.8) : body.armed ? Theme.withAlpha(body.night.primary, 0.9) : body.connected ? Theme.withAlpha(body.night.primary, 0.55) : Qt.rgba(1, 1, 1, body.dormant ? 0.08 : 0.14)
 
             Behavior on color {
                 ColorAnimation {
@@ -461,7 +462,7 @@ Item {
             height: width
             kind: body.kind
             imageSource: body.scene.prefs.imageFor(body.device)
-            color: body.focused ? "#F2F5EE" : body.connected ? Qt.lighter(Theme.primary, 1.12) : Qt.rgba(1, 1, 1, 0.86)
+            color: body.focused ? "#F2F5EE" : body.night.whiteBodies ? (body.connected ? body.night.bodyInk : body.night.bodyMuted) : body.connected ? Qt.lighter(body.night.primary, 1.12) : Qt.rgba(1, 1, 1, 0.86)
             stroke: body.focused ? 1.05 : 1.5
             Behavior on color {
                 ColorAnimation {
@@ -490,7 +491,7 @@ Item {
             }
 
             ShapePath {
-                strokeColor: Theme.withAlpha(Theme.primary, body.ancMode === "nc" ? 0.75 : 0.6)
+                strokeColor: Theme.withAlpha(body.night.primary, body.ancMode === "nc" ? 0.75 : 0.6)
                 strokeWidth: 1.5
                 strokeStyle: body.ancMode === "ambient" ? ShapePath.DashLine : ShapePath.SolidLine
                 dashPattern: [1.5, 3]
@@ -506,7 +507,7 @@ Item {
                 }
             }
             ShapePath {
-                strokeColor: body.ancMode === "adaptive" ? Theme.withAlpha(Theme.primary, 0.35) : "transparent"
+                strokeColor: body.ancMode === "adaptive" ? Theme.withAlpha(body.night.primary, 0.35) : "transparent"
                 strokeWidth: 1
                 fillColor: "transparent"
                 PathAngleArc {
@@ -543,7 +544,7 @@ Item {
                 }
             }
             ShapePath {
-                strokeColor: body.battery <= 15 ? Theme.error : Theme.primary
+                strokeColor: body.battery <= 15 ? body.night.error : body.night.primary
                 strokeWidth: 2
                 fillColor: "transparent"
                 capStyle: ShapePath.RoundCap
@@ -568,7 +569,7 @@ Item {
             preferredRendererType: Shape.CurveRenderer
 
             ShapePath {
-                strokeColor: Theme.withAlpha(Theme.primary, 0.55)
+                strokeColor: Theme.withAlpha(body.night.primary, 0.55)
                 strokeWidth: 5
                 fillColor: "transparent"
                 capStyle: ShapePath.RoundCap
@@ -607,7 +608,7 @@ Item {
             radius: width / 2
             x: parent.width * 0.86 - width / 2
             y: parent.height * 0.86 - height / 2
-            color: Theme.primary
+            color: body.night.primary
             border.width: 2
             border.color: Qt.rgba(0.04, 0.045, 0.06, 1)
             visible: body.charging && !body.focused
@@ -616,7 +617,7 @@ Item {
                 anchors.centerIn: parent
                 name: "bolt"
                 size: parent.width * 0.78
-                color: Theme.primaryText ?? "black"
+                color: body.night.primaryText ?? "black"
             }
         }
 
@@ -677,19 +678,19 @@ Item {
                             angle: 0
                             GradientStop {
                                 position: 0
-                                color: Theme.withAlpha(Theme.primary, 0.95)
+                                color: Theme.withAlpha(body.night.primary, 0.95)
                             }
                             GradientStop {
                                 position: 0.3
-                                color: Theme.withAlpha(Theme.primary, 0.4)
+                                color: Theme.withAlpha(body.night.primary, 0.4)
                             }
                             GradientStop {
                                 position: 0.56
-                                color: Theme.withAlpha(Theme.primary, 0)
+                                color: Theme.withAlpha(body.night.primary, 0)
                             }
                             GradientStop {
                                 position: 1
-                                color: Theme.withAlpha(Theme.primary, 0)
+                                color: Theme.withAlpha(body.night.primary, 0)
                             }
                         }
                         PathPolyline {
@@ -716,7 +717,7 @@ Item {
                     radius: 5
                     x: comet.width / 2 + comet.r - width / 2
                     y: comet.height / 2 - height / 2
-                    color: Theme.withAlpha(Theme.primary, 0.28)
+                    color: Theme.withAlpha(body.night.primary, 0.28)
                 }
                 Rectangle {
                     width: 4.2
@@ -724,7 +725,7 @@ Item {
                     radius: 2.1
                     x: comet.width / 2 + comet.r - width / 2
                     y: comet.height / 2 - height / 2
-                    color: Qt.lighter(Theme.primary, 1.6)
+                    color: Qt.lighter(body.night.primary, 1.6)
                 }
             }
         }
@@ -738,7 +739,7 @@ Item {
             radius: width / 2
             color: "transparent"
             border.width: 1.5
-            border.color: Theme.primary
+            border.color: body.night.primary
             opacity: 0
         }
     }
@@ -842,13 +843,13 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 name: body.charging ? "bolt" : "hourglass_bottom"
                 size: timeText.font.pixelSize + 1
-                color: Theme.withAlpha(Theme.primary, 0.8)
+                color: Theme.withAlpha(body.night.primary, 0.8)
             }
             StyledText {
                 id: timeText
                 anchors.verticalCenter: parent.verticalCenter
                 text: Charge.formatShort(parent.minutes)
-                color: Theme.withAlpha(Theme.primary, 0.8)
+                color: Theme.withAlpha(body.night.primary, 0.8)
                 font.pixelSize: Math.max(8, Math.round(body.diameter * 0.18))
                 font.weight: Font.Medium
                 font.features: {
@@ -861,7 +862,7 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             visible: !body.charging && !(body.minutesLeft > 0) && body.connected && body.scene.sinceFor(body.address) > 0 && !(body.charge?.minutesToFull > 0)
             text: Catalog.formatDuration(body.scene.now - body.scene.sinceFor(body.address))
-            color: Theme.withAlpha(Theme.primary, 0.75)
+            color: Theme.withAlpha(body.night.primary, 0.75)
             font.family: "monospace"
             font.pixelSize: Math.max(8, Math.round(body.diameter * 0.17))
         }
@@ -875,7 +876,7 @@ Item {
         x: body.width * (0.5 + 0.36 * body.baseScale) - width / 2
         y: body.height * (0.5 - 0.36 * body.baseScale) - height / 2
         z: 2
-        color: closeArea.containsMouse ? Theme.error : Qt.rgba(0.1, 0.1, 0.12, 0.95)
+        color: closeArea.containsMouse ? body.night.error : Qt.rgba(0.1, 0.1, 0.12, 0.95)
         border.width: 1
         border.color: Qt.rgba(1, 1, 1, 0.15)
         opacity: body.scene.prefs.quickDisconnect && body.connected && (body.hovered || closeArea.containsMouse) && !body.dragging ? 1 : 0
@@ -890,7 +891,7 @@ Item {
             anchors.centerIn: parent
             name: "close"
             size: parent.width * 0.7
-            color: closeArea.containsMouse ? Theme.errorText ?? "white" : Qt.rgba(1, 1, 1, 0.8)
+            color: closeArea.containsMouse ? body.night.errorText ?? "white" : Qt.rgba(1, 1, 1, 0.8)
         }
 
         MouseArea {

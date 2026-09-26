@@ -13,6 +13,7 @@ import "Earbuds.js" as Earbuds
 // (detail card open, Reduce motion off).
 Item {
     id: trio
+    readonly property NightColors night: NightColors {}
 
     property var parts: ({})              // { left, right, case: { level, charging } }
     property string name: ""
@@ -239,7 +240,7 @@ Item {
                     visible: piece.info?.charging ?? false
                     name: "bolt"
                     size: Theme.fontSizeSmall
-                    color: Theme.primary
+                    color: trio.night.primary
                 }
             }
         }

@@ -7,6 +7,7 @@ import "DeviceCatalog.js" as Catalog
 // that spits it back into the orbit. Empty, it explains what the hole is for.
 Item {
     id: card
+    readonly property NightColors night: NightColors {}
 
     required property var scene
     readonly property var hidden: scene.prefs.hiddenDevices
@@ -82,7 +83,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     visible: card.addresses.length > 1
                     text: "Show all"
-                    color: allArea.containsMouse ? Theme.primary : Theme.withAlpha(Theme.primary, 0.8)
+                    color: allArea.containsMouse ? card.night.primary : Theme.withAlpha(card.night.primary, 0.8)
                     font.pixelSize: Theme.fontSizeSmall
                     font.weight: Font.Medium
                     MouseArea {
@@ -159,7 +160,7 @@ Item {
                         width: 22
                         height: 22
                         kind: Catalog.resolve(row.device, card.scene.prefs.glyphOverrides)
-                        color: row.connected ? Qt.lighter(Theme.primary, 1.12) : Qt.rgba(1, 1, 1, 0.75)
+                        color: row.connected ? Qt.lighter(card.night.primary, 1.12) : Qt.rgba(1, 1, 1, 0.75)
                         stroke: 1.4
                     }
                     Column {
@@ -177,7 +178,7 @@ Item {
                         }
                         StyledText {
                             text: row.connected ? "Connected" : row.device ? "Nearby" : "Out of range"
-                            color: row.connected ? Theme.withAlpha(Theme.primary, 0.85) : card.muted
+                            color: row.connected ? Theme.withAlpha(card.night.primary, 0.85) : card.muted
                             font.pixelSize: Theme.fontSizeSmall - 1
                         }
                     }
@@ -189,7 +190,7 @@ Item {
                         width: showRow.implicitWidth + 20
                         height: 28
                         radius: 14
-                        color: showArea.containsMouse ? Theme.withAlpha(Theme.primary, 0.32) : Theme.withAlpha(Theme.primary, 0.16)
+                        color: showArea.containsMouse ? Theme.withAlpha(card.night.primary, 0.32) : Theme.withAlpha(card.night.primary, 0.16)
                         Row {
                             id: showRow
                             anchors.centerIn: parent
@@ -198,12 +199,12 @@ Item {
                                 anchors.verticalCenter: parent.verticalCenter
                                 name: "visibility"
                                 size: 15
-                                color: Theme.primary
+                                color: card.night.primary
                             }
                             StyledText {
                                 anchors.verticalCenter: parent.verticalCenter
                                 text: "Show"
-                                color: Theme.primary
+                                color: card.night.primary
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.weight: Font.Medium
                             }
