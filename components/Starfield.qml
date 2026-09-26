@@ -176,15 +176,15 @@ Item {
     // Shooting star flight, driven by a plain 60 Hz timer rather than a QML
     // animation: a running animation makes every shell window (bars,
     // wallpaper) redraw at the display rate, a timer only repaints this one.
-    // Same curves as before: InQuad travel, fade in over 160 ms, hold, fade
-    // out over the last 320 ms.
+    // InQuad travel; the fade (in over the first 18 %, out over the last
+    // 36 %) scales with the flight time.
     Timer {
         id: meteorAnim
         property real sx: 0
         property real sy: 0
         property double t0: 0
         readonly property real travel: root.vignette ? 0.28 : 0.45
-        readonly property int duration: 900
+        readonly property int duration: 643   // 40 % faster than the original 900 ms
         interval: 16
         repeat: true
 
@@ -200,7 +200,8 @@ Item {
             const dist = root.width * travel;
             meteor.x = sx + dist * e;
             meteor.y = sy + dist * Math.tan(24 * Math.PI / 180) * e;
-            meteor.opacity = ms < 160 ? 0.9 * ms / 160 : ms < 580 ? 0.9 : 0.9 * Math.max(0, 1 - (ms - 580) / 320);
+            const p = ms / duration;
+            meteor.opacity = p < 0.18 ? 0.9 * p / 0.18 : p < 0.64 ? 0.9 : 0.9 * Math.max(0, 1 - (p - 0.64) / 0.36);
             if (ms >= duration) {
                 meteor.opacity = 0;
                 stop();
