@@ -13,7 +13,8 @@ disconnect it. Charging devices receive a beam of energy from the core.
 
 - Works in the **Control Center**, the **bar** and as a **desktop widget**
 - Drag-to-connect with magnet snap, elastic tether to disconnect
-- Live **charging** view: energy beam, time to full, speed, session chart
+- Live **charging** view: waving energy beam, time to full, speed, session chart
+- **Earbuds trio**: case and both buds in their own mini orbit, each with its battery
 - Battery gauge colored by level (red → amber → gold → lime → aqua)
 - 28 built-in line-art device icons, matched by name
 - Idle scenes use no frames at all; nothing leaves your machine
@@ -27,6 +28,10 @@ disconnect it. Charging devices receive a beam of energy from the core.
 | Desktop widget | Desktop widget, detail card |
 | --- | --- |
 | ![Frameless orbit dissolving into the wallpaper](screenshots/desktop.png) | ![Detail card on the desktop](screenshots/desktop-detail.png) |
+
+| Earbuds trio | Buds charging in their case |
+| --- | --- |
+| ![Case between the two earbuds, one battery bar each](screenshots/earbuds.png) | ![Both earbuds docked, beams flowing from the case](screenshots/earbuds-dock.png) |
 
 *Screenshots and animations are rendered from mock data with
 `scripts/preview/render.sh` and `scripts/preview/record.sh`.*
@@ -153,7 +158,22 @@ The card shows:
 - connection time and battery level
 - actions: change icon, connect or disconnect, hide, forget (asks twice)
 - battery gauge, session chart and stats (see below)
+- for earbuds, the **trio** (next section)
 - noise control, for supported headphones (next section)
+
+### Earbuds: the trio
+
+Earbuds that report their parts (case, left, right) get a small orbit of
+their own in the detail card: the case in the middle, one bud at each end,
+each with its battery bar. A bud charging in the case moves closer to it,
+then a beam flows from the case to the bud.
+
+![Earbuds charging in their case](screenshots/earbuds-dock.png)
+
+The drawings are chosen by name (stem or pebble buds, tall, wide or pebble
+case, white or graphite). To use your own photos, put them in the
+**Custom images folder** as `<name> case.png`, `<name> left.png` and
+`<name> right.png` (the left picture is mirrored when there is no right one).
 
 ## Noise control
 
@@ -173,7 +193,7 @@ conversation detection and the left/right/case batteries.
 | Bose | QC35 / QC35 II, NC700, QC45, QC Ultra, QC Headphones | No (untested) |
 | Nothing / CMF | Ear (1), (2), (3), (a), Headphone (1), CMF Buds and Headphone Pro | No (untested) |
 | Anker Soundcore | Life Q30/Q35, Liberty Air 2 Pro, Space Q45, others with the common layout | No (untested) |
-| Huawei / Honor | FreeBuds 4i to 6i, Pro to Pro 5, SE 4, Studio, FreeLace Pro, FreeClip, Honor Earbuds 2 | No (untested) |
+| Huawei / Honor | FreeBuds 4i to 6i, Pro to Pro 5, SE 4, Studio, FreeLace Pro, FreeClip, Honor Earbuds 2 | Yes (FreeBuds Pro) |
 | Oppo / OnePlus / realme | realme Buds T200 and Air6 Pro; other Enco/realme/OnePlus models are probed | No (untested) |
 | Xiaomi | Redmi Buds 3 Pro, 4 Active, 5 Pro, 6 (Pro, Lite, Active), 8 Active | No (untested) |
 | EarFun | Air Pro 4, Air S, Free Pro 3 | No (untested) |
@@ -196,6 +216,12 @@ The **Engine** setting decides when it runs:
 - **Always connected**: one session per connected headset, so changes made
   with the headset's own buttons show up live (a small idle process).
 
+Noise control only talks to **paired** headsets: opening a channel to a
+device that is connected but not paired would make it drop and reconnect.
+The helper also reads battery and charging state once when a view opens (at
+most once a minute per headset), so a headset you just plugged in shows as
+charging right away.
+
 Some headsets cannot report every mode when asked (the WH-1000XM6 reads
 "noise cancelling" and "off" the same way); Orbit then keeps the last mode
 it set or saw.
@@ -203,8 +229,8 @@ it set or saw.
 ## Charging and battery data
 
 A charging device gets a lightning badge, a breathing battery arc and a beam
-of energy (white-hot core, iridescent shimmer, sparkles) from your machine to
-it. Under its name you read the level and the time to full, for example
+of energy from your machine to it: bright filaments that wave gently, with
+pulses flowing toward the device (drawn by a shader, only while visible). Under its name you read the level and the time to full, for example
 `54% · 2h08`.
 
 ![The charging beam, close up](screenshots/beam.gif)
@@ -231,7 +257,10 @@ light-speed streaks that flow while charging and a mark at 80%.
 Bluetooth itself only reports a percentage, so the plugin combines two
 sources:
 
-1. **Reported by the device.** Devices with a kernel battery driver (most game
+1. **Reported by the device.** Headsets with noise control report their own
+   charging state through the helper (Sony, Huawei and others, per part for
+   earbuds; a charging case alone does not mark the buds as charging).
+   Devices with a kernel battery driver (most game
    controllers, Logitech peripherals, …) publish a real state through UPower.
    The plugin maps them to their Bluetooth address by reading `HID_UNIQ` from
    sysfs once per device.
@@ -329,6 +358,10 @@ replaced by `_`.
 
 ## Troubleshooting
 
+**Earbuds keep disconnecting after a few seconds.** Some earbuds (FreeBuds
+among others) ask you to confirm a pairing code. Orbit shows DMS's pairing
+dialog for them; accept it once and they stay connected.
+
 **No devices appear while scanning.** Make sure the device is in pairing mode.
 Devices that only broadcast a MAC address are hidden unless **Show unnamed
 devices** is on, and the orbit keeps at most **Devices in orbit** entries.
@@ -367,6 +400,9 @@ orbitBluetooth/
 │   ├── HiddenCard.qml           # list of hidden devices
 │   ├── OrbitMenu.qml            # right-click menu
 │   ├── BatteryCard.qml          # gauge, chart and stat tiles
+│   ├── StatTiles.qml            # READY AT / SPEED / HEALTH tiles
+│   ├── EarbudsTrio.qml, EarbudArt.qml, Earbuds.js   # case + buds mini orbit
+│   ├── EnergyBeam.qml           # waving charging beam (beam.frag)
 │   ├── Charge.js                # charge analysis and color ramp (pure)
 │   ├── Endurance.js             # rated battery life per model (time-left estimate)
 │   ├── AncService.qml, AncPanel.qml, Anc.js   # noise control (runs the helper)
@@ -377,7 +413,7 @@ orbitBluetooth/
 │   ├── protocols/               # one module per brand + shared checksums
 │   └── tests/                   # unittest: frames, checksums, each brand
 ├── tests/anc.test.js            # gjs: brand detection, modes, time left
-├── shaders/                     # gargantua.frag, tesseract.frag + compiled .qsb, build.sh
+├── shaders/                     # beam.frag, gargantua.frag, tesseract.frag + compiled .qsb, build.sh
 ├── scripts/
 │   ├── gen_sounds.py            # synthesizes sounds/*.wav (stdlib only)
 │   └── preview/                 # offscreen renderer with mock services
