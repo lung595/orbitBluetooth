@@ -140,7 +140,7 @@ Item {
         return address ? (a[address] || null) : null;
     }
     function ancCapable(body) {
-        return prefs.ancEnabled && !!body && body.connected && body.paired && Anc.family(body.name) !== "";
+        return prefs.ancEnabled && !!body && body.connected && body.paired && Anc.family(body.model) !== "";
     }
     function ancSend(address, key, value) {
         _ancService?.send(address, key, value);
@@ -640,10 +640,27 @@ Item {
     }
 
     function clearFocus() {
+        renaming = false;
         if (!focusBody)
             return;
         focusBody = null;
         wake();
+    }
+
+    // --- Rename (click on the name in the detail card) ------------------------
+    // The new name is the BlueZ alias: shown everywhere on the system, kept
+    // by BlueZ itself (Orbit stores nothing). An empty name gives the device
+    // its own name back.
+    property bool renaming: false
+
+    function rename(b, text) {
+        renaming = false;
+        if (!b || !b.device)
+            return;
+        const next = text.trim();
+        if (next === b.name)
+            return;
+        b.device.name = next;
     }
 
     // Escape steps back one level (menu, hidden list, detail card) before it
@@ -654,7 +671,9 @@ Item {
         sequence: "Escape"
         enabled: scene.active && (scene.menuOpen || scene.hiddenOpen || !!scene.focusBody)
         onActivated: {
-            if (scene.menuOpen)
+            if (scene.renaming)
+                scene.renaming = false; // cancel the rename, keep the card
+            else if (scene.menuOpen)
                 menu.close();
             else if (scene.hiddenOpen)
                 scene.closeHidden();

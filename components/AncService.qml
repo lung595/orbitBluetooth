@@ -40,7 +40,7 @@ Item {
     }
 
     function familyFor(device) {
-        return device ? Anc.family(device.name || device.deviceName || "") : "";
+        return device ? Anc.family(device.deviceName || device.name || "") : "";
     }
 
     // Only paired, connected headsets: opening a vendor channel to an
@@ -71,7 +71,7 @@ Item {
             return _sessions[address] || null;
         const proc = sessionComponent.createObject(root, {
             "address": address,
-            "command": ["python3", _helper, address, familyFor(deviceFor(address)), deviceFor(address).name || deviceFor(address).deviceName || ""]
+            "command": ["python3", _helper, address, familyFor(deviceFor(address)), deviceFor(address).deviceName || deviceFor(address).name || ""]
         });
         const next = Object.assign({}, _sessions);
         next[address] = proc;

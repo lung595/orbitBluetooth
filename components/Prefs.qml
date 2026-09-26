@@ -70,7 +70,8 @@ QtObject {
     function imageFor(device) {
         if (!imageFolder || !device)
             return "";
-        const name = (device.name || device.deviceName || "").replace(/[\/\\:*?"<>|]/g, "_");
+        // The device's own name, so a rename does not lose its pictures
+        const name = (device.deviceName || device.name || "").replace(/[\/\\:*?"<>|]/g, "_");
         if (!name)
             return "";
         const folder = Paths.expandTilde(imageFolder).replace(/\/$/, "");

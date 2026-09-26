@@ -14,6 +14,7 @@ function load(file, names) {
 const Anc = load("Anc.js", ["family", "nextMode", "ordered"]);
 const Charge = load("Charge.js", ["analyze", "formatShort"]);
 const Endurance = load("Endurance.js", ["ratedHours"]);
+const Catalog = load("DeviceCatalog.js", ["deviceName", "modelName", "resolve"]);
 
 let count = 0, failures = 0;
 function eq(what, got, expected) {
@@ -64,6 +65,17 @@ eq("a 10% step 10 min in stays close to the rated life", early.minutesLeft > 18 
 const late = Charge.analyze([[now - 180 * 60000, 90], [now, 60]], 60, null, now, rated);
 eq("after 3 h the measure wins", Charge.formatShort(late.minutesLeft), "6h00");
 eq("days", Charge.formatShort(3 * 1440), "3d");
+
+
+// Rename: the alias is shown, but the device is still recognized by its own
+// name (icon, noise control family)
+const renamed = { address: "AA:BB:CC:DD:EE:FF", name: "My headset", deviceName: "WH-1000XM6", icon: "audio-headset" };
+const original = { address: "AA:BB:CC:DD:EE:FF", name: "WH-1000XM6", deviceName: "WH-1000XM6", icon: "audio-headset" };
+eq("renamed: shown name", Catalog.deviceName(renamed), "My headset");
+eq("renamed: model name", Catalog.modelName(renamed), "WH-1000XM6");
+eq("renamed: same kind", Catalog.resolve(renamed, {}), Catalog.resolve(original, {}));
+eq("renamed: same ANC family", Anc.family(Catalog.modelName(renamed)), "sony");
+eq("no own name: falls back to the alias", Catalog.modelName({ name: "Speaker", deviceName: "" }), "Speaker");
 
 print(failures ? failures + "/" + count + " failed" : count + " tests passed");
 imports.system.exit(failures ? 1 : 0);
