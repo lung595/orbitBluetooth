@@ -22,6 +22,8 @@ Rectangle {
     property real gaugeRatio: 0.1       // bar height / width
     property bool charging: false
     property bool animate: true
+    // Effects clock of the scene (seconds): drives the charging streaks
+    property real time: 0
     property var stats: []              // [{ label, value }], up to 3 shown
     property var history: []            // [[epochMs, percent], ...] for the sparkline
     property string footnote: ""
@@ -200,7 +202,9 @@ Rectangle {
                     Rectangle {
                         id: streak
                         readonly property real len: gauge.width * modelData[2]
-                        x: gauge.width * modelData[1]
+                        // Charging: flows left to right, one pass per `dur` (effects clock)
+                        readonly property real dur: 1.1 + (index % 4) * 0.38
+                        x: root.running ? -len + ((root.time % dur) / dur) * (gauge.width + len) : gauge.width * modelData[1]
                         y: gauge.height * modelData[0] - height / 2
                         width: len
                         height: modelData[4]
@@ -220,14 +224,6 @@ Rectangle {
                                 position: 1
                                 color: root.paper.fg(0)
                             }
-                        }
-
-                        XAnimator on x {
-                            running: root.running
-                            from: -streak.len
-                            to: gauge.width
-                            duration: 1100 + (index % 4) * 380
-                            loops: Animation.Infinite
                         }
                     }
                 }

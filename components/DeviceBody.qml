@@ -376,6 +376,7 @@ Item {
             amplitude: 2
             wavelength: 38
             running: chargeFlow.running
+            time: body.scene.fxTime
         }
 
         // Source flare where the beam leaves the host
@@ -560,7 +561,7 @@ Item {
             }
         }
 
-        // Charging: the level arc breathes (render-thread animator)
+        // Charging: the level arc breathes (0.15 ↔ 1 every 1.8 s, effects clock)
         Shape {
             id: chargeGlow
             anchors.centerIn: parent
@@ -584,22 +585,7 @@ Item {
                 }
             }
 
-            SequentialAnimation on opacity {
-                running: chargeGlow.visible && body.scene.awake && body.scene.motion
-                loops: Animation.Infinite
-                OpacityAnimator {
-                    from: 0.15
-                    to: 1
-                    duration: 900
-                    easing.type: Easing.InOutSine
-                }
-                OpacityAnimator {
-                    from: 1
-                    to: 0.15
-                    duration: 900
-                    easing.type: Easing.InOutSine
-                }
-            }
+            opacity: body.scene.awake && body.scene.motion ? 0.575 - 0.425 * Math.cos(body.scene.fxTime * Math.PI / 0.9) : 1
         }
 
         // Charging badge
@@ -623,9 +609,10 @@ Item {
         }
 
         // Connecting: a comet circles the device. Its tapered tail is static
-        // geometry (rebuilt only on resize); two render-thread animators turn
-        // it: a steady orbit plus a slow sway, so it speeds up and eases off
-        // like a breath. Nothing runs outside a connection attempt.
+        // geometry (rebuilt only on resize); the effects clock turns it: a
+        // steady orbit (1.5 s per turn) plus a slow sway (±22°, 1.8 s), so it
+        // speeds up and eases off like a breath. Nothing runs outside a
+        // connection attempt.
         Item {
             id: comet
             anchors.centerIn: parent
@@ -635,36 +622,13 @@ Item {
             readonly property real r: width / 2 - 2.5
             readonly property real span: 200 * Math.PI / 180   // tail length, radians
 
-            RotationAnimator on rotation {
-                running: comet.visible
-                from: 0
-                to: 360
-                duration: 1500
-                loops: Animation.Infinite
-            }
+            rotation: comet.visible ? (body.scene.fxTime * 240) % 360 : 0
 
             Item {
                 id: sway
                 anchors.fill: parent
 
-                SequentialAnimation {
-                    running: comet.visible && body.scene.motion
-                    loops: Animation.Infinite
-                    RotationAnimator {
-                        target: sway
-                        from: -22
-                        to: 22
-                        duration: 900
-                        easing.type: Easing.InOutSine
-                    }
-                    RotationAnimator {
-                        target: sway
-                        from: 22
-                        to: -22
-                        duration: 900
-                        easing.type: Easing.InOutSine
-                    }
-                }
+                rotation: comet.visible && body.scene.motion ? -22 * Math.cos(body.scene.fxTime * Math.PI / 0.9) : 0
 
                 // Tail: a crescent that thins to nothing, brightest at the head
                 Shape {

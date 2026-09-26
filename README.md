@@ -379,8 +379,12 @@ replaced by `_`.
   window (bars, wallpaper) redraw at the display rate. Measured on a 240 Hz
   screen: about 65 % of a core with a frame-synced loop, about 2.5 % with the
   timer, the whole shell included (the shell alone idles at about 2.8 %).
-- For the same reason, shooting stars and hovering the desktop widget run on
-  plain timers (60 Hz); display-synced frames are kept for dragging a device.
+- For the same reason, nothing loops as a QML animation anywhere (Control
+  Center, bar popout, desktop): the drift runs on a 60 Hz timer (30 Hz for the
+  desktop's ambient motion), and every effect (charging glow and beam, comet,
+  earbuds float, gauge streaks, scan ping, shooting stars) is computed from
+  one effects clock. Display-synced frames are kept for gestures and until
+  their motion has calmed down, so dragging stays smooth to the very end.
 - Everything pauses while the session is locked or the monitors are off.
 - Backgrounds (stars, nebulae, veil) are painted once. Charging effects only
   move fixed geometry, mostly with render-thread animators.

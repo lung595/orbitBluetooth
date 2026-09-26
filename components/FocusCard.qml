@@ -244,6 +244,7 @@ Item {
                     name: card.body?.name ?? ""
                     caption: card.timeValue + (card.timeSuffix ? " " + card.timeSuffix : "")
                     animate: card.scene.awake && card.scene.motion
+                    time: card.scene.fxTime
                     caseImage: card.scene.prefs.partImageFor(card.device, "case")
                     leftImage: card.scene.prefs.partImageFor(card.device, "left")
                     rightImage: card.scene.prefs.partImageFor(card.device, "right")
@@ -262,6 +263,7 @@ Item {
                     timeSuffix: card.timeSuffix
                     showMeter: !card.trioShown
                     animate: card.scene.awake && card.scene.motion
+                    time: card.scene.fxTime
 
                     readonly property var c: card.body?.charge ?? null
                     readonly property real since: card.scene.sinceFor(card.body?.address)

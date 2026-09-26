@@ -76,6 +76,7 @@ Item {
     property real dragX: 0
     property real dragY: 0
     property real clock: 0
+    property real fxTime: 0
     property real orbitTime: 0
     property bool settled: false
     property double now: Date.now()
@@ -680,6 +681,9 @@ Item {
 
     function step(dt) {
         dt = Math.min(dt, 1 / 30);
+        // Effects clock (charge glow and beam, comet, earbuds, gauge, scan):
+        // effects are plain bindings on it, never looping QML animations
+        fxTime += dt;
         // Time-driven motion (orbits, float, twinkles) only while awake: asleep,
         // the targets hold still so the bodies can settle and the loop stops.
         const timeDriven = motion && awake;
@@ -866,18 +870,30 @@ Item {
             _calmFor = 0;
 
         // Sleep when nothing moves and time-driven motion is off
-        if (!moving && !timeDriven) {
+        // Visible effects keep the steps coming: a comet while connecting (even
+        // with Reduce motion, it is the progress indicator), the rest only
+        // with motion on
+        let fx = false;
+        if (awake) {
+            fx = (discovering && motion) || (!!focusBody && motion);
+            for (const b of all) {
+                if (b.phase === "connecting" || (b.charging && motion))
+                    fx = true;
+            }
+        }
+
+        if (!moving && !timeDriven && !fx) {
             settled = true;
             _lively = false;
         }
     }
 
     readonly property bool _stepping: active && visible && width > 0 && !settled
-    // Display-synced steps only where they are felt: dragging a device (and
-    // outside the desktop). A running QML animation keeps every shell window
-    // (bars, wallpaper...) redrawing at the display rate, a plain timer only
-    // repaints what actually changed.
-    readonly property bool _fullRate: !!dragBody || _lively || !freezeWhenIdle
+    // Display-synced steps only where they are felt: a gesture and its
+    // aftermath, on every surface. A running QML animation keeps every shell
+    // window (bars, wallpaper...) redrawing at the display rate, a plain
+    // timer only repaints what actually changed.
+    readonly property bool _fullRate: !!dragBody || _lively
     // Lively: a gesture's aftermath (a device released, snapping into or out
     // of the ring, flying to its card) stays display-synced until everything
     // has slowed down, so the motion is smooth to the very end.
@@ -886,6 +902,7 @@ Item {
     function _kick() {
         _lively = true;
         _calmFor = 0;
+        settled = false;
     }
     onDragBodyChanged: _kick()
     onFocusBodyChanged: _kick()
@@ -893,8 +910,8 @@ Item {
         running: scene._stepping && scene._fullRate
         onTriggered: scene.step(frameTime)
     }
-    // Desktop without a drag: 60 Hz while hovered or showing a card, 30 Hz
-    // for the ambient drift nobody is interacting with
+    // Otherwise 60 Hz (a view open, the desktop hovered or showing a card),
+    // 30 Hz for the desktop's ambient drift nobody is interacting with
     Timer {
         interval: scene.ambientOnly ? 33 : 16
         repeat: true
@@ -1120,27 +1137,12 @@ Item {
             color: "transparent"
             border.width: 1
             border.color: scene.night.primary
-            opacity: 0
             visible: scene.discovering && scene.active && scene.motion
-
-            ParallelAnimation {
-                running: ping.visible
-                loops: Animation.Infinite
-                ScaleAnimator {
-                    target: ping
-                    from: 1
-                    to: 3.2
-                    duration: 2600
-                    easing.type: Easing.OutCubic
-                }
-                OpacityAnimator {
-                    target: ping
-                    from: 0.35
-                    to: 0
-                    duration: 2600
-                    easing.type: Easing.OutQuad
-                }
-            }
+            // One ring every 2.6 s from the effects clock: grows (OutCubic)
+            // while it fades (OutQuad)
+            readonly property real t: (scene.fxTime % 2.6) / 2.6
+            scale: 1 + 2.2 * (1 - Math.pow(1 - t, 3))
+            opacity: 0.35 * (1 - t) * (1 - t)
         }
 
         // Connection waves (elliptical, follow the orbit's perspective)
@@ -1390,21 +1392,8 @@ Item {
                 radius: 3
                 anchors.verticalCenter: parent.verticalCenter
                 color: scene.discovering ? scene.night.primary : Qt.rgba(1, 1, 1, 0.35)
-                // Animators: the blink runs on the render thread
-                SequentialAnimation on opacity {
-                    running: scene.discovering && scene.active && scene.motion
-                    loops: Animation.Infinite
-                    onRunningChanged: if (!running)
-                        scanDot.opacity = 1
-                    OpacityAnimator {
-                        to: 0.25
-                        duration: 700
-                    }
-                    OpacityAnimator {
-                        to: 1
-                        duration: 700
-                    }
-                }
+                // Blinks 1 → 0.25 → 1 every 1.4 s while scanning (effects clock)
+                opacity: scene.discovering && scene.active && scene.motion ? 0.25 + 0.75 * Math.abs(1 - (scene.fxTime % 1.4) / 0.7) : 1
             }
             StyledText {
                 text: scene.discovering ? "Scanning" : "Scan"
