@@ -13,7 +13,7 @@ disconnect it. Charging devices receive a beam of energy from the core.
 
 - Works in the **Control Center**, the **bar** and as a **desktop widget**
 - Drag-to-connect with magnet snap, elastic tether to disconnect
-- Live **charging** view: waving energy beam, time to full, speed, session chart
+- Live **charging** view: magnetic charging beam, time to full, speed, session chart
 - **Earbuds trio**: case and both buds in their own mini orbit, each with its battery
 - Battery gauge colored by level (red → amber → gold → lime → aqua)
 - 28 built-in line-art device icons, matched by name
@@ -169,7 +169,7 @@ The card shows:
 Earbuds that report their parts (case, left, right) get a small orbit of
 their own in the detail card: the case in the middle, one bud at each end,
 each with its battery bar. A bud charging in the case moves closer to it,
-then a beam flows from the case to the bud.
+its battery bar following it, and field lines join the case to the bud.
 
 ![Earbuds charging in their case](screenshots/earbuds-dock.png)
 
@@ -232,8 +232,10 @@ it set or saw.
 ## Charging and battery data
 
 A charging device gets a lightning badge, a breathing battery arc and a beam
-of energy from your machine to it: bright filaments that wave gently, with
-pulses flowing toward the device (drawn by a shader, only while visible). Under its name you read the level and the time to full, for example
+of energy from your machine to it: many faint field lines that fan out into a
+spindle and meet again at the device, each waving at its own pace, like iron
+filings around a magnet (drawn by a shader, only while visible).
+Under its name you read the level and the time to full, for example
 `54% · 2h08`.
 
 ![The charging beam, close up](screenshots/beam.gif)
@@ -405,7 +407,7 @@ orbitBluetooth/
 │   ├── BatteryCard.qml          # gauge, chart and stat tiles
 │   ├── StatTiles.qml            # READY AT / SPEED / HEALTH tiles
 │   ├── EarbudsTrio.qml, EarbudArt.qml, Earbuds.js   # case + buds mini orbit
-│   ├── EnergyBeam.qml           # waving charging beam (beam.frag)
+│   ├── EnergyBeam.qml           # magnetic field-line beam (beam.frag)
 │   ├── Charge.js                # charge analysis and color ramp (pure)
 │   ├── Endurance.js             # rated battery life per model (time-left estimate)
 │   ├── AncService.qml, AncPanel.qml, Anc.js   # noise control (runs the helper)

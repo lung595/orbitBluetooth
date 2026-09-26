@@ -10,7 +10,8 @@ trap 'rm -rf "$tmp"' EXIT
 scenes=${*:-beam gauge focus connect}
 for s in $scenes; do
     mkdir -p "$tmp/$s"
-    QT_QPA_PLATFORM=offscreen qml-qt6 -I imports record.qml -- "$s" "$tmp/$s"
+    # OpenGL rendering: the software backend skips shaders (charging beam)
+    QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=rhi QSG_RHI_BACKEND=opengl qml-qt6 -I imports record.qml -- "$s" "$tmp/$s"
     # Frame each scene on its subject to keep the files small
     case $s in
     beam) frame="crop=360:230:100:125" ;;
