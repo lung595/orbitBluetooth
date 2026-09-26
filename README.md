@@ -17,6 +17,7 @@ disconnect it. Charging devices receive a beam of energy from the core.
 - **Earbuds trio**: case and both buds in their own mini orbit, each with its battery
 - Battery gauge colored by level (red → amber → gold → lime → aqua)
 - 28 built-in line-art device icons, matched by name
+- Follows light and dark DMS themes, the sky always stays night
 - Idle scenes use no frames at all; nothing leaves your machine
 
 ## Gallery
@@ -277,6 +278,18 @@ sources:
 
 The card's footnote always says which source is in use.
 
+## Light theme
+
+Orbit keeps its night sky in every theme. With a light DMS theme, the
+devices and your machine turn into white discs, the cards into a soft
+off-white with dark ink, and the accents drawn on the sky are lifted to a
+lighter shade of the same hue so they stay readable. The dark theme is
+unchanged.
+
+| Orbit, light theme | Detail card, light theme |
+| --- | --- |
+| ![White devices on the night sky](screenshots/light.png) | ![Soft off-white detail card](screenshots/light-detail.png) |
+
 ## Keyboard shortcuts (IPC)
 
 Bind these to keys in your compositor:
@@ -418,6 +431,7 @@ orbitBluetooth/
 │   ├── Charge.js                # charge analysis and color ramp (pure)
 │   ├── Endurance.js             # rated battery life per model (time-left estimate)
 │   ├── AncService.qml, AncPanel.qml, Anc.js   # noise control (runs the helper)
+│   ├── NightColors.qml, PaperColors.qml   # light-theme accents and card colors
 │   ├── Starfield.qml, Vignette.qml, DeviceGlyph.qml, …
 ├── anc/
 │   ├── orbit_anc.py             # noise-control helper (stdin/stdout JSON session)
