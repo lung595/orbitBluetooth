@@ -442,6 +442,7 @@ over time.
 
 ### 1.4.1 (2026-09-27)
 - Device names are readable everywhere, even on a pale or busy wallpaper: each name glows softly in your theme's accent, and devices that are not connected fade less. On the desktop they also sit on a smoky disc.
+- Desktop widget: devices are a quarter smaller, so the orbit sits lighter on the wallpaper. The panels keep their size.
 - Connected devices read stronger than the others. With nothing connected, every name is lifted so the orbit stays easy to read.
 
 ### 1.4.0 (2026-09-26)
