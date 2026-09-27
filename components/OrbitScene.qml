@@ -25,6 +25,9 @@ Item {
     property bool freezeWhenIdle: false      // desktop: stop animating when idle
     property bool interacting: false         // desktop: pointer is over the widget
     property bool glass: false               // desktop: frameless, fades into the wallpaper
+    // On the desktop, labels sit on whatever wallpaper the user has, often a
+    // pale or busy one: they get a dark, theme-tinted outline to stay legible
+    readonly property color labelShade: Qt.tint(Qt.rgba(0.02, 0.024, 0.04, 0.75), Theme.withAlpha(night.primary, 0.07))
     property real cornerRadius: 0            // rounded hosts (Control Center, popout)
     property var previewDevices: []          // fake device objects, for previews and tests
     readonly property alias prefs: prefsObj
@@ -1296,7 +1299,9 @@ Item {
             y: core.y + core.height + 4
             z: 50
             text: UserInfoService.hostname || ""
-            color: Qt.rgba(1, 1, 1, 0.45)
+            color: Qt.rgba(1, 1, 1, scene.glass ? 0.7 : 0.45)
+            style: scene.glass ? Text.Outline : Text.Normal
+            styleColor: scene.labelShade
             font.pixelSize: Math.max(9, Math.round(scene.coreSize * 0.14))
             font.letterSpacing: 0.6
             opacity: scene.focusBody ? 0 : 1

@@ -75,7 +75,9 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         y: parent.height / 2 + hole.horizon + 6
         text: hole.count > 0 ? "Hidden · " + hole.count : "Hidden"
-        color: Qt.rgba(1, 1, 1, hole.hovered || hole.feed > 0.3 ? 0.8 : 0.42)
+        color: Qt.rgba(1, 1, 1, hole.hovered || hole.feed > 0.3 ? 0.8 : hole.scene.glass ? 0.7 : 0.42)
+        style: hole.scene.glass ? Text.Outline : Text.Normal
+        styleColor: hole.scene.labelShade
         font.pixelSize: Math.max(9, Math.round(hole.scene.bodySize * 0.2))
         font.letterSpacing: 0.4
         visible: hole.scene.prefs.showLabels || hole.hovered || hole.feed > 0

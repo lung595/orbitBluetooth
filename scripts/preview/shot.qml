@@ -11,10 +11,14 @@ import "../../components"
 Window {
     id: win
     readonly property var args: Qt.application.arguments
-    // A "-light" suffix renders with a light theme's accent colors
+    // A "-light" suffix renders with a light theme's accent colors; a
+    // "-bright" suffix puts the desktop shots on a pale, busy wallpaper
+    // (the hardest case for label contrast)
     readonly property string rawMode: args[args.length - 2]
-    readonly property bool light: rawMode.endsWith("-light")
-    readonly property string mode: rawMode.replace(/-light$/, "")
+    readonly property bool bright: rawMode.endsWith("-bright")
+    readonly property string baseMode: rawMode.replace(/-bright$/, "")
+    readonly property bool light: baseMode.endsWith("-light")
+    readonly property string mode: baseMode.replace(/-light$/, "")
     readonly property string out: args[args.length - 1]
     readonly property bool glass: mode.startsWith("desktop")
     // Control Center sized shots for the black hole, menu and comet
@@ -51,7 +55,8 @@ Window {
         if (mode !== "hiddenempty")
             SettingsData.pluginSettings = Object.assign({}, SettingsData.pluginSettings, {
                 "hiddenDevices": { "3C:8D:20:54:AB:12": "Keychron K3", "E8:07:BF:6A:19:D4": "JBL Flip 6" },
-                "holeStyle": mode === "holetess" ? "tesseract" : "blackhole"
+                "holeStyle": mode === "holetess" ? "tesseract" : "blackhole",
+                "desktopBackdrop": bright ? 50 : 72
             });
         BluetoothService.discovering = mode === "orbit";
         PluginService.globalVars = {
@@ -97,6 +102,29 @@ Window {
         }
         Rectangle { x: -120; y: 300; width: 700; height: 420; radius: 210; color: "#5E8B5A"; opacity: 0.55 }
         Rectangle { x: 380; y: 360; width: 600; height: 360; radius: 180; color: "#3D6B45"; opacity: 0.5 }
+
+        // Pale, busy variant: sky, clouds and bright patches under the labels
+        Item {
+            anchors.fill: parent
+            visible: win.bright
+            Rectangle {
+                anchors.fill: parent
+                gradient: Gradient {
+                    GradientStop { position: 0; color: "#DCE8F2" }
+                    GradientStop { position: 0.6; color: "#F4EFE4" }
+                    GradientStop { position: 1; color: "#C9D9B8" }
+                }
+            }
+            Repeater {
+                model: [[40, 60, 260, 90], [420, 30, 300, 110], [120, 420, 340, 120], [520, 380, 260, 150], [300, 220, 200, 70]]
+                Rectangle {
+                    x: modelData[0]; y: modelData[1]; width: modelData[2]; height: modelData[3]
+                    radius: height / 2
+                    color: index % 2 ? "#FFFFFF" : "#8FA7B8"
+                    opacity: 0.8
+                }
+            }
+        }
     }
 
     Rectangle {
