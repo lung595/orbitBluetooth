@@ -411,6 +411,22 @@ dms ipc call orbitBluetooth unhideAll    # bring every hidden device back
   when the stars change, and it only turns while the scene is awake.
 - Honors DMS **Reduce motion**.
 
+## Benchmark
+
+CPU of the whole shell (% of one core), each state for 10 s, one version after
+the other on the same machine (240 Hz screen). DMS alone: **0.7 %**.
+
+| State | 1.4.1 | 1.4.0 | 1.3.2 |
+|---|---|---|---|
+| Idle (bar icon, view closed) | 0.5 | 0.7 | 0.5 |
+| View open, left alone | 3.8 | 3.6 | 3.7 |
+| View open while scanning | 5.2 | 10.1 | 8.0 |
+| Desktop widget, *Ambient motion* on | 9.2 | 8.8 | 8.5 |
+
+Idle costs nothing: the shell uses the same with or without Orbit. Short
+runs are noisy (about ±2 points while scanning), and the desktop figure covers
+the first seconds after the widget appears.
+
 ## Troubleshooting
 
 **Earbuds keep disconnecting after a few seconds.** Some earbuds (FreeBuds
