@@ -188,7 +188,7 @@ Item {
     y: py - height / 2
     // Bodies on the far side of the ring pass behind the host core (z 50)
     z: focused ? 20000 : dragging ? 10000 : inSlot && depth < 0 ? 10 + py * 0.01 : 100 + py
-    opacity: leaving ? 0 : (spawned ? 1 : 0) * ((scene.focusBody && scene.focusBody !== body) || scene.hiddenOpen ? 0.1 : 1) * (inSlot ? 1 : scene.glass ? (dormant ? 0.8 : 0.85 + 0.15 * signal) : dormant ? 0.5 : 0.6 + 0.4 * signal)
+    opacity: leaving ? 0 : (spawned ? 1 : 0) * ((scene.focusBody && scene.focusBody !== body) || scene.hiddenOpen ? 0.1 : 1) * (inSlot ? 1 : dormant ? 0.85 : 0.9 + 0.1 * signal)
 
     Behavior on opacity {
         NumberAnimation {
@@ -454,9 +454,9 @@ Item {
                     duration: 260
                 }
             }
-            color: body.night.whiteBodies ? (body.connected ? Qt.tint("#FFFFFF", Theme.withAlpha(Theme.primary, 0.1)) : Qt.rgba(1, 1, 1, body.dormant ? 0.35 : 0.72)) : body.connected ? Qt.tint(Qt.rgba(0.06, 0.07, 0.09, 0.92), Theme.withAlpha(body.night.primary, 0.16)) : body.scene.glass ? Qt.rgba(0.05, 0.06, 0.08, body.dormant ? 0.5 : 0.6) : Qt.rgba(1, 1, 1, body.dormant ? 0.035 : 0.07)
+            color: body.night.whiteBodies ? (body.connected ? Qt.tint("#FFFFFF", Theme.withAlpha(Theme.primary, 0.1)) : Qt.rgba(1, 1, 1, body.dormant ? 0.35 : 0.72)) : body.connected ? Qt.tint(Qt.rgba(0.06, 0.07, 0.09, 0.92), Theme.withAlpha(body.night.primary, 0.16)) : body.scene.glass ? Qt.rgba(0.05, 0.06, 0.08, body.dormant ? 0.62 : 0.7) : Qt.rgba(1, 1, 1, body.dormant ? 0.07 : 0.1)
             border.width: 1
-            border.color: body.armed && body.holding ? Theme.withAlpha(body.night.error, 0.8) : body.armed ? Theme.withAlpha(body.night.primary, 0.9) : body.connected ? Theme.withAlpha(body.night.primary, 0.55) : Qt.rgba(1, 1, 1, body.dormant ? 0.08 : 0.14)
+            border.color: body.armed && body.holding ? Theme.withAlpha(body.night.error, 0.8) : body.armed ? Theme.withAlpha(body.night.primary, 0.9) : body.connected ? Theme.withAlpha(body.night.primary, 0.55) : Qt.rgba(1, 1, 1, body.dormant ? 0.14 : 0.2)
 
             Behavior on color {
                 ColorAnimation {
@@ -796,8 +796,8 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             text: body.name
             elide: Text.ElideRight
-            color: Qt.rgba(1, 1, 1, body.connected || body.hovered ? 0.88 : body.scene.glass ? 0.78 : 0.5)
-            style: body.scene.glass ? Text.Outline : Text.Normal
+            color: Qt.rgba(1, 1, 1, body.connected || body.hovered ? 0.95 : 0.88)
+            style: Text.Outline
             styleColor: body.scene.labelShade
             font.pixelSize: Math.max(9, Math.round(body.diameter * 0.2))
             font.weight: body.connected ? Font.Medium : Font.Normal
@@ -824,7 +824,7 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 text: Charge.formatShort(parent.minutes)
                 color: Theme.withAlpha(body.night.primary, 0.8)
-                style: body.scene.glass ? Text.Outline : Text.Normal
+                style: Text.Outline
                 styleColor: body.scene.labelShade
                 font.pixelSize: Math.max(8, Math.round(body.diameter * 0.18))
                 font.weight: Font.Medium
@@ -839,7 +839,7 @@ Item {
             visible: !body.charging && !(body.minutesLeft > 0) && body.connected && body.scene.sinceFor(body.address) > 0 && !(body.charge?.minutesToFull > 0)
             text: Catalog.formatDuration(body.scene.now - body.scene.sinceFor(body.address))
             color: Theme.withAlpha(body.night.primary, 0.75)
-            style: body.scene.glass ? Text.Outline : Text.Normal
+            style: Text.Outline
             styleColor: body.scene.labelShade
             font.family: "monospace"
             font.pixelSize: Math.max(8, Math.round(body.diameter * 0.17))
