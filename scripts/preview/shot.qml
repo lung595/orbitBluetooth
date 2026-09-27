@@ -11,14 +11,15 @@ import "../../components"
 Window {
     id: win
     readonly property var args: Qt.application.arguments
-    // A "-light" suffix renders with a light theme's accent colors; a
-    // "-bright" suffix puts the desktop shots on a pale, busy wallpaper
-    // (the hardest case for label contrast)
+    // Suffixes: "-light" renders with a light theme's accent colors,
+    // "-bright" puts the desktop shots on a pale, busy wallpaper (the
+    // hardest case for label contrast), "-none" disconnects every device
     readonly property string rawMode: args[args.length - 2]
-    readonly property bool bright: rawMode.endsWith("-bright")
-    readonly property string baseMode: rawMode.replace(/-bright$/, "")
-    readonly property bool light: baseMode.endsWith("-light")
-    readonly property string mode: baseMode.replace(/-light$/, "")
+    readonly property var flags: rawMode.split("-")
+    readonly property bool bright: flags.indexOf("bright") > 0
+    readonly property bool light: flags.indexOf("light") > 0
+    readonly property bool none: flags.indexOf("none") > 0
+    readonly property string mode: flags[0]
     readonly property string out: args[args.length - 1]
     readonly property bool glass: mode.startsWith("desktop")
     // Control Center sized shots for the black hole, menu and comet
@@ -31,7 +32,8 @@ Window {
     readonly property double t: Date.now()
     readonly property int m: 60000
 
-    readonly property var devices: [
+    readonly property var devices: (none ? allDevices.map(d => Object.assign({}, d, { connected: false })) : allDevices)
+    readonly property var allDevices: [
         { address: "58:18:62:3D:72:95", name: "WH-1000XM6", connected: true, paired: true, bonded: true, blocked: false, batteryAvailable: true, battery: 0.54, icon: "audio-headphones" },
         { address: "98:7A:14:22:C1:0E", name: "Xbox Wireless Controller", connected: true, paired: true, bonded: true, blocked: false, batteryAvailable: true, battery: 0.72, icon: "input-gaming" },
         { address: "D4:1A:88:10:5B:77", name: "MX Master 3S", connected: false, paired: true, bonded: true, blocked: false, batteryAvailable: false, battery: 0, icon: "input-mouse" },

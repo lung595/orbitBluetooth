@@ -71,13 +71,22 @@ Item {
     }
 
     // Name + how many devices it holds
+    LabelGlow {
+        x: holeName.x + holeName.width / 2 - width / 2
+        y: holeName.y + holeName.height / 2 - height / 2
+        spanX: holeName.width + 26
+        spanY: holeName.height + 12
+        color: hole.night.primary
+        strength: 0.14
+        visible: holeName.visible
+    }
+
     StyledText {
+        id: holeName
         anchors.horizontalCenter: parent.horizontalCenter
         y: parent.height / 2 + hole.horizon + 6
         text: hole.count > 0 ? "Hidden · " + hole.count : "Hidden"
-        color: Qt.rgba(1, 1, 1, hole.hovered || hole.feed > 0.3 ? 0.88 : 0.75)
-        style: Text.Outline
-        styleColor: hole.scene.labelShade
+        color: Qt.rgba(1, 1, 1, hole.hovered || hole.feed > 0.3 ? 0.88 : 0.7)
         font.pixelSize: Math.max(9, Math.round(hole.scene.bodySize * 0.2))
         font.letterSpacing: 0.4
         visible: hole.scene.prefs.showLabels || hole.hovered || hole.feed > 0

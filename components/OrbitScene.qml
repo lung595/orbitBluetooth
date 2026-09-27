@@ -25,10 +25,9 @@ Item {
     property bool freezeWhenIdle: false      // desktop: stop animating when idle
     property bool interacting: false         // desktop: pointer is over the widget
     property bool glass: false               // desktop: frameless, fades into the wallpaper
-    // Labels get a dark, theme-tinted outline so they stay legible on any
-    // background: a pale or busy wallpaper on the desktop, the bright halo
-    // of a connected device in the panels
-    readonly property color labelShade: Qt.tint(Qt.rgba(0.02, 0.024, 0.04, 0.75), Theme.withAlpha(night.primary, 0.07))
+    // Names of connected devices read stronger than the others; with nothing
+    // connected there is no hierarchy to show, so every name is lifted
+    property bool anyConnected: false
     property real cornerRadius: 0            // rounded hosts (Control Center, popout)
     property var previewDevices: []          // fake device objects, for previews and tests
     readonly property alias prefs: prefsObj
@@ -248,6 +247,7 @@ Item {
         list = list.filter(d => d.connected || kept++ < room);
         for (const d of list)
             map[d.address] = d;
+        anyConnected = btOn && list.some(d => d.connected);
         if (!btOn) {
             for (const k in map)
                 delete map[k];
@@ -1295,14 +1295,25 @@ Item {
             }
         }
 
+        LabelGlow {
+            x: hostName.x + hostName.width / 2 - width / 2
+            y: hostName.y + hostName.height / 2 - height / 2
+            z: 49
+            spanX: hostName.width + 26
+            spanY: hostName.height + 12
+            color: scene.night.primary
+            strength: 0.16
+            opacity: hostName.opacity
+            visible: hostName.text !== ""
+        }
+
         StyledText {
+            id: hostName
             anchors.horizontalCenter: core.horizontalCenter
             y: core.y + core.height + 4
             z: 50
             text: UserInfoService.hostname || ""
-            color: Qt.rgba(1, 1, 1, 0.75)
-            style: Text.Outline
-            styleColor: scene.labelShade
+            color: Qt.rgba(1, 1, 1, 0.72)
             font.pixelSize: Math.max(9, Math.round(scene.coreSize * 0.14))
             font.letterSpacing: 0.6
             opacity: scene.focusBody ? 0 : 1
