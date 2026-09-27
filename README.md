@@ -20,7 +20,7 @@ disconnect it. Charging devices receive a beam of energy from the core.
 - Follows light and dark DMS themes, the sky always stays night
 - Idle scenes use no frames at all; nothing leaves your machine
 
-**New in 1.4.0:** rename a device: click its name in the detail card. See the [changelog](#changelog) and the [roadmap](#roadmap).
+**New in 1.4.1:** device names stay readable on a pale or busy wallpaper. See the [changelog](#changelog) and the [roadmap](#roadmap).
 
 **Contents:** [Install](#install) · [Quick start](#quick-start) · [Using the orbit](#using-the-orbit) · [Noise control](#noise-control) · [Settings](#settings) · [Privacy](#privacy) · [Troubleshooting](#troubleshooting) · [Changelog](#changelog) · [Roadmap](#roadmap)
 
@@ -439,6 +439,9 @@ Some headsets report in 10% steps, so the first minutes are rough and improve
 over time.
 
 ## Changelog
+
+### 1.4.1 (2026-09-27)
+- Desktop widget: device names, the host name and the black hole's label get a thin dark outline tinted by your theme, and devices that are not connected fade less and sit on a smoky disc. They no longer vanish on a pale or busy wallpaper. The Control Center and the bar popout look the same as before.
 
 ### 1.4.0 (2026-09-26)
 - Rename a device: click its name in the detail card. Enter saves, Escape cancels, an empty name restores the device's own name.
