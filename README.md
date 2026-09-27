@@ -441,7 +441,8 @@ over time.
 ## Changelog
 
 ### 1.4.1 (2026-09-27)
-- Device names are readable everywhere: every label (devices, host, black hole) gets a thin dark outline tinted by your theme, and devices that are not connected barely fade any more. On the desktop they also sit on a smoky disc, so they no longer vanish on a pale or busy wallpaper. Same in the Control Center and the bar popout.
+- Device names are readable everywhere, even on a pale or busy wallpaper: each name glows softly in your theme's accent, and devices that are not connected fade less. On the desktop they also sit on a smoky disc.
+- Connected devices read stronger than the others. With nothing connected, every name is lifted so the orbit stays easy to read.
 
 ### 1.4.0 (2026-09-26)
 - Rename a device: click its name in the detail card. Enter saves, Escape cancels, an empty name restores the device's own name.
