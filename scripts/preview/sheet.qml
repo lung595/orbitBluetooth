@@ -5,8 +5,8 @@ import "../../components"
 import "../../components/Offer.js" as Offer
 
 // Offscreen renders of the pairing sheet with a given DMS palette.
-// Usage: qml -I imports sheet.qml -- <palette> <phase> <out.png> [fade] [picture]
-// Fades: up (night above, theme below), down (theme above), none (all night)
+// Usage: qml -I imports sheet.qml -- <palette> <phase> <out.png> [picture]
+// Light palettes get the light skin, dark ones the dark skin (as in DMS)
 // Palettes: green (dark), light, pastel, neon, mono, deepblue
 // Phases: offer, pairing, connecting, done, failed, stack (offer + one waiting)
 Window {
@@ -15,8 +15,7 @@ Window {
     readonly property string paletteName: opts[0]
     readonly property string phase: opts[1]
     readonly property string out: opts[2]
-    readonly property string fade: opts[3] || "up"
-    readonly property string picture: opts[4] || ""
+    readonly property string picture: opts[3] || ""
 
     // Shaped like matugen output: [isLight, primary, tertiary, surfaceContainer, high, text, muted, wallpaper top, bottom]
     readonly property var palettes: ({
@@ -51,7 +50,6 @@ Window {
         anchors.horizontalCenter: parent.horizontalCenter
         y: 36
         phase: win.phase === "stack" ? "offer" : win.phase
-        fade: win.fade
         stacked: win.phase === "stack" ? 1 : 0
         name: "WH-1000XM6"
         subtitle: "Sony · Headphones"
