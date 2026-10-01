@@ -9,19 +9,23 @@ import "Palette.js" as Palette
 // headphones are in pairing mode. NewDeviceWatch owns the state and the
 // actions; this is the look.
 //
-// Top to bottom: a status pill and the close button (its ring is the time
-// left), a stage where the device floats above a perspective orbit, its
-// name, three "what you get" tiles (or the pairing steps, or quick actions
-// once connected), the main button and two quiet ones.
+// It is a piece of Orbit's night sky in every theme: stars, an aurora in the
+// theme's accents, the device floating above a perspective orbit. One end of
+// the card melts into the theme's own surface with a long, eased fade, so it
+// still belongs to a white, pastel or dark DMS:
+// - fade "up": night above, the theme's surface under the buttons
+// - fade "down": the theme's surface at the top (it unfolds out of the bar),
+//   night below
+// - fade "none": night from top to bottom
 //
-// Every colour comes from the DMS theme. Accents are pushed to a readable
-// contrast against the surface (Palette.js), so the sheet glows with a
-// pastel, a neon or a monochrome palette, light or dark.
+// Accents are pushed to a readable contrast against what lies under them
+// (Palette.js): the night for the sky, the theme surface for the rest.
 Item {
     id: root
 
     // "offer", "pairing", "connecting", "done" or "failed"
     property string phase: "offer"
+    property string fade: "up"
     property string name: ""
     property string subtitle: ""
     property string kind: "headphonesSlim"
@@ -33,7 +37,6 @@ Item {
     // Noise-control modes offered once connected, and the current one
     property var ancModes: []
     property string ancMode: ""
-    property real volume: -1
     // 1 -> 0 while the offer waits for an answer
     property real life: 1
     // Devices waiting behind this one
@@ -59,28 +62,55 @@ Item {
     implicitWidth: cardWidth + 48
     implicitHeight: cardHeight + 60
 
+    // Which ends of the card sit on the theme's surface
+    readonly property bool themeTop: fade === "down"
+    readonly property bool themeBottom: fade === "up"
+
+    NightColors {
+        id: night
+    }
+
     // --- Colours -------------------------------------------------------------------
+    function rgb(o) {
+        return Qt.rgba(o.r, o.g, o.b, 1);
+    }
+
+    // The theme's surface, where a fade lands
     QtObject {
         id: pal
         readonly property color surface: Theme.surfaceContainer
-        readonly property color raised: Theme.surfaceContainerHigh
         readonly property color text: Theme.surfaceText
-        readonly property color muted: Theme.surfaceVariantText
         readonly property bool light: Palette.luminance(surface) > 0.35
-        function rgb(o) {
-            return Qt.rgba(o.r, o.g, o.b, 1);
+        readonly property color accent: root.rgb(Palette.ensureContrast(sky.seed, surface, 3.2))
+        readonly property color accent2: root.rgb(Palette.ensureContrast(sky.seed2, surface, 2.4))
+        readonly property color onAccent: root.rgb(Palette.onColor(accent))
+        readonly property color line: Theme.withAlpha(text, light ? 0.12 : 0.1)
+        function fg(a) {
+            return Theme.withAlpha(text, a);
         }
-        // A grey theme accent borrows the picture's colour when there is one
-        readonly property color seed: Palette.isGrey(Theme.primary) && probe.found.a > 0 ? probe.found : Theme.primary
-        readonly property color accent: rgb(Palette.ensureContrast(seed, surface, 3.2))
-        readonly property color accent2: rgb(Palette.ensureContrast(Palette.isGrey(Theme.tertiary) ? seed : Theme.tertiary, surface, 2.4))
-        // The device's own colour (picture) leads the aurora when known
-        readonly property color glow: probe.found.a > 0 ? rgb(Palette.ensureContrast(probe.found, surface, 2.4)) : accent
-        readonly property color onAccent: rgb(Palette.onColor(accent))
-        readonly property color line: Theme.withAlpha(text, light ? 0.1 : 0.08)
     }
 
-    // Average colour of the picture's saturated pixels (see NewDevicePopup)
+    // The night sky, whatever the theme
+    QtObject {
+        id: sky
+        readonly property color base: night.sky
+        readonly property color deep: night.skyDeep
+        // A grey theme accent borrows the picture's colour when there is one
+        readonly property color seed: Palette.isGrey(Theme.primary) && probe.found.a > 0 ? probe.found : Theme.primary
+        readonly property color seed2: Palette.isGrey(Theme.tertiary) ? seed : Theme.tertiary
+        // Lifted like the rest of Orbit's night, then checked for contrast
+        readonly property color accent: root.rgb(Palette.ensureContrast(Palette.lift(seed, 0.68), base, 6))
+        readonly property color accent2: root.rgb(Palette.ensureContrast(Palette.lift(seed2, 0.62), base, 4))
+        // The device's own colour (picture) leads the aurora when known
+        readonly property color glow: probe.found.a > 0 ? root.rgb(Palette.ensureContrast(Palette.lift(probe.found, 0.62), base, 4)) : accent
+        readonly property color onAccent: root.rgb(Palette.onColor(accent))
+        readonly property color line: night.ink(0.1)
+        function fg(a) {
+            return night.ink(a);
+        }
+    }
+
+    // Average colour of the picture's saturated pixels
     Canvas {
         id: probe
         width: 12
@@ -114,6 +144,54 @@ Item {
         }
     }
 
+    // A round light, squashed vertically when flatter than wide: the
+    // gradient reaches zero exactly at the edge, so it never shows a rim
+    component Light: Shape {
+        property color tint
+        property real strength: 0.4
+        property real squash: 1
+        height: width
+        transform: Scale {
+            origin.y: 0
+            yScale: squash
+        }
+        preferredRendererType: Shape.CurveRenderer
+        ShapePath {
+            strokeWidth: 0
+            strokeColor: "transparent"
+            fillGradient: RadialGradient {
+                centerX: width / 2
+                centerY: height / 2
+                centerRadius: width / 2
+                focalX: centerX
+                focalY: centerY
+                GradientStop {
+                    position: 0
+                    color: Theme.withAlpha(tint, strength)
+                }
+                GradientStop {
+                    position: 0.3
+                    color: Theme.withAlpha(tint, strength * 0.62)
+                }
+                GradientStop {
+                    position: 0.6
+                    color: Theme.withAlpha(tint, strength * 0.22)
+                }
+                GradientStop {
+                    position: 1
+                    color: Theme.withAlpha(tint, 0)
+                }
+            }
+            PathAngleArc {
+                centerX: width / 2
+                centerY: height / 2
+                radiusX: width / 2
+                radiusY: height / 2
+                sweepAngle: 360
+            }
+        }
+    }
+
     // --- The next device, peeking behind ------------------------------------------
     Rectangle {
         visible: root.stacked > 0
@@ -122,9 +200,9 @@ Item {
         x: card.x + 18
         y: card.y + 20
         radius: card.radius
-        color: Qt.tint(pal.surface, Theme.withAlpha(pal.accent, 0.1))
+        color: root.themeBottom ? Qt.tint(pal.surface, Theme.withAlpha(pal.accent, 0.1)) : Qt.tint(sky.base, Theme.withAlpha(sky.accent, 0.1))
         border.width: 1
-        border.color: Theme.withAlpha(pal.accent, 0.3)
+        border.color: Theme.withAlpha(root.themeBottom ? pal.accent : sky.accent, 0.3)
     }
 
     // --- Card ----------------------------------------------------------------------
@@ -136,23 +214,21 @@ Item {
         y: 12
         readonly property real radius: 30
 
+        // Shadow
         Rectangle {
-            id: body
             anchors.fill: parent
             radius: card.radius
-            color: pal.surface
-            border.width: 1
-            border.color: Theme.withAlpha(pal.accent, pal.light ? 0.22 : 0.18)
+            color: sky.base
             layer.enabled: true
             layer.effect: MultiEffect {
                 shadowEnabled: true
-                shadowColor: Qt.rgba(0, 0, 0, pal.light ? 0.28 : 0.55)
+                shadowColor: Qt.rgba(0, 0, 0, pal.light ? 0.3 : 0.6)
                 shadowBlur: 1
-                shadowVerticalOffset: 10
+                shadowVerticalOffset: 12
             }
         }
 
-        // Light that must stay inside the rounded card
+        // Everything painted inside the rounded card
         Item {
             id: inside
             anchors.fill: parent
@@ -162,104 +238,178 @@ Item {
                 maskSource: cardMask
             }
 
-            // Aurora: soft lights in the theme's colours, and the device's own
-            // colour under the stage
-            // A round light, squashed vertically when flatter than wide: the
-            // gradient must reach zero exactly at the edge, or it shows a rim
-            component Light: Shape {
-                property color tint
-                property real strength: 0.4
-                property real squash: 1
-                height: width
-                transform: Scale {
-                    origin.y: 0
-                    yScale: squash
-                }
-                preferredRendererType: Shape.CurveRenderer
-                ShapePath {
-                    strokeWidth: 0
-                    strokeColor: "transparent"
-                    fillGradient: RadialGradient {
-                        centerX: width / 2
-                        centerY: height / 2
-                        centerRadius: width / 2
-                        focalX: centerX
-                        focalY: centerY
-                        GradientStop {
-                            position: 0
-                            color: Theme.withAlpha(tint, strength)
-                        }
-                        GradientStop {
-                            position: 0.55
-                            color: Theme.withAlpha(tint, strength * 0.35)
-                        }
-                        GradientStop {
-                            position: 1
-                            color: Theme.withAlpha(tint, 0)
-                        }
-                    }
-                    PathAngleArc {
-                        centerX: width / 2
-                        centerY: height / 2
-                        radiusX: width / 2
-                        radiusY: height / 2
-                        sweepAngle: 360
-                    }
-                }
-            }
-            Light {
-                width: 380
-                x: -150
-                y: -170
-                tint: pal.accent
-                strength: pal.light ? 0.42 : 0.5
-            }
-            Light {
-                width: 360
-                x: 150
-                y: -150
-                tint: pal.accent2
-                strength: pal.light ? 0.36 : 0.42
-            }
-            Light {
-                width: 300
-                squash: 0.6
-                x: 20
-                y: 100
-                tint: pal.glow
-                strength: pal.light ? 0.4 : 0.45
-            }
-
-            // The lower half settles back to the plain surface
+            // Night, a touch deeper at the top
             Rectangle {
                 anchors.fill: parent
                 gradient: Gradient {
                     GradientStop {
-                        position: 0.42
-                        color: Theme.withAlpha(pal.surface, 0)
+                        position: 0
+                        color: sky.deep
                     }
                     GradientStop {
-                        position: 0.66
-                        color: pal.surface
+                        position: 1
+                        color: sky.base
                     }
                 }
             }
 
-            // Dust in the light, fixed so the sheet looks the same each time
+            // Aurora in the theme's accents, and the device's colour under it
+            Light {
+                width: 420
+                x: -190
+                y: -150
+                tint: sky.accent
+                strength: 0.4
+            }
+            Light {
+                width: 400
+                x: 140
+                y: -130
+                tint: sky.accent2
+                strength: 0.36
+            }
+            Light {
+                width: 320
+                squash: 0.62
+                x: 10
+                y: 70
+                tint: sky.glow
+                strength: 0.34
+            }
+            // A faint band of the milky way across the sky
+            Light {
+                width: 560
+                squash: 0.16
+                x: -110
+                y: 150
+                rotation: -24
+                tint: night.ink(1)
+                strength: 0.05
+            }
+
+            // Stars: many faint ones, a few brighter, three with a soft flare.
+            // Fixed (golden-ratio scatter) so the sheet looks the same each time.
             Repeater {
-                model: 22
+                model: 90
                 Rectangle {
                     required property int index
-                    readonly property real h1: (index * 0.6180339 + 0.21) % 1
-                    readonly property real h2: (index * 0.4142135 + 0.63) % 1
-                    x: 14 + h1 * (card.width - 28)
-                    y: 40 + h2 * 220
-                    width: index % 6 === 0 ? 2.4 : 1.4
+                    readonly property real u: (index * 0.6180339 + 0.137) % 1
+                    readonly property real v: (index * 0.7548776 + 0.421) % 1
+                    readonly property bool bright: index % 9 === 0
+                    x: u * card.width
+                    y: v * card.height
+                    width: bright ? 1.8 : index % 3 === 0 ? 1.2 : 0.9
                     height: width
                     radius: width / 2
-                    visible: !pal.light || index % 2 === 0
-                    color: pal.light ? pal.accent : pal.text
-                    opacity: (pal.light ? 0.18 : 0.22) + 0.3 * h2
+                    color: night.ink(1)
+                    opacity: bright ? 0.85 : 0.18 + 0.4 * ((index * 0.31) % 1)
+                }
+            }
+            Repeater {
+                model: [[0.12, 0.2], [0.84, 0.31], [0.71, 0.08]]
+                Item {
+                    id: flare
+                    required property var modelData
+                    required property int index
+                    x: modelData[0] * card.width
+                    y: modelData[1] * card.height
+                    Light {
+                        width: 18
+                        x: -9
+                        y: -9
+                        tint: night.ink(1)
+                        strength: 0.5
+                    }
+                    Rectangle {
+                        width: 14 - flare.index * 3
+                        height: 1
+                        x: -width / 2
+                        y: -0.5
+                        gradient: Gradient {
+                            orientation: Gradient.Horizontal
+                            GradientStop {
+                                position: 0
+                                color: night.ink(0)
+                            }
+                            GradientStop {
+                                position: 0.5
+                                color: night.ink(0.9)
+                            }
+                            GradientStop {
+                                position: 1
+                                color: night.ink(0)
+                            }
+                        }
+                    }
+                    Rectangle {
+                        width: 1
+                        height: 14 - flare.index * 3
+                        x: -0.5
+                        y: -height / 2
+                        gradient: Gradient {
+                            GradientStop {
+                                position: 0
+                                color: night.ink(0)
+                            }
+                            GradientStop {
+                                position: 0.5
+                                color: night.ink(0.9)
+                            }
+                            GradientStop {
+                                position: 1
+                                color: night.ink(0)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // The theme's surface melting into the night. Many stops on an
+            // eased curve (smoothstep), so the long fade never bands.
+            Rectangle {
+                id: fadeLayer
+                visible: root.fade !== "none"
+                anchors.fill: parent
+                readonly property real from: root.themeTop ? 0.04 : 0.78
+                readonly property real to: root.themeTop ? 0.38 : 0.93
+                gradient: Gradient {
+                    id: fadeGradient
+                }
+                function build() {
+                    const stops = [fadeStop.createObject(fadeGradient, {
+                            "position": 0,
+                            "color": Theme.withAlpha(pal.surface, root.themeTop ? 1 : 0)
+                        })];
+                    for (let i = 0; i <= 16; i++) {
+                        const t = i / 16;
+                        const eased = t * t * (3 - 2 * t);
+                        stops.push(fadeStop.createObject(fadeGradient, {
+                            "position": from + (to - from) * t,
+                            "color": Theme.withAlpha(pal.surface, root.themeTop ? 1 - eased : eased)
+                        }));
+                    }
+                    stops.push(fadeStop.createObject(fadeGradient, {
+                        "position": 1,
+                        "color": Theme.withAlpha(pal.surface, root.themeTop ? 0 : 1)
+                    }));
+                    fadeGradient.stops = stops;
+                }
+                Component.onCompleted: build()
+                Connections {
+                    target: root
+                    function onFadeChanged() {
+                        fadeLayer.build();
+                    }
+                }
+                Connections {
+                    target: pal
+                    function onSurfaceChanged() {
+                        fadeLayer.build();
+                    }
+                }
+                Component {
+                    id: fadeStop
+                    GradientStop {}
                 }
             }
         }
@@ -272,7 +422,19 @@ Item {
             layer.enabled: true
         }
 
+        // Hairline outline
+        Rectangle {
+            anchors.fill: parent
+            radius: card.radius
+            color: "transparent"
+            border.width: 1
+            border.color: pal.light && root.fade !== "none" ? pal.line : night.ink(0.09)
+        }
+
         // --- Header ---------------------------------------------------------------
+        // On the night, or on the theme's surface when it unfolds from the bar
+        readonly property QtObject topInk: root.themeTop ? pal : sky
+
         Rectangle {
             id: statusPill
             x: 16
@@ -280,9 +442,9 @@ Item {
             height: 28
             width: statusRow.implicitWidth + 22
             radius: 14
-            color: Theme.withAlpha(pal.surface, pal.light ? 0.6 : 0.45)
+            color: card.topInk.fg(0.07)
             border.width: 1
-            border.color: pal.line
+            border.color: card.topInk.line
 
             Row {
                 id: statusRow
@@ -293,7 +455,7 @@ Item {
                     width: 7
                     height: 7
                     radius: 3.5
-                    color: root.phase === "failed" ? Theme.error : pal.accent
+                    color: root.phase === "failed" ? night.error : card.topInk.accent
                 }
                 StyledText {
                     anchors.verticalCenter: parent.verticalCenter
@@ -304,7 +466,7 @@ Item {
                             "done": "Connected",
                             "failed": "Not connected"
                         })[root.phase] || ""
-                    color: pal.text
+                    color: card.topInk.fg(0.88)
                     font.pixelSize: Theme.fontSizeSmall - 1
                     font.weight: Font.Medium
                 }
@@ -319,12 +481,12 @@ Item {
             height: 24
             width: moreText.implicitWidth + 16
             radius: 12
-            color: Theme.withAlpha(pal.accent, 0.16)
+            color: Theme.withAlpha(card.topInk.accent, 0.18)
             StyledText {
                 id: moreText
                 anchors.centerIn: parent
                 text: "+" + root.stacked
-                color: pal.accent
+                color: card.topInk.accent
                 font.pixelSize: Theme.fontSizeSmall - 1
                 font.weight: Font.DemiBold
             }
@@ -341,14 +503,14 @@ Item {
             Rectangle {
                 anchors.fill: parent
                 radius: width / 2
-                color: closeArea.containsMouse ? Theme.withAlpha(pal.text, 0.12) : Theme.withAlpha(pal.surface, pal.light ? 0.6 : 0.45)
+                color: card.topInk.fg(closeArea.containsMouse ? 0.14 : 0.07)
             }
             Shape {
                 anchors.fill: parent
                 visible: root.phase === "offer"
                 preferredRendererType: Shape.CurveRenderer
                 ShapePath {
-                    strokeColor: pal.accent
+                    strokeColor: card.topInk.accent
                     strokeWidth: 2
                     fillColor: "transparent"
                     capStyle: ShapePath.RoundCap
@@ -366,7 +528,7 @@ Item {
                 anchors.centerIn: parent
                 name: "close"
                 size: 17
-                color: pal.text
+                color: card.topInk.fg(0.85)
             }
             MouseArea {
                 id: closeArea
@@ -384,52 +546,53 @@ Item {
             width: card.width
             height: 210
             readonly property real cx: width / 2
-            readonly property real floorY: 180
-            readonly property real deviceY: 96
+            readonly property real floorY: 182
+            readonly property real deviceY: 98
 
-            // Contact shadow on the floor
+            // A pool of light on the floor
             Light {
-                width: 180
-                squash: 0.2
+                width: 220
+                squash: 0.22
                 x: stage.cx - width / 2
                 y: stage.floorY - width * squash / 2
-                tint: "black"
-                strength: pal.light ? 0.22 : 0.6
+                tint: sky.glow
+                strength: 0.32
             }
 
             // Sonar rings spreading on the floor
             Repeater {
                 model: 3
                 Shape {
+                    id: ring
                     required property int index
-                    readonly property real k: 0.62 + index * 0.3
+                    readonly property real k: 0.6 + index * 0.32
                     anchors.fill: parent
                     preferredRendererType: Shape.CurveRenderer
-                    opacity: root.phase === "done" ? 0 : 0.55 - index * 0.17
+                    opacity: root.phase === "done" ? 0 : 0.5 - index * 0.15
                     ShapePath {
-                        strokeColor: pal.accent
-                        strokeWidth: 1.4
+                        strokeColor: sky.accent
+                        strokeWidth: 1.2
                         fillColor: "transparent"
                         PathAngleArc {
                             centerX: stage.cx
                             centerY: stage.floorY
-                            radiusX: 104 * k
-                            radiusY: 20 * k
+                            radiusX: 104 * ring.k
+                            radiusY: 19 * ring.k
                             sweepAngle: 360
                         }
                     }
                 }
             }
 
-            // Back half of the orbit, behind the device
+            // The orbit: its back half behind the device, its front half over it
             component OrbitHalf: Shape {
                 property bool front: false
                 anchors.fill: parent
                 preferredRendererType: Shape.CurveRenderer
                 rotation: -7
                 ShapePath {
-                    strokeColor: Theme.withAlpha(pal.accent, front ? 0.75 : 0.35)
-                    strokeWidth: front ? 1.6 : 1.2
+                    strokeColor: Theme.withAlpha(sky.accent, front ? 0.7 : 0.3)
+                    strokeWidth: front ? 1.4 : 1
                     fillColor: "transparent"
                     PathAngleArc {
                         centerX: stage.cx
@@ -443,7 +606,6 @@ Item {
             }
             OrbitHalf {}
 
-            // The device, with a glow of its accent
             Item {
                 id: hero
                 width: 150
@@ -457,7 +619,7 @@ Item {
                     visible: root.phase === "done" && root.battery >= 0
                     preferredRendererType: Shape.CurveRenderer
                     ShapePath {
-                        strokeColor: Theme.withAlpha(pal.text, 0.1)
+                        strokeColor: night.ink(0.1)
                         strokeWidth: 4
                         fillColor: "transparent"
                         PathAngleArc {
@@ -469,7 +631,7 @@ Item {
                         }
                     }
                     ShapePath {
-                        strokeColor: pal.accent
+                        strokeColor: sky.accent
                         strokeWidth: 4
                         fillColor: "transparent"
                         capStyle: ShapePath.RoundCap
@@ -491,20 +653,19 @@ Item {
                     height: width
                     kind: root.kind
                     pictureSource: root.pictureSource
-                    color: pal.light ? pal.accent : Qt.lighter(pal.accent, 1.15)
+                    color: Qt.lighter(sky.accent, 1.08)
                     stroke: 1.15
                     layer.enabled: true
                     layer.effect: MultiEffect {
                         shadowEnabled: true
-                        shadowColor: pal.glow
+                        shadowColor: sky.glow
                         shadowBlur: 1
-                        shadowOpacity: pal.light ? 0.55 : 0.9
+                        shadowOpacity: 0.9
                         shadowHorizontalOffset: 0
                         shadowVerticalOffset: 0
                     }
                 }
 
-                // Battery level under the device
                 Rectangle {
                     visible: root.phase === "done" && root.battery >= 0
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -512,12 +673,12 @@ Item {
                     height: 24
                     width: batteryText.implicitWidth + 18
                     radius: 12
-                    color: pal.accent
+                    color: sky.accent
                     StyledText {
                         id: batteryText
                         anchors.centerIn: parent
                         text: root.battery + " %"
-                        color: pal.onAccent
+                        color: sky.onAccent
                         font.pixelSize: Theme.fontSizeSmall - 1
                         font.weight: Font.DemiBold
                     }
@@ -530,16 +691,16 @@ Item {
 
             // A small moon on the front of the orbit
             Rectangle {
-                width: 8
-                height: 8
-                radius: 4
-                x: stage.cx + 78 - 4
-                y: stage.deviceY + 22 + 21 - 4
-                color: pal.accent
+                width: 7
+                height: 7
+                radius: 3.5
+                x: stage.cx + 74
+                y: stage.deviceY + 39
+                color: sky.accent
                 layer.enabled: true
                 layer.effect: MultiEffect {
                     shadowEnabled: true
-                    shadowColor: pal.accent
+                    shadowColor: sky.accent
                     shadowBlur: 0.6
                     shadowVerticalOffset: 0
                     shadowHorizontalOffset: 0
@@ -550,9 +711,9 @@ Item {
         // --- Identity -----------------------------------------------------------------
         Column {
             id: identity
-            y: stage.y + stage.height + 4
+            y: stage.y + stage.height + 2
             width: card.width
-            spacing: 2
+            spacing: 3
 
             Row {
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -560,10 +721,10 @@ Item {
                 StyledText {
                     anchors.verticalCenter: parent.verticalCenter
                     text: root.name
-                    color: pal.text
-                    font.pixelSize: Theme.fontSizeLarge + 9
+                    color: night.ink(0.97)
+                    font.pixelSize: Theme.fontSizeLarge + 10
                     font.weight: Font.Bold
-                    font.letterSpacing: -0.3
+                    font.letterSpacing: -0.4
                     elide: Text.ElideRight
                     width: Math.min(implicitWidth, card.width - 80)
                 }
@@ -571,8 +732,8 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     visible: root.phase === "offer"
                     name: "edit"
-                    size: 17
-                    color: pal.muted
+                    size: 16
+                    color: night.ink(0.45)
                     MouseArea {
                         anchors.fill: parent
                         anchors.margins: -6
@@ -584,53 +745,55 @@ Item {
             StyledText {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: root.phase === "failed" ? "Could not connect. Is it still in pairing mode?" : root.subtitle
-                color: root.phase === "failed" ? Theme.error : pal.muted
+                color: root.phase === "failed" ? night.error : night.ink(0.55)
                 font.pixelSize: Theme.fontSizeSmall
+                font.letterSpacing: 0.2
             }
         }
 
-        // --- Middle: tiles, steps or quick actions --------------------------------------
+        // --- Middle: tiles, steps or quick actions, on the night ---------------------------
         Item {
             id: middle
             x: 16
             y: 326
             width: card.width - 32
-            height: 76
+            height: 72
 
-            // What you get
+            // What you get: glass tiles
             Row {
                 visible: root.phase === "offer"
                 spacing: 8
                 Repeater {
                     model: root.features
                     Rectangle {
+                        id: tile
                         required property var modelData
                         width: (middle.width - 16) / 3
                         height: middle.height
                         radius: 18
-                        color: Theme.withAlpha(pal.raised, pal.light ? 0.85 : 0.7)
+                        color: night.ink(0.05)
                         border.width: 1
-                        border.color: pal.line
+                        border.color: night.ink(0.08)
                         Column {
                             anchors.centerIn: parent
                             spacing: 3
                             DankIcon {
                                 anchors.horizontalCenter: parent.horizontalCenter
-                                name: modelData.icon
-                                size: 20
-                                color: pal.accent
+                                name: tile.modelData.icon
+                                size: 19
+                                color: sky.accent
                             }
                             StyledText {
                                 anchors.horizontalCenter: parent.horizontalCenter
-                                text: modelData.value
-                                color: pal.text
+                                text: tile.modelData.value
+                                color: night.ink(0.95)
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.weight: Font.DemiBold
                             }
                             StyledText {
                                 anchors.horizontalCenter: parent.horizontalCenter
-                                text: modelData.label
-                                color: pal.muted
+                                text: tile.modelData.label
+                                color: night.ink(0.5)
                                 font.pixelSize: Theme.fontSizeSmall - 2
                             }
                         }
@@ -640,32 +803,34 @@ Item {
 
             // Pairing steps
             Item {
+                id: steps
                 anchors.fill: parent
                 visible: root.busy || root.phase === "failed"
-                readonly property int step: root.phase === "pairing" ? 0 : root.phase === "connecting" ? 1 : root.phase === "done" ? 3 : 0
+                readonly property int step: root.phase === "connecting" ? 1 : 0
                 readonly property var labels: ["Pair", "Connect", "Ready"]
 
                 Rectangle {
                     x: parent.width / 6
                     width: parent.width * 2 / 3
-                    y: 16
+                    y: 15
                     height: 2
                     radius: 1
-                    color: Theme.withAlpha(pal.text, 0.12)
+                    color: night.ink(0.12)
                     Rectangle {
                         height: parent.height
                         radius: 1
-                        width: parent.width * Math.min(1, parent.parent.step / 2) + (root.busy ? parent.width * 0.25 : 0)
-                        color: pal.accent
+                        width: parent.width * (steps.step / 2 + (root.busy ? 0.25 : 0))
+                        color: sky.accent
                     }
                 }
                 Repeater {
                     model: 3
                     Column {
+                        id: stepItem
                         required property int index
-                        readonly property bool doneStep: index < parent.step
-                        readonly property bool current: index === parent.step && root.phase !== "failed"
-                        x: parent.width * (index * 2 + 1) / 6 - width / 2
+                        readonly property bool passed: index < steps.step
+                        readonly property bool current: index === steps.step && root.phase !== "failed"
+                        x: steps.width * (index * 2 + 1) / 6 - width / 2
                         width: 70
                         spacing: 6
                         Rectangle {
@@ -673,28 +838,28 @@ Item {
                             width: 32
                             height: 32
                             radius: 16
-                            color: parent.doneStep ? pal.accent : pal.surface
-                            border.width: parent.doneStep ? 0 : 2
-                            border.color: parent.current ? pal.accent : root.phase === "failed" && parent.index === 0 ? Theme.error : Theme.withAlpha(pal.text, 0.18)
+                            color: stepItem.passed ? sky.accent : sky.base
+                            border.width: stepItem.passed ? 0 : 1.5
+                            border.color: stepItem.current ? sky.accent : root.phase === "failed" && stepItem.index === 0 ? night.error : night.ink(0.18)
                             DankIcon {
                                 anchors.centerIn: parent
-                                name: parent.parent.doneStep ? "check" : ["link", "bluetooth", "headphones"][parent.parent.index]
+                                name: stepItem.passed ? "check" : ["link", "bluetooth", "headphones"][stepItem.index]
                                 size: 16
-                                color: parent.parent.doneStep ? pal.onAccent : parent.parent.current ? pal.accent : pal.muted
+                                color: stepItem.passed ? sky.onAccent : stepItem.current ? sky.accent : night.ink(0.45)
                             }
                         }
                         StyledText {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            text: parent.parent.labels[parent.index]
-                            color: parent.current ? pal.text : pal.muted
+                            text: steps.labels[stepItem.index]
+                            color: stepItem.current ? night.ink(0.95) : night.ink(0.5)
                             font.pixelSize: Theme.fontSizeSmall - 1
-                            font.weight: parent.current ? Font.DemiBold : Font.Normal
+                            font.weight: stepItem.current ? Font.DemiBold : Font.Normal
                         }
                     }
                 }
             }
 
-            // Quick actions once connected: noise-control mode
+            // Once connected: noise-control mode
             Column {
                 anchors.fill: parent
                 visible: root.phase === "done"
@@ -705,35 +870,36 @@ Item {
                     width: parent.width
                     height: 44
                     radius: 22
-                    color: Theme.withAlpha(pal.raised, pal.light ? 0.85 : 0.7)
+                    color: night.ink(0.05)
                     border.width: 1
-                    border.color: pal.line
+                    border.color: night.ink(0.08)
                     Row {
                         anchors.fill: parent
                         anchors.margins: 4
                         Repeater {
                             model: root.ancModes
                             Rectangle {
+                                id: modeItem
                                 required property var modelData
                                 readonly property bool on: modelData.id === root.ancMode
-                                width: (parent.width) / root.ancModes.length
+                                width: parent.width / root.ancModes.length
                                 height: parent.height
                                 radius: height / 2
-                                color: on ? pal.accent : "transparent"
+                                color: on ? sky.accent : "transparent"
                                 Row {
                                     anchors.centerIn: parent
                                     spacing: 5
                                     DankIcon {
                                         anchors.verticalCenter: parent.verticalCenter
-                                        name: modelData.icon
+                                        name: modeItem.modelData.icon
                                         size: 17
-                                        color: parent.parent.on ? pal.onAccent : pal.muted
+                                        color: modeItem.on ? sky.onAccent : night.ink(0.55)
                                     }
                                     StyledText {
                                         anchors.verticalCenter: parent.verticalCenter
-                                        visible: parent.parent.on
-                                        text: modelData.label
-                                        color: pal.onAccent
+                                        visible: modeItem.on
+                                        text: modeItem.modelData.label
+                                        color: sky.onAccent
                                         font.pixelSize: Theme.fontSizeSmall - 1
                                         font.weight: Font.DemiBold
                                     }
@@ -741,7 +907,7 @@ Item {
                                 MouseArea {
                                     anchors.fill: parent
                                     cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.modeRequested(modelData.id)
+                                    onClicked: root.modeRequested(modeItem.modelData.id)
                                 }
                             }
                         }
@@ -751,13 +917,15 @@ Item {
                     width: parent.width
                     horizontalAlignment: Text.AlignHCenter
                     text: root.ancModes.length ? "Noise control" : "Ready to use"
-                    color: pal.muted
+                    color: night.ink(0.5)
                     font.pixelSize: Theme.fontSizeSmall - 1
                 }
             }
         }
 
-        // --- Main button ---------------------------------------------------------------
+        // --- Bottom: on the theme's surface when the night fades up into it -----------------
+        readonly property QtObject bottomInk: root.themeBottom ? pal : sky
+
         Rectangle {
             id: mainButton
             x: 16
@@ -766,18 +934,18 @@ Item {
             height: 50
             radius: 25
             readonly property bool quiet: root.busy
-            color: quiet ? Theme.withAlpha(pal.accent, 0.16) : pal.accent
+            color: quiet ? Theme.withAlpha(card.bottomInk.accent, 0.16) : card.bottomInk.accent
             gradient: quiet ? null : shine
             Gradient {
                 id: shine
                 orientation: Gradient.Horizontal
                 GradientStop {
                     position: 0
-                    color: pal.accent
+                    color: card.bottomInk.accent
                 }
                 GradientStop {
                     position: 1
-                    color: Qt.tint(pal.accent, Theme.withAlpha(pal.accent2, 0.45))
+                    color: Qt.tint(card.bottomInk.accent, Theme.withAlpha(card.bottomInk.accent2, 0.45))
                 }
             }
 
@@ -787,7 +955,7 @@ Item {
                 height: parent.height
                 radius: parent.radius
                 width: parent.width * (root.phase === "pairing" ? 0.38 : 0.72)
-                color: Theme.withAlpha(pal.accent, 0.4)
+                color: Theme.withAlpha(card.bottomInk.accent, 0.4)
             }
 
             Row {
@@ -803,7 +971,7 @@ Item {
                             "failed": "refresh"
                         })[root.phase] || "bluetooth"
                     size: 19
-                    color: mainButton.quiet ? pal.text : pal.onAccent
+                    color: mainButton.quiet ? card.bottomInk.fg(0.95) : card.bottomInk.onAccent
                 }
                 StyledText {
                     anchors.verticalCenter: parent.verticalCenter
@@ -814,7 +982,7 @@ Item {
                             "done": "Done",
                             "failed": "Try again"
                         })[root.phase] || ""
-                    color: mainButton.quiet ? pal.text : pal.onAccent
+                    color: mainButton.quiet ? card.bottomInk.fg(0.95) : card.bottomInk.onAccent
                     font.pixelSize: Theme.fontSizeMedium + 1
                     font.weight: Font.DemiBold
                 }
@@ -827,7 +995,6 @@ Item {
             }
         }
 
-        // --- Quiet actions ----------------------------------------------------------------
         Row {
             anchors.horizontalCenter: parent.horizontalCenter
             y: mainButton.y + mainButton.height + 6
@@ -841,7 +1008,7 @@ Item {
                 leftPadding: 10
                 rightPadding: 10
                 verticalAlignment: Text.AlignVCenter
-                color: quietArea.containsMouse ? pal.text : pal.muted
+                color: card.bottomInk.fg(quietArea.containsMouse ? 0.95 : 0.55)
                 font.pixelSize: Theme.fontSizeSmall
                 MouseArea {
                     id: quietArea
@@ -862,7 +1029,7 @@ Item {
                 text: "·"
                 height: 28
                 verticalAlignment: Text.AlignVCenter
-                color: pal.muted
+                color: card.bottomInk.fg(0.4)
             }
             Quiet {
                 visible: root.phase === "offer" || root.phase === "failed"
@@ -890,7 +1057,7 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             text: "Picture " + root.credit
             elide: Text.ElideMiddle
-            color: Theme.withAlpha(pal.muted, 0.7)
+            color: night.ink(0.32)
             font.pixelSize: Theme.fontSizeSmall - 3
         }
     }
