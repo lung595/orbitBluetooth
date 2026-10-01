@@ -29,4 +29,17 @@ QtObject {
     readonly property color error: night(Theme.error)
     readonly property color primaryText: onAccent(Theme.primary, Theme.primaryText)
     readonly property color errorText: onAccent(Theme.error, Theme.errorText)
+
+    // The sky itself and the ink drawn on it. The sky is night in every theme
+    // on purpose, so these are the one place its constants live; everything
+    // else (sizes, radii, spacing) comes from Theme.
+    readonly property color sky: "#07080c"
+    readonly property color skyDeep: "#05060a"
+    function ink(alpha) {
+        return Qt.rgba(1, 1, 1, alpha);
+    }
+    // Smoky pill drawn over the wallpaper (desktop glass chips)
+    function smoke(alpha) {
+        return Qt.rgba(0.04, 0.045, 0.06, alpha);
+    }
 }

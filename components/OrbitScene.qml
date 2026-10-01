@@ -1021,7 +1021,7 @@ Item {
     // Desktop glass: a theme-tinted smoky veil that dissolves into the wallpaper
     Vignette {
         visible: scene.glass
-        color: Qt.tint("#05060a", Theme.withAlpha(scene.night.primary, 0.07))
+        color: Qt.tint(scene.night.skyDeep, Theme.withAlpha(scene.night.primary, 0.07))
         strength: scene.prefs.desktopBackdrop
     }
 
@@ -1152,7 +1152,7 @@ Item {
             }
 
             ShapePath {
-                strokeColor: innerRing.armedIn ? Theme.withAlpha(scene.night.primary, 0.85) : innerRing.guiding ? Theme.withAlpha(scene.night.primary, 0.45) : Qt.rgba(1, 1, 1, 0.1)
+                strokeColor: innerRing.armedIn ? Theme.withAlpha(scene.night.primary, 0.85) : innerRing.guiding ? Theme.withAlpha(scene.night.primary, 0.45) : scene.night.ink(0.1)
                 strokeWidth: innerRing.armedIn ? 1.8 : 1
                 fillColor: innerRing.armedIn ? Theme.withAlpha(scene.night.primary, 0.05) : "transparent"
                 PathAngleArc {
@@ -1274,7 +1274,7 @@ Item {
                 width: parent.width * 0.5
                 height: width
                 kind: scene.prefs.hostGlyph !== "auto" ? scene.prefs.hostGlyph : (BatteryService.batteryAvailable ? "laptop" : "desktop")
-                color: scene.btOn ? (scene.night.whiteBodies ? scene.night.bodyInk : Qt.lighter(scene.night.primary, 1.2)) : (scene.night.whiteBodies ? scene.night.bodyMuted : Qt.rgba(1, 1, 1, 0.4))
+                color: scene.btOn ? (scene.night.whiteBodies ? scene.night.bodyInk : Qt.lighter(scene.night.primary, 1.2)) : (scene.night.whiteBodies ? scene.night.bodyMuted : scene.night.ink(0.4))
                 stroke: 1.4
             }
 
@@ -1313,7 +1313,7 @@ Item {
             y: core.y + core.height + 4
             z: 50
             text: UserInfoService.hostname || ""
-            color: Qt.rgba(1, 1, 1, 0.72)
+            color: scene.night.ink(0.72)
             font.pixelSize: Math.max(9, Math.round(scene.coreSize * 0.14))
             font.letterSpacing: 0.6
             opacity: scene.focusBody ? 0 : 1
@@ -1419,12 +1419,12 @@ Item {
         anchors.horizontalCenter: scene.glass ? parent.horizontalCenter : undefined
         anchors.margins: Theme.spacingS
         anchors.topMargin: scene.glass ? Math.round(scene.height * 0.07) : Theme.spacingS
-        height: 24
-        width: chipRow.implicitWidth + 16
-        radius: 12
-        color: scene.glass ? (chipArea.containsMouse ? Qt.rgba(0.1, 0.11, 0.14, 0.78) : Qt.rgba(0.04, 0.045, 0.06, 0.6)) : chipArea.containsMouse ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(1, 1, 1, 0.06)
+        height: Theme.fontSizeSmall + Theme.spacingM
+        width: chipRow.implicitWidth + Theme.spacingL
+        radius: height / 2
+        color: scene.glass ? (chipArea.containsMouse ? Qt.tint(scene.night.smoke(0.78), scene.night.ink(0.06)) : scene.night.smoke(0.6)) : chipArea.containsMouse ? scene.night.ink(0.12) : scene.night.ink(0.06)
         border.width: scene.glass ? 1 : 0
-        border.color: Qt.rgba(1, 1, 1, 0.08)
+        border.color: scene.night.ink(0.08)
         readonly property bool shown: scene.btOn && !scene.focusBody && !scene.hiddenOpen && (!scene.glass || scene.interacting || scene.discovering)
         opacity: shown ? 1 : 0
         visible: opacity > 0.01
@@ -1437,20 +1437,20 @@ Item {
         Row {
             id: chipRow
             anchors.centerIn: parent
-            spacing: 5
+            spacing: Theme.spacingXS
             Rectangle {
                 id: scanDot
-                width: 6
-                height: 6
-                radius: 3
+                width: Theme.spacingXS + 2
+                height: width
+                radius: width / 2
                 anchors.verticalCenter: parent.verticalCenter
-                color: scene.discovering ? scene.night.primary : Qt.rgba(1, 1, 1, 0.35)
+                color: scene.discovering ? scene.night.primary : scene.night.ink(0.35)
                 // Blinks 1 → 0.25 → 1 every 1.4 s while scanning (effects clock)
                 opacity: scene.discovering && scene.active && scene.motion ? 0.25 + 0.75 * Math.abs(1 - (scene.fxTime % 1.4) / 0.7) : 1
             }
             StyledText {
                 text: scene.discovering ? "Scanning" : "Scan"
-                color: Qt.rgba(1, 1, 1, 0.75)
+                color: scene.night.ink(0.75)
                 font.pixelSize: Theme.fontSizeSmall - 1
                 anchors.verticalCenter: parent.verticalCenter
             }
@@ -1474,15 +1474,15 @@ Item {
         StyledText {
             anchors.horizontalCenter: parent.horizontalCenter
             text: BluetoothService.available ? "Bluetooth is off" : "No Bluetooth adapter"
-            color: Qt.rgba(1, 1, 1, 0.6)
+            color: scene.night.ink(0.6)
             font.pixelSize: Theme.fontSizeSmall
         }
         Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
             visible: BluetoothService.available
-            width: onText.implicitWidth + 28
-            height: 30
-            radius: 15
+            width: onText.implicitWidth + Theme.spacingXL
+            height: Theme.fontSizeSmall + Theme.spacingL
+            radius: height / 2
             color: onArea.containsMouse ? Theme.withAlpha(scene.night.primary, 0.35) : Theme.withAlpha(scene.night.primary, 0.2)
             StyledText {
                 id: onText
