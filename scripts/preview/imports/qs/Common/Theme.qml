@@ -7,6 +7,11 @@ QtObject {
     property color tertiary: "#9FD3C7"
     property color error: "#FFB4AB"
     property color errorText: "#690005"
+    property color surface: "#12140E"
+    property color surfaceContainer: "#1E201A"
+    property color surfaceContainerHigh: "#282B24"
+    property color surfaceContainerHighest: "#33362E"
+    property color outline: "#909284"
     property color surfaceText: "#E4E3DB"
     property color surfaceVariantText: "#C6C8B8"
     property real fontSizeSmall: 12
