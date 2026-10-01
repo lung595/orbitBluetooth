@@ -178,7 +178,7 @@ The device falls out of the bar along a comet trail, is caught by an orbit with 
 - **Later** (or <kbd>Escape</kbd>) closes it; the same device is not offered again for 10 minutes. No answer within 30 s counts as *Later*: the ring around × shows the time left, and stops while the pointer is over the sheet.
 - **Don't offer again** never offers that device again. **Offer ignored devices again** (end of the settings) clears the list.
 - **Several devices at once**: the next one peeks behind the sheet with a "+1", and comes forward when you are done with the first.
-- The keyboard is only taken while the pointer is on the sheet or a name is being typed, so it never steals keys from the window you use.
+- The keyboard is only taken once you click the sheet, so it never steals keys from the window you use.
 
 **Two looks, any palette**: with a dark DMS theme the sheet is deep space (blue-black sky, glowing planet and device); with a light theme it is the stratosphere (pearly sky, porcelain planet, the device casting a real shadow). The DMS colours enter through the accent only, which each look brightens or deepens until it reads well, so pastel, neon or grey palettes all work.
 

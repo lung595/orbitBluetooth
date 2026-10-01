@@ -39,9 +39,11 @@ PanelWindow {
         })
 
     screen: watch._screen
+    // Under the right end of the bar: the card's edge lines up with the
+    // screen edge the bar's last widget sits against (the sheet keeps a thin
+    // margin of its own for the shadow)
     anchors.top: true
     anchors.right: true
-    margins.right: Theme.spacingS
     color: "transparent"
     implicitWidth: sheet.implicitWidth
     implicitHeight: sheet.implicitHeight
@@ -50,12 +52,15 @@ PanelWindow {
     exclusiveZone: 0
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "dms:plugins:orbitBluetooth:newDevice"
-    // The keyboard only while the pointer is on the sheet (Enter, Escape) or
-    // a name is being typed: it never steals keys from the window in use
-    WlrLayershell.keyboardFocus: sheet.hovered || sheet.renaming ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    // The keyboard once the sheet is clicked (Enter, Escape, typing a name),
+    // never on its own: it does not steal keys from the window in use. Fixed
+    // on purpose: switching it as the pointer came and went made the
+    // compositor reconfigure the surface under the pointer, and clicks on
+    // Connect were lost.
+    WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
     // Clicks around the card reach the windows below
     mask: Region {
-        item: sheet.card
+        item: sheet.hitArea
     }
 
     Binding {
@@ -93,7 +98,10 @@ PanelWindow {
         }
         ancMode: win.watch.ancInfo?.state?.mode ?? ""
 
-        onAccepted: win.watch.connect()
+        onAccepted: {
+            sheet.forceActiveFocus();
+            win.watch.connect();
+        }
         onRetry: win.watch.connect()
         onLater: win.watch.phase === "done" ? win.watch.close() : win.watch.later()
         onIgnored: win.watch.ignore()

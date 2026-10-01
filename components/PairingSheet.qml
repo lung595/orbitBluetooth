@@ -54,6 +54,18 @@ Item {
 
     readonly property bool busy: phase === "pairing" || phase === "connecting"
     readonly property Item card: card
+    // Where clicks are taken: the card's resting place. The card itself is
+    // scaled while it unfolds, and a window mask built from it kept that
+    // squashed size, so the bottom of the card (Connect, Don't offer again)
+    // let clicks through to the window below.
+    readonly property Item hitArea: hitArea
+    Item {
+        id: hitArea
+        x: root.pad
+        y: 6
+        width: root.cardWidth
+        height: root.cardHeight
+    }
     readonly property bool hovered: hover.hovered
     // Typing a new name (the window gives the sheet the keyboard meanwhile)
     property bool renaming: false
@@ -238,9 +250,11 @@ Item {
 
     readonly property real cardWidth: 340
     readonly property real cardHeight: 520
-    // Room for the shadow and the card peeking behind
-    implicitWidth: cardWidth + 48
-    implicitHeight: cardHeight + 64
+    // Room for the shadow (kept short so the card can sit close to the screen
+    // edge) and the cards peeking below
+    readonly property real pad: 16
+    implicitWidth: cardWidth + pad * 2
+    implicitHeight: cardHeight + pad + 44
 
     // --- Skin ------------------------------------------------------------------------
     function rgb(o) {
@@ -364,17 +378,24 @@ Item {
         }
     }
 
-    // --- The next device, peeking behind ------------------------------------------
-    Rectangle {
-        visible: root.stacked > 0
-        width: root.cardWidth - 36
-        height: root.cardHeight
-        x: card.x + 18
-        y: card.y + 20
-        radius: card.radius
-        color: skin.planetTop
-        border.width: 1
-        border.color: Theme.withAlpha(skin.accent, 0.3)
+    // --- The next devices, peeking below like a stack of cards ------------------
+    Repeater {
+        model: Math.min(2, root.stacked)
+        Rectangle {
+            id: peek
+            required property int index
+            readonly property real k: index + 1
+            width: root.cardWidth * (1 - 0.06 * k)
+            height: 40
+            x: card.x + (root.cardWidth - width) / 2
+            y: card.y + root.cardHeight - height + 7 * k
+            z: -k
+            radius: card.radius * (1 - 0.06 * k)
+            color: Qt.tint(skin.planetLow, Theme.withAlpha(skin.inkBase, skin.light ? 0.02 + 0.03 * k : 0.04 + 0.03 * k))
+            border.width: 1
+            border.color: skin.ink(skin.light ? 0.08 : 0.1)
+            opacity: root.reveal * (1 - 0.25 * peek.index)
+        }
     }
 
     // --- Card ----------------------------------------------------------------------
@@ -382,9 +403,9 @@ Item {
         id: card
         width: root.cardWidth
         height: root.cardHeight
-        x: 24
-        y: 12
-        readonly property real radius: 30
+        x: root.pad
+        y: 6
+        readonly property real radius: 28
         // Where the planet's limb crosses the middle of the card
         readonly property real horizon: 222
         // Unfolds downwards from the bar; after a connection it folds back
@@ -414,9 +435,11 @@ Item {
             layer.enabled: true
             layer.effect: MultiEffect {
                 shadowEnabled: true
-                shadowColor: skin.light ? Qt.tint(Qt.rgba(0.1, 0.1, 0.16, 0.22), Theme.withAlpha(skin.accent, 0.12)) : Qt.rgba(0, 0, 0, 0.6)
-                shadowBlur: 1
-                shadowVerticalOffset: skin.light ? 14 : 12
+                shadowColor: skin.light ? Qt.tint(Qt.rgba(0.1, 0.1, 0.16, 0.22), Theme.withAlpha(skin.accent, 0.12)) : Qt.rgba(0, 0, 0, 0.55)
+                // Short enough to fit in the sheet's own margin
+                blurMax: 24
+                shadowBlur: 0.7
+                shadowVerticalOffset: 8
             }
         }
 
@@ -1052,8 +1075,11 @@ Item {
                         font.pixelSize: Theme.fontSizeLarge + 10
                         font.weight: Font.Bold
                         font.letterSpacing: -0.4
+                        // One line: a long name (an alias) is cut, never wrapped
+                        wrapMode: Text.NoWrap
+                        maximumLineCount: 1
                         elide: Text.ElideRight
-                        width: Math.min(implicitWidth, card.width - 80)
+                        width: Math.min(implicitWidth, card.width - 76)
                     }
                     DankIcon {
                         anchors.verticalCenter: parent.verticalCenter
@@ -1132,9 +1158,10 @@ Item {
                 y: (1 - root.stagger(4)) * 14
             }
 
-            // What you get
+            // What you get (centred when there are fewer than three)
             Row {
                 visible: root.phase === "offer"
+                anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 8
                 Repeater {
                     model: root.features
