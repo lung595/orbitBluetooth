@@ -12,6 +12,9 @@ import "components/DeviceCatalog.js" as Catalog
 PluginComponent {
     id: root
 
+    // The sky color shared with the scene
+    readonly property NightColors night: NightColors {}
+
     // Devices hidden in the black hole are left out here too
     readonly property var hiddenDevices: pluginData.hiddenDevices ?? ({})
     readonly property var connectedDevices: {
@@ -46,7 +49,7 @@ PluginComponent {
     ccDetailContent: Component {
         Rectangle {
             radius: Theme.cornerRadius
-            color: "#07080c"
+            color: root.night.sky
             clip: true
 
             OrbitScene {
@@ -139,7 +142,7 @@ PluginComponent {
             Rectangle {
                 anchors.fill: parent
                 radius: Theme.cornerRadius
-                color: "#07080c"
+                color: root.night.sky
                 clip: true
 
                 OrbitScene {
