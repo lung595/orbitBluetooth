@@ -476,7 +476,7 @@ over time.
 ## Changelog
 
 ### 1.7.1 (2026-10-01)
-- Control Center tile: named **OrbitBluetooth** instead of "Bluetooth", and the device name under it is cut at 14 characters so it stays inside the tile.
+- Control Center tile: named **OrbitBluetooth** instead of "Bluetooth", and the device name under it is cut at 12 characters so it stays inside the tile.
 
 ### 1.7.0 (2026-10-01)
 - Offer to connect: when an unpaired, named device shows up while the view scans, a small card says so with a **Connect** button (it goes away after 12 s or with ×). Devices already around when the view opens are not offered. Turn it off with **Scanning → Offer new devices**.
