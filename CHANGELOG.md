@@ -1,0 +1,145 @@
+# Changelog
+
+All notable changes to Orbit Bluetooth are documented here.
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
+
+## Unreleased
+
+### Changed
+
+- Documentation split into `README.md`, `docs/GUIDE.md`, `CHANGELOG.md`, `ROADMAP.md` and `CONTRIBUTING.md`.
+
+## 1.7.1 - 2026-10-01
+
+### Changed
+
+- Control Center tile: named **OrbitBluetooth** instead of "Bluetooth", and the device name under it is cut at 12 characters so it stays inside the tile.
+
+## 1.7.0 - 2026-10-01
+
+### Added
+
+- Offer to connect: when an unpaired, named device shows up while the view scans, a small card says so with a **Connect** button (it goes away after 12 s or with ×). Devices already around when the view opens are not offered. Turn it off with **Scanning → Offer new devices**.
+- Connecting: two soft sonar rings leave the device, next to the comet. Not seen on real hardware yet.
+
+## 1.6.0 - 2026-10-01
+
+### Added
+
+- Volume per device: a slider and a mute button in the detail card of a connected audio device, through PipeWire (local only). Not tested on real hardware yet.
+
+## 1.5.0 - 2026-10-01
+
+### Added
+
+- Conversation awareness is remembered per headset and put back after a reconnect (option *Remember conversation awareness*, on by default).
+- Silent Apple models (AirPods Max 2): Orbit asks for the state a second time, then offers the modes for *Pro* and *Max* names. Known not functional on the AirPods Max.
+
+### Changed
+
+- Scene chrome (scan chip, *Turn on* button, sky color) takes its sizes from the DMS theme; the night colors live in one place (`NightColors`).
+- AirPods 3 and 4 confirmed on hardware.
+
+## 1.4.1 - 2026-09-27
+
+### Changed
+
+- Device names are readable everywhere, even on a pale or busy wallpaper: each name glows softly in your theme's accent, and devices that are not connected fade less. On the desktop they also sit on a smoky disc.
+- Desktop widget: devices are a quarter smaller, so the orbit sits lighter on the wallpaper. The panels keep their size.
+- Connected devices read stronger than the others. With nothing connected, every name is lifted.
+
+## 1.4.0 - 2026-09-26
+
+### Added
+
+- Rename a device: click its name in the detail card. Enter saves, Escape cancels, an empty name restores the device's own name.
+
+### Changed
+
+- A renamed device keeps its icon, noise control, earbuds look, battery estimate and custom pictures: they follow the name the device reports itself.
+
+## 1.3.2 - 2026-09-26
+
+### Changed
+
+- The Control Center and the bar popout are as light as the desktop: nothing loops as a QML animation anywhere, the drift runs on a 30 Hz timer, and display-synced frames are only used while dragging. An open view at rest costs about 5–6 % of one core for the whole shell.
+- Shooting stars are rarer (every 12–32 s), cross from the top left to the bottom right, and bend toward the black hole or get swallowed by it.
+
+### Fixed
+
+- A connection attempt no longer makes the whole shell redraw at the display rate.
+
+## 1.3.1 - 2026-09-26
+
+### Changed
+
+- Everything pauses while the session is locked or the monitors are off; connection timers pause when nobody is looking.
+
+### Fixed
+
+- Desktop widget truly at rest: from about 65 % of a core to about 1 % (about 3.5 % with *Ambient motion*).
+- Dragging stays smooth to the very end of the motion.
+
+## 1.3.0 - 2026-09-26
+
+### Added
+
+- Light theme support: the sky stays night, devices turn white, cards use a soft white.
+
+## 1.2.2 - 2026-09-26
+
+### Added
+
+- Pick the screens of the desktop widget from Orbit's settings.
+
+### Changed
+
+- Esc steps back one level (menu, hidden list, card) before closing the view.
+- The quick-disconnect × is now an option, off by default.
+- Clicking the center only reacts on its inner 70 %, never over a device.
+- Settings grouped into short sections, with a note on the options that use more battery.
+- The machine in the center is 15 % smaller.
+
+## 1.2.1 - 2026-09-26
+
+### Changed
+
+- Charging beam redrawn as thin magnetic field lines.
+- Charging earbuds move closer to the case, with their battery bar.
+
+## 1.2.0 - 2026-09-26
+
+### Added
+
+- Earbuds trio: the case and both buds in their own mini orbit, each with its battery, and a beam to the bud that charges.
+- Live charging state while a view is open (headset session instead of a one-off read).
+
+### Changed
+
+- The Control Center tile grows to the exact height of the open card.
+
+### Fixed
+
+- DMS's pairing dialog is shown for devices that ask for a code (fixes endless disconnects).
+
+## 1.1.1 - 2026-09-26
+
+### Fixed
+
+- Detail card polish: symmetric spacing, a mode pill that hugs its content.
+- Noise control no longer loses the final state or flashes back to the previous mode.
+
+## 1.1.0 - 2026-09-26
+
+### Added
+
+- Noise control for 13 headphone brands (tested on Sony and Huawei).
+- The black hole: drag a device into it to hide it, click it to list and bring devices back; two looks.
+- Right-click menu, a comet while a device connects, depth on the ring of connected devices.
+- Battery time left from the moment a device connects.
+
+## 1.0.0 - 2026-09-25
+
+### Added
+
+- First release: the planetary scene, drag to connect, the detail card, Control Center + bar + desktop, 28 device icons, sounds, and an option to scan only on demand.

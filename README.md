@@ -1,380 +1,132 @@
+<div align="center">
+
 # Orbit Bluetooth
 
-A planetary Bluetooth manager for [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell).
-Your machine sits at the center of a small star system and nearby devices float
-around it. Drag a device toward the center to connect it, pull it away to
-disconnect it. Charging devices receive a beam of energy from the core.
+**A planetary Bluetooth manager for [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell).**
+
+Your machine sits at the center of a small star system and nearby devices float around it.
+Drag a device to the center to connect it, pull it away to disconnect it.
 
 ![Orbit view in the Control Center](screenshots/orbit.png)
 
-| Drag to connect | Energy beam while charging |
-| --- | --- |
-| ![Dragging earbuds to the inner ring connects them](screenshots/connect.gif) | ![A beam of energy flowing from the host to a charging headset](screenshots/beam.gif) |
+[Getting started](#getting-started) · [Usage](#usage) · [Settings](#settings) · [Troubleshooting](#troubleshooting) · [User guide](docs/GUIDE.md) · [Changelog](CHANGELOG.md)
 
-- Works in the **Control Center**, the **bar** and as a **desktop widget**
-- Drag-to-connect with magnet snap, elastic tether to disconnect
-- Live **charging** view: magnetic charging beam, time to full, speed, session chart
-- **Earbuds trio**: case and both buds in their own mini orbit, each with its battery
-- Battery gauge colored by level (red → amber → gold → lime → aqua)
-- 28 built-in line-art device icons, matched by name
-- Follows light and dark DMS themes, the sky always stays night
-- Idle scenes use no frames at all; nothing leaves your machine
+</div>
 
-**New in 1.7.0:** a card offers to connect a new device as it shows up, and connecting plays sonar rings. Before that, 1.6.0 added a volume slider, and 1.5.0: Orbit remembers your conversation-awareness choice and puts it back when the headset reconnects; AirPods Max / Pro models that stay silent still get their noise-control modes. See the [changelog](#changelog) and the [roadmap](#roadmap).
+## Getting started
 
-**Contents:** [Install](#install) · [Quick start](#quick-start) · [Using the orbit](#using-the-orbit) · [Noise control](#noise-control) · [Settings](#settings) · [Privacy](#privacy) · [Troubleshooting](#troubleshooting) · [Changelog](#changelog) · [Roadmap](#roadmap)
+### Requirements
 
-## Install
+| Dependency | Version | Needed for |
+| --- | --- | --- |
+| DankMaterialShell | 1.6.0 or newer | Everything |
+| BlueZ | Any recent version, adapter powered on | Everything |
+| UPower | Any | *Optional*: real charging states |
+| PipeWire | Any | *Optional*: volume slider of audio devices |
+| Python 3 | Standard library only | *Optional*: headphone noise control |
 
-From the DMS plugin browser: **Settings → Plugins**, search for **Orbit Bluetooth**, install and enable it. Or from a terminal:
+### 1. Install
+
+From the plugin browser: **Settings → Plugins**, search for **Orbit Bluetooth**, click *Install*. Or from a terminal:
 
 ```sh
 dms plugins install orbitBluetooth
 ```
 
-Manual install: clone [the repository](https://github.com/lung595/orbitBluetooth) into `~/.config/DankMaterialShell/plugins/orbitBluetooth`, then enable it in **Settings → Plugins**. No restart is needed.
+<details>
+<summary>Manual install</summary>
 
-### Requirements
+```sh
+git clone https://github.com/lung595/orbitBluetooth ~/.config/DankMaterialShell/plugins/orbitBluetooth
+```
 
-| | |
+Then click **Settings → Plugins → *Scan for plugins***.
+</details>
+
+### 2. Enable
+
+In **Settings → Plugins**, turn **Orbit Bluetooth** on.
+
+### 3. Add a widget
+
+> [!IMPORTANT]
+> **Orbit Bluetooth does not replace the built-in DMS Bluetooth widget.** Nothing shows up until you **add at least one of its widgets** yourself.
+
+| Where | How to add it |
 | --- | --- |
-| DankMaterialShell | 1.6.0 or newer |
-| Quickshell | 0.3 or newer (ships with DMS) |
-| BlueZ | any recent version, adapter powered on |
-| UPower | optional, gives real charging states for devices that report one |
-| PipeWire | optional, volume slider of audio devices |
-| Python 3 | optional, standard library only: headphone noise control |
+| **Control Center** | Open the Control Center, enter **edit mode**, add the **Bluetooth** tile from *Orbit Bluetooth* |
+| **Bar** | **Settings → Appearance → DankBar Layout**, add **Orbit Bluetooth** to a section |
+| **Desktop** | **Settings → Desktop Widgets**, add **Orbit Bluetooth**, then move and resize it |
 
-## Quick start
+> [!TIP]
+> To avoid two Bluetooth tiles in the Control Center, remove the built-in one in edit mode.
 
-1. **Pick where it lives**: the Bluetooth tile in the Control Center, the bar, or a desktop widget (see [Surfaces](#surfaces)).
-2. **Drag a device into the inner ring** to connect it; drag it back out to disconnect.
-3. **Click a device** for its detail card (battery, charging, noise control); **right-click** it for a menu; **drop it into the black hole** to hide it.
+### 4. First steps
 
+1. **Open the orbit** from the widget you added. Discovery starts on its own.
+2. **Drag a device into the inner ring** to pair and connect it; drag it back out to disconnect.
+3. **Click a device** for its detail card: battery, charging, volume, noise control.
 
-## Surfaces
+## Features
 
-### Control Center
+| Drag to connect | Energy beam while charging |
+| --- | --- |
+| ![Dragging earbuds to the inner ring connects them](screenshots/connect.gif) | ![A beam of energy flowing to a charging headset](screenshots/beam.gif) |
 
-Enter the Control Center edit mode and add the **Bluetooth** tile from Orbit
-Bluetooth.
+- **Drag to connect** with a magnet snap, elastic tether to disconnect.
+- **Live charging**: energy beam, time to full, charge speed, session chart.
+- **Earbuds trio**: the case and both buds in their own mini orbit, each with its battery.
+- **Noise control** for 13 headphone brands (Sony, Apple, Samsung, Bose, Huawei…).
+- **Black hole**: drop a device you never use into it to hide it.
+- **28 device icons** matched by name, or your own pictures.
+- **Light and dark themes**; the sky always stays night.
+- **Lightweight and private**: no frames drawn at rest, nothing leaves your machine.
 
-- Click the tile icon to turn Bluetooth on or off.
-- Click the arrow to expand the orbit view inline.
-- The view stays compact; it grows while a detail card is open so the whole
-  card fits without scrolling.
-
-### Bar
-
-Add **Orbit Bluetooth** to any bar section.
-
-- Left click opens the orbit view in a popout.
-- The popout grows while a detail card is open, so the whole card fits.
-- Right click turns Bluetooth on or off.
-- Connected devices appear as tiny glyphs in the pill.
-
-### Desktop
-
-Add **Orbit Bluetooth** from **Settings → Desktop widgets**, then move and
-resize it like any other widget (default 440 × 380).
-
-- It is frameless: a smoky veil tinted with your theme accent fades out into
-  the wallpaper. Tune it with **Desktop backdrop**.
-- It stays frozen until the pointer is over it. The scan chip only shows while
-  you use it.
-- The detail card closes by itself when the pointer leaves or another window
-  takes focus.
-
-## Using the orbit
+## Usage
 
 | Gesture | Result |
 | --- | --- |
-| Drag a device inside the inner ring | Magnet snap; release to pair and connect |
-| Drag a connected device outward | Elastic tether; release to disconnect |
-| Hover a connected device, click × | Disconnect (when *Quick disconnect button* is on) |
-| Click a device | It flies onto a detail card |
-| Right-click a device | Menu: connect or disconnect, noise-control modes, hide |
-| Drag a device into the black hole | It is swallowed and hidden (it stays connected) |
-| Click the black hole | List of hidden devices, with **Show** to bring one back |
+| Drag a device inside the inner ring | Pair and connect |
+| Drag a connected device outward | Disconnect |
+| Click a device | Open its detail card |
+| Right-click a device | Menu: connect, noise-control modes, hide |
+| Drag a device into the black hole | Hide it (it stays connected) |
+| Click the black hole | List hidden devices, **Show** brings one back |
 | Click the center, or the **Scan** chip | Start discovery |
-| Esc, click outside, or ← | Leave the detail card (Esc also closes the menu and the hidden list first) |
+| <kbd>Esc</kbd> | Step back: menu, hidden list, detail card |
 
-Connected devices orbit on the inner ring, the others float in the outer
-field. Connected devices are drawn 15% smaller so the ring stays airy. While
-a connection is being made, a small comet circles the device and sonar
-rings leave it. Named devices
-are ranked before devices that only expose a MAC address.
+In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow expands the orbit. In the **bar**, left click opens the orbit, right click turns Bluetooth on or off.
 
-### Hiding devices: the black hole
-
-A small black hole drifts in the outer field with the unpaired devices.
-Drag a device you never use into it (or right-click it and pick **Hide**)
-and it spirals in and disappears from the orbit and the bar. It stays
-connected. Click the black hole to see what it holds and click **Show** to
-spit a device back out. With nothing hidden, clicking it explains what it is
-for.
-
-The black hole bends the starfield around it like a gravitational lens. Pick
-its look in the settings (**Look → Black hole**):
-
-- **Black hole** (default): a realistic one in the spirit of *Interstellar*,
-  with a thin accretion disk seen almost edge-on, the far side of the disk
-  bent over the shadow, a brighter approaching side and a photon ring,
-  tinted by your theme.
-- **Three-dimensional shadow of a four-dimensional bubble**: a wireframe
-  tesseract turning inside the horizon (a nod to the hypercube in
-  *Adventure Time*).
-
-Both are a single small shader and only move while the scene is already
-animating, so they cost nothing at rest. On the desktop widget the lens is off because the sky there
-is see-through.
-
-| ![Hidden devices listed by the black hole](screenshots/hidden.png) | ![Right-click menu of a headset](screenshots/menu.png) |
-| --- | --- |
-
-### Example: connecting new headphones
-
-1. Put the headphones in pairing mode.
-2. Open the orbit view. Discovery starts on its own (click **Scan** if
-   *Scan automatically* is off), and the chip reads **Scanning**.
-3. The headphones appear in the outer field. Drag them toward the center;
-   the ring lights up and pulls them in.
-4. Release. They pair, connect, and settle on the inner ring with their
-   battery arc.
-
-![Dragging earbuds toward the center: magnet snap, connecting, connected](screenshots/connect.gif)
-
-### The detail card
-
-Click any device to open it: its glyph flies onto the card.
-
-![A device flying onto its detail card](screenshots/focus.gif)
-
-The card shows:
-
-- name, type and state (connected, paired, available). **Click the name to
-  rename** a paired device: Enter saves, Escape cancels, and an empty name
-  gives the device its own name back. The new name is the Bluetooth alias,
-  so every app on the system shows it; the icon, noise control and battery
-  estimates still follow the device's own name.
-- connection time and battery level
-- **volume** of audio devices: a slider and a mute button on the device's PipeWire output (hidden for devices with no sound output)
-- actions: change icon, connect or disconnect, hide, forget (asks twice)
-- battery gauge, session chart and stats (see below)
-- for earbuds, the **trio** (next section)
-- noise control, for supported headphones (next section)
-
-### Earbuds: the trio
-
-Earbuds that report their parts (case, left, right) get a small orbit of
-their own in the detail card: the case in the middle, one bud at each end,
-each with its battery bar. A bud charging in the case moves closer to it,
-its battery bar following it, and field lines join the case to the bud.
-
-![Earbuds charging in their case](screenshots/earbuds-dock.png)
-
-The drawings are chosen by name (stem or pebble buds, tall, wide or pebble
-case, white or graphite). To use your own photos, put them in the
-**Custom images folder** as `<name> case.png`, `<name> left.png` and
-`<name> right.png` (the left picture is mirrored when there is no right one).
-
-## Gallery
-
-| Charging in orbit | Charging details |
-| --- | --- |
-| ![An energy beam flowing from the host to a charging headset](screenshots/charging.png) | ![Detail card with gauge, ETA and stats](screenshots/detail-charging.png) |
-
-| Desktop widget | Desktop widget, detail card |
-| --- | --- |
-| ![Frameless orbit dissolving into the wallpaper](screenshots/desktop.png) | ![Detail card on the desktop](screenshots/desktop-detail.png) |
-
-| Earbuds trio | Buds charging in their case |
-| --- | --- |
-| ![Case between the two earbuds, one battery bar each](screenshots/earbuds.png) | ![Both earbuds docked, beams flowing from the case](screenshots/earbuds-dock.png) |
-
-*Screenshots and animations are rendered from mock data with
-`scripts/preview/render.sh` and `scripts/preview/record.sh`.*
-
-## Noise control
-
-Supported headphones get a mode selector in their detail card, a halo in
-the orbit (solid: cancelling, dotted: ambient) and the modes in their
-right-click menu. Only what the model supports is shown: noise cancelling,
-adaptive, ambient (transparency) and off, the ambient level, voice focus,
-conversation detection and the left/right/case batteries.
-
-![Noise control in the detail card](screenshots/noise-control.png)
-
-| Brand | Models | Tested on hardware |
-| --- | --- | --- |
-| Sony | WH-1000XM3 to XM6, WF-1000XM3 to XM5, LinkBuds, WH-CH720N, ULT WEAR… | Yes (WH-1000XM6) |
-| Apple | AirPods Pro, AirPods 3 and 4, AirPods Max, Beats with noise control | Yes (AirPods 3 and 4); **AirPods Max: noise control is not functional** (AirPods Max 2 does not answer) |
-| Samsung | Galaxy Buds, Buds+, Live, Pro, Buds2 to Buds4 (Pro, FE, Core) | No (untested) |
-| Bose | QC35 / QC35 II, NC700, QC45, QC Ultra, QC Headphones | No (untested) |
-| Nothing / CMF | Ear (1), (2), (3), (a), Headphone (1), CMF Buds and Headphone Pro | No (untested) |
-| Anker Soundcore | Life Q30/Q35, Liberty Air 2 Pro, Space Q45, others with the common layout | No (untested) |
-| Huawei / Honor | FreeBuds 4i to 6i, Pro to Pro 5, SE 4, Studio, FreeLace Pro, FreeClip, Honor Earbuds 2 | Yes (FreeBuds Pro) |
-| Oppo / OnePlus / realme | realme Buds T200 and Air6 Pro; other Enco/realme/OnePlus models are probed | No (untested) |
-| Xiaomi | Redmi Buds 3 Pro, 4 Active, 5 Pro, 6 (Pro, Lite, Active), 8 Active | No (untested) |
-| EarFun | Air Pro 4, Air S, Free Pro 3 | No (untested) |
-| Moondrop | Space Travel 2, Space Travel 2 Ultra | No (untested) |
-| Haylou | S35 ANC (mode can be set, not read) | No (untested) |
-| 1MORE | SonoFlow, SonoFlow SE | No (untested) |
-
-Untested brands follow their protocol documentation byte for byte and are
-covered by unit tests, but have not met a real headset yet. If yours does
-not answer, it simply shows no noise control; reports are welcome. Not
-supported (no reliable public documentation): Jabra, JBL, Sennheiser,
-Marshall, Google Pixel Buds.
-
-How it works: QML cannot open a Bluetooth socket, so a small helper
-(`anc/orbit_anc.py`, Python standard library only) talks to the headset.
-The **Engine** setting decides when it runs:
-
-- **On demand** (default): only while an Orbit view is open (Control Center,
-  popout, visible desktop widget), or for the second it takes to apply a
-  command. The helper waits for the headset to speak, so plugging in or
-  unplugging the charger shows up at once, with no polling. Nothing runs
-  once the view is closed.
-- **Always connected**: one session per connected headset, so changes made
-  with the headset's own buttons show up live (a small idle process).
-
-Noise control only talks to **paired** headsets: opening a channel to a
-device that is connected but not paired would make it drop and reconnect.
-
-**Conversation awareness** (the *Conversation* chip) is a setting many headsets
-forget when they disconnect. Orbit keeps your last choice per headset and
-puts it back about 2.5 s after the headset reconnects (one short helper
-session, then it closes). Switch it off with **Headphones → Remember
-conversation awareness**; Orbit then never changes it by itself. The choice
-is stored with your other DMS plugin settings, as an address and a yes or no.
-
-**AirPods Max (including the Max 2): noise control does not work yet.** The
-headset does not answer the way AirPods 3 and 4 do. Orbit asks twice, then
-offers off / noise cancelling / ambient anyway (commands are sent blind), but
-this is unverified and may do nothing. To help decode it, run the shell with
-`ORBIT_ANC_DEBUG=1` and open an issue with the packets.
-
-Some headsets cannot report every mode when asked (the WH-1000XM6 reads
-"noise cancelling" and "off" the same way); Orbit then keeps the last mode
-it set or saw.
-
-## Charging and battery data
-
-A charging device gets a lightning badge, a breathing battery arc and a beam
-of energy from your machine to it: many faint field lines that fan out into a
-spindle and meet again at the device, each waving at its own pace, like iron
-filings around a magnet (drawn by a shader, only while visible).
-Under its name you read the level and the time to full, for example
-`54% · 2h08`.
-
-![The charging beam, close up](screenshots/beam.gif)
-
-The detail card adds:
-
-| Field | Example | Meaning |
-| --- | --- | --- |
-| Readout | `54%  ≈ 2 h 08 to full` | Level (in its color) and time to full |
-| **READY AT** | `≈ 15:45` | Clock time when it should be full |
-| **SPEED** or **POWER** | `+29 %/h` or `4.5 W` | Charge rate (power when the device reports it) |
-| **+16% IN** | `34 min` | Gained during this charge, and for how long |
-| **HEALTH** | `92%` | Battery health, when reported |
-| Chart | step line | Level over the current connection |
-
-![Charging gauge: level colored by the aurora ramp, streaks flowing](screenshots/gauge.gif)
-
-When not charging, the readout shows the time left and the tiles switch to
-**EMPTY AT** and **DRAIN**. The gauge is a matte pill colored by level, with
-light-speed streaks that flow while charging and a mark at 80%.
-
-### Where the numbers come from
-
-Bluetooth itself only reports a percentage, so the plugin combines two
-sources:
-
-1. **Reported by the device.** Headsets with noise control report their own
-   charging state through the helper (Sony, Huawei and others, per part for
-   earbuds; a charging case alone does not mark the buds as charging).
-   Devices with a kernel battery driver (most game
-   controllers, Logitech peripherals, …) publish a real state through UPower.
-   The plugin maps them to their Bluetooth address by reading `HID_UNIQ` from
-   sysfs once per device.
-2. **Estimated from level changes.** Otherwise, charging is inferred from a
-   rising level. Time to full accounts for the usual lithium-ion slowdown
-   past 80%. Estimates are shown with `≈` and refine as more steps arrive.
-   It takes a few level changes (usually a few minutes) before the first
-   estimate appears.
-
-The card's footnote always says which source is in use.
-
-## Light theme
-
-Orbit keeps its night sky in every theme. With a light DMS theme, the
-devices and your machine turn into white discs, the cards into a soft
-off-white with dark ink, and the accents drawn on the sky are lifted to a
-lighter shade of the same hue so they stay readable. The dark theme is
-unchanged.
-
-| Orbit, light theme | Detail card, light theme |
-| --- | --- |
-| ![White devices on the night sky](screenshots/light.png) | ![Soft off-white detail card](screenshots/light-detail.png) |
-
-## Device icons
-
-Icons are matched by name patterns, for example every `WH-1000XMx`,
-`AirPods Max`, `MX Master`, `Galaxy Buds`, `G703` or `DualSense`. The BlueZ
-device class breaks ties, so a `G733` headset is never drawn as a mouse.
-
-To change one, open its detail card and click the palette button. Your
-choice is remembered per device. **Reset device icons** in the
-settings clears all choices.
-
-To use your own artwork, set **Custom images folder** and add PNGs named
-after each device's own name (a rename does not change it):
-
-```
-~/Pictures/bluetooth/
-├── WH-1000XM6.png
-├── Xbox Wireless Controller.png
-└── MX Master 3S.png
-```
-
-Characters that are not allowed in file names (`/ \ : * ? " < > |`) are
-replaced by `_`.
+📖 Everything else (detail card, renaming, earbuds, noise control and supported models, charging data, custom icons) is in the **[user guide](docs/GUIDE.md)**.
 
 ## Settings
 
-Grouped by what they change; options marked ⚡ use more battery.
+**Settings → Plugins → Orbit Bluetooth.** Options marked ⚡ use more battery.
 
-| Section | Setting | Default | Description |
-| --- | --- | --- | --- |
-| Orbit | Devices in orbit | 8 | Connected devices always show; the rest are ranked by pairing and name |
-| | Always show names | on | Otherwise names appear on hover |
-| | Show unnamed devices | off | Devices that only expose a MAC address |
-| | Quick disconnect button | off | An × on connected devices, on hover (otherwise drag away or right-click) |
-| | Center device | Automatic | Icon of this machine (laptop or desktop is detected) |
-| Scanning | Scan automatically | on | Start discovery when a view opens; otherwise click the center |
-| | Offer new devices | on | A card with *Connect* when an unpaired device shows up while scanning |
-| | Scan duration | 45 s | 20 s, 45 s, 90 s or *While open* ⚡ |
-| Headphones | Noise control | on | Supported headphones (needs Python 3) |
-| | Remember conversation awareness | on | Puts the *Conversation* choice back when a headset reconnects |
-| | Engine | On demand | *Always connected* ⚡ shows headset button presses live (see *Noise control*) |
-| Desktop widget | Displays | All | Which displays show the desktop widget (DMS's own picker) |
-| | Backdrop | 72% | Depth of the veil behind the orbit |
-| | Ambient motion | off | Keep orbits moving when the pointer is away ⚡ |
-| Look | Black hole | Black hole | Realistic, or the three-dimensional shadow of a four-dimensional bubble |
-| | Shooting stars | on | A rare meteor (every 12–32 s) from the top left to the bottom right; one passing the black hole bends toward it, or is swallowed and lights up its ring |
-| | Stars | Normal | Low, Normal or High |
-| | Custom images folder | — | PNG files that replace built-in icons |
-| Sounds | Sounds | off | Short cues on snap, connect and disconnect |
-| | Volume | 60% | |
+| Section | Setting | Default |
+| --- | --- | --- |
+| Orbit | Devices in orbit | 8 |
+| | Always show names | On |
+| | Show unnamed devices (MAC address only) | Off |
+| | Quick disconnect button (× on hover) | Off |
+| | Center device | Automatic |
+| Scanning | Scan automatically | On |
+| | Offer new devices (a *Connect* card) | On |
+| | Scan duration: 20 s, 45 s, 90 s or *While open* ⚡ | 45 s |
+| Headphones | Noise control | On |
+| | Remember conversation awareness | On |
+| | Engine: *On demand* or *Always connected* ⚡ | On demand |
+| Desktop widget | Displays | All |
+| | Backdrop | 72 % |
+| | Ambient motion ⚡ | Off |
+| Look | Black hole: realistic or tesseract | Black hole |
+| | Shooting stars | On |
+| | Stars: Low, Normal or High | Normal |
+| | Custom images folder | — |
+| Sounds | Sounds | Off |
+| | Volume | 60 % |
 
-Two buttons at the end reset custom device icons and bring back every
-hidden device.
-
-## Keyboard shortcuts (IPC)
-
-Bind these to keys in your compositor:
+## Command line and keybindings
 
 ```sh
 dms ipc call orbitBluetooth anc nc       # nc, ambient, off or adaptive (first supported headset)
@@ -384,262 +136,39 @@ dms ipc call orbitBluetooth hidden       # list hidden devices
 dms ipc call orbitBluetooth unhideAll    # bring every hidden device back
 ```
 
-## Privacy
-
-- No network access, no telemetry.
-- The only process is the noise-control helper (Python, standard library):
-  it opens a local Bluetooth socket to your headset and nothing else, only
-  while needed (see *Noise control*). Set `ORBIT_ANC_DEBUG=1` to see its raw
-  packets on stderr; nothing is ever logged to a file.
-- The volume slider talks to the local sound server (PipeWire) only.
-- Connection times and battery history live in memory for the current
-  session only. They are never written to disk.
-- The only files read are the sysfs `uevent` of kernel batteries, once each,
-  to match them to a Bluetooth address.
-- Settings (your choices, custom icon picks, the addresses and names of
-  hidden devices, the conversation-awareness choice per headset) are stored by DMS with your other plugin settings.
-- A device name you set is stored by BlueZ, like any Bluetooth alias, not by
-  Orbit. On the desktop, the widget only takes the keyboard while a detail
-  card is open, so you can type a name.
-
-## Performance
-
-- One `FrameAnimation` drives physics, orbits and twinkles while you interact.
-  It stops as soon as the scene settles or is hidden.
-- The desktop widget renders zero frames while idle: the orbits hold still,
-  and even the connection timers pause and catch up as soon as the pointer
-  comes back.
-- *Ambient motion* on the desktop runs on a plain 30 Hz timer instead of a
-  frame-synced animation: in Qt, any running animation makes every shell
-  window (bars, wallpaper) redraw at the display rate. Measured on a 240 Hz
-  screen: about 65 % of a core with a frame-synced loop, about 2.5 % with the
-  timer, the whole shell included (the shell alone idles at about 2.8 %).
-- For the same reason, nothing loops as a QML animation anywhere (Control
-  Center, bar popout, desktop): the drift runs on a 30 Hz timer (60 Hz while
-  a comet turns or a card is open), and every effect (charging glow and beam, comet,
-  earbuds float, gauge streaks, scan ping, shooting stars) is computed from
-  one effects clock. Display-synced frames are kept for gestures and until
-  their motion has calmed down, so dragging stays smooth to the very end.
-- Everything pauses while the session is locked or the monitors are off.
-- Backgrounds (stars, nebulae, veil) are painted once. Charging effects only
-  move fixed geometry, from the effects clock.
-- Discovery runs only while a view is open and stops after the configured delay.
-- The device list polls only while someone is looking or discovery runs.
-- Sounds load the multimedia backend only when enabled.
-- The black hole is one small fragment shader (either style). Its sky patch is re-sampled only
-  when the stars change, and it only turns while the scene is awake.
-- Honors DMS **Reduce motion**.
-
-## Benchmark
-
-CPU of the whole shell (% of one core), each state for 10 s, one version after
-the other on the same machine (240 Hz screen). DMS alone: **0.7 %**.
-
-| State | 1.4.1 | 1.4.0 | 1.3.2 |
-|---|---|---|---|
-| Idle (bar icon, view closed) | 0.5 | 0.7 | 0.5 |
-| View open, left alone | 3.8 | 3.6 | 3.7 |
-| View open while scanning | 5.2 | 10.1 | 8.0 |
-| Desktop widget, *Ambient motion* on | 9.2 | 8.8 | 8.5 |
-
-Idle costs nothing: the shell uses the same with or without Orbit. Short
-runs are noisy (about ±2 points while scanning), and the desktop figure covers
-the first seconds after the widget appears.
+Bind them in your compositor, for example in niri: `Mod+N { spawn "dms" "ipc" "call" "orbitBluetooth" "ancCycle"; }`, or in Hyprland: `bind = SUPER, N, exec, dms ipc call orbitBluetooth ancCycle`.
 
 ## Troubleshooting
 
-**Earbuds keep disconnecting after a few seconds.** Some earbuds (FreeBuds
-among others) ask you to confirm a pairing code. Orbit shows DMS's pairing
-dialog for them; accept it once and they stay connected.
+| Problem | Solution |
+| --- | --- |
+| Nothing changed after installing | Add one of its widgets, see [Add a widget](#3-add-a-widget) |
+| Earbuds disconnect after a few seconds | Accept the pairing code dialog once |
+| No devices appear while scanning | Put the device in pairing mode; turn on **Show unnamed devices** |
+| A device charges but shows no lightning | Wait for its first level increase: the estimate starts then |
+| Noise control does not appear | Headset must be paired and supported, Python 3 installed; reopen the card |
+| A device vanished | It is in the black hole: click it, or `dms ipc call orbitBluetooth unhideAll` |
+| Time to full looks off | Some headsets report in 10 % steps; it improves over time |
 
-**No devices appear while scanning.** Make sure the device is in pairing mode.
-Devices that only broadcast a MAC address are hidden unless **Show unnamed
-devices** is on, and the orbit keeps at most **Devices in orbit** entries.
+Some Sony headsets do not report charging, or drop Bluetooth while charging: this is a hardware limit.
 
-**A device charges but shows no lightning.** It reports no charging state and
-its level has not risen yet. The estimate starts after the first level
-increase.
+## Privacy
 
-**Noise control does not appear.** The headset must be connected and its
-brand supported (see *Noise control*); Python 3 must be installed. Close and
-reopen the card to retry: after an error the helper stays quiet instead of
-retrying in a loop.
+No network access, no telemetry. The only process is the noise-control helper, which talks to your headset over a local Bluetooth socket while needed. Connection times and battery history stay in memory; settings are stored by DMS. Details in the [user guide](docs/GUIDE.md#privacy).
 
-**A device vanished.** It may be in the black hole: click it, or use
-**Show all hidden devices** in the settings, or
-`dms ipc call orbitBluetooth unhideAll`.
+## Documentation
 
-**The time to full looks off.** Estimates rely on the device's level steps.
-Some headsets report in 10% steps, so the first minutes are rough and improve
-over time.
-
-## Changelog
-
-### 1.7.1 (2026-10-01)
-- Control Center tile: named **OrbitBluetooth** instead of "Bluetooth", and the device name under it is cut at 12 characters so it stays inside the tile.
-
-### 1.7.0 (2026-10-01)
-- Offer to connect: when an unpaired, named device shows up while the view scans, a small card says so with a **Connect** button (it goes away after 12 s or with ×). Devices already around when the view opens are not offered. Turn it off with **Scanning → Offer new devices**.
-- Connecting: two soft sonar rings leave the device, next to the comet. Both are driven by the effects clock, so they cost nothing at rest. Not seen on real hardware yet.
-
-### 1.6.0 (2026-10-01)
-- Volume per device: a slider and a mute button in the detail card of a connected audio device, through PipeWire (local only). Not tested on real hardware yet.
-
-### 1.5.0 (2026-10-01)
-- Conversation awareness is remembered per headset and put back after a reconnect (option *Remember conversation awareness*, on by default). A request made before the headset announces the feature is kept until it does.
-- Silent Apple models (AirPods Max 2): Orbit asks for the state a second time, then offers the modes for *Pro* and *Max* names. Known not functional on the AirPods Max.
-- Scene chrome (scan chip, *Turn on* button, sky color) now takes its sizes from the DMS theme; the night colors live in one place (`NightColors`).
-
-### 1.4.1 (2026-09-27)
-- Device names are readable everywhere, even on a pale or busy wallpaper: each name glows softly in your theme's accent, and devices that are not connected fade less. On the desktop they also sit on a smoky disc.
-- Desktop widget: devices are a quarter smaller, so the orbit sits lighter on the wallpaper. The panels keep their size.
-- Connected devices read stronger than the others. With nothing connected, every name is lifted so the orbit stays easy to read.
-
-### 1.4.0 (2026-09-26)
-- Rename a device: click its name in the detail card. Enter saves, Escape cancels, an empty name restores the device's own name.
-- A renamed device keeps its icon, noise control, earbuds look, battery estimate and custom pictures: they follow the name the device reports itself.
-
-### 1.3.2 (2026-09-26)
-- The Control Center and the bar popout are now as light as the desktop: nothing loops as a QML animation anywhere, the drift runs on a 30 Hz timer, and display-synced frames are only used while you drag a device (and until it settles). An open view at rest costs about 5–6 % of one core for the whole shell, which idles at 2–3 % on its own.
-- A connection attempt no longer makes the whole shell redraw at the display rate.
-- Shooting stars are rarer (every 12–32 s), always cross from the top left to the bottom right on a random path, and bend toward the black hole when they pass near it, or get swallowed and light up its ring.
-
-### 1.3.1 (2026-09-26)
-- Desktop widget truly at rest: from about 65 % of a core to about 1 % (about 3.5 % with *Ambient motion*).
-- Dragging stays smooth to the very end of the motion.
-- Everything pauses while the session is locked or the monitors are off; connection timers pause when nobody is looking.
-
-### 1.3.0 (2026-09-26)
-- Light theme support: the sky stays night, devices turn white, cards use a soft white.
-
-### 1.2.2 (2026-09-26)
-- Esc steps back one level (menu, hidden list, card) before closing the view.
-- The quick-disconnect × is now an option, off by default: pull a device away or right-click it instead.
-- Clicking the center only reacts on its inner 70 %, never over a device.
-- Settings grouped into short sections, with a note on the options that use more battery.
-- Pick the screens of the desktop widget from Orbit's settings.
-- The machine in the center is 15 % smaller.
-
-### 1.2.1 (2026-09-26)
-- Charging beam redrawn as thin magnetic field lines.
-- Charging earbuds move closer to the case, with their battery bar.
-
-### 1.2.0 (2026-09-26)
-- Earbuds trio: the case and both buds in their own mini orbit, each with its battery, and a beam to the bud that charges.
-- Live charging state while a view is open (headset session instead of a one-off read).
-- DMS's pairing dialog is shown for devices that ask for a code (fixes endless disconnects).
-- The Control Center tile grows to the exact height of the open card.
-
-### 1.1.1 (2026-09-26)
-- Detail card polish: symmetric spacing, a mode pill that hugs its content.
-- Noise control no longer loses the final state or flashes back to the previous mode.
-
-### 1.1.0 (2026-09-26)
-- Noise control for 13 headphone brands (tested on Sony and Huawei).
-- The black hole: drag a device into it to hide it, click it to list and bring devices back; two looks, realistic or the three-dimensional shadow of a four-dimensional bubble (a nod to *Adventure Time*).
-- Right-click menu, a comet while a device connects, depth on the ring of connected devices.
-- Battery time left from the moment a device connects.
-
-### 1.0.0 (2026-09-25)
-- First release: the planetary scene, drag to connect, the detail card, Control Center + bar + desktop, 28 device icons, sounds, and an option to scan only on demand.
-
-## Roadmap
-
-Ideas, not promises, and no dates. Anything that would need the network or send data somewhere is out of scope.
-
-- **Conversation awareness that ends sooner** (how long the headset waits before going back to noise cancelling): needs the exact Sony / Samsung packet, not guessed.
-- **The same offer as a system notification** while no view is open: it needs discovery to run in the background, which costs battery, so it is not planned for now.
-- **Real device pictures**: only from your own **Custom images folder**. Downloading them is out of scope (it needs the network).
-- **Easier to read code**: split the largest files (`OrbitScene.qml`, `DeviceBody.qml`) by role, without changing behavior.
-- **More headphones tested on real hardware**: only Sony and Huawei have been tested so far; reports for other brands are welcome.
-- **Distance from the signal strength**, once Quickshell exposes it (it does not in 0.3.1).
-- Firmware updates are not planned: they usually need the vendor's app and the network.
-
-Known limits: some Sony headsets do not report charging, or drop Bluetooth while charging; this is a hardware limit.
-
-## Development
-
-```
-orbitBluetooth/
-├── plugin.json
-├── OrbitBluetoothDaemon.qml     # connection times, battery log, UPower bridge
-├── OrbitBluetoothWidget.qml     # Control Center tile, bar pill and popout
-├── OrbitBluetoothDesktop.qml    # desktop widget
-├── OrbitBluetoothSettings.qml
-├── components/
-│   ├── OrbitScene.qml           # the scene: physics, drag, focus, chrome
-│   ├── DeviceBody.qml           # one orbiting device, charging beam
-│   ├── FocusCard.qml            # detail card
-│   ├── BlackHole.qml            # the "Hidden" black hole (picks one of two shaders)
-│   ├── HiddenCard.qml           # list of hidden devices
-│   ├── OrbitMenu.qml            # right-click menu
-│   ├── VolumeRow.qml            # output volume slider (PipeWire)
-│   ├── BatteryCard.qml          # gauge, chart and stat tiles
-│   ├── StatTiles.qml            # READY AT / SPEED / HEALTH tiles
-│   ├── EarbudsTrio.qml, EarbudArt.qml, Earbuds.js   # case + buds mini orbit
-│   ├── EnergyBeam.qml           # magnetic field-line beam (beam.frag)
-│   ├── Charge.js                # charge analysis and color ramp (pure)
-│   ├── Endurance.js             # rated battery life per model (time-left estimate)
-│   ├── AncService.qml, AncPanel.qml, Anc.js   # noise control (runs the helper)
-│   ├── NightColors.qml, PaperColors.qml   # light-theme accents and card colors
-│   ├── Starfield.qml, Vignette.qml, DeviceGlyph.qml, …
-├── anc/
-│   ├── orbit_anc.py             # noise-control helper (stdin/stdout JSON session)
-│   ├── sdp.py                   # minimal SDP client (finds RFCOMM channels)
-│   ├── protocols/               # one module per brand + shared checksums
-│   └── tests/                   # unittest: frames, checksums, each brand
-├── tests/anc.test.js            # gjs: brand detection, modes, time left
-├── shaders/                     # beam.frag, gargantua.frag, tesseract.frag + compiled .qsb, build.sh
-├── scripts/
-│   ├── gen_sounds.py            # synthesizes sounds/*.wav (stdlib only)
-│   └── preview/                 # offscreen renderer with mock services
-├── screenshots/
-└── sounds/
-```
-
-DMS reloads QML on save, but Qt keeps `components/` and `.js` files cached
-in the running shell: run `dms restart` after changing them before judging
-the result. Set `ORBIT_ANC_DEBUG=1` in the shell's environment to see the
-noise-control packets.
-
-Regenerate the screenshots and GIFs (mock devices, no real data; the GIFs
-need `ffmpeg`; the shader needs the OpenGL backend, which `render.sh` sets):
-
-```sh
-scripts/preview/render.sh          # PNG screenshots
-scripts/preview/record.sh          # all GIFs
-scripts/preview/record.sh beam     # one of: beam, gauge, focus, connect
-```
-
-Recompile the shaders after editing a `shaders/*.frag` file (needs Qt's
-`qsb`):
-
-```sh
-shaders/build.sh
-```
-
-Run the tests:
-
-```sh
-(cd anc && python3 -m unittest discover -s tests -t .)
-gjs tests/anc.test.js
-```
-
-Regenerate the sounds:
-
-```sh
-python3 scripts/gen_sounds.py
-```
+| File | Content |
+| --- | --- |
+| [docs/GUIDE.md](docs/GUIDE.md) | Full user guide |
+| [CHANGELOG.md](CHANGELOG.md) | What changed in each version |
+| [ROADMAP.md](ROADMAP.md) | Ideas for the future |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Architecture, tests and release process, for anyone working on the code |
 
 ## Credits
 
-The noise-control protocols were written from the public documentation and
-reverse-engineering notes of these projects (protocols reimplemented, no
-code copied): Gadgetbridge, SonyHeadphonesClient (mos9527), XMDeck,
-LibrePods, MagicPodsCore, GalaxyBudsClient, based-connect, bosectl,
-OpenSCQ30, OpenFreebuds, EarA-linux, earctl and cmfctl. SAFER+ follows the
-Bluetooth Core specification.
+Noise-control protocols were reimplemented from the public notes of Gadgetbridge, SonyHeadphonesClient, XMDeck, LibrePods, MagicPodsCore, GalaxyBudsClient, based-connect, bosectl, OpenSCQ30, OpenFreebuds, EarA-linux, earctl and cmfctl (no code copied). Built on [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell) and [Quickshell](https://quickshell.org).
 
 ## License
 
-MIT © lung595
+[MIT](LICENSE) © lung595
