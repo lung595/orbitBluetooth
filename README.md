@@ -205,7 +205,7 @@ conversation detection and the left/right/case batteries.
 | Brand | Models | Tested on hardware |
 | --- | --- | --- |
 | Sony | WH-1000XM3 to XM6, WF-1000XM3 to XM5, LinkBuds, WH-CH720N, ULT WEAR… | Yes (WH-1000XM6) |
-| Apple | AirPods Pro, AirPods 4, AirPods Max, Beats with noise control | No (untested) |
+| Apple | AirPods Pro, AirPods 3 and 4, AirPods Max, Beats with noise control | Yes (AirPods 3 and 4); AirPods Max 2 does not answer yet |
 | Samsung | Galaxy Buds, Buds+, Live, Pro, Buds2 to Buds4 (Pro, FE, Core) | No (untested) |
 | Bose | QC35 / QC35 II, NC700, QC45, QC Ultra, QC Headphones | No (untested) |
 | Nothing / CMF | Ear (1), (2), (3), (a), Headphone (1), CMF Buds and Headphone Pro | No (untested) |
