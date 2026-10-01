@@ -28,7 +28,7 @@ PluginComponent {
     ccWidgetPrimaryText: "OrbitBluetooth"
     // The tile is narrow and cannot elide: long device names would spill out
     function short(name) {
-        return name.length > 14 ? name.slice(0, 13).trimEnd() + "…" : name;
+        return name.length > 12 ? name.slice(0, 11).trimEnd() + "…" : name;
     }
     ccWidgetSecondaryText: {
         if (!BluetoothService.available)
