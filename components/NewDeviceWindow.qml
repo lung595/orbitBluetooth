@@ -77,6 +77,10 @@ PanelWindow {
         reduceMotion: win.watch.prefs.reduceMotion
         exitToBar: win.watch.phase === "done"
         stacked: win.watch._queue.length
+        // Line up with the bar: its gap to the screen edge when DMS has one
+        rightGap: typeof SettingsData.dankBarSpacing === "number" ? Math.max(2, SettingsData.dankBarSpacing) : Theme.spacingXS
+        topGap: Theme.spacingS
+        errorText: Offer.errorText(win.watch.lastError)
         name: win.watch.pendingName || Catalog.deviceName(win.device)
         subtitle: [Offer.BRANDS[win.family] || "", Glyphs.label(win.kind)].filter(x => x).join(" · ")
         kind: win.kind

@@ -26,6 +26,8 @@ Item {
     property string phase: "offer"
     property string name: ""
     property string subtitle: ""
+    // Shown when pairing failed, in plain words (Offer.errorText)
+    property string errorText: "Could not connect. Is it still in pairing mode?"
     property string kind: "headphonesSlim"
     property url pictureSource: ""
     property string credit: ""
@@ -62,7 +64,7 @@ Item {
     Item {
         id: hitArea
         x: root.pad
-        y: 6
+        y: root.topGap
         width: root.cardWidth
         height: root.cardHeight
     }
@@ -253,7 +255,12 @@ Item {
     // Room for the shadow (kept short so the card can sit close to the screen
     // edge) and the cards peeking below
     readonly property real pad: 16
-    implicitWidth: cardWidth + pad * 2
+    // Gap between the card and the screen's right edge: the bar's own, so
+    // both line up (the shadow simply runs off the screen there)
+    property real rightGap: pad
+    // Gap under the bar
+    property real topGap: 6
+    implicitWidth: cardWidth + pad + rightGap
     implicitHeight: cardHeight + pad + 44
 
     // --- Skin ------------------------------------------------------------------------
@@ -404,7 +411,7 @@ Item {
         width: root.cardWidth
         height: root.cardHeight
         x: root.pad
-        y: 6
+        y: root.topGap
         readonly property real radius: 28
         // Where the planet's limb crosses the middle of the card
         readonly property real horizon: 222
@@ -425,6 +432,16 @@ Item {
 
         HoverHandler {
             id: hover
+        }
+
+        // A click on the card's background takes the focus back from the
+        // name field, which keeps what was typed
+        MouseArea {
+            anchors.fill: parent
+            onPressed: mouse => {
+                root.forceActiveFocus();
+                mouse.accepted = false;
+            }
         }
 
         // Shadow: neutral and deep on the night, soft and tinted on the pearl
@@ -1123,14 +1140,28 @@ Item {
                         font.weight: Font.Bold
                         maximumLength: 40
                         clip: true
+                        // Leaving the field keeps what was typed: Enter, a click
+                        // elsewhere on the sheet, or another window taking the
+                        // keyboard. Only Escape gives the old name back.
+                        property bool hadFocus: false
                         function commit() {
+                            if (!root.renaming)
+                                return;
                             root.renaming = false;
+                            hadFocus = false;
                             root.renamed(text.trim());
                             root.forceActiveFocus();
+                        }
+                        onActiveFocusChanged: {
+                            if (activeFocus)
+                                hadFocus = true;
+                            else if (hadFocus)
+                                commit();
                         }
                         Keys.onReturnPressed: commit()
                         Keys.onEnterPressed: commit()
                         Keys.onEscapePressed: {
+                            hadFocus = false;
                             root.renaming = false;
                             root.forceActiveFocus();
                         }
@@ -1139,7 +1170,7 @@ Item {
             }
             StyledText {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: root.phase === "failed" ? "Could not connect. Is it still in pairing mode?" : root.renaming ? "Enter to keep, Escape to cancel" : root.subtitle
+                text: root.phase === "failed" ? root.errorText : root.renaming ? "Enter or click away to keep · Escape to cancel" : root.subtitle
                 color: root.phase === "failed" ? Theme.error : skin.ink(0.5)
                 font.pixelSize: Theme.fontSizeSmall
                 font.letterSpacing: 0.2
@@ -1243,7 +1274,7 @@ Item {
                             border.color: stepItem.current ? skin.accent : root.phase === "failed" && stepItem.index === 0 ? Theme.error : skin.ink(0.16)
                             DankIcon {
                                 anchors.centerIn: parent
-                                name: stepItem.passed ? "check" : ["link", "bluetooth", "headphones"][stepItem.index]
+                                name: stepItem.passed ? "check" : ["link", "bluetooth", "task_alt"][stepItem.index]
                                 size: 16
                                 color: stepItem.passed ? skin.inkOnAccent : stepItem.current ? skin.accent : skin.ink(0.4)
                             }

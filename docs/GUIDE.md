@@ -171,10 +171,11 @@ The device falls out of the bar along a comet trail, is caught by an orbit with 
 
 ![The sheet offering, then connected, in a dark and a light theme](../screenshots/newdevice.png)
 
-- **What you get**: three tiles Orbit knows before anything is paired: noise control when the brand is supported, the rated battery life when the model is known, the earbuds' case and buds, volume.
+- **What you get**: up to three tiles Orbit knows before anything is paired: noise control when the brand is supported, the rated battery life when the model is known, the earbuds' case and buds, volume, and charging for anything with a battery (not a soundbar or a smart speaker).
+- **If pairing fails**, the sheet says why in plain words (declined, wrong code, no answer, busy) and offers **Try again**.
 - **Connect** (or <kbd>Enter</kbd>) pairs and connects it right there; accept the code in DMS's pairing dialog if the device asks. The button turns into a progress bar and the steps *Pair → Connect → Ready* follow along.
 - **Connected**: a burst of stars, a battery ring filling up to the real level, and the noise-control modes to pick one straight away. After 6 s without the pointer on it, the sheet folds back into the corner of the bar.
-- **Rename it first**: click the pencil next to the name, type, <kbd>Enter</kbd>. The name is given to the device once it is connected (as a rename in the detail card would).
+- **Rename it first**: click the pencil next to the name, type, then <kbd>Enter</kbd> or click anywhere else (<kbd>Escape</kbd> gives the old name back). The name is given to the device once it is connected (as a rename in the detail card would).
 - **Later** (or <kbd>Escape</kbd>) closes it; the same device is not offered again for 10 minutes. No answer within 30 s counts as *Later*: the ring around × shows the time left, and stops while the pointer is over the sheet.
 - **Don't offer again** never offers that device again. **Offer ignored devices again** (end of the settings) clears the list.
 - **Several devices at once**: the next one peeks behind the sheet with a "+1", and comes forward when you are done with the first.
