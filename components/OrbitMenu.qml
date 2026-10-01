@@ -4,7 +4,8 @@ import qs.Widgets
 import "Anc.js" as Anc
 
 // Right-click menu of an orbiting device: connect/disconnect, the headset's
-// noise-control modes when it has them, and "Hide" (into the black hole).
+// noise-control modes when it has them, "Hide" (into the black hole) and
+// "Forget" (unpair), which asks for a second click.
 // It lives inside the scene (no extra window) and closes on any choice,
 // a click elsewhere or Escape.
 Item {
@@ -14,6 +15,8 @@ Item {
     required property var scene
     property var body: null
     readonly property bool open: !!body
+    // "Forget" was clicked once: the next click on it unpairs
+    property bool confirmForget: false
 
     readonly property var entries: {
         const b = body;
@@ -50,10 +53,18 @@ Item {
             "icon": "visibility_off",
             "label": "Hide"
         });
+        if (b.device && b.paired)
+            list.push({
+                "id": "forget",
+                "icon": confirmForget ? "delete_forever" : "delete",
+                "label": confirmForget ? "Click to forget" : "Forget",
+                "danger": true
+            });
         return list;
     }
 
     function popup(b, point) {
+        confirmForget = false;
         body = b;
         // Keep the menu inside the scene
         panel.x = Math.max(8, Math.min(point.x, scene.width - panel.width - 8));
@@ -73,6 +84,11 @@ Item {
     }
 
     function choose(id) {
+        // Forgetting unpairs: the first click only arms it
+        if (id === "forget" && !confirmForget) {
+            confirmForget = true;
+            return;
+        }
         const b = body;
         close();
         if (!b)
@@ -85,6 +101,8 @@ Item {
             scene.cancelConnect(b);
         else if (id === "hide")
             scene.hideBody(b);
+        else if (id === "forget")
+            scene.forget(b);
         else if (id.startsWith("anc:"))
             scene.ancSend(b.address, "mode", id.slice(4));
     }
@@ -130,11 +148,11 @@ Item {
                 Rectangle {
                     required property var modelData
                     required property int index
-                    readonly property bool danger: modelData.id === "hide"
+                    readonly property bool danger: modelData.danger ?? false
                     width: col.width
                     height: 32
                     radius: 10
-                    color: itemArea.containsMouse ? menu.paper.fg(0.08) : "transparent"
+                    color: danger && menu.confirmForget ? Theme.withAlpha(Theme.error, 0.16) : itemArea.containsMouse ? menu.paper.fg(0.08) : "transparent"
 
                     // A hairline before "Hide" and before the first mode
                     Rectangle {
@@ -150,14 +168,14 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         name: modelData.icon
                         size: 16
-                        color: modelData.checked ? Theme.primary : menu.paper.fg(0.75)
+                        color: modelData.checked ? Theme.primary : danger ? Theme.error : menu.paper.fg(0.75)
                     }
                     StyledText {
                         anchors.left: icon.right
                         anchors.leftMargin: 9
                         anchors.verticalCenter: parent.verticalCenter
                         text: modelData.label
-                        color: modelData.checked ? Theme.primary : menu.paper.ink
+                        color: modelData.checked ? Theme.primary : danger ? Theme.error : menu.paper.ink
                         font.pixelSize: Theme.fontSizeSmall
                         font.weight: modelData.checked ? Font.DemiBold : Font.Normal
                     }

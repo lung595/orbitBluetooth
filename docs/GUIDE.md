@@ -67,6 +67,7 @@ Click any device to open it: its glyph flies onto the card.
 - **Connection time and battery level.**
 - **Volume** of audio devices: a slider and a mute button on the device's PipeWire output (hidden for devices with no sound output).
 - **Actions**: change icon, connect or disconnect, hide, forget (asks twice).
+- **Forget** unpairs the device (BlueZ removes it) and clears what Orbit kept about it: its icon choice and a *Don't offer again* mark, so it can be offered as new next time. Also in the right-click menu: **Forget**, then click again to confirm.
 - **Battery gauge, session chart and stats** (see [Charging and battery](#charging-and-battery)).
 - The **earbuds trio** and **noise control** when the device supports them.
 

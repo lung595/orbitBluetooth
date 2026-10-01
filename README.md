@@ -97,7 +97,8 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 | Drag a device inside the inner ring | Pair and connect |
 | Drag a connected device outward | Disconnect |
 | Click a device | Open its detail card |
-| Right-click a device | Menu: connect, noise-control modes, hide |
+| Right-click a device | Menu: connect, noise-control modes, hide, forget |
+| Forget a device (unpair) | Right-click → **Forget**, click again to confirm; or the 🗑 button of its detail card |
 | Drag a device into the black hole | Hide it (it stays connected) |
 | Click the black hole | List hidden devices, **Show** brings one back |
 | Click the center, or the **Scan** chip | Start discovery |
