@@ -107,7 +107,7 @@ Supported headphones get a mode selector in their detail card, a halo in the orb
 | Apple | AirPods Pro, AirPods 3 and 4, AirPods Max, Beats with noise control | Yes (AirPods 3 and 4); **AirPods Max: noise control is not functional** (AirPods Max 2 does not answer) |
 | Samsung | Galaxy Buds, Buds+, Live, Pro, Buds2 to Buds4 (Pro, FE, Core) | No |
 | Bose | QC35 / QC35 II, NC700, QC45, QC Ultra, QC Headphones | No |
-| Nothing / CMF | Ear (1), (2), (3), (a), Headphone (1), CMF Buds and Headphone Pro | No |
+| Nothing / CMF | Ear (1), (2), (3), (a), Headphone (1), CMF Buds and Headphone Pro | Ear (2) |
 | Anker Soundcore | Life Q30/Q35, Liberty Air 2 Pro, Space Q45, others with the common layout | No |
 | Huawei / Honor | FreeBuds 4i to 6i, Pro to Pro 5, SE 4, Studio, FreeLace Pro, FreeClip, Honor Earbuds 2 | Yes (FreeBuds Pro) |
 | Oppo / OnePlus / realme | realme Buds T200 and Air6 Pro; other Enco/realme/OnePlus models are probed | No |
@@ -128,7 +128,7 @@ QML cannot open a Bluetooth socket, so a small helper (`anc/orbit_anc.py`, Pytho
 
 Noise control only talks to **paired** headsets: opening a channel to a device that is connected but not paired would make it drop and reconnect. Some headsets cannot report every mode (the WH-1000XM6 reads "noise cancelling" and "off" the same way); Orbit then keeps the last mode it set or saw.
 
-**Conversation awareness** (the *Conversation* chip) is a setting many headsets forget when they disconnect. Orbit keeps your last choice per headset and puts it back about 2.5 s after the headset reconnects (one short helper session, then it closes). Switch it off with **Headphones → Remember conversation awareness**; Orbit then never changes it by itself.
+**Conversation awareness** (the *Conversation* chip) cannot be turned off once the headset is disconnected, so a headset could stay stuck in conversation mode. When you disconnect a headset from Orbit (drag away, menu, × button), Orbit first turns conversation awareness off, then disconnects (at most 4 s of waiting). It does the same about 2.5 s after any reconnection, which covers a headset switched off, out of range or disconnected from another app. The noise-control mode (noise cancelling, ambient, off) is never changed. Switch it off with **Headphones → Turn off conversation awareness on disconnect**; Orbit then never changes it by itself.
 
 **AirPods Max (including the Max 2): noise control does not work yet.** The headset does not answer the way AirPods 3 and 4 do. Orbit asks twice, then offers off / noise cancelling / ambient anyway (commands are sent blind), but this is unverified and may do nothing. To help decode it, run the shell with `ORBIT_ANC_DEBUG=1` and open an issue with the packets.
 
@@ -193,7 +193,7 @@ Orbit keeps its night sky in every theme. With a light DMS theme, devices turn i
 | | Offer new devices | On | A card with *Connect* when an unpaired device shows up while scanning |
 | | Scan duration | 45 s | 20 s, 45 s, 90 s or *While open* ⚡ |
 | Headphones | Noise control | On | Supported headphones (needs Python 3) |
-| | Remember conversation awareness | On | Puts the *Conversation* choice back when a headset reconnects |
+| | Turn off conversation awareness on disconnect | On | Turns *Conversation* off before Orbit disconnects a headset, and after it reconnects |
 | | Engine | On demand | *Always connected* ⚡ shows headset button presses live |
 | Desktop widget | Displays | All | Which displays show the desktop widget |
 | | Backdrop | 72 % | Depth of the veil behind the orbit |

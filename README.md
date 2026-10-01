@@ -114,7 +114,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Offer new devices (a *Connect* card) | On |
 | | Scan duration: 20 s, 45 s, 90 s or *While open* ⚡ | 45 s |
 | Headphones | Noise control | On |
-| | Remember conversation awareness | On |
+| | Turn off conversation awareness on disconnect | On |
 | | Engine: *On demand* or *Always connected* ⚡ | On demand |
 | Desktop widget | Displays | All |
 | | Backdrop | 72 % |

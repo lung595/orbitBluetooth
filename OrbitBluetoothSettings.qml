@@ -174,9 +174,9 @@ PluginSettings {
     }
 
     ToggleSetting {
-        settingKey: "ancRemember"
-        label: "Remember conversation awareness"
-        description: "Puts your choice back when the headset reconnects, since it forgets it"
+        settingKey: "ancChatOff"
+        label: "Turn off conversation awareness on disconnect"
+        description: "A disconnected headset would stay in conversation mode with no way to leave it. The noise-control mode is kept"
         defaultValue: true
     }
 
