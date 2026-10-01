@@ -20,7 +20,7 @@ disconnect it. Charging devices receive a beam of energy from the core.
 - Follows light and dark DMS themes, the sky always stays night
 - Idle scenes use no frames at all; nothing leaves your machine
 
-**New in 1.4.1:** device names stay readable everywhere, even on a pale or busy wallpaper. See the [changelog](#changelog) and the [roadmap](#roadmap).
+**New in 1.7.0:** a card offers to connect a new device as it shows up, and connecting plays sonar rings. Before that, 1.6.0 added a volume slider, and 1.5.0: Orbit remembers your conversation-awareness choice and puts it back when the headset reconnects; AirPods Max / Pro models that stay silent still get their noise-control modes. See the [changelog](#changelog) and the [roadmap](#roadmap).
 
 **Contents:** [Install](#install) · [Quick start](#quick-start) · [Using the orbit](#using-the-orbit) · [Noise control](#noise-control) · [Settings](#settings) · [Privacy](#privacy) · [Troubleshooting](#troubleshooting) · [Changelog](#changelog) · [Roadmap](#roadmap)
 
@@ -42,6 +42,7 @@ Manual install: clone [the repository](https://github.com/lung595/orbitBluetooth
 | Quickshell | 0.3 or newer (ships with DMS) |
 | BlueZ | any recent version, adapter powered on |
 | UPower | optional, gives real charging states for devices that report one |
+| PipeWire | optional, volume slider of audio devices |
 | Python 3 | optional, standard library only: headphone noise control |
 
 ## Quick start
@@ -100,7 +101,8 @@ resize it like any other widget (default 440 × 380).
 
 Connected devices orbit on the inner ring, the others float in the outer
 field. Connected devices are drawn 15% smaller so the ring stays airy. While
-a connection is being made, a small comet circles the device. Named devices
+a connection is being made, a small comet circles the device and sonar
+rings leave it. Named devices
 are ranked before devices that only expose a MAC address.
 
 ### Hiding devices: the black hole
@@ -156,6 +158,7 @@ The card shows:
   so every app on the system shows it; the icon, noise control and battery
   estimates still follow the device's own name.
 - connection time and battery level
+- **volume** of audio devices: a slider and a mute button on the device's PipeWire output (hidden for devices with no sound output)
 - actions: change icon, connect or disconnect, hide, forget (asks twice)
 - battery gauge, session chart and stats (see below)
 - for earbuds, the **trio** (next section)
@@ -205,7 +208,7 @@ conversation detection and the left/right/case batteries.
 | Brand | Models | Tested on hardware |
 | --- | --- | --- |
 | Sony | WH-1000XM3 to XM6, WF-1000XM3 to XM5, LinkBuds, WH-CH720N, ULT WEAR… | Yes (WH-1000XM6) |
-| Apple | AirPods Pro, AirPods 4, AirPods Max, Beats with noise control | No (untested) |
+| Apple | AirPods Pro, AirPods 3 and 4, AirPods Max, Beats with noise control | Yes (AirPods 3 and 4); **AirPods Max: noise control is not functional** (AirPods Max 2 does not answer) |
 | Samsung | Galaxy Buds, Buds+, Live, Pro, Buds2 to Buds4 (Pro, FE, Core) | No (untested) |
 | Bose | QC35 / QC35 II, NC700, QC45, QC Ultra, QC Headphones | No (untested) |
 | Nothing / CMF | Ear (1), (2), (3), (a), Headphone (1), CMF Buds and Headphone Pro | No (untested) |
@@ -238,6 +241,19 @@ The **Engine** setting decides when it runs:
 
 Noise control only talks to **paired** headsets: opening a channel to a
 device that is connected but not paired would make it drop and reconnect.
+
+**Conversation awareness** (the *Conversation* chip) is a setting many headsets
+forget when they disconnect. Orbit keeps your last choice per headset and
+puts it back about 2.5 s after the headset reconnects (one short helper
+session, then it closes). Switch it off with **Headphones → Remember
+conversation awareness**; Orbit then never changes it by itself. The choice
+is stored with your other DMS plugin settings, as an address and a yes or no.
+
+**AirPods Max (including the Max 2): noise control does not work yet.** The
+headset does not answer the way AirPods 3 and 4 do. Orbit asks twice, then
+offers off / noise cancelling / ambient anyway (commands are sent blind), but
+this is unverified and may do nothing. To help decode it, run the shell with
+`ORBIT_ANC_DEBUG=1` and open an issue with the packets.
 
 Some headsets cannot report every mode when asked (the WH-1000XM6 reads
 "noise cancelling" and "off" the same way); Orbit then keeps the last mode
@@ -338,8 +354,10 @@ Grouped by what they change; options marked ⚡ use more battery.
 | | Quick disconnect button | off | An × on connected devices, on hover (otherwise drag away or right-click) |
 | | Center device | Automatic | Icon of this machine (laptop or desktop is detected) |
 | Scanning | Scan automatically | on | Start discovery when a view opens; otherwise click the center |
+| | Offer new devices | on | A card with *Connect* when an unpaired device shows up while scanning |
 | | Scan duration | 45 s | 20 s, 45 s, 90 s or *While open* ⚡ |
 | Headphones | Noise control | on | Supported headphones (needs Python 3) |
+| | Remember conversation awareness | on | Puts the *Conversation* choice back when a headset reconnects |
 | | Engine | On demand | *Always connected* ⚡ shows headset button presses live (see *Noise control*) |
 | Desktop widget | Displays | All | Which displays show the desktop widget (DMS's own picker) |
 | | Backdrop | 72% | Depth of the veil behind the orbit |
@@ -373,12 +391,13 @@ dms ipc call orbitBluetooth unhideAll    # bring every hidden device back
   it opens a local Bluetooth socket to your headset and nothing else, only
   while needed (see *Noise control*). Set `ORBIT_ANC_DEBUG=1` to see its raw
   packets on stderr; nothing is ever logged to a file.
+- The volume slider talks to the local sound server (PipeWire) only.
 - Connection times and battery history live in memory for the current
   session only. They are never written to disk.
 - The only files read are the sysfs `uevent` of kernel batteries, once each,
   to match them to a Bluetooth address.
 - Settings (your choices, custom icon picks, the addresses and names of
-  hidden devices) are stored by DMS with your other plugin settings.
+  hidden devices, the conversation-awareness choice per headset) are stored by DMS with your other plugin settings.
 - A device name you set is stored by BlueZ, like any Bluetooth alias, not by
   Orbit. On the desktop, the widget only takes the keyboard while a detail
   card is open, so you can type a name.
@@ -456,6 +475,21 @@ over time.
 
 ## Changelog
 
+### 1.7.1 (2026-10-01)
+- Control Center tile: named **OrbitBluetooth** instead of "Bluetooth", and the device name under it is cut at 12 characters so it stays inside the tile.
+
+### 1.7.0 (2026-10-01)
+- Offer to connect: when an unpaired, named device shows up while the view scans, a small card says so with a **Connect** button (it goes away after 12 s or with ×). Devices already around when the view opens are not offered. Turn it off with **Scanning → Offer new devices**.
+- Connecting: two soft sonar rings leave the device, next to the comet. Both are driven by the effects clock, so they cost nothing at rest. Not seen on real hardware yet.
+
+### 1.6.0 (2026-10-01)
+- Volume per device: a slider and a mute button in the detail card of a connected audio device, through PipeWire (local only). Not tested on real hardware yet.
+
+### 1.5.0 (2026-10-01)
+- Conversation awareness is remembered per headset and put back after a reconnect (option *Remember conversation awareness*, on by default). A request made before the headset announces the feature is kept until it does.
+- Silent Apple models (AirPods Max 2): Orbit asks for the state a second time, then offers the modes for *Pro* and *Max* names. Known not functional on the AirPods Max.
+- Scene chrome (scan chip, *Turn on* button, sky color) now takes its sizes from the DMS theme; the night colors live in one place (`NightColors`).
+
 ### 1.4.1 (2026-09-27)
 - Device names are readable everywhere, even on a pale or busy wallpaper: each name glows softly in your theme's accent, and devices that are not connected fade less. On the desktop they also sit on a smoky disc.
 - Desktop widget: devices are a quarter smaller, so the orbit sits lighter on the wallpaper. The panels keep their size.
@@ -513,6 +547,9 @@ over time.
 
 Ideas, not promises, and no dates. Anything that would need the network or send data somewhere is out of scope.
 
+- **Conversation awareness that ends sooner** (how long the headset waits before going back to noise cancelling): needs the exact Sony / Samsung packet, not guessed.
+- **The same offer as a system notification** while no view is open: it needs discovery to run in the background, which costs battery, so it is not planned for now.
+- **Real device pictures**: only from your own **Custom images folder**. Downloading them is out of scope (it needs the network).
 - **Easier to read code**: split the largest files (`OrbitScene.qml`, `DeviceBody.qml`) by role, without changing behavior.
 - **More headphones tested on real hardware**: only Sony and Huawei have been tested so far; reports for other brands are welcome.
 - **Distance from the signal strength**, once Quickshell exposes it (it does not in 0.3.1).
@@ -536,6 +573,7 @@ orbitBluetooth/
 │   ├── BlackHole.qml            # the "Hidden" black hole (picks one of two shaders)
 │   ├── HiddenCard.qml           # list of hidden devices
 │   ├── OrbitMenu.qml            # right-click menu
+│   ├── VolumeRow.qml            # output volume slider (PipeWire)
 │   ├── BatteryCard.qml          # gauge, chart and stat tiles
 │   ├── StatTiles.qml            # READY AT / SPEED / HEALTH tiles
 │   ├── EarbudsTrio.qml, EarbudArt.qml, Earbuds.js   # case + buds mini orbit

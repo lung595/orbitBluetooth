@@ -20,6 +20,15 @@ Item {
     // Called with the address -> snapshot map whenever it changes
     property var publish: function (map) {}
 
+    // Conversation awareness is a setting the headset forgets (Sony resets
+    // it when it disconnects). With "remember" on, the choice made here is
+    // kept per headset and put back a moment after it connects. Off: Orbit
+    // never touches the setting by itself.
+    property bool remember: true
+    // address -> bool, the last choice made from Orbit
+    property var chatChoices: ({})
+    property var saveChat: function (address, on) {}
+
     // address -> last snapshot {status, error, model, features, state, live}
     property var states: ({})
     // address -> number of open detail cards showing it
@@ -102,9 +111,11 @@ Item {
         _sync(address);
     }
 
-    function send(address, key, value) {
+    function send(address, key, value, restoring) {
         if (!supported(address))
             return false;
+        if (key === "chat" && !restoring)
+            saveChat(address, value === "on");
         const line = "set " + key + " " + value + "\n";
         const proc = _open(address);
         if (!proc)
@@ -148,6 +159,31 @@ Item {
             if (list[i].connected && familyFor(list[i]))
                 return list[i].address;
         return "";
+    }
+
+    // The vendor channel is not ready the instant BlueZ reports the link, and
+    // the pairing/audio setup is still busy: wait a little before talking
+    property var _restoring: []
+    function _restoreLater(address) {
+        if (!remember || chatChoices[address] === undefined || _restoring.indexOf(address) >= 0)
+            return;
+        _restoring = _restoring.concat([address]);
+        restoreTimer.restart();
+    }
+
+    Timer {
+        id: restoreTimer
+        interval: 2500
+        onTriggered: {
+            const list = root._restoring;
+            root._restoring = [];
+            list.forEach(a => {
+                // The helper applies it once the handshake is done and the
+                // headset has announced the feature, then closes again
+                if (root.remember && root.supported(a) && root.chatChoices[a] !== undefined)
+                    root.send(a, "chat", root.chatChoices[a] ? "on" : "off", true);
+            });
+        }
     }
 
     function _onLine(address, line) {
@@ -240,6 +276,8 @@ Item {
             onConnectedChanged: {
                 if (!connected)
                     root._setState(modelData.address, null);
+                else
+                    root._restoreLater(modelData.address);
                 root._sync(modelData.address);
             }
             Component.onCompleted: if (connected)

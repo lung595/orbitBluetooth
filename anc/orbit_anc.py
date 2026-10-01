@@ -190,6 +190,7 @@ def run(address, family, name=""):
                         line, pending_input = pending_input.split(b"\n", 1)
                         handle_command(proto, parse_command(line.decode("utf-8", "ignore")))
             proto.tick(time.monotonic())
+            proto.flush_deferred()
             now = time.monotonic()
             if proto.ready and ready_at is None:
                 ready_at = now
@@ -198,7 +199,7 @@ def run(address, family, name=""):
             if snapshot != last and not (settling and snapshot["status"] == "ready"):
                 last = snapshot
                 emit(snapshot)
-            if not stdin_open and proto.ready and not proto.pending and not proto.awaiting:
+            if not stdin_open and proto.ready and not proto.pending and not proto.deferred and not proto.awaiting:
                 # Everything answered: no need to wait for the full linger
                 deadline = min(deadline, time.monotonic() + 0.2)
     except (OSError, ConnectionError) as err:
