@@ -20,7 +20,7 @@ disconnect it. Charging devices receive a beam of energy from the core.
 - Follows light and dark DMS themes, the sky always stays night
 - Idle scenes use no frames at all; nothing leaves your machine
 
-**New in 1.5.0:** Orbit remembers your conversation-awareness choice and puts it back when the headset reconnects; AirPods Max / Pro models that stay silent still get their noise-control modes. See the [changelog](#changelog) and the [roadmap](#roadmap).
+**New in 1.6.0:** a volume slider for connected audio devices, in their detail card. Before that, in 1.5.0: Orbit remembers your conversation-awareness choice and puts it back when the headset reconnects; AirPods Max / Pro models that stay silent still get their noise-control modes. See the [changelog](#changelog) and the [roadmap](#roadmap).
 
 **Contents:** [Install](#install) · [Quick start](#quick-start) · [Using the orbit](#using-the-orbit) · [Noise control](#noise-control) · [Settings](#settings) · [Privacy](#privacy) · [Troubleshooting](#troubleshooting) · [Changelog](#changelog) · [Roadmap](#roadmap)
 
@@ -42,6 +42,7 @@ Manual install: clone [the repository](https://github.com/lung595/orbitBluetooth
 | Quickshell | 0.3 or newer (ships with DMS) |
 | BlueZ | any recent version, adapter powered on |
 | UPower | optional, gives real charging states for devices that report one |
+| PipeWire | optional, volume slider of audio devices |
 | Python 3 | optional, standard library only: headphone noise control |
 
 ## Quick start
@@ -156,6 +157,7 @@ The card shows:
   so every app on the system shows it; the icon, noise control and battery
   estimates still follow the device's own name.
 - connection time and battery level
+- **volume** of audio devices: a slider and a mute button on the device's PipeWire output (hidden for devices with no sound output)
 - actions: change icon, connect or disconnect, hide, forget (asks twice)
 - battery gauge, session chart and stats (see below)
 - for earbuds, the **trio** (next section)
@@ -387,6 +389,7 @@ dms ipc call orbitBluetooth unhideAll    # bring every hidden device back
   it opens a local Bluetooth socket to your headset and nothing else, only
   while needed (see *Noise control*). Set `ORBIT_ANC_DEBUG=1` to see its raw
   packets on stderr; nothing is ever logged to a file.
+- The volume slider talks to the local sound server (PipeWire) only.
 - Connection times and battery history live in memory for the current
   session only. They are never written to disk.
 - The only files read are the sysfs `uevent` of kernel batteries, once each,
@@ -470,6 +473,9 @@ over time.
 
 ## Changelog
 
+### 1.6.0 (2026-10-01)
+- Volume per device: a slider and a mute button in the detail card of a connected audio device, through PipeWire (local only). Not tested on real hardware yet.
+
 ### 1.5.0 (2026-10-01)
 - Conversation awareness is remembered per headset and put back after a reconnect (option *Remember conversation awareness*, on by default). A request made before the headset announces the feature is kept until it does.
 - AirPods Max 2 and other silent Apple models: Orbit asks for the state a second time and then offers the modes for *Pro* and *Max* names instead of showing nothing. Needs feedback from real hardware.
@@ -533,7 +539,6 @@ over time.
 Ideas, not promises, and no dates. Anything that would need the network or send data somewhere is out of scope.
 
 - **Conversation awareness that ends sooner** (how long the headset waits before going back to noise cancelling): needs the exact Sony / Samsung packet, not guessed.
-- **Volume per device** in the detail card, through PipeWire.
 - **A smoother, more striking connection animation.**
 - **Offer to connect an unknown device** that becomes pairable, as a notification or right in the open view.
 - **Real device pictures**: only from your own **Custom images folder**. Downloading them is out of scope (it needs the network).
@@ -560,6 +565,7 @@ orbitBluetooth/
 │   ├── BlackHole.qml            # the "Hidden" black hole (picks one of two shaders)
 │   ├── HiddenCard.qml           # list of hidden devices
 │   ├── OrbitMenu.qml            # right-click menu
+│   ├── VolumeRow.qml            # output volume slider (PipeWire)
 │   ├── BatteryCard.qml          # gauge, chart and stat tiles
 │   ├── StatTiles.qml            # READY AT / SPEED / HEALTH tiles
 │   ├── EarbudsTrio.qml, EarbudArt.qml, Earbuds.js   # case + buds mini orbit
