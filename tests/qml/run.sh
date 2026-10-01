@@ -1,0 +1,35 @@
+#!/bin/sh
+# Runs the QML tests of the "new device" pop-up without Quickshell or a
+# Bluetooth adapter: stubs/ stands in for Quickshell and the DMS services,
+# Device.qml for a BlueZ device, and NewDeviceWindow.qml replaces the real
+# layer-shell window. Needs Qt 6 (qml, qml6, qml-qt6 or PySide6).
+# Run from anywhere: sh tests/qml/run.sh
+# The stubs come last: the last import path wins, and the preview imports
+# (Theme, StyledText) have their own, smaller qs.Services.
+set -e
+here=$(cd "$(dirname "$0")" && pwd)
+root=$(dirname "$(dirname "$here")")
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+cp "$root"/components/NewDeviceWatch.qml "$root"/components/*.js "$work"/
+# Quickshell's device list is a model with .values; the stub keeps a plain list
+sed -i 's/Bluetooth\.devices\.values/Bluetooth.list/g' "$work"/NewDeviceWatch.qml
+cp "$here"/Device.qml "$here"/NewDeviceWindow.qml "$here"/newDevice.test.qml "$work"/
+export QT_QPA_PLATFORM=offscreen
+for tool in qml6 qml-qt6 qml; do
+    if command -v "$tool" >/dev/null 2>&1; then
+        exec "$tool" -I "$root/scripts/preview/imports" -I "$here/stubs" "$work/newDevice.test.qml"
+    fi
+done
+python3 - "$root/scripts/preview/imports" "$here/stubs" "$work/newDevice.test.qml" <<'PY'
+import sys
+from PySide6.QtCore import QUrl
+from PySide6.QtGui import QGuiApplication
+from PySide6.QtQml import QQmlApplicationEngine
+app = QGuiApplication(sys.argv[:1])
+engine = QQmlApplicationEngine()
+for path in sys.argv[1:3]:
+    engine.addImportPath(path)
+engine.load(QUrl.fromLocalFile(sys.argv[3]))
+sys.exit(app.exec() if engine.rootObjects() else 1)
+PY

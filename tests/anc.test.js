@@ -14,6 +14,7 @@ function load(file, names) {
 const Anc = load("Anc.js", ["family", "nextMode", "ordered"]);
 const Charge = load("Charge.js", ["analyze", "formatShort"]);
 const Endurance = load("Endurance.js", ["ratedHours"]);
+const Offer = load("Offer.js", ["scanBlocker", "isCandidate", "offerable", "headline"]);
 const Pictures = load("Pictures.js", ["queryFor", "creditText"]);
 const Catalog = load("DeviceCatalog.js", ["deviceName", "modelName", "resolve"]);
 
@@ -86,6 +87,23 @@ eq("picture query: possessive", Pictures.queryFor("Marie's iPhone", true), "");
 eq("picture query: 'de' name", Pictures.queryFor("iPhone de Marie", true), "");
 eq("picture query: address only", Pictures.queryFor("AA:BB:CC:DD:EE:FF", true), "");
 eq("picture credit", Pictures.creditText({ title: "Sony", author: "Bob", license: "CC BY 4.0", source: "Wikimedia Commons" }), "“Sony” · by Bob · CC BY 4.0 · Wikimedia Commons");
+
+// New device pop-up: when the background scan may run, what is offered
+const ctx = { enabled: true, btOn: true, asleep: false, busy: false, audioConnected: false, onBattery: true, level: 50, minLevel: 30 };
+eq("scan: allowed", Offer.scanBlocker(ctx), "");
+eq("scan: low battery", Offer.scanBlocker(Object.assign({}, ctx, { level: 29 })), "battery below 30%");
+eq("scan: low but plugged in", Offer.scanBlocker(Object.assign({}, ctx, { level: 10, onBattery: false })), "");
+eq("scan: no battery", Offer.scanBlocker(Object.assign({}, ctx, { level: -1 })), "");
+eq("scan: audio playing", Offer.scanBlocker(Object.assign({}, ctx, { audioConnected: true })), "audio device connected");
+eq("scan: screen off", Offer.scanBlocker(Object.assign({}, ctx, { asleep: true })), "screen locked or off");
+eq("offer: new headphones", Offer.isCandidate({ address: "A", name: "WH-1000XM6" }, "audio", {}), true);
+eq("offer: paired", Offer.isCandidate({ address: "A", name: "WH-1000XM6", paired: true }, "audio", {}), false);
+eq("offer: a phone", Offer.isCandidate({ address: "A", name: "Pixel 8" }, "phone", {}), false);
+eq("offer: ignored", Offer.isCandidate({ address: "A", name: "WH-1000XM6" }, "audio", { A: "WH-1000XM6" }), false);
+eq("offer: address only", Offer.isCandidate({ address: "A", name: "AA:BB:CC:DD:EE:FF" }, "audio", {}), false);
+eq("offer: snoozed", Offer.offerable("A", { A: 2000 }, 1000), false);
+eq("offer: snooze over", Offer.offerable("A", { A: 2000 }, 3000), true);
+eq("headline: earbuds", Offer.headline("earbudsRound"), "New earbuds nearby");
 
 print(failures ? failures + "/" + count + " failed" : count + " tests passed");
 imports.system.exit(failures ? 1 : 0);

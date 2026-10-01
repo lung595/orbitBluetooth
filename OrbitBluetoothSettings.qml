@@ -119,6 +119,48 @@ PluginSettings {
         defaultValue: true
     }
 
+    ToggleSetting {
+        settingKey: "offerPopup"
+        label: "Pop-up for new headphones"
+        description: "A short scan in the background finds headphones in pairing mode and offers them under the bar, even with Orbit closed · " + root.batteryNote
+        defaultValue: true
+    }
+
+    SelectionSetting {
+        settingKey: "offerEvery"
+        label: "Background scan"
+        description: "How often the pop-up looks for new headphones (8 s each time). Skipped while Bluetooth audio is connected, since scanning makes it stutter"
+        options: [
+            {
+                label: "Every 30 seconds",
+                value: "30"
+            },
+            {
+                label: "Every minute",
+                value: "60"
+            },
+            {
+                label: "Every 2 minutes",
+                value: "120"
+            },
+            {
+                label: "Every 5 minutes",
+                value: "300"
+            }
+        ]
+        defaultValue: "60"
+    }
+
+    SliderSetting {
+        settingKey: "offerMinBattery"
+        label: "No background scan below"
+        description: "Battery level of this computer, when it is not plugged in"
+        defaultValue: 30
+        minimum: 0
+        maximum: 100
+        unit: "%"
+    }
+
     SelectionSetting {
         settingKey: "scanSeconds"
         label: "Scan duration"
@@ -336,6 +378,11 @@ PluginSettings {
         ActionButton {
             text: "Show hidden devices"
             onClicked: root.saveValue("hiddenDevices", ({}))
+        }
+        // Devices refused with "Ignore" in the pop-up
+        ActionButton {
+            text: "Offer ignored devices again"
+            onClicked: root.saveValue("ignoredDevices", ({}))
         }
     }
 }

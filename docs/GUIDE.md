@@ -11,6 +11,8 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 - [Hiding devices: the black hole](#hiding-devices-the-black-hole)
 - [Noise control](#noise-control)
 - [Charging and battery](#charging-and-battery)
+- [New headphones pop-up](#new-headphones-pop-up)
+- [Real device pictures](#real-device-pictures)
 - [Device icons](#device-icons)
 - [Light theme](#light-theme)
 - [Settings](#settings)
@@ -158,11 +160,38 @@ When not charging, the readout shows the time left and the tiles switch to **EMP
 1. **Reported by the device.** Headsets with noise control report their charging state through the helper. Devices with a kernel battery driver (game controllers, Logitech peripherals…) publish it through UPower, matched to their Bluetooth address via `HID_UNIQ` in sysfs.
 2. **Estimated from level changes.** Otherwise charging is inferred from a rising level, accounting for the usual slowdown past 80 %. Estimates are shown with `≈`, appear after a few minutes and refine over time.
 
+## New headphones pop-up
+
+![The pop-up: the headset falls into orbit, then connects](../screenshots/newdevice.gif)
+
+Switch on new headphones, earbuds or a speaker and put them in pairing mode: within about a minute a card drops from the top of the screen, under the bar, even with every Orbit view closed. The device falls out of the bar into a small orbit and sends sonar rings while it waits.
+
+- **Connect** pairs and connects it right there (accept the code in DMS's pairing dialog if the device asks), then shows its battery and closes.
+- **Later** closes it; the same device is not offered again for 10 minutes. No answer within 20 s counts as *Later*; the line at the bottom shows the time left and stops while the pointer is over the card.
+- **Ignore** never offers that device again. **Offer ignored devices again** (end of the settings) clears the list.
+
+**What is offered**: only named, unpaired audio devices (headphones, earbuds, speakers) found by discovery, so the neighbours' phones and TVs never pop up. Devices BlueZ already knew when the shell started wait 10 minutes before they can be offered.
+
+**When it stays quiet**: no pop-up while a window is full screen (it waits, then shows), or while the screen is locked or off. On the screen of the active window; with *Reduce motion* it simply fades in.
+
+**The background scan** runs for 8 s every minute (**Background scan**: 30 s to 5 min), and only when it is harmless:
+
+- Bluetooth on, screen on and unlocked;
+- no Bluetooth audio device connected: discovery shares the radio with the audio link and makes music stutter on many adapters, so while you listen it waits;
+- on battery, only above **No background scan below** (30 % by default); plugged in, always;
+- not while an Orbit view is already scanning (the pop-up uses that scan, and never stops it).
+
+With **Real device pictures** on, the card shows the headset's picture and its halo takes the picture's colour. That means the model name of an *unpaired* audio device is looked up too, under the same rules as below.
+
+To see it without new headphones: `dms ipc call orbitBluetooth newDeviceDemo` (a made-up headset; *Connect* plays the pairing, nothing is paired). `dms ipc call orbitBluetooth newDeviceStatus` says whether the last background scan ran, or why it was skipped.
+
+Turn it all off with **Scanning → Pop-up for new headphones**; Orbit then only finds devices while a view is open, as before. While it is on, the small *Connect* card inside the orbit is replaced by the pop-up.
+
 ## Real device pictures
 
 Off by default, because it is the one feature that uses the internet. Turn it on in **Settings → Device pictures**: the icon of a paired or connected device is replaced by a photo of the model, cropped to a disc.
 
-- **What is sent**: only the model name, for example `WH-1000XM6`. Never the Bluetooth address, never the name of your machine, never devices you only see while scanning. Names that look personal (`Marie's iPhone`, `iPhone de Marie`) or that are only an address are skipped.
+- **What is sent**: only the model name, for example `WH-1000XM6`. Never the Bluetooth address, never the name of your machine, never devices you only see while scanning, except audio devices the [new headphones pop-up](#new-headphones-pop-up) offers you. Names that look personal (`Marie's iPhone`, `iPhone de Marie`) or that are only an address are skipped.
 - **Where it goes**, in this order, stopping at the first match: `commons.wikimedia.org` (real photos, the picture comes from `upload.wikimedia.org`), then `api.sketchfab.com` (previews of 3D models, from `media.sketchfab.com`).
 - **Licenses**: only CC0, CC BY, CC BY-SA and public domain. The title, author and license appear under the detail card.
 - **Accuracy**: a result counts only when its title contains the model name, so a missing picture is more likely than a wrong one. Very recent models may have none yet; the icon stays.
@@ -204,6 +233,9 @@ Orbit keeps its night sky in every theme. With a light DMS theme, devices turn i
 | | Center device | Automatic | Icon of this machine (laptop or desktop is detected) |
 | Scanning | Scan automatically | On | Start discovery when a view opens; otherwise click the center |
 | | Offer new devices | On | A card with *Connect* when an unpaired device shows up while scanning |
+| | Pop-up for new headphones | On | Background scan and a pop-up under the bar, see [New headphones pop-up](#new-headphones-pop-up) ⚡ |
+| | Background scan | Every minute | 30 s, 1, 2 or 5 min; 8 s each time |
+| | No background scan below | 30 % | Battery of this computer, when unplugged |
 | | Scan duration | 45 s | 20 s, 45 s, 90 s or *While open* ⚡ |
 | Headphones | Noise control | On | Supported headphones (needs Python 3) |
 | | Turn off conversation awareness on disconnect | On | Turns *Conversation* off before Orbit disconnects a headset, and after it reconnects |
@@ -219,11 +251,12 @@ Orbit keeps its night sky in every theme. With a light DMS theme, devices turn i
 | Sounds | Sounds | Off | Short cues on snap, connect and disconnect |
 | | Volume | 60 % | |
 
-Two buttons at the end reset custom device icons and bring back every hidden device. DMS's *Reduce motion* is respected.
+Three buttons at the end reset custom device icons, bring back every hidden device and offer ignored devices again. DMS's *Reduce motion* is respected.
 
 ## Privacy
 
 - **No telemetry. No network access, except one opt-in feature, off by default**: [Real device pictures](#real-device-pictures), which sends only the model name of paired devices to `commons.wikimedia.org` and `api.sketchfab.com`.
+- **Background scan** (the new headphones pop-up, on by default): Bluetooth discovery for 8 s about once a minute, local only, under the conditions in [New headphones pop-up](#new-headphones-pop-up). Devices you *Ignore* are stored with the plugin settings.
 - **The volume slider** talks to the local sound server (PipeWire) only.
 - **One helper process**: the noise-control helper opens a local Bluetooth socket to your headset and nothing else, only while needed. `ORBIT_ANC_DEBUG=1` prints its raw packets on stderr; nothing is logged to a file.
 - **Nothing written to disk by Orbit**, except the pictures cache of that opt-in feature (`~/.cache/orbitBluetooth/pictures`): connection times and battery history live in memory for the session.
@@ -233,7 +266,7 @@ Two buttons at the end reset custom device icons and bring back every hidden dev
 
 ## Performance
 
-Orbit costs nothing while you are not looking at it: no frames at rest, nothing running while views are closed, everything paused while the session is locked. CPU of the whole shell (% of one core, 240 Hz screen, DMS alone: 0.7 %):
+Orbit costs nothing while you are not looking at it: no frames at rest, nothing running while views are closed (except the pop-up's short background scan, which you can turn off), everything paused while the session is locked. CPU of the whole shell (% of one core, 240 Hz screen, DMS alone: 0.7 %):
 
 | State | 1.4.1 |
 | --- | --- |

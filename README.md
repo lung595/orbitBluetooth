@@ -73,6 +73,9 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 | --- | --- |
 | ![Dragging earbuds to the inner ring connects them](screenshots/connect.gif) | ![A beam of energy flowing to a charging headset](screenshots/beam.gif) |
 
+<p align="center"><img src="screenshots/newdevice.gif" alt="A pop-up under the bar offers new headphones in pairing mode, then connects them" width="480"></p>
+
+- **New headphones? Orbit notices.** Put them in pairing mode and a card drops from the bar: the headset falls into orbit, *Connect* pairs it on the spot and shows its battery. Works with Orbit closed.
 - **Drag to connect** with a magnet snap, elastic tether to disconnect.
 - **Live charging**: energy beam, time to full, charge speed, session chart.
 - **Earbuds trio**: the case and both buds in their own mini orbit, each with its battery.
@@ -113,6 +116,9 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Center device | Automatic |
 | Scanning | Scan automatically | On |
 | | Offer new devices (a *Connect* card) | On |
+| | Pop-up for new headphones (background scan) ⚡ | On |
+| | Background scan | Every minute |
+| | No background scan below (battery, unplugged) | 30 % |
 | | Scan duration: 20 s, 45 s, 90 s or *While open* ⚡ | 45 s |
 | Headphones | Noise control | On |
 | | Turn off conversation awareness on disconnect | On |
@@ -134,6 +140,8 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 dms ipc call orbitBluetooth anc nc       # nc, ambient, off or adaptive (first supported headset)
 dms ipc call orbitBluetooth ancCycle     # next noise-control mode
 dms ipc call orbitBluetooth ancStatus    # current noise-control state (JSON)
+dms ipc call orbitBluetooth newDeviceDemo    # show the new-headphones pop-up with a made-up headset
+dms ipc call orbitBluetooth newDeviceStatus  # is the background scan running, or why not
 dms ipc call orbitBluetooth hidden       # list hidden devices
 dms ipc call orbitBluetooth unhideAll    # bring every hidden device back
 ```
@@ -146,6 +154,7 @@ Bind them in your compositor, for example in niri: `Mod+N { spawn "dms" "ipc" "c
 | --- | --- |
 | Nothing changed after installing | Add one of its widgets, see [Add a widget](#3-add-a-widget) |
 | Earbuds disconnect after a few seconds | Accept the pairing code dialog once |
+| No pop-up for new headphones | Turn off Bluetooth audio you are using (scanning would make it stutter, so it waits); check the battery threshold; the pop-up waits for full-screen windows |
 | No devices appear while scanning | Put the device in pairing mode; turn on **Show unnamed devices** |
 | A device charges but shows no lightning | Wait for its first level increase: the estimate starts then |
 | Noise control does not appear | Headset must be paired and supported, Python 3 installed; reopen the card |
@@ -156,7 +165,7 @@ Some Sony headsets do not report charging, or drop Bluetooth while charging: thi
 
 ## Privacy
 
-No telemetry, and no network access except one opt-in feature that is **off by default**: **Real device pictures** looks up the *model name* of your paired devices (never the Bluetooth address) on `commons.wikimedia.org`, then `api.sketchfab.com`, and downloads the picture from `upload.wikimedia.org` or `media.sketchfab.com`. The author is credited in the detail card. Pictures are kept in `~/.cache/orbitBluetooth/pictures` and deleted from the settings. The noise-control process is the noise-control helper, which talks to your headset over a local Bluetooth socket while needed. Connection times and battery history stay in memory; settings are stored by DMS. Details in the [user guide](docs/GUIDE.md#privacy).
+The pop-up for new headphones scans for 8 s about once a minute, only while the screen is on, Bluetooth audio is idle and the battery is above the threshold; it remembers devices you **Ignore** in the DMS settings. No telemetry, and no network access except one opt-in feature that is **off by default**: **Real device pictures** looks up the *model name* of your paired devices, and of headphones the pop-up offers (never the Bluetooth address) on `commons.wikimedia.org`, then `api.sketchfab.com`, and downloads the picture from `upload.wikimedia.org` or `media.sketchfab.com`. The author is credited in the detail card. Pictures are kept in `~/.cache/orbitBluetooth/pictures` and deleted from the settings. The noise-control process is the noise-control helper, which talks to your headset over a local Bluetooth socket while needed. Connection times and battery history stay in memory; settings are stored by DMS. Details in the [user guide](docs/GUIDE.md#privacy).
 
 ## Documentation
 
@@ -169,7 +178,7 @@ No telemetry, and no network access except one opt-in feature that is **off by d
 
 ## Credits
 
-Noise-control protocols were reimplemented from the public notes of Gadgetbridge, SonyHeadphonesClient, XMDeck, LibrePods, MagicPodsCore, GalaxyBudsClient, based-connect, bosectl, OpenSCQ30, OpenFreebuds, EarA-linux, earctl and cmfctl (no code copied). Device pictures come from [Wikimedia Commons](https://commons.wikimedia.org) and [Sketchfab](https://sketchfab.com) (free licenses only, each author is credited in the card): thank you to the photographers and 3D artists who share their work. Built on [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell) and [Quickshell](https://quickshell.org).
+Noise-control protocols were reimplemented from the public notes of Gadgetbridge, SonyHeadphonesClient, XMDeck, LibrePods, MagicPodsCore, GalaxyBudsClient, based-connect, bosectl, OpenSCQ30, OpenFreebuds, EarA-linux, earctl and cmfctl (no code copied). The new-device pop-up is inspired by the nearby-device cards of Google Fast Pair and Apple's AirPods setup (the idea only: Orbit uses plain BlueZ discovery, no vendor protocol). Device pictures come from [Wikimedia Commons](https://commons.wikimedia.org) and [Sketchfab](https://sketchfab.com) (free licenses only, each author is credited in the card): thank you to the photographers and 3D artists who share their work. Built on [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell) and [Quickshell](https://quickshell.org).
 
 ## License
 
