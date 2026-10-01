@@ -20,14 +20,12 @@ Item {
     // Called with the address -> snapshot map whenever it changes
     property var publish: function (map) {}
 
-    // Conversation awareness is a setting the headset forgets (Sony resets
-    // it when it disconnects). With "remember" on, the choice made here is
-    // kept per headset and put back a moment after it connects. Off: Orbit
-    // never touches the setting by itself.
-    property bool remember: true
-    // address -> bool, the last choice made from Orbit
-    property var chatChoices: ({})
-    property var saveChat: function (address, on) {}
+    // Conversation awareness has no off switch once the headset is gone: a
+    // disconnected headset keeps it, and only Orbit could turn it off. With
+    // this on, it is switched off before Orbit disconnects a headset, and
+    // again right after any reconnection (headset switched off, out of range
+    // or disconnected elsewhere). The noise-control mode is never touched.
+    property bool chatOffOnDisconnect: true
 
     // address -> last snapshot {status, error, model, features, state, live}
     property var states: ({})
@@ -37,6 +35,8 @@ Item {
     property var _sessions: ({})
     // address -> commands sent while a session was closing, replayed after it
     property var _queue: ({})
+    // address -> true while a disconnect waits for conversation awareness to go off
+    property var _leaving: ({})
 
     readonly property string _helper: decodeURIComponent(Qt.resolvedUrl("../anc/orbit_anc.py").toString().replace(/^file:\/\//, ""))
 
@@ -111,11 +111,9 @@ Item {
         _sync(address);
     }
 
-    function send(address, key, value, restoring) {
+    function send(address, key, value) {
         if (!supported(address))
             return false;
-        if (key === "chat" && !restoring)
-            saveChat(address, value === "on");
         const line = "set " + key + " " + value + "\n";
         const proc = _open(address);
         if (!proc)
@@ -141,6 +139,45 @@ Item {
         return true;
     }
 
+    // Disconnects a device on behalf of the user. A headset in conversation
+    // mode first gets "chat off" and is disconnected once the helper has
+    // finished (it exits when the headset confirmed), or after a short
+    // timeout if the headset stays silent.
+    function disconnectDevice(address) {
+        const device = deviceFor(address);
+        if (!device)
+            return;
+        const known = states[address];
+        // Known not to have the feature, or known to be off: nothing to undo
+        const needless = known && known.features && (!known.features.chat || (known.state && known.state.chat === false));
+        if (!chatOffOnDisconnect || needless || !send(address, "chat", "off")) {
+            device.disconnect();
+            return;
+        }
+        const next = Object.assign({}, _leaving);
+        next[address] = true;
+        _leaving = next;
+        leaveTimer.restart();
+    }
+
+    function _finishLeaving(address) {
+        if (!_leaving[address])
+            return;
+        const next = Object.assign({}, _leaving);
+        delete next[address];
+        _leaving = next;
+        const device = deviceFor(address);
+        if (device && device.connected)
+            device.disconnect();
+    }
+
+    // The headset never answered: do not keep the user waiting
+    Timer {
+        id: leaveTimer
+        interval: 4000
+        onTriggered: Object.keys(root._leaving).forEach(a => root._finishLeaving(a))
+    }
+
     function cycle(address) {
         const s = states[address];
         const next = s && s.features ? Anc.nextMode(s.features.modes, s.state.mode) : "";
@@ -163,25 +200,26 @@ Item {
 
     // The vendor channel is not ready the instant BlueZ reports the link, and
     // the pairing/audio setup is still busy: wait a little before talking
-    property var _restoring: []
-    function _restoreLater(address) {
-        if (!remember || chatChoices[address] === undefined || _restoring.indexOf(address) >= 0)
+    property var _reconnected: []
+    function _chatOffLater(address) {
+        if (!chatOffOnDisconnect || _reconnected.indexOf(address) >= 0)
             return;
-        _restoring = _restoring.concat([address]);
-        restoreTimer.restart();
+        _reconnected = _reconnected.concat([address]);
+        reconnectTimer.restart();
     }
 
     Timer {
-        id: restoreTimer
+        id: reconnectTimer
         interval: 2500
         onTriggered: {
-            const list = root._restoring;
-            root._restoring = [];
+            const list = root._reconnected;
+            root._reconnected = [];
+            // The helper applies it once the handshake is done and the
+            // headset has announced the feature (nothing happens without
+            // it), then closes again
             list.forEach(a => {
-                // The helper applies it once the handshake is done and the
-                // headset has announced the feature, then closes again
-                if (root.remember && root.supported(a) && root.chatChoices[a] !== undefined)
-                    root.send(a, "chat", root.chatChoices[a] ? "on" : "off", true);
+                if (root.chatOffOnDisconnect && root.supported(a))
+                    root.send(a, "chat", "off");
             });
         }
     }
@@ -232,6 +270,7 @@ Item {
                 "live": false
             }));
         proc.destroy();
+        _finishLeaving(address);
         const queued = _queue[address] || [];
         const q = Object.assign({}, _queue);
         delete q[address];
@@ -277,7 +316,7 @@ Item {
                 if (!connected)
                     root._setState(modelData.address, null);
                 else
-                    root._restoreLater(modelData.address);
+                    root._chatOffLater(modelData.address);
                 root._sync(modelData.address);
             }
             Component.onCompleted: if (connected)

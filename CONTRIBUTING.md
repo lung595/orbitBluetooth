@@ -44,6 +44,8 @@ Logic that can be tested lives in **pure `.js` files** with no QML: `Charge.js` 
 
 **Noise control** is the only part outside QML: QML cannot open a Bluetooth socket, so `components/AncService.qml` runs `anc/orbit_anc.py`, which speaks each vendor protocol (`anc/protocols/`, one module per brand) through a JSON session on stdin/stdout. `anc/sdp.py` finds the RFCOMM channel.
 
+**Real device pictures** (opt-in) is the only network use: `components/PictureService.qml` runs `pictures/orbit_pictures.py` (Wikimedia Commons, then Sketchfab; standard library only), and `components/Pictures.js` decides which names may be sent. Keep the list of hosts in sync between the helper header, the settings description, the README and the GUIDE.
+
 Settings are read through `components/Prefs.qml`, a reactive view shared by every surface.
 
 ## Project layout
@@ -71,6 +73,7 @@ orbitBluetooth/
 │   ├── Charge.js, Endurance.js  # battery analysis (pure)
 │   ├── DeviceCatalog.js, Glyphs.js, DeviceGlyph.qml # device icons
 │   ├── NightColors.qml, PaperColors.qml             # light-theme colors
+│   ├── PictureService.qml, Pictures.js              # real device pictures (opt-in)
 │   ├── Prefs.qml                # settings, shared by every surface
 │   └── Starfield.qml, Vignette.qml, LabelGlow.qml, SoundFx.qml
 ├── anc/
@@ -78,6 +81,9 @@ orbitBluetooth/
 │   ├── sdp.py                   # minimal SDP client (finds RFCOMM channels)
 │   ├── protocols/               # one module per brand + shared checksums
 │   └── tests/                   # unittest: frames, checksums, each brand
+├── pictures/
+│   ├── orbit_pictures.py        # picture lookup (Wikimedia Commons, Sketchfab)
+│   └── tests/                   # unittest, no network
 ├── tests/anc.test.js            # gjs: brand detection, modes, time left
 ├── shaders/                     # .frag sources, compiled .qsb, build.sh
 ├── scripts/
@@ -92,6 +98,7 @@ orbitBluetooth/
 
 ```sh
 (cd anc && python3 -m unittest discover -s tests -t .)   # noise-control protocols
+(cd pictures && python3 -m unittest discover -s tests -t .)   # picture lookup, without network
 gjs tests/anc.test.js                                     # brand detection, modes, time left
 ```
 
@@ -135,7 +142,7 @@ Short runs are noisy (about ±2 points while scanning).
 
 - **Language**: code, comments, UI and docs in English.
 - **Comments**: every file starts with a short comment saying what it is and why.
-- **Privacy**: no network access and no telemetry, ever. Nothing written to disk except settings through DMS.
+- **Privacy**: no telemetry, ever. No network access except the opt-in, off-by-default **Real device pictures** (model names only). Nothing written to disk except settings through DMS and that feature's pictures cache.
 - **Settings**: every option works out of the box; descriptions stay one short line; options that cost battery are marked ⚡.
 - **Docs**: user-facing changes go in `docs/GUIDE.md` (and the README if they change installation or the basics), plus an entry in `CHANGELOG.md`.
 

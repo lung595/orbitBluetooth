@@ -5,6 +5,7 @@ import qs.Widgets
 import "DeviceCatalog.js" as Catalog
 import "Glyphs.js" as Glyphs
 import "Charge.js" as Charge
+import "Pictures.js" as Pictures
 
 // Frosted detail card. The focused device glyph is not drawn here: the real
 // orbiting body flies onto the card's top edge and scales up, so it breaks
@@ -423,6 +424,17 @@ Item {
                     width: parent ? parent.width : 0
                     address: card.body?.address ?? ""
                 }
+            }
+
+            // Credit of the downloaded picture: its licenses ask for it
+            StyledText {
+                width: parent.width
+                visible: !card.picking && !!card.body?.picture?.credit
+                text: visible ? Pictures.creditText(card.body.picture.credit) : ""
+                horizontalAlignment: Text.AlignHCenter
+                elide: Text.ElideRight
+                color: card.paper.fg(0.45)
+                font.pixelSize: Theme.fontSizeSmall - 2
             }
 
             // Glyph picker

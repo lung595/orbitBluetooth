@@ -14,7 +14,9 @@ import "components/Anc.js" as Anc
 // is the noise-control helper (see AncService), and only while a supported
 // headset is connected and being controlled.
 // Privacy: all data stays in memory for the current session; nothing is
-// written to disk or sent anywhere.
+// sent anywhere. The one exception is opt-in and off by default: with "Real
+// device pictures" on, PictureService looks up the model name of paired
+// devices online and keeps the pictures in ~/.cache/orbitBluetooth.
 Item {
     id: root
 
@@ -41,11 +43,19 @@ Item {
         id: ancService
         enabled: prefs.ancEnabled
         engine: prefs.ancEngine
-        remember: prefs.ancRemember
-        chatChoices: prefs.ancChat
-        saveChat: (address, on) => prefs.setAncChat(address, on)
+        chatOffOnDisconnect: prefs.ancChatOff
         publish: map => root._publish("anc", map)
     }
+
+    // Real device pictures: off by default, the only use of the network
+    PictureService {
+        id: pictureService
+        enabled: prefs.realPictures
+        clearToken: prefs.picturesClear
+        publish: map => root._publish("pictures", map)
+    }
+
+    readonly property alias pictureLookup: pictureService
 
     // Pairing prompts. DMS only shows its pairing dialog from the native
     // Bluetooth panel, which Orbit replaces: without this, a headset asking
