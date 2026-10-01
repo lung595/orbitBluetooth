@@ -704,6 +704,26 @@ Item {
             }
         }
 
+        // Connecting: two soft sonar rings leave the device one after the
+        // other (half a cycle apart), so the attempt reads as a call going
+        // out. Pure functions of the effects clock: no animation of their own.
+        Repeater {
+            model: 2
+            Rectangle {
+                required property int index
+                readonly property real phase: body.phase === "connecting" ? ((body.scene.fxTime / 1.8 + index * 0.5) % 1) : 0
+                anchors.centerIn: parent
+                width: parent.width * (1.05 + 0.75 * phase)
+                height: width
+                radius: width / 2
+                color: "transparent"
+                border.width: 1.5
+                border.color: body.night.primary
+                opacity: body.phase === "connecting" ? 0.5 * Math.pow(1 - phase, 2) : 0
+                visible: opacity > 0.01
+            }
+        }
+
         // Lock ring: collapses onto the disc when a connection lands
         Rectangle {
             id: lockRing

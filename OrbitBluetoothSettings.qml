@@ -112,6 +112,13 @@ PluginSettings {
         defaultValue: true
     }
 
+    ToggleSetting {
+        settingKey: "offerNew"
+        label: "Offer new devices"
+        description: "A card with Connect when an unpaired device shows up while scanning"
+        defaultValue: true
+    }
+
     SelectionSetting {
         settingKey: "scanSeconds"
         label: "Scan duration"
