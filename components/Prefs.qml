@@ -33,6 +33,10 @@ QtObject {
     readonly property var glyphOverrides: _get("glyphOverrides", ({}))
     readonly property bool ancEnabled: _get("ancEnabled", true)
     readonly property string ancEngine: _get("ancEngine", "demand")
+    // Put the conversation-awareness choice back when a headset reconnects
+    readonly property bool ancRemember: _get("ancRemember", true)
+    // address -> bool, last conversation-awareness choice made from Orbit
+    readonly property var ancChat: _get("ancChat", ({}))
     // Devices swallowed by the black hole: address -> name (the name keeps
     // the list readable when the device is out of range)
     readonly property var hiddenDevices: _get("hiddenDevices", ({}))
@@ -52,6 +56,14 @@ QtObject {
         else
             next[address] = kind;
         set("glyphOverrides", next);
+    }
+
+    function setAncChat(address, on) {
+        if (ancChat[address] === on)
+            return;
+        const next = Object.assign({}, ancChat);
+        next[address] = on;
+        set("ancChat", next);
     }
 
     function isHidden(address) {

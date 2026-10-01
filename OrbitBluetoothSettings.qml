@@ -166,6 +166,13 @@ PluginSettings {
         defaultValue: "demand"
     }
 
+    ToggleSetting {
+        settingKey: "ancRemember"
+        label: "Remember conversation awareness"
+        description: "Puts your choice back when the headset reconnects, since it forgets it"
+        defaultValue: true
+    }
+
     // --- Desktop -----------------------------------------------------------------
     Section {
         text: "Desktop widget"

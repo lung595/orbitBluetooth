@@ -9,6 +9,8 @@ There is no "get" command: after the handshake the AirPods push their
 current mode, settings and battery on their own.
 """
 
+import re
+
 from .base import Protocol
 
 PSM = 0x1001
@@ -48,6 +50,13 @@ ADAPTIVE_MODELS = {
 STEP_TIMEOUT = 0.6
 # Without any mode notification after this, the model has no noise control
 MODE_TIMEOUT = 3.0
+# A model that has pushed nothing yet is asked once more after this long
+RETRY_NOTIFICATIONS = 1.5
+# Names of models that always have noise control. If one of them stays silent
+# (a new model whose notifications we do not decode yet, e.g. AirPods Max 2),
+# the modes are offered anyway: setting one works without ever hearing the
+# current one back, and a real notification corrects the display.
+ALWAYS_NC = re.compile(r"\b(Pro|Max)\b", re.I)
 
 
 def control(ident, value):
@@ -81,6 +90,7 @@ class Apple(Protocol):
         self._allow_off = True
         self._adaptive = False
         self._has_modes = False
+        self._retried = False
 
     def start(self):
         self.send(HANDSHAKE)
@@ -108,9 +118,18 @@ class Apple(Protocol):
             return
         if self._step in (1, 2) and now - self._step_at > STEP_TIMEOUT:
             self._advance(now)
-        elif self._step == 3 and not self.ready and now - self._step_at > MODE_TIMEOUT:
-            # Nothing pushed: an AirPods model without noise control
-            self.mark_ready()
+        elif self._step == 3 and not self.ready:
+            waited = now - self._step_at
+            if waited > MODE_TIMEOUT:
+                # Nothing pushed: a model without noise control, unless its
+                # name says it must have some
+                if not self._has_modes and ALWAYS_NC.search(self.name or ""):
+                    self._has_modes = True
+                    self._update_modes()
+                self.mark_ready()
+            elif waited > RETRY_NOTIFICATIONS and not self._retried:
+                self._retried = True
+                self.send(REQUEST_NOTIFICATIONS)
 
     def _update_modes(self):
         modes = ["off", "nc", "ambient"] if self._has_modes else []
