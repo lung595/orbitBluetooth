@@ -507,7 +507,10 @@ Item {
         if (!b || !b.device || !b.connected)
             return;
         b.phase = "disconnecting";
-        b.device.disconnect();
+        if (_ancService && ancCapable(b))
+            _ancService.disconnectDevice(b.address);
+        else
+            b.device.disconnect();
         wake();
     }
 

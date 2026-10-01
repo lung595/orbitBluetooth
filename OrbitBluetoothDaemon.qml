@@ -41,9 +41,7 @@ Item {
         id: ancService
         enabled: prefs.ancEnabled
         engine: prefs.ancEngine
-        remember: prefs.ancRemember
-        chatChoices: prefs.ancChat
-        saveChat: (address, on) => prefs.setAncChat(address, on)
+        chatOffOnDisconnect: prefs.ancChatOff
         publish: map => root._publish("anc", map)
     }
 

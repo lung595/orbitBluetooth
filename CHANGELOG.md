@@ -3,10 +3,16 @@
 All notable changes to Orbit Bluetooth are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 1.8.0 - 2026-10-01
+
+### Fixed
+
+- A headset disconnected while in conversation mode stayed in it, with no way to turn it off. Orbit now turns conversation awareness off before it disconnects a headset, and again after a reconnection. The noise-control mode is kept as it was. Option **Turn off conversation awareness on disconnect** (on by default).
 
 ### Changed
 
+- The *Remember conversation awareness* option and its saved per-headset choice are gone: they did the opposite of this fix.
+- Nothing Ear (2) confirmed on hardware.
 - Documentation split into `README.md`, `docs/GUIDE.md`, `CHANGELOG.md`, `ROADMAP.md` and `CONTRIBUTING.md`.
 
 ## 1.7.1 - 2026-10-01
