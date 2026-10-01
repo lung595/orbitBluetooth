@@ -67,6 +67,7 @@ Click any device to open it: its glyph flies onto the card.
 - **Connection time and battery level.**
 - **Volume** of audio devices: a slider and a mute button on the device's PipeWire output (hidden for devices with no sound output).
 - **Actions**: change icon, connect or disconnect, hide, forget (asks twice).
+- **Forget** unpairs the device (BlueZ removes it) and clears what Orbit kept about it: its icon choice and a *Don't offer again* mark, so it can be offered as new next time. Also in the right-click menu: **Forget**, then click again to confirm.
 - **Battery gauge, session chart and stats** (see [Charging and battery](#charging-and-battery)).
 - The **earbuds trio** and **noise control** when the device supports them.
 
@@ -170,14 +171,15 @@ The device falls out of the bar along a comet trail, is caught by an orbit with 
 
 ![The sheet offering, then connected, in a dark and a light theme](../screenshots/newdevice.png)
 
-- **What you get**: three tiles Orbit knows before anything is paired: noise control when the brand is supported, the rated battery life when the model is known, the earbuds' case and buds, volume.
+- **What you get**: up to three tiles Orbit knows before anything is paired: noise control when the brand is supported, the rated battery life when the model is known, the earbuds' case and buds, volume, and charging for anything with a battery (not a soundbar or a smart speaker).
+- **If pairing fails**, the sheet says why in plain words (declined, wrong code, no answer, busy) and offers **Try again**.
 - **Connect** (or <kbd>Enter</kbd>) pairs and connects it right there; accept the code in DMS's pairing dialog if the device asks. The button turns into a progress bar and the steps *Pair → Connect → Ready* follow along.
 - **Connected**: a burst of stars, a battery ring filling up to the real level, and the noise-control modes to pick one straight away. After 6 s without the pointer on it, the sheet folds back into the corner of the bar.
-- **Rename it first**: click the pencil next to the name, type, <kbd>Enter</kbd>. The name is given to the device once it is connected (as a rename in the detail card would).
+- **Rename it first**: click the pencil next to the name, type, then <kbd>Enter</kbd> or click anywhere else (<kbd>Escape</kbd> gives the old name back). The name is given to the device once it is connected (as a rename in the detail card would).
 - **Later** (or <kbd>Escape</kbd>) closes it; the same device is not offered again for 10 minutes. No answer within 30 s counts as *Later*: the ring around × shows the time left, and stops while the pointer is over the sheet.
 - **Don't offer again** never offers that device again. **Offer ignored devices again** (end of the settings) clears the list.
 - **Several devices at once**: the next one peeks behind the sheet with a "+1", and comes forward when you are done with the first.
-- The keyboard is only taken while the pointer is on the sheet or a name is being typed, so it never steals keys from the window you use.
+- The keyboard is only taken once you click the sheet, so it never steals keys from the window you use.
 
 **Two looks, any palette**: with a dark DMS theme the sheet is deep space (blue-black sky, glowing planet and device); with a light theme it is the stratosphere (pearly sky, porcelain planet, the device casting a real shadow). The DMS colours enter through the accent only, which each look brightens or deepens until it reads well, so pastel, neon or grey palettes all work.
 

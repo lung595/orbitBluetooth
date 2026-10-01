@@ -54,7 +54,7 @@ Window {
         anchors.horizontalCenter: parent.horizontalCenter
         y: 36
         phase: win.phase === "stack" || win.recording ? "offer" : win.phase
-        stacked: win.phase === "stack" ? 1 : 0
+        stacked: win.phase === "stack" ? 2 : 0
         name: "WH-1000XM6"
         subtitle: "Sony · Headphones"
         kind: "headphonesSlim"

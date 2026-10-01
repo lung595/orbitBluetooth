@@ -101,7 +101,9 @@ Item {
             return JSON.stringify({
                 "enabled": newDeviceWatch.offering,
                 "lastScan": newDeviceWatch.lastSkip ? "skipped: " + newDeviceWatch.lastSkip : "ran",
-                "showing": newDeviceWatch.current
+                "showing": newDeviceWatch.current,
+                "phase": newDeviceWatch.current ? newDeviceWatch.phase : "",
+                "lastError": newDeviceWatch.lastError
             });
         }
 

@@ -79,6 +79,27 @@ function features(info) {
     if (/^earbuds/.test(info.kind))
         out.push({ "icon": "earbuds", "value": "Case & buds", "label": "Each battery" });
     out.push({ "icon": "volume_up", "value": "Volume", "label": "Per device" });
-    out.push({ "icon": "bolt", "value": "Charging", "label": "Time to full" });
+    // Mains-powered things (soundbar, smart speaker, TV...) have nothing to charge
+    if (!/^(soundbar|speakerTall|tv|desktop|car)$/.test(info.kind))
+        out.push({ "icon": "bolt", "value": "Charging", "label": "Time to full" });
     return out.slice(0, 3);
+}
+
+// A failed pairing in plain words. BlueZ errors arrive as text such as
+// "org.bluez.Error.AuthenticationRejected" or "Page Timeout".
+function errorText(error) {
+    const e = String(error || "");
+    if (/AuthenticationRejected|AuthenticationCanceled|Rejected|Canceled/i.test(e))
+        return "The pairing was declined.";
+    if (/AuthenticationFailed|PIN|passkey/i.test(e))
+        return "The code did not match. Try again.";
+    if (/Timeout|timed out|Page/i.test(e))
+        return "No answer. Is it still in pairing mode?";
+    if (/InProgress|Busy/i.test(e))
+        return "Busy with another pairing. Try again.";
+    if (/NotReady|powered|NotAvailable/i.test(e))
+        return "Bluetooth is not ready. Try again.";
+    if (/AlreadyExists/i.test(e))
+        return "Already paired: connecting from Orbit should work.";
+    return "Could not connect. Is it still in pairing mode?";
 }

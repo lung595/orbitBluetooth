@@ -15,7 +15,7 @@ const Anc = load("Anc.js", ["family", "nextMode", "ordered"]);
 const Charge = load("Charge.js", ["analyze", "formatShort"]);
 const Endurance = load("Endurance.js", ["ratedHours"]);
 const Palette = load("Palette.js", ["contrast", "ensureContrast", "onColor", "lift", "isGrey", "toHsl"]);
-const Offer = load("Offer.js", ["scanBlocker", "isCandidate", "offerable", "headline"]);
+const Offer = load("Offer.js", ["scanBlocker", "isCandidate", "offerable", "headline", "features", "errorText"]);
 const Pictures = load("Pictures.js", ["queryFor", "creditText"]);
 const Catalog = load("DeviceCatalog.js", ["deviceName", "modelName", "resolve"]);
 
@@ -105,6 +105,12 @@ eq("offer: address only", Offer.isCandidate({ address: "A", name: "AA:BB:CC:DD:E
 eq("offer: snoozed", Offer.offerable("A", { A: 2000 }, 1000), false);
 eq("offer: snooze over", Offer.offerable("A", { A: 2000 }, 3000), true);
 eq("headline: earbuds", Offer.headline("earbudsRound"), "New earbuds nearby");
+eq("tiles: portable speaker charges", Offer.features({ family: "", hours: 0, kind: "speaker" }).map(t => t.value), ["Volume", "Charging"]);
+eq("tiles: soundbar has no battery", Offer.features({ family: "", hours: 0, kind: "soundbar" }).map(t => t.value), ["Volume"]);
+eq("tiles: headphones", Offer.features({ family: "sony", hours: 30, kind: "headphonesSlim" }).map(t => t.value), ["Noise control", "≈ 30 h", "Volume"]);
+eq("error: declined", Offer.errorText("org.bluez.Error.AuthenticationRejected"), "The pairing was declined.");
+eq("error: timeout", Offer.errorText("Page Timeout"), "No answer. Is it still in pairing mode?");
+eq("error: unknown", Offer.errorText(""), "Could not connect. Is it still in pairing mode?");
 
 // Pairing sheet colours: any accent reads on either skin
 const hex = h => ({ r: parseInt(h.slice(1, 3), 16) / 255, g: parseInt(h.slice(3, 5), 16) / 255, b: parseInt(h.slice(5, 7), 16) / 255 });

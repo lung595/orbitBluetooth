@@ -538,10 +538,15 @@ Item {
         wake();
     }
 
+    // Unpairs the device, and drops what Orbit kept about it (its icon
+    // choice, the "Don't offer again" mark), so it comes back as new
     function forget(b) {
         if (!b || !b.device)
             return;
         clearFocus();
+        prefs.setGlyphOverride(b.address, "auto");
+        if (prefs.ignoredDevices[b.address] !== undefined)
+            prefs.setIgnored(b.address, "", false);
         b.device.forget();
     }
 

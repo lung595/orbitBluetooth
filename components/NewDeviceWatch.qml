@@ -194,6 +194,8 @@ Item {
     property string phase: "offer"
     property bool shown: false
     property var _screen: null
+    // Why the last pairing failed (newDeviceStatus), "" otherwise
+    property string lastError: ""
     // A name typed in the sheet before connecting, applied once connected
     property string pendingName: ""
     // The pointer is over the sheet (set by NewDeviceWindow): nothing closes meanwhile
@@ -326,6 +328,7 @@ Item {
         if (!d)
             return;
         const address = current;
+        lastError = "";
         connectTimeout.restart();
         if (_demo) {
             phase = "pairing";
@@ -342,6 +345,8 @@ Item {
             if (root.current !== address || (root.phase !== "pairing" && root.phase !== "connecting"))
                 return;
             if (res && res.error) {
+                root.lastError = String(res.error);
+                console.warn("orbitBluetooth: pairing " + Catalog.deviceName(d) + " failed: " + root.lastError);
                 root.phase = "failed";
                 connectTimeout.stop();
                 return;
@@ -390,8 +395,10 @@ Item {
     Timer {
         id: connectTimeout
         interval: 45000
-        onTriggered: if (root.phase === "pairing" || root.phase === "connecting")
-            root.phase = "failed"
+        onTriggered: if (root.phase === "pairing" || root.phase === "connecting") {
+            root.lastError = "timed out in " + root.phase;
+            root.phase = "failed";
+        }
     }
 
     // Long enough to read the battery and pick a mode, then it folds back
