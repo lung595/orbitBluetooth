@@ -135,6 +135,17 @@ Item {
         return address ? (p[address] || null) : null;
     }
 
+    // --- Real device pictures (opt-in, the daemon does the lookups) ----------
+    readonly property var _pictureService: PluginService.pluginDaemonInstances[prefs.pluginId]?.pictureLookup ?? null
+    function pictureFor(model) {
+        const p = _globals.pictures || {};
+        return prefs.realPictures && model ? (p[model] || null) : null;
+    }
+    function requestPicture(query) {
+        if (query)
+            _pictureService?.request(query);
+    }
+
     // --- Noise control (the daemon runs the helper, see AncService) ----------
     readonly property var _ancService: PluginService.pluginDaemonInstances[prefs.pluginId]?.anc ?? null
 
