@@ -209,6 +209,60 @@ Item {
             dismiss();
     }
 
+    // --- Offer to connect a new device ---------------------------------------
+    // A named, unpaired device that shows up while scanning is offered right
+    // in the view (a small card with Connect), like a nearby-device prompt.
+    // Devices already around when the view opens are not news: they are
+    // marked as seen after a short settling delay. Nothing leaves the
+    // machine and nothing is remembered between sessions.
+    property string offerAddress: ""
+    property var _seen: ({})
+    property bool _primed: false
+
+    function updateOffer(list) {
+        if (!_primed || !prefs.offerNew)
+            return;
+        for (const d of list) {
+            if (_seen[d.address])
+                continue;
+            _seen[d.address] = true;
+            if (discovering && !d.connected && !(d.paired || d.bonded) && !Catalog.isUnnamed(d)) {
+                offerAddress = d.address;
+                offerTimer.restart();
+            }
+        }
+    }
+    function dismissOffer() {
+        offerAddress = "";
+        offerTimer.stop();
+    }
+    function acceptOffer() {
+        const address = offerAddress;
+        dismissOffer();
+        for (let i = 0; i < bodies.count; i++) {
+            const b = bodies.itemAt(i);
+            if (b && b.address === address) {
+                startConnect(b);
+                return;
+            }
+        }
+    }
+    Timer {
+        id: primeTimer
+        interval: 3000
+        running: scene.active
+        onTriggered: {
+            for (const a in scene.deviceMap)
+                scene._seen[a] = true;
+            scene._primed = true;
+        }
+    }
+    Timer {
+        id: offerTimer
+        interval: 12000
+        onTriggered: scene.offerAddress = ""
+    }
+
     // --- Device list -----------------------------------------------------------
     ListModel {
         id: bodyModel
@@ -282,6 +336,7 @@ Item {
                 map[addr] = deviceMap[addr];
         }
         deviceMap = map;
+        updateOffer(list);
         wake();
     }
 
@@ -1021,7 +1076,7 @@ Item {
     // Desktop glass: a theme-tinted smoky veil that dissolves into the wallpaper
     Vignette {
         visible: scene.glass
-        color: Qt.tint("#05060a", Theme.withAlpha(scene.night.primary, 0.07))
+        color: Qt.tint(scene.night.skyDeep, Theme.withAlpha(scene.night.primary, 0.07))
         strength: scene.prefs.desktopBackdrop
     }
 
@@ -1152,7 +1207,7 @@ Item {
             }
 
             ShapePath {
-                strokeColor: innerRing.armedIn ? Theme.withAlpha(scene.night.primary, 0.85) : innerRing.guiding ? Theme.withAlpha(scene.night.primary, 0.45) : Qt.rgba(1, 1, 1, 0.1)
+                strokeColor: innerRing.armedIn ? Theme.withAlpha(scene.night.primary, 0.85) : innerRing.guiding ? Theme.withAlpha(scene.night.primary, 0.45) : scene.night.ink(0.1)
                 strokeWidth: innerRing.armedIn ? 1.8 : 1
                 fillColor: innerRing.armedIn ? Theme.withAlpha(scene.night.primary, 0.05) : "transparent"
                 PathAngleArc {
@@ -1274,7 +1329,7 @@ Item {
                 width: parent.width * 0.5
                 height: width
                 kind: scene.prefs.hostGlyph !== "auto" ? scene.prefs.hostGlyph : (BatteryService.batteryAvailable ? "laptop" : "desktop")
-                color: scene.btOn ? (scene.night.whiteBodies ? scene.night.bodyInk : Qt.lighter(scene.night.primary, 1.2)) : (scene.night.whiteBodies ? scene.night.bodyMuted : Qt.rgba(1, 1, 1, 0.4))
+                color: scene.btOn ? (scene.night.whiteBodies ? scene.night.bodyInk : Qt.lighter(scene.night.primary, 1.2)) : (scene.night.whiteBodies ? scene.night.bodyMuted : scene.night.ink(0.4))
                 stroke: 1.4
             }
 
@@ -1313,7 +1368,7 @@ Item {
             y: core.y + core.height + 4
             z: 50
             text: UserInfoService.hostname || ""
-            color: Qt.rgba(1, 1, 1, 0.72)
+            color: scene.night.ink(0.72)
             font.pixelSize: Math.max(9, Math.round(scene.coreSize * 0.14))
             font.letterSpacing: 0.6
             opacity: scene.focusBody ? 0 : 1
@@ -1411,6 +1466,78 @@ Item {
         }
     }
 
+    // Offer card for a newly found, unpaired device
+    Rectangle {
+        id: offer
+        readonly property var device: scene.offerAddress ? scene.deviceMap[scene.offerAddress] ?? null : null
+        readonly property bool shown: !!device && !device.connected && !(device.paired || device.bonded) && !scene.focusBody && !scene.hiddenOpen && !scene.dragBody
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: (scene.glass ? Math.round(scene.height * 0.1) : Theme.spacingS) + Theme.spacingXL
+        width: Math.min(parent.width - Theme.spacingL * 2, offerRow.implicitWidth + Theme.spacingL * 2)
+        height: Theme.fontSizeSmall + Theme.spacingXL
+        radius: height / 2
+        color: scene.night.smoke(0.8)
+        border.width: 1
+        border.color: Theme.withAlpha(scene.night.primary, 0.45)
+        opacity: shown ? 1 : 0
+        visible: opacity > 0.01
+        z: 20
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 220
+            }
+        }
+
+        Row {
+            id: offerRow
+            anchors.centerIn: parent
+            spacing: Theme.spacingS
+            StyledText {
+                anchors.verticalCenter: parent.verticalCenter
+                text: offer.device ? Catalog.deviceName(offer.device) + " can be paired" : ""
+                color: scene.night.ink(0.85)
+                elide: Text.ElideRight
+                width: Math.min(implicitWidth, scene.width * 0.5)
+                font.pixelSize: Theme.fontSizeSmall - 1
+            }
+            Rectangle {
+                anchors.verticalCenter: parent.verticalCenter
+                width: connectText.implicitWidth + Theme.spacingL
+                height: Theme.fontSizeSmall + Theme.spacingM
+                radius: height / 2
+                color: connectArea.containsMouse ? Theme.withAlpha(scene.night.primary, 0.4) : Theme.withAlpha(scene.night.primary, 0.25)
+                StyledText {
+                    id: connectText
+                    anchors.centerIn: parent
+                    text: "Connect"
+                    color: scene.night.primary
+                    font.pixelSize: Theme.fontSizeSmall - 1
+                    font.weight: Font.Medium
+                }
+                MouseArea {
+                    id: connectArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: scene.acceptOffer()
+                }
+            }
+            DankIcon {
+                anchors.verticalCenter: parent.verticalCenter
+                name: "close"
+                size: 15
+                color: scene.night.ink(0.55)
+                MouseArea {
+                    anchors.fill: parent
+                    anchors.margins: -4
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: scene.dismissOffer()
+                }
+            }
+        }
+    }
+
     // Scan chip. On glass it is centered, carries its own smoky pill so it
     // reads on any wallpaper, and only shows while the widget is in use.
     Rectangle {
@@ -1419,12 +1546,12 @@ Item {
         anchors.horizontalCenter: scene.glass ? parent.horizontalCenter : undefined
         anchors.margins: Theme.spacingS
         anchors.topMargin: scene.glass ? Math.round(scene.height * 0.07) : Theme.spacingS
-        height: 24
-        width: chipRow.implicitWidth + 16
-        radius: 12
-        color: scene.glass ? (chipArea.containsMouse ? Qt.rgba(0.1, 0.11, 0.14, 0.78) : Qt.rgba(0.04, 0.045, 0.06, 0.6)) : chipArea.containsMouse ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(1, 1, 1, 0.06)
+        height: Theme.fontSizeSmall + Theme.spacingM
+        width: chipRow.implicitWidth + Theme.spacingL
+        radius: height / 2
+        color: scene.glass ? (chipArea.containsMouse ? Qt.tint(scene.night.smoke(0.78), scene.night.ink(0.06)) : scene.night.smoke(0.6)) : chipArea.containsMouse ? scene.night.ink(0.12) : scene.night.ink(0.06)
         border.width: scene.glass ? 1 : 0
-        border.color: Qt.rgba(1, 1, 1, 0.08)
+        border.color: scene.night.ink(0.08)
         readonly property bool shown: scene.btOn && !scene.focusBody && !scene.hiddenOpen && (!scene.glass || scene.interacting || scene.discovering)
         opacity: shown ? 1 : 0
         visible: opacity > 0.01
@@ -1437,20 +1564,20 @@ Item {
         Row {
             id: chipRow
             anchors.centerIn: parent
-            spacing: 5
+            spacing: Theme.spacingXS
             Rectangle {
                 id: scanDot
-                width: 6
-                height: 6
-                radius: 3
+                width: Theme.spacingXS + 2
+                height: width
+                radius: width / 2
                 anchors.verticalCenter: parent.verticalCenter
-                color: scene.discovering ? scene.night.primary : Qt.rgba(1, 1, 1, 0.35)
+                color: scene.discovering ? scene.night.primary : scene.night.ink(0.35)
                 // Blinks 1 → 0.25 → 1 every 1.4 s while scanning (effects clock)
                 opacity: scene.discovering && scene.active && scene.motion ? 0.25 + 0.75 * Math.abs(1 - (scene.fxTime % 1.4) / 0.7) : 1
             }
             StyledText {
                 text: scene.discovering ? "Scanning" : "Scan"
-                color: Qt.rgba(1, 1, 1, 0.75)
+                color: scene.night.ink(0.75)
                 font.pixelSize: Theme.fontSizeSmall - 1
                 anchors.verticalCenter: parent.verticalCenter
             }
@@ -1474,15 +1601,15 @@ Item {
         StyledText {
             anchors.horizontalCenter: parent.horizontalCenter
             text: BluetoothService.available ? "Bluetooth is off" : "No Bluetooth adapter"
-            color: Qt.rgba(1, 1, 1, 0.6)
+            color: scene.night.ink(0.6)
             font.pixelSize: Theme.fontSizeSmall
         }
         Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
             visible: BluetoothService.available
-            width: onText.implicitWidth + 28
-            height: 30
-            radius: 15
+            width: onText.implicitWidth + Theme.spacingXL
+            height: Theme.fontSizeSmall + Theme.spacingL
+            radius: height / 2
             color: onArea.containsMouse ? Theme.withAlpha(scene.night.primary, 0.35) : Theme.withAlpha(scene.night.primary, 0.2)
             StyledText {
                 id: onText

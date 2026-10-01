@@ -12,6 +12,9 @@ import "components/DeviceCatalog.js" as Catalog
 PluginComponent {
     id: root
 
+    // The sky color shared with the scene
+    readonly property NightColors night: NightColors {}
+
     // Devices hidden in the black hole are left out here too
     readonly property var hiddenDevices: pluginData.hiddenDevices ?? ({})
     readonly property var connectedDevices: {
@@ -22,7 +25,11 @@ PluginComponent {
 
     // --- Control Center -------------------------------------------------------
     ccWidgetIcon: !BluetoothService.enabled ? "bluetooth_disabled" : connectedDevices.length > 0 ? "bluetooth_connected" : "bluetooth"
-    ccWidgetPrimaryText: "Bluetooth"
+    ccWidgetPrimaryText: "OrbitBluetooth"
+    // The tile is narrow and cannot elide: long device names would spill out
+    function short(name) {
+        return name.length > 12 ? name.slice(0, 11).trimEnd() + "…" : name;
+    }
     ccWidgetSecondaryText: {
         if (!BluetoothService.available)
             return "Unavailable";
@@ -32,7 +39,7 @@ PluginComponent {
         if (n === 0)
             return "No devices";
         if (n === 1)
-            return Catalog.deviceName(connectedDevices[0]);
+            return short(Catalog.deviceName(connectedDevices[0]));
         return n + " devices";
     }
     ccWidgetIsActive: BluetoothService.enabled
@@ -46,7 +53,7 @@ PluginComponent {
     ccDetailContent: Component {
         Rectangle {
             radius: Theme.cornerRadius
-            color: "#07080c"
+            color: root.night.sky
             clip: true
 
             OrbitScene {
@@ -139,7 +146,7 @@ PluginComponent {
             Rectangle {
                 anchors.fill: parent
                 radius: Theme.cornerRadius
-                color: "#07080c"
+                color: root.night.sky
                 clip: true
 
                 OrbitScene {
