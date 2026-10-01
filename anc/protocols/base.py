@@ -44,6 +44,10 @@ class Protocol:
         self.pending = []
         # number of our writes the headset has not acknowledged yet
         self.awaiting = 0
+        # Settings asked for before the headset announced the feature (e.g.
+        # Apple only reports Conversation Awareness after the first modes):
+        # kept and applied as soon as it exists
+        self.deferred = {}
         self.model = ""
         self.features = {"modes": [], "ambientMax": 0, "levelMode": "ambient", "voice": False, "chat": False}
         self.state = {"mode": None, "ambient": None, "voice": None, "chat": None, "battery": {}}
@@ -116,8 +120,16 @@ class Protocol:
             self.set_ambient(max(0, min(self.features["ambientMax"], int(value))))
         elif key == "voice" and self.features["voice"]:
             self.set_voice(value in ("1", "true", "on"))
-        elif key == "chat" and self.features["chat"]:
-            self.set_chat(value in ("1", "true", "on"))
+        elif key == "chat":
+            if self.features["chat"]:
+                self.deferred.pop("chat", None)
+                self.set_chat(value in ("1", "true", "on"))
+            else:
+                self.deferred["chat"] = value
+
+    def flush_deferred(self):
+        if self.ready and self.deferred.get("chat") is not None and self.features["chat"]:
+            self.set("chat", self.deferred.pop("chat"))
 
     def set_battery(self, part, level, charging=False):
         if 0 <= level <= 100:

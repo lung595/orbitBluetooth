@@ -59,6 +59,7 @@ orbitBluetooth/
 │   ├── OrbitScene.qml           # the scene: physics, drag, focus, chrome
 │   ├── DeviceBody.qml           # one orbiting device, charging beam
 │   ├── FocusCard.qml            # detail card
+│   ├── VolumeRow.qml            # output volume slider (PipeWire)
 │   ├── BatteryCard.qml          # gauge, chart and stat tiles
 │   ├── StatTiles.qml            # READY AT / SPEED / HEALTH tiles
 │   ├── EarbudsTrio.qml, EarbudArt.qml, Earbuds.js   # case + buds mini orbit
