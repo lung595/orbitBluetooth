@@ -66,6 +66,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 1. **Open the orbit** from the widget you added. Discovery starts on its own.
 2. **Drag a device into the inner ring** to pair and connect it; drag it back out to disconnect.
 3. **Click a device** for its detail card: battery, charging, volume, noise control.
+4. **New headphones?** Put them in pairing mode: within a minute a card drops from the bar and offers to connect them, even with Orbit closed.
 
 ## Features
 
@@ -73,9 +74,11 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 | --- | --- |
 | ![Dragging earbuds to the inner ring connects them](screenshots/connect.gif) | ![A beam of energy flowing to a charging headset](screenshots/beam.gif) |
 
-<p align="center"><img src="screenshots/newdevice.gif" alt="A pop-up under the bar offers new headphones in pairing mode, then connects them" width="480"></p>
+| New headphones pop-up | Offer, pairing, connected |
+| --- | --- |
+| ![A card drops from the bar, the headset falls into orbit and connects](screenshots/newdevice.gif) | ![The card while offering, pairing and once connected](screenshots/newdevice.png) |
 
-- **New headphones? Orbit notices.** Put them in pairing mode and a card drops from the bar: the headset falls into orbit, *Connect* pairs it on the spot and shows its battery. Works with Orbit closed.
+- **New headphones? Orbit notices.** Put them in pairing mode and a card drops from the bar: the headset falls into orbit along a comet trail, sends sonar rings, and *Connect* pairs it on the spot and shows its battery. Works with Orbit closed; *Later* and *Ignore* keep it quiet.
 - **Drag to connect** with a magnet snap, elastic tether to disconnect.
 - **Live charging**: energy beam, time to full, charge speed, session chart.
 - **Earbuds trio**: the case and both buds in their own mini orbit, each with its battery.
@@ -84,12 +87,13 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 - **Black hole**: drop a device you never use into it to hide it.
 - **28 device icons** matched by name, or your own pictures.
 - **Light and dark themes**; the sky always stays night.
-- **Lightweight and private**: no frames drawn at rest, nothing leaves your machine.
+- **Lightweight and private**: no frames drawn at rest, no telemetry, nothing leaves your machine unless you turn on real device pictures.
 
 ## Usage
 
 | Gesture | Result |
 | --- | --- |
+| Put new headphones in pairing mode | A pop-up under the bar offers to connect them |
 | Drag a device inside the inner ring | Pair and connect |
 | Drag a connected device outward | Disconnect |
 | Click a device | Open its detail card |
@@ -165,7 +169,12 @@ Some Sony headsets do not report charging, or drop Bluetooth while charging: thi
 
 ## Privacy
 
-The pop-up for new headphones scans for 8 s about once a minute, only while the screen is on, Bluetooth audio is idle and the battery is above the threshold; it remembers devices you **Ignore** in the DMS settings. No telemetry, and no network access except one opt-in feature that is **off by default**: **Real device pictures** looks up the *model name* of your paired devices, and of headphones the pop-up offers (never the Bluetooth address) on `commons.wikimedia.org`, then `api.sketchfab.com`, and downloads the picture from `upload.wikimedia.org` or `media.sketchfab.com`. The author is credited in the detail card. Pictures are kept in `~/.cache/orbitBluetooth/pictures` and deleted from the settings. The noise-control process is the noise-control helper, which talks to your headset over a local Bluetooth socket while needed. Connection times and battery history stay in memory; settings are stored by DMS. Details in the [user guide](docs/GUIDE.md#privacy).
+- **No telemetry.** Connection times and battery history stay in memory; settings, hidden and ignored devices are stored by DMS.
+- **Noise control**: a small helper talks to your headset over a local Bluetooth socket, only while needed.
+- **New headphones pop-up**: a local Bluetooth scan of 8 s about once a minute, only while the screen is on, no Bluetooth audio is connected and the battery is above the threshold (30 % by default, unplugged). Turn it off in **Scanning**.
+- **Network: only one opt-in feature, off by default.** **Real device pictures** sends the *model name* of your paired devices, and of headphones the pop-up offers, never the Bluetooth address. It contacts `commons.wikimedia.org`, then `api.sketchfab.com`, and downloads the picture from `upload.wikimedia.org` or `media.sketchfab.com`. Pictures are credited in the card, kept in `~/.cache/orbitBluetooth/pictures` and deleted from the settings.
+
+Details in the [user guide](docs/GUIDE.md#privacy).
 
 ## Documentation
 
