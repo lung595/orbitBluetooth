@@ -77,6 +77,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 - **Live charging**: energy beam, time to full, charge speed, session chart.
 - **Earbuds trio**: the case and both buds in their own mini orbit, each with its battery.
 - **Noise control** for 13 headphone brands (Sony, Apple, Samsung, Bose, Huawei…).
+- **Real device pictures** (opt-in, uses the internet): a photo of your headphones, phone or TV instead of an icon.
 - **Black hole**: drop a device you never use into it to hide it.
 - **28 device icons** matched by name, or your own pictures.
 - **Light and dark themes**; the sky always stays night.
@@ -119,6 +120,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | Desktop widget | Displays | All |
 | | Backdrop | 72 % |
 | | Ambient motion ⚡ | Off |
+| Device pictures | Real device pictures (uses the internet) | Off |
 | Look | Black hole: realistic or tesseract | Black hole |
 | | Shooting stars | On |
 | | Stars: Low, Normal or High | Normal |
@@ -154,7 +156,7 @@ Some Sony headsets do not report charging, or drop Bluetooth while charging: thi
 
 ## Privacy
 
-No network access, no telemetry. The only process is the noise-control helper, which talks to your headset over a local Bluetooth socket while needed. Connection times and battery history stay in memory; settings are stored by DMS. Details in the [user guide](docs/GUIDE.md#privacy).
+No telemetry, and no network access except one opt-in feature that is **off by default**: **Real device pictures** looks up the *model name* of your paired devices (never the Bluetooth address) on `commons.wikimedia.org`, then `api.sketchfab.com`, and downloads the picture from `upload.wikimedia.org` or `media.sketchfab.com`. The author is credited in the detail card. Pictures are kept in `~/.cache/orbitBluetooth/pictures` and deleted from the settings. The noise-control process is the noise-control helper, which talks to your headset over a local Bluetooth socket while needed. Connection times and battery history stay in memory; settings are stored by DMS. Details in the [user guide](docs/GUIDE.md#privacy).
 
 ## Documentation
 
@@ -167,7 +169,7 @@ No network access, no telemetry. The only process is the noise-control helper, w
 
 ## Credits
 
-Noise-control protocols were reimplemented from the public notes of Gadgetbridge, SonyHeadphonesClient, XMDeck, LibrePods, MagicPodsCore, GalaxyBudsClient, based-connect, bosectl, OpenSCQ30, OpenFreebuds, EarA-linux, earctl and cmfctl (no code copied). Built on [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell) and [Quickshell](https://quickshell.org).
+Noise-control protocols were reimplemented from the public notes of Gadgetbridge, SonyHeadphonesClient, XMDeck, LibrePods, MagicPodsCore, GalaxyBudsClient, based-connect, bosectl, OpenSCQ30, OpenFreebuds, EarA-linux, earctl and cmfctl (no code copied). Device pictures come from [Wikimedia Commons](https://commons.wikimedia.org) and [Sketchfab](https://sketchfab.com) (free licenses only, each author is credited in the card): thank you to the photographers and 3D artists who share their work. Built on [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell) and [Quickshell](https://quickshell.org).
 
 ## License
 

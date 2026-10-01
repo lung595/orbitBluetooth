@@ -158,6 +158,19 @@ When not charging, the readout shows the time left and the tiles switch to **EMP
 1. **Reported by the device.** Headsets with noise control report their charging state through the helper. Devices with a kernel battery driver (game controllers, Logitech peripherals…) publish it through UPower, matched to their Bluetooth address via `HID_UNIQ` in sysfs.
 2. **Estimated from level changes.** Otherwise charging is inferred from a rising level, accounting for the usual slowdown past 80 %. Estimates are shown with `≈`, appear after a few minutes and refine over time.
 
+## Real device pictures
+
+Off by default, because it is the one feature that uses the internet. Turn it on in **Settings → Device pictures**: the icon of a paired or connected device is replaced by a photo of the model, cropped to a disc.
+
+- **What is sent**: only the model name, for example `WH-1000XM6`. Never the Bluetooth address, never the name of your machine, never devices you only see while scanning. Names that look personal (`Marie's iPhone`, `iPhone de Marie`) or that are only an address are skipped.
+- **Where it goes**, in this order, stopping at the first match: `commons.wikimedia.org` (real photos, the picture comes from `upload.wikimedia.org`), then `api.sketchfab.com` (previews of 3D models, from `media.sketchfab.com`).
+- **Licenses**: only CC0, CC BY, CC BY-SA and public domain. The title, author and license appear under the detail card.
+- **Accuracy**: a result counts only when its title contains the model name, so a missing picture is more likely than a wrong one. Very recent models may have none yet; the icon stays.
+- **Cache**: each model is looked up once and kept in `~/.cache/orbitBluetooth/pictures` (a model with no result is retried after a week). **Delete downloaded pictures** empties it.
+- Your own **Custom images folder** always wins over a downloaded picture.
+
+Not tested against the live services yet: the lookup logic is covered by unit tests with sample answers.
+
 ## Device icons
 
 Icons are matched by name patterns (`WH-1000XMx`, `AirPods Max`, `MX Master`, `Galaxy Buds`, `DualSense`…). The BlueZ device class breaks ties, so a `G733` headset is never drawn as a mouse.
@@ -198,6 +211,7 @@ Orbit keeps its night sky in every theme. With a light DMS theme, devices turn i
 | Desktop widget | Displays | All | Which displays show the desktop widget |
 | | Backdrop | 72 % | Depth of the veil behind the orbit |
 | | Ambient motion | Off | Keep orbits moving when the pointer is away ⚡ |
+| Device pictures | Real device pictures (uses the internet) | Off | Photo of the model instead of an icon, see [Real device pictures](#real-device-pictures) |
 | Look | Black hole | Black hole | Realistic, or the tesseract |
 | | Shooting stars | On | A rare meteor (every 12–32 s), bent or swallowed by the black hole |
 | | Stars | Normal | Low, Normal or High |
@@ -209,12 +223,12 @@ Two buttons at the end reset custom device icons and bring back every hidden dev
 
 ## Privacy
 
-- **No network access, no telemetry.**
+- **No telemetry. No network access, except one opt-in feature, off by default**: [Real device pictures](#real-device-pictures), which sends only the model name of paired devices to `commons.wikimedia.org` and `api.sketchfab.com`.
 - **The volume slider** talks to the local sound server (PipeWire) only.
 - **One helper process**: the noise-control helper opens a local Bluetooth socket to your headset and nothing else, only while needed. `ORBIT_ANC_DEBUG=1` prints its raw packets on stderr; nothing is logged to a file.
-- **Nothing written to disk by Orbit**: connection times and battery history live in memory for the session.
+- **Nothing written to disk by Orbit**, except the pictures cache of that opt-in feature (`~/.cache/orbitBluetooth/pictures`): connection times and battery history live in memory for the session.
 - **Files read**: only the sysfs `uevent` of kernel batteries, once each.
-- **Settings** (choices, custom icons, hidden devices, the conversation-awareness choice per headset) are stored by DMS with your other plugin settings.
+- **Settings** (choices, custom icons, hidden devices) are stored by DMS with your other plugin settings.
 - **Device names** you set are stored by BlueZ, like any Bluetooth alias.
 
 ## Performance

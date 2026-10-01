@@ -4,6 +4,7 @@ import qs.Common
 import qs.Widgets
 import "DeviceCatalog.js" as Catalog
 import "Charge.js" as Charge
+import "Pictures.js" as Pictures
 import "Endurance.js" as Endurance
 
 // One orbiting device. Purely presentational + input: the owning OrbitScene
@@ -23,6 +24,12 @@ Item {
     // Recognition only (see Catalog.modelName): never changes on rename
     readonly property string model: Catalog.modelName(device) || address
     readonly property string kind: Catalog.resolve(device, scene.prefs.glyphOverrides)
+    // Real picture of the model (opt-in); the query is empty for anything
+    // that must not be looked up, see Pictures.js
+    readonly property string pictureQuery: scene.prefs.realPictures ? Pictures.queryFor(Catalog.modelName(device), paired || connected) : ""
+    readonly property var picture: pictureQuery ? scene.pictureFor(pictureQuery) : null
+    onPictureQueryChanged: scene.requestPicture(pictureQuery)
+    Component.onCompleted: scene.requestPicture(pictureQuery)
     readonly property bool connected: device?.connected ?? false
     readonly property bool paired: (device?.paired || device?.bonded) ?? false
     // The headset's own battery report (noise-control helper), trusted while
@@ -469,10 +476,11 @@ Item {
 
         DeviceGlyph {
             anchors.centerIn: parent
-            width: parent.width * 0.52
+            width: parent.width * (pictureShown ? 0.92 : 0.52)
             height: width
             kind: body.kind
             imageSource: body.scene.prefs.imageFor(body.device)
+            pictureSource: body.picture ? body.picture.image : ""
             color: body.focused ? body.paper.ink : body.night.whiteBodies ? (body.connected ? body.night.bodyInk : body.night.bodyMuted) : body.connected ? Qt.lighter(body.night.primary, 1.12) : Qt.rgba(1, 1, 1, 0.86)
             stroke: body.focused ? 1.05 : 1.5
             Behavior on color {

@@ -14,6 +14,7 @@ function load(file, names) {
 const Anc = load("Anc.js", ["family", "nextMode", "ordered"]);
 const Charge = load("Charge.js", ["analyze", "formatShort"]);
 const Endurance = load("Endurance.js", ["ratedHours"]);
+const Pictures = load("Pictures.js", ["queryFor", "creditText"]);
 const Catalog = load("DeviceCatalog.js", ["deviceName", "modelName", "resolve"]);
 
 let count = 0, failures = 0;
@@ -76,6 +77,15 @@ eq("renamed: model name", Catalog.modelName(renamed), "WH-1000XM6");
 eq("renamed: same kind", Catalog.resolve(renamed, {}), Catalog.resolve(original, {}));
 eq("renamed: same ANC family", Anc.family(Catalog.modelName(renamed)), "sony");
 eq("no own name: falls back to the alias", Catalog.modelName({ name: "Speaker", deviceName: "" }), "Speaker");
+
+// Real pictures: what may be looked up online (only paired or connected devices, never a personal name)
+eq("picture query: model", Pictures.queryFor("WH-1000XM6", true), "WH-1000XM6");
+eq("picture query: suffix dropped", Pictures.queryFor("Galaxy Buds2 Pro (A1B2)", true), "Galaxy Buds2 Pro");
+eq("picture query: not paired", Pictures.queryFor("Samsung QN90", false), "");
+eq("picture query: possessive", Pictures.queryFor("Marie's iPhone", true), "");
+eq("picture query: 'de' name", Pictures.queryFor("iPhone de Marie", true), "");
+eq("picture query: address only", Pictures.queryFor("AA:BB:CC:DD:EE:FF", true), "");
+eq("picture credit", Pictures.creditText({ title: "Sony", author: "Bob", license: "CC BY 4.0", source: "Wikimedia Commons" }), "“Sony” · by Bob · CC BY 4.0 · Wikimedia Commons");
 
 print(failures ? failures + "/" + count + " failed" : count + " tests passed");
 imports.system.exit(failures ? 1 : 0);

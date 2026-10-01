@@ -3,6 +3,16 @@
 All notable changes to Orbit Bluetooth are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.9.0 - 2026-10-01
+
+### Added
+
+- **Real device pictures** (opt-in, off by default, uses the internet): a photo of the model replaces the icon of paired and connected devices, with its author and license under the detail card. Looked up on `commons.wikimedia.org`, then `api.sketchfab.com`; only the model name is sent, free licenses only, kept in `~/.cache/orbitBluetooth/pictures`. **Delete downloaded pictures** empties the cache. Not tested against the live services yet.
+
+### Changed
+
+- Privacy: the "no network" rule now has this one opt-in exception, documented in the README, the guide and the settings.
+
 ## 1.8.0 - 2026-10-01
 
 ### Fixed
