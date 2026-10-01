@@ -25,7 +25,11 @@ PluginComponent {
 
     // --- Control Center -------------------------------------------------------
     ccWidgetIcon: !BluetoothService.enabled ? "bluetooth_disabled" : connectedDevices.length > 0 ? "bluetooth_connected" : "bluetooth"
-    ccWidgetPrimaryText: "Bluetooth"
+    ccWidgetPrimaryText: "OrbitBluetooth"
+    // The tile is narrow and cannot elide: long device names would spill out
+    function short(name) {
+        return name.length > 14 ? name.slice(0, 13).trimEnd() + "…" : name;
+    }
     ccWidgetSecondaryText: {
         if (!BluetoothService.available)
             return "Unavailable";
@@ -35,7 +39,7 @@ PluginComponent {
         if (n === 0)
             return "No devices";
         if (n === 1)
-            return Catalog.deviceName(connectedDevices[0]);
+            return short(Catalog.deviceName(connectedDevices[0]));
         return n + " devices";
     }
     ccWidgetIsActive: BluetoothService.enabled
