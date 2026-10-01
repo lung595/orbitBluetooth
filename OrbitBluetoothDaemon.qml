@@ -10,13 +10,15 @@ import "components/Anc.js" as Anc
 // Event-driven bookkeeping shared by every surface. BlueZ exposes neither a
 // connection timestamp, a charging state nor a discharge rate, so we record
 // them ourselves and merge what UPower knows.
-// No timers: everything reacts to D-Bus property changes. The only process
-// is the noise-control helper (see AncService), and only while a supported
-// headset is connected and being controlled.
+// Everything reacts to D-Bus property changes. The one timer is the short
+// background scan of the "new device" pop-up (NewDeviceWatch, setting).
+// The only processes are the noise-control helper (see AncService), only
+// while a supported headset is connected and being controlled, and the
+// opt-in picture lookup.
 // Privacy: all data stays in memory for the current session; nothing is
 // sent anywhere. The one exception is opt-in and off by default: with "Real
 // device pictures" on, PictureService looks up the model name of paired
-// devices online and keeps the pictures in ~/.cache/orbitBluetooth.
+// devices (and of headphones the new-device pop-up offers) online and keeps the pictures in ~/.cache/orbitBluetooth.
 Item {
     id: root
 
@@ -57,6 +59,15 @@ Item {
 
     readonly property alias pictureLookup: pictureService
 
+    // "New device nearby" pop-up, with its own background scan
+    NewDeviceWatch {
+        id: newDeviceWatch
+        prefs: prefs
+        pictureLookup: pictureService
+    }
+
+    readonly property alias newDevices: newDeviceWatch
+
     // Pairing prompts. DMS only shows its pairing dialog from the native
     // Bluetooth panel, which Orbit replaces: without this, a headset asking
     // for a passkey confirmation (e.g. FreeBuds) waits in vain, gives up and
@@ -75,8 +86,23 @@ Item {
 
     // dms ipc call orbitBluetooth anc nc | ambient | off | adaptive
     // dms ipc call orbitBluetooth hidden | unhideAll
+    // dms ipc call orbitBluetooth newDeviceDemo | newDeviceStatus
     IpcHandler {
         target: "orbitBluetooth"
+
+        // Shows the new-device pop-up with a made-up headset
+        function newDeviceDemo(): string {
+            return newDeviceWatch.demo();
+        }
+
+        // Why the pop-up's last background scan was skipped, if it was
+        function newDeviceStatus(): string {
+            return JSON.stringify({
+                "enabled": newDeviceWatch.offering,
+                "lastScan": newDeviceWatch.lastSkip ? "skipped: " + newDeviceWatch.lastSkip : "ran",
+                "showing": newDeviceWatch.current
+            });
+        }
 
         function anc(mode: string): string {
             const address = ancService.primary();

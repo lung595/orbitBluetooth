@@ -5,7 +5,6 @@ Ideas, not promises, and no dates. Anything that would need the network or send 
 ## Planned
 
 - **Conversation awareness that ends sooner** (how long the headset waits before going back to noise cancelling): needs the exact Sony / Samsung packet, not guessed.
-- **The same offer as a system notification** while no view is open: it needs discovery to run in the background, which costs battery, so it is not planned for now.
 - **3D models of devices** (to animate them): Sketchfab only lets a signed-in account download a model, which Orbit cannot ask for without an account and a token. Previews (pictures) are what ships today.
 - **Easier to read code**: split the largest files (`OrbitScene.qml`, `DeviceBody.qml`) by role, without changing behavior.
 - **More headphones tested on real hardware**: only Sony, Huawei and Nothing Ear (2) have been tested so far; reports for other brands are welcome.

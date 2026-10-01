@@ -1,0 +1,4 @@
+module qs.Services
+singleton BluetoothService 1.0 BluetoothService.qml
+singleton SessionService 1.0 SessionService.qml
+singleton IdleService 1.0 IdleService.qml

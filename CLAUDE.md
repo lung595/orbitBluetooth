@@ -6,7 +6,8 @@ Values of the project. They hold for every change; do not ask again.
 - **Total privacy, zero telemetry.** No network access, no analytics, no
   crash reports. Anything that would need the network is out of scope, with
   one exception decided by the owner: **Real device pictures**, opt-in and
-  off by default, which looks up only the model name of paired devices on
+  off by default, which looks up only the model name of paired devices (and
+  of audio devices the new-device pop-up offers) on
   the hosts named in `pictures/orbit_pictures.py`, the settings page and the
   README. Never the Bluetooth address, never a personal name. Data stays in
   memory or in DMS's own plugin settings, never in a log file; the
@@ -24,6 +25,7 @@ Workflow:
   off the **Roadmap** as soon as it ships. Bump `plugin.json` for a release.
 - Tests: `(cd anc && python3 -m unittest discover -s tests -t .)` and
   `(cd pictures && python3 -m unittest discover -s tests -t .)` and
+  `sh tests/qml/run.sh` (Qt 6) and
   `gjs tests/anc.test.js` when gjs is available.
 - Code comments explain *why*, in English, like the surrounding code.
 - Use `Theme` tokens (spacing, radius, surface colors) for chrome. The night

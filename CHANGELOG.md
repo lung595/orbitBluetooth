@@ -3,6 +3,21 @@
 All notable changes to Orbit Bluetooth are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.10.0 - 2026-10-01
+
+### Added
+
+- **New headphones pop-up**: put headphones, earbuds or a speaker in pairing mode and a card drops from the bar, even with Orbit closed. The device falls into a small orbit along a comet trail, sends sonar rings, and its halo takes the colour of its picture. **Connect** pairs and connects it in place and shows the battery; **Later** snoozes it 10 minutes; **Ignore** never offers it again. Only named, unpaired audio devices; never while a window is full screen or the screen is locked.
+- Background scan for it: 8 s every minute (**Background scan**), skipped while Bluetooth audio is connected (scanning makes it stutter), on battery below **No background scan below** (30 %), and while the screen is off. Turn it off with **Pop-up for new headphones**.
+- **Offer ignored devices again** button in the settings.
+- IPC: `newDeviceDemo` shows the pop-up with a made-up headset, `newDeviceStatus` tells whether the background scan runs or why not.
+- QML scenario tests for the pop-up's logic (`tests/qml/run.sh`), with stubs for Quickshell and the DMS services.
+
+### Changed
+
+- With the pop-up on, the *Connect* card inside the orbit gives way to it.
+- Real device pictures: the model name of an audio device offered by the pop-up may be looked up too (only with that option on).
+
 ## 1.9.0 - 2026-10-01
 
 ### Added
