@@ -4,7 +4,8 @@ import QtQuick
 QtObject {
     property string address
     property string name
-    property string deviceName: name
+    // The name the device reports itself: a rename (alias) never changes it
+    property string deviceName
     property string icon
     property bool paired: false
     property bool bonded: false

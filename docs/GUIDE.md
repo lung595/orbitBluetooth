@@ -162,17 +162,28 @@ When not charging, the readout shows the time left and the tiles switch to **EMP
 
 ## New headphones pop-up
 
-![The pop-up: the headset falls into orbit, then connects](../screenshots/newdevice.gif)
+![The pairing sheet in a dark and a light theme: the headset falls into orbit, then connects](../screenshots/newdevice.gif)
 
-Switch on new headphones, earbuds or a speaker and put them in pairing mode: within about a minute a card drops from the top of the screen, under the bar, even with every Orbit view closed. The device falls out of the bar into a small orbit and sends sonar rings while it waits.
+Switch on new headphones, earbuds or a speaker and put them in pairing mode: within about a minute a tall **pairing sheet** unfolds from the right end of the bar, even with every Orbit view closed.
 
-- **Connect** pairs and connects it right there (accept the code in DMS's pairing dialog if the device asks), then shows its battery and closes.
-- **Later** closes it; the same device is not offered again for 10 minutes. No answer within 20 s counts as *Later*; the line at the bottom shows the time left and stops while the pointer is over the card.
-- **Ignore** never offers that device again. **Offer ignored devices again** (end of the settings) clears the list.
+The device falls out of the bar along a comet trail, is caught by an orbit with a flash, then floats above the horizon of a planet, tilting a little towards the pointer, while sonar rings leave it and a small moon goes round. Stars twinkle and, now and then, one shoots across.
+
+![The sheet offering, then connected, in a dark and a light theme](../screenshots/newdevice.png)
+
+- **What you get**: three tiles Orbit knows before anything is paired: noise control when the brand is supported, the rated battery life when the model is known, the earbuds' case and buds, volume.
+- **Connect** (or <kbd>Enter</kbd>) pairs and connects it right there; accept the code in DMS's pairing dialog if the device asks. The button turns into a progress bar and the steps *Pair → Connect → Ready* follow along.
+- **Connected**: a burst of stars, a battery ring filling up to the real level, and the noise-control modes to pick one straight away. After 6 s without the pointer on it, the sheet folds back into the corner of the bar.
+- **Rename it first**: click the pencil next to the name, type, <kbd>Enter</kbd>. The name is given to the device once it is connected (as a rename in the detail card would).
+- **Later** (or <kbd>Escape</kbd>) closes it; the same device is not offered again for 10 minutes. No answer within 30 s counts as *Later*: the ring around × shows the time left, and stops while the pointer is over the sheet.
+- **Don't offer again** never offers that device again. **Offer ignored devices again** (end of the settings) clears the list.
+- **Several devices at once**: the next one peeks behind the sheet with a "+1", and comes forward when you are done with the first.
+- The keyboard is only taken while the pointer is on the sheet or a name is being typed, so it never steals keys from the window you use.
+
+**Two looks, any palette**: with a dark DMS theme the sheet is deep space (blue-black sky, glowing planet and device); with a light theme it is the stratosphere (pearly sky, porcelain planet, the device casting a real shadow). The DMS colours enter through the accent only, which each look brightens or deepens until it reads well, so pastel, neon or grey palettes all work.
 
 **What is offered**: only named, unpaired audio devices (headphones, earbuds, speakers) found by discovery, so the neighbours' phones and TVs never pop up. Devices BlueZ already knew when the shell started wait 10 minutes before they can be offered.
 
-**When it stays quiet**: no pop-up while a window is full screen (it waits, then shows), or while the screen is locked or off. On the screen of the active window; with *Reduce motion* it simply fades in.
+**When it stays quiet**: no sheet while a window is full screen (it waits, then shows), or while the screen is locked or off. On the screen of the active window; with *Reduce motion* it simply appears, without any movement.
 
 **The background scan** runs for 8 s every minute (**Background scan**: 30 s to 5 min), and only when it is harmless:
 
@@ -181,11 +192,11 @@ Switch on new headphones, earbuds or a speaker and put them in pairing mode: wit
 - on battery, only above **No background scan below** (30 % by default); plugged in, always;
 - not while an Orbit view is already scanning (the pop-up uses that scan, and never stops it).
 
-With **Real device pictures** on, the card shows the headset's picture and its halo takes the picture's colour. That means the model name of an *unpaired* audio device is looked up too, under the same rules as below.
+With **Real device pictures** on, the sheet shows the headset's picture and its light takes the picture's colour. That means the model name of an *unpaired* audio device is looked up too, under the same rules as below.
 
-To see it without new headphones: `dms ipc call orbitBluetooth newDeviceDemo` (a made-up headset; *Connect* plays the pairing, nothing is paired). `dms ipc call orbitBluetooth newDeviceStatus` says whether the last background scan ran, or why it was skipped.
+To see it without new headphones: `dms ipc call orbitBluetooth newDeviceDemo` (a made-up headset; *Connect* plays the pairing, nothing is paired, nothing is renamed). `dms ipc call orbitBluetooth newDeviceStatus` says whether the last background scan ran, or why it was skipped.
 
-Turn it all off with **Scanning → Pop-up for new headphones**; Orbit then only finds devices while a view is open, as before. While it is on, the small *Connect* card inside the orbit is replaced by the pop-up.
+Turn it all off with **Scanning → Pop-up for new headphones**; Orbit then only finds devices while a view is open, as before. While it is on, the small *Connect* card inside the orbit gives way to the sheet. Sounds (if on): a soft cue on arrival, the connect sound on success.
 
 ## Real device pictures
 

@@ -7,6 +7,7 @@ import qs.Services
 import "DeviceCatalog.js" as Catalog
 import "Offer.js" as Offer
 import "Pictures.js" as Pictures
+import "Anc.js" as Anc
 
 // "New device nearby" pop-up. Lives in the daemon, so it works while every
 // Orbit view is closed:
@@ -14,9 +15,9 @@ import "Pictures.js" as Pictures
 //   cheap and harmless: Bluetooth on, screen awake, no Bluetooth audio
 //   playing (discovery makes it stutter), battery above the chosen level
 //   (Offer.scanBlocker);
-// - a named, unpaired audio device that shows up is offered in a small
-//   window under the bar (NewDevicePopup), never while a window is full
-//   screen; "Later" snoozes it, "Ignore" never offers it again;
+// - a named, unpaired audio device that shows up is offered in a sheet
+//   under the right end of the bar (PairingSheet), never while a window
+//   is full screen; "Later" snoozes it, "Ignore" never offers it again;
 // - Connect pairs and connects it right there, and shows the battery.
 // Nothing leaves the machine, except the model name when the user turned
 // "Real device pictures" on (see Pictures.js).
@@ -29,6 +30,8 @@ Item {
     required property var prefs
     // PictureService of the daemon (lookups and the model -> picture map)
     property var pictureLookup: null
+    // AncService of the daemon: noise-control modes once connected
+    property var anc: null
 
     readonly property bool offering: prefs.offerNew && prefs.offerPopup
     readonly property var adapter: BluetoothService.adapter
@@ -191,6 +194,13 @@ Item {
     property string phase: "offer"
     property bool shown: false
     property var _screen: null
+    // A name typed in the sheet before connecting, applied once connected
+    property string pendingName: ""
+    // The pointer is over the sheet (set by NewDeviceWindow): nothing closes meanwhile
+    property bool hovered: false
+    // Noise control of the connected headset, once the sheet asked for it
+    property bool _ancWatching: false
+    readonly property var ancInfo: anc && current && !_demo ? (anc.states[current] || null) : null
     readonly property var device: _demo ? demoDevice : current ? deviceFor(current) : null
     readonly property string query: prefs.realPictures && device ? Pictures.queryFor(Catalog.modelName(device), true) : ""
     readonly property var picture: query && pictureLookup ? (pictureLookup.pictures[query] || null) : null
@@ -225,6 +235,7 @@ Item {
         const top = ToplevelManager.activeToplevel;
         _screen = top && top.screens && top.screens.length ? top.screens[0] : Quickshell.screens[0];
         phase = "offer";
+        pendingName = "";
         current = "demo";
         if (query && pictureLookup)
             pictureLookup.request(query);
@@ -257,6 +268,7 @@ Item {
             const top = ToplevelManager.activeToplevel;
             _screen = top && top.screens && top.screens.length ? top.screens[0] : Quickshell.screens[0];
             phase = "offer";
+            pendingName = "";
             current = address;
             if (query && pictureLookup)
                 pictureLookup.request(query);
@@ -275,8 +287,15 @@ Item {
     function close() {
         shown = false;
         connectTimeout.stop();
-        doneTimer.stop();
+        if (_ancWatching && anc)
+            anc.watch(current, false);
+        _ancWatching = false;
         hideDelay.restart();
+    }
+
+    function setMode(mode) {
+        if (anc && current && !_demo)
+            anc.send(current, "mode", mode);
     }
 
     Timer {
@@ -350,7 +369,15 @@ Item {
             if (root.device.connected && (root.phase === "pairing" || root.phase === "connecting")) {
                 root.phase = "done";
                 connectTimeout.stop();
-                doneTimer.restart();
+                // The name typed in the sheet becomes the BlueZ alias, like a
+                // rename in the detail card
+                if (root.pendingName && root.pendingName !== Catalog.deviceName(root.device))
+                    root.device.name = root.pendingName;
+                // Ask the headset for its modes, for the selector in the sheet
+                if (root.anc && !root._demo && Anc.family(Catalog.modelName(root.device))) {
+                    root.anc.watch(root.current, true);
+                    root._ancWatching = true;
+                }
             }
         }
         function onPairedChanged() {
@@ -367,10 +394,11 @@ Item {
             root.phase = "failed"
     }
 
-    // Long enough to read the battery, then it gets out of the way
+    // Long enough to read the battery and pick a mode, then it folds back
+    // into the bar; never while the pointer is over it
     Timer {
-        id: doneTimer
-        interval: 4500
+        interval: 6000
+        running: root.phase === "done" && root.shown && !root.hovered
         onTriggered: root.close()
     }
 

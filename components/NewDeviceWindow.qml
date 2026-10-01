@@ -1,62 +1,135 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import qs.Common
 import "DeviceCatalog.js" as Catalog
 import "Offer.js" as Offer
 import "Pictures.js" as Pictures
+import "Anc.js" as Anc
+import "Endurance.js" as Endurance
+import "Glyphs.js" as Glyphs
 
-// The window of the "new device" pop-up: a transparent overlay layer at
-// the top of the screen, under the bar, that only takes clicks on the card.
-// NewDeviceWatch creates it while there is something to offer.
+// The window of the pairing sheet: a transparent overlay layer under the
+// right end of the bar, that only takes clicks on the card. NewDeviceWatch
+// creates it while there is something to offer.
 PanelWindow {
     id: win
 
     required property var watch
 
+    readonly property var device: watch.device
+    readonly property string model: Catalog.modelName(device)
+    readonly property string kind: Catalog.resolve(device, ({}))
+    readonly property string family: Anc.family(model)
+
+    // Rated hours only for models Orbit knows; a guess by type would mislead here
+    function knownHours(name) {
+        for (let i = 0; i < Endurance.MODELS.length; i++)
+            if (Endurance.MODELS[i][0].test(name || ""))
+                return Endurance.MODELS[i][1];
+        return 0;
+    }
+
+    // Short labels: the selected mode shows its name inside a pill
+    readonly property var shortLabels: ({
+            "nc": "ANC",
+            "adaptive": "Auto",
+            "ambient": "Ambient",
+            "off": "Off"
+        })
+
     screen: watch._screen
     anchors.top: true
+    anchors.right: true
+    margins.right: Theme.spacingS
     color: "transparent"
-    implicitWidth: popup.implicitWidth
-    implicitHeight: popup.implicitHeight
+    implicitWidth: sheet.implicitWidth
+    implicitHeight: sheet.implicitHeight
     // Below the bar (it keeps its exclusive zone), above windows
     exclusionMode: ExclusionMode.Normal
     exclusiveZone: 0
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "dms:plugins:orbitBluetooth:newDevice"
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+    // The keyboard only while the pointer is on the sheet (Enter, Escape) or
+    // a name is being typed: it never steals keys from the window in use
+    WlrLayershell.keyboardFocus: sheet.hovered || sheet.renaming ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
     // Clicks around the card reach the windows below
     mask: Region {
-        item: popup.card
+        item: sheet.card
     }
 
-    NewDevicePopup {
-        id: popup
+    Binding {
+        target: win.watch
+        property: "hovered"
+        value: sheet.hovered
+    }
+
+    PairingSheet {
+        id: sheet
         anchors.fill: parent
         shown: win.watch.shown
         phase: win.watch.phase
         reduceMotion: win.watch.prefs.reduceMotion
-        name: Catalog.deviceName(win.watch.device)
-        kind: Catalog.resolve(win.watch.device, ({}))
-        headline: Offer.headline(kind)
+        exitToBar: win.watch.phase === "done"
+        stacked: win.watch._queue.length
+        name: win.watch.pendingName || Catalog.deviceName(win.device)
+        subtitle: [Offer.BRANDS[win.family] || "", Glyphs.label(win.kind)].filter(x => x).join(" · ")
+        kind: win.kind
+        features: Offer.features({
+            "family": win.family,
+            "hours": win.knownHours(win.model),
+            "kind": win.kind
+        })
         pictureSource: win.watch.picture ? win.watch.picture.image : ""
         credit: win.watch.picture ? Pictures.creditText(win.watch.picture.credit) : ""
-        battery: win.watch.device && win.watch.device.batteryAvailable ? Math.round(win.watch.device.battery * 100) : -1
+        battery: win.device && win.device.batteryAvailable ? Math.round(win.device.battery * 100) : -1
+        ancModes: {
+            const modes = win.watch.ancInfo?.features?.modes ?? [];
+            return Anc.ordered(modes).map(m => ({
+                        "id": m,
+                        "icon": Anc.ICONS[m] || "tune",
+                        "label": win.shortLabels[m] || m
+                    }));
+        }
+        ancMode: win.watch.ancInfo?.state?.mode ?? ""
 
         onAccepted: win.watch.connect()
         onRetry: win.watch.connect()
         onLater: win.watch.phase === "done" ? win.watch.close() : win.watch.later()
         onIgnored: win.watch.ignore()
         onCancelled: win.watch.cancel()
+        onRenamed: text => win.watch.pendingName = text
+        onModeRequested: mode => win.watch.setMode(mode)
 
         // Runs down while nobody answers; paused under the pointer
         NumberAnimation on life {
             running: win.watch.shown && win.watch.phase === "offer"
-            paused: running && popup.hovered
+            paused: running && sheet.hovered
             from: 1
             to: 0
-            duration: 20000
+            duration: 30000
             onFinished: if (win.watch.phase === "offer")
                 win.watch.later()
+        }
+    }
+
+    // Arrival, success and failure cues, when Orbit's sounds are on
+    SoundFx {
+        id: sounds
+        enabled: win.watch.prefs.sounds
+        volume: win.watch.prefs.soundVolume
+    }
+    Connections {
+        target: win.watch
+        function onShownChanged() {
+            if (win.watch.shown)
+                sounds.play("snap");
+        }
+        function onPhaseChanged() {
+            if (win.watch.phase === "done")
+                sounds.play("connect");
+            else if (win.watch.phase === "failed")
+                sounds.play("error");
         }
     }
 }
