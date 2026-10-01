@@ -68,6 +68,13 @@ function ensureContrast(c, bg, ratio) {
     return out;
 }
 
+// The same hue and saturation at least this light: how Orbit turns a light
+// theme's dark accent into one that glows on the night (NightColors.night)
+function lift(c, minLightness) {
+    const hsl = toHsl(c);
+    return fromHsl(hsl.h, hsl.s, Math.max(hsl.l, minLightness));
+}
+
 // Ink for text on an accent fill: a deep or a pale shade of the accent's
 // own hue, whichever reads better
 function onColor(c) {
