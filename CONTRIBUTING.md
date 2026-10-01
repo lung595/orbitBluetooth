@@ -44,6 +44,8 @@ Logic that can be tested lives in **pure `.js` files** with no QML: `Charge.js` 
 
 **Noise control** is the only part outside QML: QML cannot open a Bluetooth socket, so `components/AncService.qml` runs `anc/orbit_anc.py`, which speaks each vendor protocol (`anc/protocols/`, one module per brand) through a JSON session on stdin/stdout. `anc/sdp.py` finds the RFCOMM channel.
 
+**New headphones pop-up**: `components/NewDeviceWatch.qml` (in the daemon) runs the short background scan, picks what to offer (`Offer.js`, pure) and drives pairing; `NewDeviceWindow.qml` is its layer-shell window and `PairingSheet.qml` the sheet itself (two skins, colours from `Palette.js`), which `scripts/preview/sheet.qml` renders offscreen with six test palettes, or records frame by frame.
+
 **Real device pictures** (opt-in) is the only network use: `components/PictureService.qml` runs `pictures/orbit_pictures.py` (Wikimedia Commons, then Sketchfab; standard library only), and `components/Pictures.js` decides which names may be sent. Keep the list of hosts in sync between the helper header, the settings description, the README and the GUIDE.
 
 Settings are read through `components/Prefs.qml`, a reactive view shared by every surface.
@@ -74,6 +76,7 @@ orbitBluetooth/
 │   ├── DeviceCatalog.js, Glyphs.js, DeviceGlyph.qml # device icons
 │   ├── NightColors.qml, PaperColors.qml             # light-theme colors
 │   ├── PictureService.qml, Pictures.js              # real device pictures (opt-in)
+│   ├── NewDeviceWatch.qml, NewDeviceWindow.qml, PairingSheet.qml, Offer.js, Palette.js  # new device pop-up
 │   ├── Prefs.qml                # settings, shared by every surface
 │   └── Starfield.qml, Vignette.qml, LabelGlow.qml, SoundFx.qml
 ├── anc/
@@ -84,6 +87,7 @@ orbitBluetooth/
 ├── pictures/
 │   ├── orbit_pictures.py        # picture lookup (Wikimedia Commons, Sketchfab)
 │   └── tests/                   # unittest, no network
+├── tests/qml/                   # pop-up scenario test, stubs for Quickshell/DMS
 ├── tests/anc.test.js            # gjs: brand detection, modes, time left
 ├── shaders/                     # .frag sources, compiled .qsb, build.sh
 ├── scripts/
@@ -99,6 +103,7 @@ orbitBluetooth/
 ```sh
 (cd anc && python3 -m unittest discover -s tests -t .)   # noise-control protocols
 (cd pictures && python3 -m unittest discover -s tests -t .)   # picture lookup, without network
+sh tests/qml/run.sh                                       # new-device pop-up scenario (Qt 6)
 gjs tests/anc.test.js                                     # brand detection, modes, time left
 ```
 
@@ -123,7 +128,7 @@ Orbit must cost nothing while nobody looks at it. Keep these rules when changing
 - **Never loop a QML animation** (`NumberAnimation` with `loops`, `Animator`, a running `FrameAnimation`). In Qt, any running animation makes *every* shell window (bars, wallpaper) redraw at the display rate. Use a plain `Timer` (30 Hz, 60 Hz while a comet turns or a card is open) and compute effects from one effects clock.
 - **Display-synced frames only for gestures**, and only until the motion has calmed down.
 - **Paint backgrounds once** (stars, nebulae, veil); effects only move fixed geometry.
-- **Run nothing while hidden**: discovery, polling and the noise-control helper only run while a view is open; everything pauses while the session is locked or the monitors are off.
+- **Run nothing while hidden**: discovery, polling and the noise-control helper only run while a view is open (the one exception is the new-device pop-up's 8 s background scan, with its battery and audio rules); everything pauses while the session is locked or the monitors are off.
 - **Load on demand**: the multimedia backend only when sounds are enabled.
 - **Honor DMS Reduce motion.**
 

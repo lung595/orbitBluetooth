@@ -3,6 +3,23 @@
 All notable changes to Orbit Bluetooth are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.10.0 - 2026-10-01
+
+### Added
+
+- **New headphones pop-up**: put headphones, earbuds or a speaker in pairing mode and a tall pairing sheet unfolds from the right end of the bar, even with Orbit closed. The device falls out of the bar along a comet trail into an orbit, floats above a planet's horizon and tilts towards the pointer, among twinkling stars and the odd shooting star. Two looks: deep space with a dark DMS theme, stratosphere with a light one; any palette works, its accent is brightened or deepened until it reads well.
+- In the sheet: what you get (noise control, rated battery life, earbuds), **Connect** with live *Pair → Connect → Ready* steps, a star burst and a filling battery ring when connected, then the noise-control modes; rename the device before connecting; **Later** snoozes it 10 minutes, **Don't offer again** never offers it again; several devices stack with a "+1". <kbd>Enter</kbd> and <kbd>Escape</kbd> work while the pointer is on it. It folds back into the bar after a connection.
+- Only named, unpaired audio devices; never while a window is full screen or the screen is locked.
+- Background scan for it: 8 s every minute (**Background scan**), skipped while Bluetooth audio is connected (scanning makes it stutter), on battery below **No background scan below** (30 %), and while the screen is off. Turn it off with **Pop-up for new headphones**.
+- **Offer ignored devices again** button in the settings.
+- IPC: `newDeviceDemo` shows the sheet with a made-up headset, `newDeviceStatus` tells whether the background scan runs or why not.
+- QML scenario tests for the pop-up's logic (`tests/qml/run.sh`), with stubs for Quickshell and the DMS services; `scripts/preview/sheet.qml` renders the sheet with six test palettes, or records it.
+
+### Changed
+
+- With the pop-up on, the *Connect* card inside the orbit gives way to it.
+- Real device pictures: the model name of an audio device offered by the pop-up may be looked up too (only with that option on).
+
 ## 1.9.0 - 2026-10-01
 
 ### Added

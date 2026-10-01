@@ -231,7 +231,8 @@ Item {
     property bool _primed: false
 
     function updateOffer(list) {
-        if (!_primed || !prefs.offerNew)
+        // The pop-up under the bar offers it instead (it sees the same discovery)
+        if (!_primed || !prefs.offerNew || prefs.offerPopup)
             return;
         for (const d of list) {
             if (_seen[d.address])
@@ -424,14 +425,25 @@ Item {
 
     // --- Discovery -------------------------------------------------------------
     property bool _ownsDiscovery: false
+    // The daemon's background scan for the pop-up must not end a view's scan
+    readonly property var _newDevices: PluginService.pluginDaemonInstances[prefs.pluginId]?.newDevices ?? null
+    property bool _holdingScan: false
+    function _holdScan(on) {
+        if (_holdingScan === on)
+            return;
+        _holdingScan = on;
+        _newDevices?.holdScan(on);
+    }
 
     function startScan() {
         if (!adapter || !btOn)
             return;
-        if (!adapter.discovering) {
-            adapter.discovering = true;
+        // Already running for the pop-up's background scan: take it over
+        if (!adapter.discovering || _newDevices?._owns)
             _ownsDiscovery = true;
-        }
+        if (!adapter.discovering)
+            adapter.discovering = true;
+        _holdScan(true);
         if (prefs.scanSeconds > 0)
             scanStopTimer.restart();
     }
@@ -441,6 +453,7 @@ Item {
         if (adapter && _ownsDiscovery && adapter.discovering)
             adapter.discovering = false;
         _ownsDiscovery = false;
+        _holdScan(false);
     }
 
     // With the autoScan preference off, only the center or the Scan chip start

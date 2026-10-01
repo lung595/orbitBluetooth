@@ -20,6 +20,14 @@ QtObject {
     readonly property int maxDevices: parseInt(_get("maxDevices", "8"))
     // Offer to connect a new unpaired device found while scanning
     readonly property bool offerNew: _get("offerNew", true)
+    // The same offer as a pop-up under the bar, found by a short background
+    // scan while no view is open (see NewDeviceWatch)
+    readonly property bool offerPopup: _get("offerPopup", true)
+    readonly property int offerEvery: parseInt(_get("offerEvery", "60"))
+    // No background scan on battery below this level (%)
+    readonly property int offerMinBattery: _get("offerMinBattery", 30)
+    // Devices the pop-up must never offer again: address -> name
+    readonly property var ignoredDevices: _get("ignoredDevices", ({}))
     readonly property bool autoScan: _get("autoScan", true)
     // Hover × on connected devices; off by default (drag away or right-click instead)
     readonly property bool quickDisconnect: _get("quickDisconnect", false)
@@ -61,6 +69,15 @@ QtObject {
         else
             next[address] = kind;
         set("glyphOverrides", next);
+    }
+
+    function setIgnored(address, name, ignored) {
+        const next = Object.assign({}, ignoredDevices);
+        if (ignored)
+            next[address] = name || address;
+        else
+            delete next[address];
+        set("ignoredDevices", next);
     }
 
     function isHidden(address) {
