@@ -18,6 +18,8 @@ QtObject {
     readonly property bool showUnnamed: _get("showUnnamed", false)
     readonly property bool showLabels: _get("showLabels", true)
     readonly property int maxDevices: parseInt(_get("maxDevices", "8"))
+    // Offer to connect a new unpaired device found while scanning
+    readonly property bool offerNew: _get("offerNew", true)
     readonly property bool autoScan: _get("autoScan", true)
     // Hover × on connected devices; off by default (drag away or right-click instead)
     readonly property bool quickDisconnect: _get("quickDisconnect", false)

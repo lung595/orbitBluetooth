@@ -209,6 +209,60 @@ Item {
             dismiss();
     }
 
+    // --- Offer to connect a new device ---------------------------------------
+    // A named, unpaired device that shows up while scanning is offered right
+    // in the view (a small card with Connect), like a nearby-device prompt.
+    // Devices already around when the view opens are not news: they are
+    // marked as seen after a short settling delay. Nothing leaves the
+    // machine and nothing is remembered between sessions.
+    property string offerAddress: ""
+    property var _seen: ({})
+    property bool _primed: false
+
+    function updateOffer(list) {
+        if (!_primed || !prefs.offerNew)
+            return;
+        for (const d of list) {
+            if (_seen[d.address])
+                continue;
+            _seen[d.address] = true;
+            if (discovering && !d.connected && !(d.paired || d.bonded) && !Catalog.isUnnamed(d)) {
+                offerAddress = d.address;
+                offerTimer.restart();
+            }
+        }
+    }
+    function dismissOffer() {
+        offerAddress = "";
+        offerTimer.stop();
+    }
+    function acceptOffer() {
+        const address = offerAddress;
+        dismissOffer();
+        for (let i = 0; i < bodies.count; i++) {
+            const b = bodies.itemAt(i);
+            if (b && b.address === address) {
+                startConnect(b);
+                return;
+            }
+        }
+    }
+    Timer {
+        id: primeTimer
+        interval: 3000
+        running: scene.active
+        onTriggered: {
+            for (const a in scene.deviceMap)
+                scene._seen[a] = true;
+            scene._primed = true;
+        }
+    }
+    Timer {
+        id: offerTimer
+        interval: 12000
+        onTriggered: scene.offerAddress = ""
+    }
+
     // --- Device list -----------------------------------------------------------
     ListModel {
         id: bodyModel
@@ -282,6 +336,7 @@ Item {
                 map[addr] = deviceMap[addr];
         }
         deviceMap = map;
+        updateOffer(list);
         wake();
     }
 
@@ -1407,6 +1462,78 @@ Item {
         Behavior on opacity {
             NumberAnimation {
                 duration: 200
+            }
+        }
+    }
+
+    // Offer card for a newly found, unpaired device
+    Rectangle {
+        id: offer
+        readonly property var device: scene.offerAddress ? scene.deviceMap[scene.offerAddress] ?? null : null
+        readonly property bool shown: !!device && !device.connected && !(device.paired || device.bonded) && !scene.focusBody && !scene.hiddenOpen && !scene.dragBody
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: (scene.glass ? Math.round(scene.height * 0.1) : Theme.spacingS) + Theme.spacingXL
+        width: Math.min(parent.width - Theme.spacingL * 2, offerRow.implicitWidth + Theme.spacingL * 2)
+        height: Theme.fontSizeSmall + Theme.spacingXL
+        radius: height / 2
+        color: scene.night.smoke(0.8)
+        border.width: 1
+        border.color: Theme.withAlpha(scene.night.primary, 0.45)
+        opacity: shown ? 1 : 0
+        visible: opacity > 0.01
+        z: 20
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 220
+            }
+        }
+
+        Row {
+            id: offerRow
+            anchors.centerIn: parent
+            spacing: Theme.spacingS
+            StyledText {
+                anchors.verticalCenter: parent.verticalCenter
+                text: offer.device ? Catalog.deviceName(offer.device) + " can be paired" : ""
+                color: scene.night.ink(0.85)
+                elide: Text.ElideRight
+                width: Math.min(implicitWidth, scene.width * 0.5)
+                font.pixelSize: Theme.fontSizeSmall - 1
+            }
+            Rectangle {
+                anchors.verticalCenter: parent.verticalCenter
+                width: connectText.implicitWidth + Theme.spacingL
+                height: Theme.fontSizeSmall + Theme.spacingM
+                radius: height / 2
+                color: connectArea.containsMouse ? Theme.withAlpha(scene.night.primary, 0.4) : Theme.withAlpha(scene.night.primary, 0.25)
+                StyledText {
+                    id: connectText
+                    anchors.centerIn: parent
+                    text: "Connect"
+                    color: scene.night.primary
+                    font.pixelSize: Theme.fontSizeSmall - 1
+                    font.weight: Font.Medium
+                }
+                MouseArea {
+                    id: connectArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: scene.acceptOffer()
+                }
+            }
+            DankIcon {
+                anchors.verticalCenter: parent.verticalCenter
+                name: "close"
+                size: 15
+                color: scene.night.ink(0.55)
+                MouseArea {
+                    anchors.fill: parent
+                    anchors.margins: -4
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: scene.dismissOffer()
+                }
             }
         }
     }
