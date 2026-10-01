@@ -9,6 +9,7 @@ import "../../components/Offer.js" as Offer
 // Light palettes get the light skin, dark ones the dark skin (as in DMS)
 // Palettes: green (dark), light, pastel, neon, mono, deepblue
 // Phases: offer, pairing, connecting, done, failed, stack (offer + one waiting)
+//         record: the whole story, a frame every 40 ms in <out> (a folder)
 Window {
     id: win
     readonly property var opts: Qt.application.arguments.slice(Qt.application.arguments.indexOf("--") + 1)
@@ -46,16 +47,19 @@ Window {
         color: Qt.rgba(0, 0, 0, win.p[0] ? 0.12 : 0.35)
     }
 
+    readonly property bool recording: phase === "record"
+
     PairingSheet {
+        id: sheet
         anchors.horizontalCenter: parent.horizontalCenter
         y: 36
-        phase: win.phase === "stack" ? "offer" : win.phase
+        phase: win.phase === "stack" || win.recording ? "offer" : win.phase
         stacked: win.phase === "stack" ? 1 : 0
         name: "WH-1000XM6"
         subtitle: "Sony · Headphones"
         kind: "headphonesSlim"
         battery: 80
-        life: 0.64
+        life: win.recording ? Math.max(0, 1 - (win.now - win.started) / 30000) : 0.64
         features: Offer.features({ "family": "sony", "hours": 30, "kind": "headphonesSlim" })
         ancModes: [
             { "id": "nc", "icon": "noise_control_on", "label": "ANC" },
@@ -78,12 +82,37 @@ Window {
         Theme.surfaceVariantText = p[6];
         Theme.error = p[0] ? "#BA1A1A" : "#FFB4AB";
     }
+    property double started: Date.now()
+    property double now: Date.now()
+    property int frame: 0
+
+    // Still: wait for the entrance to settle. Record: the whole story.
     Timer {
-        interval: 900
+        interval: win.recording ? 40 : 3000
         running: true
-        onTriggered: win.contentItem.grabToImage(r => {
-            r.saveToFile(win.out);
-            Qt.quit();
-        })
+        repeat: win.recording
+        onTriggered: {
+            if (!win.recording) {
+                win.contentItem.grabToImage(r => {
+                    r.saveToFile(win.out);
+                    Qt.quit();
+                });
+                return;
+            }
+            win.now = Date.now();
+            const t = win.now - win.started;
+            sheet.phase = t < 4200 ? "offer" : t < 5300 ? "pairing" : t < 6400 ? "connecting" : "done";
+            const n = win.frame++;
+            win.contentItem.grabToImage(r => r.saveToFile(win.out + "/f" + String(n).padStart(4, "0") + ".png"));
+            if (t > 9000) {
+                stop();
+                quitLater.start();
+            }
+        }
+    }
+    Timer {
+        id: quitLater
+        interval: 500
+        onTriggered: Qt.quit()
     }
 }

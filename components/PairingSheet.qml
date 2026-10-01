@@ -49,12 +49,192 @@ Item {
     signal ignored
     signal retry
     signal cancelled
-    signal renameRequested
-    signal openOrbit
+    signal renamed(string text)
     signal modeRequested(string mode)
 
     readonly property bool busy: phase === "pairing" || phase === "connecting"
     readonly property Item card: card
+    readonly property bool hovered: hover.hovered
+    // Typing a new name (the window gives the sheet the keyboard meanwhile)
+    property bool renaming: false
+    // Leaving after a connection: the sheet folds back into the bar's corner
+    property bool exitToBar: false
+
+    // --- Motion -----------------------------------------------------------------------
+    readonly property bool moving: shown && !reduceMotion
+    // Seconds since the sheet appeared: drives every loop (float, moon,
+    // twinkle, sonar, shooting star) from one animation
+    property real clock: 0
+    NumberAnimation on clock {
+        running: root.moving
+        from: 0
+        to: 3600
+        duration: 3600000
+        loops: Animation.Infinite
+    }
+    // 0 -> 1: the card unfolds (springy on the way in, quick on the way out)
+    property real reveal: shown ? 1 : 0
+    Behavior on reveal {
+        NumberAnimation {
+            duration: root.reduceMotion ? 0 : root.shown ? 700 : 300
+            easing.type: root.shown ? Easing.OutBack : Easing.InCubic
+            easing.overshoot: 1.15
+        }
+    }
+    // 0 -> 1: the sections come in one after another
+    property real intro: 0
+    // 0 -> 1: the device falls out of the bar along a comet trail
+    property real fall: 0
+    // 0 -> 1: caught by the orbit (flash, then sonar and moon)
+    property real arrived: 0
+    // 0 -> 1: star burst when connected, and the battery ring filling
+    property real burst: 0
+    property real shownBattery: 0
+    // Pointer tilt of the device, in degrees
+    property real tiltX: hover.hovered && moving ? -((hover.point.position.y / cardHeight) - 0.3) * 12 : 0
+    property real tiltY: hover.hovered && moving ? ((hover.point.position.x / cardWidth) - 0.5) * 18 : 0
+    Behavior on tiltX {
+        SmoothedAnimation {
+            velocity: 30
+        }
+    }
+    Behavior on tiltY {
+        SmoothedAnimation {
+            velocity: 40
+        }
+    }
+    readonly property real floatY: arrived * 6 * Math.sin(clock * 1.6)
+    readonly property real floatTurn: arrived * 1.8 * Math.sin(clock * 1.05)
+
+    function stagger(i) {
+        return Math.max(0, Math.min(1, (intro - i * 0.09) / 0.4));
+    }
+
+    SequentialAnimation {
+        id: enter
+        ParallelAnimation {
+            NumberAnimation {
+                target: root
+                property: "intro"
+                from: 0
+                to: 1
+                duration: 1300
+            }
+            SequentialAnimation {
+                PauseAnimation {
+                    duration: 260
+                }
+                NumberAnimation {
+                    target: root
+                    property: "fall"
+                    from: 0
+                    to: 1
+                    duration: 1000
+                    easing.type: Easing.OutCubic
+                }
+                ParallelAnimation {
+                    NumberAnimation {
+                        target: flash
+                        property: "scale"
+                        from: 1
+                        to: 2.1
+                        duration: 600
+                        easing.type: Easing.OutCubic
+                    }
+                    NumberAnimation {
+                        target: flash
+                        property: "opacity"
+                        from: 0.9
+                        to: 0
+                        duration: 600
+                    }
+                    NumberAnimation {
+                        target: root
+                        property: "arrived"
+                        from: 0
+                        to: 1
+                        duration: 700
+                        easing.type: Easing.OutCubic
+                    }
+                }
+            }
+        }
+    }
+
+    ParallelAnimation {
+        id: celebrate
+        NumberAnimation {
+            target: root
+            property: "burst"
+            from: 0
+            to: 1
+            duration: 1100
+            easing.type: Easing.OutCubic
+        }
+        NumberAnimation {
+            target: root
+            property: "shownBattery"
+            from: 0
+            to: Math.max(0, root.battery)
+            duration: 1300
+            easing.type: Easing.OutCubic
+        }
+    }
+
+    function start() {
+        enter.stop();
+        if (reduceMotion) {
+            intro = 1;
+            fall = 1;
+            arrived = 1;
+            return;
+        }
+        intro = 0;
+        fall = 0;
+        arrived = 0;
+        enter.restart();
+    }
+    onShownChanged: if (shown)
+        start()
+    Component.onCompleted: if (shown)
+        start()
+    onPhaseChanged: {
+        if (phase === "done") {
+            if (reduceMotion) {
+                burst = 1;
+                shownBattery = Math.max(0, battery);
+            } else {
+                celebrate.restart();
+            }
+        } else {
+            burst = 0;
+            shownBattery = 0;
+        }
+    }
+    onBatteryChanged: if (phase === "done" && !celebrate.running)
+        shownBattery = Math.max(0, battery)
+
+    // Enter: connect (or retry, or done); Escape: later (or cancel)
+    focus: true
+    Keys.onPressed: event => {
+        if (renaming)
+            return;
+        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+            if (phase === "offer")
+                accepted();
+            else if (phase === "failed")
+                retry();
+            else if (phase === "done")
+                later();
+            event.accepted = true;
+        } else if (event.key === Qt.Key_Escape) {
+            if (busy)
+                cancelled();
+            else
+                later();
+            event.accepted = true;
+        }
+    }
 
     readonly property real cardWidth: 340
     readonly property real cardHeight: 520
@@ -207,6 +387,24 @@ Item {
         readonly property real radius: 30
         // Where the planet's limb crosses the middle of the card
         readonly property real horizon: 222
+        // Unfolds downwards from the bar; after a connection it folds back
+        // into the corner it came from
+        opacity: Math.min(1, root.reveal * 1.6)
+        transform: [
+            Scale {
+                origin.x: root.exitToBar ? card.width : card.width / 2
+                origin.y: 0
+                xScale: root.exitToBar ? 0.12 + 0.88 * root.reveal : 0.93 + 0.07 * root.reveal
+                yScale: root.exitToBar ? 0.12 + 0.88 * root.reveal : 0.78 + 0.22 * root.reveal
+            },
+            Translate {
+                y: root.exitToBar ? 0 : -16 * (1 - root.reveal)
+            }
+        ]
+
+        HoverHandler {
+            id: hover
+        }
 
         // Shadow: neutral and deep on the night, soft and tinted on the pearl
         Rectangle {
@@ -264,23 +462,69 @@ Item {
                 strength: skin.light ? 0.16 : 0.18
             }
 
-            // Stars: many faint ones, a few brighter. Fixed (golden-ratio
-            // scatter) so the sheet looks the same each time.
+            // Stars, in three depths that drift a little with the pointer
+            // tilt. Fixed scatter (golden ratio), so the sky is the same each
+            // time; one in six twinkles.
             Repeater {
-                model: 70
-                Rectangle {
+                model: [[150, 0.9, 0.4], [70, 1.3, 0.8], [18, 1.9, 1.3]]
+                Item {
+                    id: layerOfStars
+                    required property var modelData
                     required property int index
-                    readonly property real u: (index * 0.6180339 + 0.137) % 1
-                    readonly property real v: (index * 0.7548776 + 0.421) % 1
-                    readonly property bool bright: index % 9 === 0
-                    visible: v * card.height < card.horizon - 6
-                    x: u * card.width
-                    y: v * card.height
-                    width: bright ? 1.8 : index % 3 === 0 ? 1.2 : 0.9
-                    height: width
-                    radius: width / 2
-                    color: skin.ink(1)
-                    opacity: skin.light ? (bright ? 0.45 : 0.1 + 0.2 * ((index * 0.31) % 1)) : (bright ? 0.85 : 0.18 + 0.4 * ((index * 0.31) % 1))
+                    anchors.fill: parent
+                    transform: Translate {
+                        x: -root.tiltY * layerOfStars.modelData[2]
+                        y: root.tiltX * layerOfStars.modelData[2]
+                    }
+                    Repeater {
+                        model: layerOfStars.modelData[0]
+                        Rectangle {
+                            id: star
+                            required property int index
+                            readonly property real u: (index * 0.6180339 + 0.137 + layerOfStars.index * 0.29) % 1
+                            readonly property real v: (index * 0.7548776 + 0.421 + layerOfStars.index * 0.53) % 1
+                            readonly property real base: skin.light ? 0.08 + 0.14 * ((index * 0.31) % 1) + 0.12 * layerOfStars.index : 0.14 + 0.32 * ((index * 0.31) % 1) + 0.2 * layerOfStars.index
+                            readonly property bool twinkles: index % 6 === 0
+                            visible: v * card.height < card.horizon - 4
+                            x: u * card.width
+                            y: v * card.height
+                            width: layerOfStars.modelData[1]
+                            height: width
+                            radius: width / 2
+                            color: skin.ink(1)
+                            opacity: twinkles ? base * (0.5 + 0.5 * Math.sin(root.clock * (1.3 + (index % 5) * 0.35) + index)) : base
+                        }
+                    }
+                }
+            }
+
+            // Now and then a shooting star crosses the sky
+            Item {
+                id: meteor
+                readonly property real period: 7.5
+                readonly property int n: Math.floor(root.clock / period)
+                readonly property real p: ((root.clock % period) / period) / 0.12
+                visible: root.moving && root.clock > 2.5 && p < 1
+                x: 150 + (n * 67) % 160 - p * 170
+                y: 18 + (n * 41) % 70 + p * 80
+                Rectangle {
+                    width: 70
+                    height: 1.4
+                    radius: 0.7
+                    transformOrigin: Item.Left
+                    rotation: -25
+                    opacity: meteor.p < 0.25 ? meteor.p / 0.25 : 1 - (meteor.p - 0.25) / 0.75
+                    gradient: Gradient {
+                        orientation: Gradient.Horizontal
+                        GradientStop {
+                            position: 0
+                            color: skin.ink(skin.light ? 0.6 : 0.95)
+                        }
+                        GradientStop {
+                            position: 1
+                            color: skin.ink(0)
+                        }
+                    }
                 }
             }
 
@@ -429,6 +673,7 @@ Item {
             id: statusPill
             x: 16
             y: 16
+            opacity: root.stagger(0)
             height: 28
             width: statusRow.implicitWidth + 22
             radius: 14
@@ -485,6 +730,7 @@ Item {
         // Close, with the time left as a ring around it
         Item {
             id: closeButton
+            opacity: root.stagger(0)
             width: 32
             height: 32
             x: card.width - width - 14
@@ -538,12 +784,19 @@ Item {
             readonly property real cx: width / 2
             readonly property real deviceY: 86
 
+            // Where the device is now: out of the bar (fall 0), in orbit (1)
+            function along(t) {
+                const u = 1 - t;
+                return Qt.point(u * u * 150 + 2 * u * t * -120, u * u * -210 + 2 * u * t * -20);
+            }
+
             // A thin orbit around the device: back half behind it, front half over it
             component OrbitHalf: Shape {
                 property bool front: false
                 anchors.fill: parent
                 preferredRendererType: Shape.CurveRenderer
                 rotation: -9
+                opacity: root.arrived
                 ShapePath {
                     strokeColor: Theme.withAlpha(skin.accent, front ? (skin.light ? 0.55 : 0.7) : (skin.light ? 0.22 : 0.28))
                     strokeWidth: front ? 1.3 : 1
@@ -558,16 +811,105 @@ Item {
                     }
                 }
             }
-            OrbitHalf {}
+            OrbitHalf {
+                z: 0
+            }
+
+            // Sonar: rings leaving the device while it waits, faster while pairing
+            Repeater {
+                model: 2
+                Rectangle {
+                    id: ring
+                    required property int index
+                    readonly property real speed: root.busy ? 0.75 : 0.38
+                    readonly property real f: (root.clock * speed + index * 0.5) % 1
+                    z: 0
+                    width: 120
+                    height: 120
+                    radius: 60
+                    x: stage.cx - 60
+                    y: stage.deviceY - 60 + root.floatY
+                    scale: 1 + f * 1.1
+                    color: "transparent"
+                    border.width: 1.2 / scale
+                    border.color: skin.accent
+                    visible: root.moving && root.phase !== "done" && root.phase !== "failed"
+                    opacity: root.arrived * (1 - f) * (skin.light ? 0.35 : 0.45)
+                }
+            }
+
+            // Comet trail: ghosts of where the device just was
+            Repeater {
+                model: 9
+                Rectangle {
+                    id: ghost
+                    required property int index
+                    readonly property point at: stage.along(Math.max(0, root.fall - (index + 1) * 0.045))
+                    z: 0
+                    width: 30 - index * 2.6
+                    height: width
+                    radius: width / 2
+                    x: stage.cx + at.x - width / 2
+                    y: stage.deviceY + at.y - height / 2
+                    color: skin.haze
+                    opacity: root.fall > 0 && root.fall < 1 ? (0.4 - index * 0.04) * Math.min(1, (1 - root.fall) * 4) : 0
+                }
+            }
+
+            // Flash when the orbit catches it
+            Rectangle {
+                id: flash
+                z: 0
+                width: 110
+                height: 110
+                radius: 55
+                x: stage.cx - 55
+                y: stage.deviceY - 55
+                color: "transparent"
+                border.width: 1.5
+                border.color: skin.accent
+                opacity: 0
+            }
 
             Item {
                 id: hero
+                z: 1
                 width: 150
                 height: 150
+                readonly property point at: stage.along(root.fall)
                 x: stage.cx - width / 2
                 y: stage.deviceY - height / 2
+                scale: 0.45 + 0.55 * root.fall
+                opacity: Math.min(1, root.fall * 3)
+                transform: [
+                    Translate {
+                        x: hero.at.x
+                        y: hero.at.y + root.floatY
+                    },
+                    Rotation {
+                        origin.x: 75
+                        origin.y: 75
+                        axis.x: 1
+                        axis.y: 0
+                        axis.z: 0
+                        angle: root.tiltX
+                    },
+                    Rotation {
+                        origin.x: 75
+                        origin.y: 75
+                        axis.x: 0
+                        axis.y: 1
+                        axis.z: 0
+                        angle: root.tiltY
+                    },
+                    Rotation {
+                        origin.x: 75
+                        origin.y: 75
+                        angle: root.floatTurn
+                    }
+                ]
 
-                // Battery once connected: a ring around the device
+                // Battery once connected: a ring around the device, filling up
                 Shape {
                     anchors.fill: parent
                     visible: root.phase === "done" && root.battery >= 0
@@ -595,12 +937,13 @@ Item {
                             radiusX: 72
                             radiusY: 72
                             startAngle: -90
-                            sweepAngle: 3.6 * Math.max(0, root.battery)
+                            sweepAngle: 3.6 * root.shownBattery
                         }
                     }
                 }
 
-                // Night: the device glows. Pearl: it casts a soft shadow.
+                // Night: the device glows. Pearl: it casts a soft shadow that
+                // stretches as it floats up.
                 DeviceGlyph {
                     id: glyph
                     anchors.centerIn: parent
@@ -615,9 +958,9 @@ Item {
                         shadowEnabled: true
                         shadowColor: skin.light ? Qt.tint(Qt.rgba(0.08, 0.08, 0.14, 1), Theme.withAlpha(skin.accent, 0.3)) : skin.glow
                         shadowBlur: 1
-                        shadowOpacity: skin.light ? 0.3 : 0.9
+                        shadowOpacity: skin.light ? 0.3 + root.floatY * 0.012 : 0.85 - root.floatY * 0.02
                         shadowHorizontalOffset: 0
-                        shadowVerticalOffset: skin.light ? 12 : 0
+                        shadowVerticalOffset: skin.light ? 13 - root.floatY * 1.2 : 0
                     }
                 }
 
@@ -632,7 +975,7 @@ Item {
                     StyledText {
                         id: batteryText
                         anchors.centerIn: parent
-                        text: root.battery + " %"
+                        text: Math.round(root.shownBattery) + " %"
                         color: skin.inkOnAccent
                         font.pixelSize: Theme.fontSizeSmall - 1
                         font.weight: Font.DemiBold
@@ -642,16 +985,43 @@ Item {
 
             OrbitHalf {
                 front: true
+                z: 2
             }
 
-            // A small moon on the front of the orbit
+            // A small moon going round: in front of the device, then behind it
             Rectangle {
+                readonly property real a: root.clock * 0.8 + 0.6
+                readonly property real px: 116 * Math.cos(a)
+                readonly property real py: 24 * Math.sin(a)
+                readonly property real t: -9 * Math.PI / 180
+                z: Math.sin(a) > 0 ? 3 : 0.5
                 width: 7
                 height: 7
                 radius: 3.5
-                x: stage.cx + 70
-                y: stage.deviceY + 32
+                x: stage.cx + px * Math.cos(t) - py * Math.sin(t) - 3.5
+                y: stage.deviceY + 18 + px * Math.sin(t) + py * Math.cos(t) - 3.5
                 color: skin.accent
+                opacity: root.arrived * (Math.sin(a) > 0 ? 1 : 0.45)
+            }
+
+            // Connected: a burst of stars out of the device
+            Repeater {
+                model: 16
+                Rectangle {
+                    id: spark
+                    required property int index
+                    readonly property real a: index * Math.PI * 2 / 16 + (index % 2) * 0.2
+                    readonly property real d: 46 + root.burst * (60 + (index % 3) * 22)
+                    z: 3
+                    visible: root.burst > 0 && root.burst < 1
+                    width: index % 3 === 0 ? 4 : 2.6
+                    height: width
+                    radius: width / 2
+                    x: stage.cx + d * Math.cos(a) - width / 2
+                    y: stage.deviceY + d * Math.sin(a) * 0.8 - height / 2
+                    color: index % 2 ? skin.accent : skin.ink(1)
+                    opacity: 1 - root.burst
+                }
             }
         }
 
@@ -661,37 +1031,89 @@ Item {
             y: card.horizon + 22
             width: card.width
             spacing: 2
+            opacity: root.stagger(3)
+            transform: Translate {
+                y: (1 - root.stagger(3)) * 14
+            }
 
-            Row {
+            Item {
                 anchors.horizontalCenter: parent.horizontalCenter
-                spacing: 6
-                StyledText {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: root.name
-                    color: skin.ink(0.96)
-                    font.pixelSize: Theme.fontSizeLarge + 10
-                    font.weight: Font.Bold
-                    font.letterSpacing: -0.4
-                    elide: Text.ElideRight
-                    width: Math.min(implicitWidth, card.width - 80)
+                width: root.renaming ? card.width - 48 : nameRow.implicitWidth
+                height: nameRow.implicitHeight
+
+                Row {
+                    id: nameRow
+                    visible: !root.renaming
+                    spacing: 6
+                    StyledText {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: root.name
+                        color: skin.ink(0.96)
+                        font.pixelSize: Theme.fontSizeLarge + 10
+                        font.weight: Font.Bold
+                        font.letterSpacing: -0.4
+                        elide: Text.ElideRight
+                        width: Math.min(implicitWidth, card.width - 80)
+                    }
+                    DankIcon {
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: root.phase === "offer"
+                        name: "edit"
+                        size: 16
+                        color: skin.ink(0.4)
+                        MouseArea {
+                            anchors.fill: parent
+                            anchors.margins: -6
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                nameInput.text = root.name;
+                                root.renaming = true;
+                                nameInput.forceActiveFocus();
+                                nameInput.selectAll();
+                            }
+                        }
+                    }
                 }
-                DankIcon {
-                    anchors.verticalCenter: parent.verticalCenter
-                    visible: root.phase === "offer"
-                    name: "edit"
-                    size: 16
-                    color: skin.ink(0.4)
-                    MouseArea {
+
+                // Rename before connecting: Enter keeps it, Escape cancels
+                Rectangle {
+                    visible: root.renaming
+                    anchors.fill: parent
+                    anchors.margins: -4
+                    radius: 12
+                    color: skin.tileFill
+                    border.width: 1
+                    border.color: skin.accent
+                    TextInput {
+                        id: nameInput
                         anchors.fill: parent
-                        anchors.margins: -6
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.renameRequested()
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        verticalAlignment: TextInput.AlignVCenter
+                        horizontalAlignment: TextInput.AlignHCenter
+                        color: skin.ink(0.96)
+                        selectionColor: Theme.withAlpha(skin.accent, 0.4)
+                        font.pixelSize: Theme.fontSizeLarge + 6
+                        font.weight: Font.Bold
+                        maximumLength: 40
+                        clip: true
+                        function commit() {
+                            root.renaming = false;
+                            root.renamed(text.trim());
+                            root.forceActiveFocus();
+                        }
+                        Keys.onReturnPressed: commit()
+                        Keys.onEnterPressed: commit()
+                        Keys.onEscapePressed: {
+                            root.renaming = false;
+                            root.forceActiveFocus();
+                        }
                     }
                 }
             }
             StyledText {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: root.phase === "failed" ? "Could not connect. Is it still in pairing mode?" : root.subtitle
+                text: root.phase === "failed" ? "Could not connect. Is it still in pairing mode?" : root.renaming ? "Enter to keep, Escape to cancel" : root.subtitle
                 color: root.phase === "failed" ? Theme.error : skin.ink(0.5)
                 font.pixelSize: Theme.fontSizeSmall
                 font.letterSpacing: 0.2
@@ -705,6 +1127,10 @@ Item {
             y: 324
             width: card.width - 32
             height: 76
+            opacity: root.stagger(4)
+            transform: Translate {
+                y: (1 - root.stagger(4)) * 14
+            }
 
             // What you get
             Row {
@@ -874,6 +1300,7 @@ Item {
         // Its own light under it: a glow on the night, a tinted shadow on the pearl
         Light {
             visible: !root.busy
+            opacity: root.stagger(5)
             width: card.width - 60
             squash: 0.2
             x: 30
@@ -886,6 +1313,10 @@ Item {
             id: mainButton
             x: 16
             y: 420
+            opacity: root.stagger(5)
+            transform: Translate {
+                y: (1 - root.stagger(5)) * 14
+            }
             width: card.width - 32
             height: 50
             radius: 25
@@ -905,13 +1336,44 @@ Item {
                 }
             }
 
-            // Progress while pairing and connecting
+            // Progress while pairing and connecting, with a sheen running across
             Rectangle {
                 visible: root.busy
                 height: parent.height
                 radius: parent.radius
-                width: parent.width * (root.phase === "pairing" ? 0.38 : 0.72)
+                width: parent.width * (root.phase === "pairing" ? 0.38 : root.phase === "connecting" ? 0.72 : 0)
                 color: Theme.withAlpha(skin.accent, 0.35)
+                Behavior on width {
+                    NumberAnimation {
+                        duration: 600
+                        easing.type: Easing.OutCubic
+                    }
+                }
+            }
+            Item {
+                anchors.fill: parent
+                visible: root.busy && root.moving
+                clip: true
+                Rectangle {
+                    width: 90
+                    height: parent.height
+                    x: ((root.clock * 0.7) % 1) * (parent.width + 180) - 180
+                    gradient: Gradient {
+                        orientation: Gradient.Horizontal
+                        GradientStop {
+                            position: 0
+                            color: "transparent"
+                        }
+                        GradientStop {
+                            position: 0.5
+                            color: Theme.withAlpha(skin.accent, 0.35)
+                        }
+                        GradientStop {
+                            position: 1
+                            color: "transparent"
+                        }
+                    }
+                }
             }
 
             Row {
@@ -956,6 +1418,7 @@ Item {
             y: mainButton.y + mainButton.height + 6
             height: 28
             spacing: 4
+            opacity: root.stagger(6)
 
             component Quiet: StyledText {
                 id: quiet
@@ -996,11 +1459,6 @@ Item {
                 visible: root.busy
                 text: "Cancel"
                 onClicked: root.cancelled()
-            }
-            Quiet {
-                visible: root.phase === "done"
-                text: "Open in Orbit"
-                onClicked: root.openOrbit()
             }
         }
 

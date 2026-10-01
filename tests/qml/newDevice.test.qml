@@ -21,7 +21,16 @@ Item {
         function setIgnored(a, n, on) { const x = Object.assign({}, ignoredDevices); x[a] = n; ignoredDevices = x; }
     }
     Component { id: dev; Device {} }
-    NewDeviceWatch { id: w; prefs: prefs }
+    // AncService stand-in: records which headsets the sheet asked about
+    QtObject {
+        id: anc
+        property var states: ({})
+        property var watched: []
+        property var sent: []
+        function watch(a, on) { watched = watched.concat([a + (on ? "+" : "-")]); }
+        function send(a, k, v) { sent = sent.concat([a + " " + k + " " + v]); }
+    }
+    NewDeviceWatch { id: w; prefs: prefs; anc: anc }
 
     property int failures: 0
     property int calls: 0
@@ -31,7 +40,7 @@ Item {
         print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
     }
     function add(addr, name, icon, extra) {
-        const d = dev.createObject(h, Object.assign({ address: addr, name: name, icon: icon }, extra || {}));
+        const d = dev.createObject(h, Object.assign({ address: addr, name: name, deviceName: name, icon: icon }, extra || {}));
         const a = Bluetooth.list.slice(); a.push(d);
         Bluetooth.list = a; Bluetooth.devices = a;
         return d;
@@ -46,9 +55,18 @@ Item {
         () => { BluetoothService.adapter.discovering = true; add("00:00:00:00:00:02", "Pixel 8", "phone"); add("00:00:00:00:00:03", "WH-1000XM6", "audio-headphones"); },
         () => { check("new headphones offered", w.current, "00:00:00:00:00:03"); check("shown", w.shown, true); check("phase", w.phase, "offer"); check("phone not queued", w._queue, []); },
         () => { remove("00:00:00:00:00:01"); add("00:00:00:00:00:01", "Old Buds", "audio-headset"); },
-        () => { check("startup device still snoozed", w._queue, []); w.connect(); check("pairing", w.phase, "pairing"); },
+        () => { check("startup device still snoozed", w._queue, []); w.pendingName = "Office headset"; w.connect(); check("pairing", w.phase, "pairing"); },
         () => {},
-        () => { check("done", w.phase, "done"); check("calls", BluetoothService.log, ["pair WH-1000XM6", "connect WH-1000XM6"]); w.close(); },
+        () => {
+            check("done", w.phase, "done");
+            check("calls", BluetoothService.log, ["pair WH-1000XM6", "connect WH-1000XM6"]);
+            check("typed name becomes the alias", w.device.name, "Office headset");
+            check("asks the headset for its modes", anc.watched, ["00:00:00:00:00:03+"]);
+            w.setMode("ambient");
+            check("mode from the sheet", anc.sent, ["00:00:00:00:00:03 mode ambient"]);
+            w.close();
+            check("stops asking once closed", anc.watched, ["00:00:00:00:00:03+", "00:00:00:00:00:03-"]);
+        },
         () => {},
         () => { check("closed", w.current, ""); BluetoothService.adapter.discovering = false; w.scanOnce(); check("audio connected blocks scan", w.lastSkip, "audio device connected"); },
         () => { Bluetooth.list.forEach(d => d.connected = false); w.scanOnce(); check("scan runs", w.lastSkip, ""); check("discovering", BluetoothService.adapter.discovering, true); },

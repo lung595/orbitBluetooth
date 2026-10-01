@@ -64,6 +64,7 @@ Item {
         id: newDeviceWatch
         prefs: prefs
         pictureLookup: pictureService
+        anc: ancService
     }
 
     readonly property alias newDevices: newDeviceWatch

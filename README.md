@@ -66,7 +66,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 1. **Open the orbit** from the widget you added. Discovery starts on its own.
 2. **Drag a device into the inner ring** to pair and connect it; drag it back out to disconnect.
 3. **Click a device** for its detail card: battery, charging, volume, noise control.
-4. **New headphones?** Put them in pairing mode: within a minute a card drops from the bar and offers to connect them, even with Orbit closed.
+4. **New headphones?** Put them in pairing mode: within a minute a pairing sheet unfolds from the bar and offers to connect them, even with Orbit closed.
 
 ## Features
 
@@ -74,11 +74,11 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 | --- | --- |
 | ![Dragging earbuds to the inner ring connects them](screenshots/connect.gif) | ![A beam of energy flowing to a charging headset](screenshots/beam.gif) |
 
-| New headphones pop-up | Offer, pairing, connected |
+| New headphones pop-up | Dark and light themes |
 | --- | --- |
-| ![A card drops from the bar, the headset falls into orbit and connects](screenshots/newdevice.gif) | ![The card while offering, pairing and once connected](screenshots/newdevice.png) |
+| ![The pairing sheet unfolds from the bar, the headset falls into orbit and connects](screenshots/newdevice.gif) | ![The pairing sheet offering, then connected, in a dark and a light theme](screenshots/newdevice.png) |
 
-- **New headphones? Orbit notices.** Put them in pairing mode and a card drops from the bar: the headset falls into orbit along a comet trail, sends sonar rings, and *Connect* pairs it on the spot and shows its battery. Works with Orbit closed; *Later* and *Ignore* keep it quiet.
+- **New headphones? Orbit notices.** Put them in pairing mode and a pairing sheet unfolds from the bar: the headset falls into orbit and floats above a planet, *Connect* pairs it on the spot, shows its battery and its noise-control modes. Deep space in a dark theme, stratosphere in a light one, with any DMS palette. Works with Orbit closed.
 - **Drag to connect** with a magnet snap, elastic tether to disconnect.
 - **Live charging**: energy beam, time to full, charge speed, session chart.
 - **Earbuds trio**: the case and both buds in their own mini orbit, each with its battery.
@@ -93,7 +93,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 
 | Gesture | Result |
 | --- | --- |
-| Put new headphones in pairing mode | A pop-up under the bar offers to connect them |
+| Put new headphones in pairing mode | A pairing sheet under the bar offers to connect them (<kbd>Enter</kbd> connects, <kbd>Esc</kbd> later) |
 | Drag a device inside the inner ring | Pair and connect |
 | Drag a connected device outward | Disconnect |
 | Click a device | Open its detail card |

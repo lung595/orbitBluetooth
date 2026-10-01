@@ -13,7 +13,7 @@ for s in $scenes; do
     # OpenGL rendering: the software backend skips shaders (charging beam)
     # and effects (the pop-up's shadow and rounded clip)
     if [ "$s" = newdevice ]; then
-        QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=rhi QSG_RHI_BACKEND=opengl qml-qt6 -I imports popup.qml -- record 0 "$tmp/$s"
+        QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=rhi QSG_RHI_BACKEND=opengl qml-qt6 -I imports sheet.qml -- green record "$tmp/$s"
     else
         QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=rhi QSG_RHI_BACKEND=opengl qml-qt6 -I imports record.qml -- "$s" "$tmp/$s"
     fi
@@ -21,7 +21,7 @@ for s in $scenes; do
     case $s in
     beam) frame="crop=360:230:100:125" ;;
     gauge) frame="crop=380:420:90:40" ;;
-    newdevice) frame="crop=480:170:20:0" ;;
+    newdevice) frame="crop=400:600:20:0" ;;
     *) frame="scale=400:-1:flags=lanczos" ;;
     esac
     # Close-ups keep 20 fps; whole-scene clips use 15 fps and fewer colors
