@@ -9,6 +9,37 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 - Documentation split into `README.md`, `docs/GUIDE.md`, `CHANGELOG.md`, `ROADMAP.md` and `CONTRIBUTING.md`.
 
+## 1.7.1 - 2026-10-01
+
+### Changed
+
+- Control Center tile: named **OrbitBluetooth** instead of "Bluetooth", and the device name under it is cut at 12 characters so it stays inside the tile.
+
+## 1.7.0 - 2026-10-01
+
+### Added
+
+- Offer to connect: when an unpaired, named device shows up while the view scans, a small card says so with a **Connect** button (it goes away after 12 s or with ×). Devices already around when the view opens are not offered. Turn it off with **Scanning → Offer new devices**.
+- Connecting: two soft sonar rings leave the device, next to the comet. Not seen on real hardware yet.
+
+## 1.6.0 - 2026-10-01
+
+### Added
+
+- Volume per device: a slider and a mute button in the detail card of a connected audio device, through PipeWire (local only). Not tested on real hardware yet.
+
+## 1.5.0 - 2026-10-01
+
+### Added
+
+- Conversation awareness is remembered per headset and put back after a reconnect (option *Remember conversation awareness*, on by default).
+- Silent Apple models (AirPods Max 2): Orbit asks for the state a second time, then offers the modes for *Pro* and *Max* names. Known not functional on the AirPods Max.
+
+### Changed
+
+- Scene chrome (scan chip, *Turn on* button, sky color) takes its sizes from the DMS theme; the night colors live in one place (`NightColors`).
+- AirPods 3 and 4 confirmed on hardware.
+
 ## 1.4.1 - 2026-09-27
 
 ### Changed

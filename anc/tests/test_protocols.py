@@ -53,6 +53,49 @@ class Sony(unittest.TestCase):
         self.assertEqual(proto.state["mode"], "ambient")
 
 
+class Apple(unittest.TestCase):
+    def _silent(self, name):
+        sent = []
+        proto = FAMILIES["apple"](sent.append, name)
+        proto.start()
+        proto.tick(0.0)
+        proto.receive(h("01 00 04 00 00 00 00 00"))      # handshake answered
+        proto.receive(h("04 00 04 00 2b 00 00"))         # features acknowledged
+        proto.tick(1.0)
+        return proto, sent
+
+    def test_silent_max_is_asked_again_then_offers_modes(self):
+        proto, sent = self._silent("AirPods Max 2")
+        count = len(sent)
+        proto.tick(3.0)     # past the retry delay: asked once more
+        self.assertEqual(len(sent), count + 1)
+        proto.tick(3.5)
+        self.assertEqual(len(sent), count + 1)
+        self.assertFalse(proto.ready)
+        proto.tick(5.5)     # still silent: modes are offered anyway
+        self.assertTrue(proto.ready)
+        self.assertEqual(proto.features["modes"], ["off", "nc", "ambient"])
+        proto.set("mode", "nc")
+        self.assertEqual(sent[-1], h("04 00 04 00 09 00 0d 02 00 00 00"))
+
+    def test_silent_plain_airpods_show_no_modes(self):
+        proto, _ = self._silent("AirPods")
+        proto.tick(5.5)
+        self.assertTrue(proto.ready)
+        self.assertEqual(proto.features["modes"], [])
+
+    def test_chat_asked_early_waits_for_the_feature(self):
+        proto, sent = self._silent("AirPods Pro")
+        proto.receive(h("04 00 04 00 09 00 0d 02 00 00 00"))   # modes pushed: ready
+        proto.set("chat", "on")                                  # feature not announced yet
+        proto.flush_deferred()
+        self.assertNotIn(h("04 00 04 00 09 00 28 01 00 00 00"), sent)
+        proto.receive(h("04 00 04 00 09 00 28 02 00 00 00"))   # announced (off)
+        proto.flush_deferred()
+        self.assertIn(h("04 00 04 00 09 00 28 01 00 00 00"), sent)
+        self.assertTrue(proto.state["chat"])
+
+
 class Nothing(unittest.TestCase):
     def test_start_mode_battery_and_set(self):
         proto, sent = make("nothing", "Nothing Ear (2)")

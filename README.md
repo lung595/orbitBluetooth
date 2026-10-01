@@ -22,6 +22,7 @@ Drag a device to the center to connect it, pull it away to disconnect it.
 | DankMaterialShell | 1.6.0 or newer | Everything |
 | BlueZ | Any recent version, adapter powered on | Everything |
 | UPower | Any | *Optional*: real charging states |
+| PipeWire | Any | *Optional*: volume slider of audio devices |
 | Python 3 | Standard library only | *Optional*: headphone noise control |
 
 ### 1. Install
@@ -64,7 +65,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 
 1. **Open the orbit** from the widget you added. Discovery starts on its own.
 2. **Drag a device into the inner ring** to pair and connect it; drag it back out to disconnect.
-3. **Click a device** for its detail card: battery, charging, noise control.
+3. **Click a device** for its detail card: battery, charging, volume, noise control.
 
 ## Features
 
@@ -110,8 +111,10 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Quick disconnect button (× on hover) | Off |
 | | Center device | Automatic |
 | Scanning | Scan automatically | On |
+| | Offer new devices (a *Connect* card) | On |
 | | Scan duration: 20 s, 45 s, 90 s or *While open* ⚡ | 45 s |
 | Headphones | Noise control | On |
+| | Remember conversation awareness | On |
 | | Engine: *On demand* or *Always connected* ⚡ | On demand |
 | Desktop widget | Displays | All |
 | | Backdrop | 72 % |
