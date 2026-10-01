@@ -59,3 +59,26 @@ function headline(kind) {
         return "New headset nearby";
     return "New headphones nearby";
 }
+
+// Brand names for the sheet's subtitle, by noise-control family (Anc.js)
+var BRANDS = {
+    "sony": "Sony", "apple": "Apple", "samsung": "Samsung", "bose": "Bose", "nothing": "Nothing",
+    "soundcore": "Soundcore", "huawei": "Huawei", "oppo": "OPPO", "xiaomi": "Xiaomi",
+    "earfun": "EarFun", "moondrop": "Moondrop", "haylou": "Haylou", "onemore": "1MORE"
+};
+
+// "What you get" tiles of the pairing sheet, at most three, all known
+// locally before anything is paired.
+// info: {family (Anc.js, "" if none), hours (rated, 0 if unknown), kind}
+function features(info) {
+    const out = [];
+    if (info.family)
+        out.push({ "icon": "noise_control_on", "value": "Noise control", "label": "Supported" });
+    if (info.hours > 0)
+        out.push({ "icon": "battery_full", "value": "≈ " + info.hours + " h", "label": "Battery life" });
+    if (/^earbuds/.test(info.kind))
+        out.push({ "icon": "earbuds", "value": "Case & buds", "label": "Each battery" });
+    out.push({ "icon": "volume_up", "value": "Volume", "label": "Per device" });
+    out.push({ "icon": "bolt", "value": "Charging", "label": "Time to full" });
+    return out.slice(0, 3);
+}
