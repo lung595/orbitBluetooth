@@ -1264,14 +1264,18 @@ Item {
                     }
                 }
             }
+            // A rounded sheen that stays inside the button and fades at both
+            // ends: a clip would cut it square against the rounded corners
             Item {
                 anchors.fill: parent
                 visible: root.busy && root.moving
-                clip: true
                 Rectangle {
+                    readonly property real t: (root.clock * 0.7) % 1
                     width: 90
                     height: parent.height
-                    x: ((root.clock * 0.7) % 1) * (parent.width + 180) - 180
+                    radius: height / 2
+                    x: t * (parent.width - width)
+                    opacity: Math.sin(Math.PI * t)
                     gradient: Gradient {
                         orientation: Gradient.Horizontal
                         GradientStop {

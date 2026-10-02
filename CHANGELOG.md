@@ -7,6 +7,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## 1.10.4 - 2026-10-02
 
+### Fixed
+
+- The sheen on the *Connecting* button no longer shows a square edge: it is a rounded pill that fades at both ends.
+
 ### Changed
 
 - Settings are grouped into tabs (Orbit, Scanning, Headphones, Desktop, Look & sound), one shown at a time.
