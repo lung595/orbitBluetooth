@@ -14,6 +14,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - The picture cache is private (folder 0700, files 0600).
 - The pairing log no longer contains the device name.
 - **Safe pairing**: a device is offered only when Bluetooth says it is audio, not because of its name. After pairing, Orbit checks its services before trusting it; headphones that can also send key presses (often for their buttons) wait, unable to connect, until you choose **Pair anyway**, and are forgotten otherwise. Same check when dragging a device into the orbit.
+- **Real device pictures** follows a redirect only to the listed hosts, over https; its User-Agent now gives the right version.
+- The noise-control helper receives the headset's name through its environment rather than its command line, which other programs can read. Both helpers ignore `PYTHON*` variables and user packages (`python3 -E -s`).
+- The noise-control helper keeps at most 64 KB of an unfinished message, whatever a device sends.
 
 ### Fixed
 

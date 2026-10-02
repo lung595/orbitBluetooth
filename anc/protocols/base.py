@@ -99,10 +99,16 @@ class Protocol:
     def send(self, data):
         self._send(bytes(data))
 
+    # No real frame comes near this; a device sending endless bytes without
+    # a frame end must not make the helper grow without limit (P117)
+    MAX_BUFFER = 64 * 1024
+
     def receive(self, data):
         self.buffer += data
         for frame in self.frames():
             self.handle(frame)
+        if len(self.buffer) > self.MAX_BUFFER:
+            del self.buffer[:-self.MAX_BUFFER]
 
     def mark_ready(self):
         if self.ready:

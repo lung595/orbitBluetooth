@@ -105,10 +105,10 @@ orbitBluetooth/
 (cd anc && python3 -m unittest discover -s tests -t .)   # noise-control protocols
 (cd pictures && python3 -m unittest discover -s tests -t .)   # picture lookup, without network
 sh tests/qml/run.sh                                       # new-device pop-up scenario (Qt 6)
-gjs tests/anc.test.js                                     # brand detection, modes, time left
+gjs tests/anc.test.js                                     # brand detection, modes, pairing guard
 ```
 
-Run both before every commit. A new headphone brand needs a module in `anc/protocols/` and tests in `anc/tests/`.
+Run them all before every commit. A new headphone brand needs a module in `anc/protocols/` and tests in `anc/tests/`.
 
 ## Screenshots, shaders and sounds
 

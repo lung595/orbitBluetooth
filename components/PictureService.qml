@@ -37,7 +37,7 @@ Item {
             return;
         _current = _queue[0];
         _queue = _queue.slice(1);
-        finder.command = ["python3", _helper, "find", _current];
+        finder.command = ["python3", "-E", "-s", _helper, "find", _current];
         finder.running = true;
     }
 
@@ -79,7 +79,7 @@ Item {
         _asked = ({});
         pictures = ({});
         publish(pictures);
-        eraser.command = ["python3", _helper, "clear"];
+        eraser.command = ["python3", "-E", "-s", _helper, "clear"];
         eraser.running = true;
     }
 
@@ -93,7 +93,7 @@ Item {
         pictures = ({});
         publish(pictures);
         finder.running = false;
-        eraser.command = ["python3", _helper, "clear"];
+        eraser.command = ["python3", "-E", "-s", _helper, "clear"];
         eraser.running = true;
     }
 

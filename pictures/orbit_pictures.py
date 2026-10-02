@@ -123,9 +123,42 @@ def pick_sketchfab(results, name, license_label):
     return None
 
 
+# Every host the helper may talk to; anything else is refused, redirects included
+ALLOWED_HOSTS = ("commons.wikimedia.org", "api.sketchfab.com") + IMAGE_HOSTS
+
+
+def allowed(url):
+    parts = urllib.parse.urlsplit(url)
+    return parts.scheme == "https" and (parts.hostname or "") in ALLOWED_HOSTS
+
+
+class SafeRedirect(urllib.request.HTTPRedirectHandler):
+    """Follows a redirect only to https and a listed host."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if not allowed(newurl):
+            raise OSError("redirect refused")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def version():
+    """The plugin's version, so the User-Agent never goes stale."""
+    try:
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "plugin.json")) as f:
+            return str(json.load(f).get("version", ""))[:16]
+    except (OSError, ValueError):
+        return ""
+
+
+OPENER = urllib.request.build_opener(SafeRedirect)
+USER_AGENT = "orbitBluetooth/" + version() + " (open source, MIT; https://github.com/lung595/orbitBluetooth)"
+
+
 def get(url):
-    request = urllib.request.Request(url, headers={"User-Agent": "orbitBluetooth/1.9 (open source, MIT; https://github.com/lung595/orbitBluetooth)"})
-    with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
+    if not allowed(url):
+        raise OSError("host refused")
+    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    with OPENER.open(request, timeout=TIMEOUT) as response:
         data = response.read(MAX_BYTES + 1)
     if len(data) > MAX_BYTES:
         raise OSError("image too large")

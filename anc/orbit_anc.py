@@ -219,4 +219,7 @@ if __name__ == "__main__":
     if len(sys.argv) not in (3, 4):
         sys.stderr.write(__doc__)
         sys.exit(2)
-    sys.exit(run(*sys.argv[1:]))
+    # The device name comes from the environment (kept out of /proc/*/cmdline);
+    # a third argument still works, for running the helper by hand
+    name = sys.argv[3] if len(sys.argv) == 4 else os.environ.get("ORBIT_ANC_NAME", "")
+    sys.exit(run(sys.argv[1], sys.argv[2], name[:248]))

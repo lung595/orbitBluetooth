@@ -80,7 +80,13 @@ Item {
             return _sessions[address] || null;
         const proc = sessionComponent.createObject(root, {
             "address": address,
-            "command": ["python3", _helper, address, familyFor(deviceFor(address)), deviceFor(address).deviceName || deviceFor(address).name || ""]
+            // -E -s: ignore PYTHON* variables and user packages. The name
+            // goes through the environment: argv is readable by every user
+            // in /proc, and a device name can be a person's name
+            "command": ["python3", "-E", "-s", _helper, address, familyFor(deviceFor(address))],
+            "environment": {
+                "ORBIT_ANC_NAME": deviceFor(address).deviceName || deviceFor(address).name || ""
+            }
         });
         const next = Object.assign({}, _sessions);
         next[address] = proc;
