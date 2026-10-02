@@ -157,4 +157,4 @@ Short runs are noisy (about ±2 points while scanning).
 1. Bump `version` in `plugin.json` ([Semantic Versioning](https://semver.org/)).
 2. Move the `Unreleased` entries of `CHANGELOG.md` under the new version and date.
 3. Refresh screenshots if the look changed (`scripts/preview/`).
-4. Run the tests, commit, then tag: `git tag v1.4.2 && git push --tags`.
+4. Run the tests, commit, then tag: `git tag v1.10.1 && git push --tags`.

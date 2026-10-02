@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## Unreleased
 
+## 1.10.1 - 2026-10-02
+
 ### Fixed
 
 - The offscreen previews (`scripts/preview/`) render again: they lacked a stand-in for PipeWire, which the volume row needs since 1.10.0.
