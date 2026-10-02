@@ -271,7 +271,7 @@ Orbit keeps its night sky in every theme. With a light DMS theme, devices turn i
 | | Quick disconnect button | Off | An × on connected devices, on hover |
 | | Center device | Automatic | Icon of this machine (laptop or desktop is detected) |
 | Scanning | Scan automatically | On | Start discovery when a view opens; otherwise click the center |
-| | Offer new devices | On | A card with *Connect* when an unpaired device shows up while scanning |
+| | Offer new devices | On | A card with *Connect* inside the Orbit view; the pop-up has its own switch |
 | | Pop-up for new headphones | On | A pop-up under the bar for new headphones any search finds, see [New headphones pop-up](#new-headphones-pop-up); it only listens |
 | | Background scan | Off | Orbit also searches by itself, 8 s at a time ⚡ |
 | | Background scan interval | Every minute | 30 s, 1, 2 or 5 min (shown once *Background scan* is on) |

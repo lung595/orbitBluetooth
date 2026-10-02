@@ -5,6 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## Unreleased
 
+## 1.10.4 - 2026-10-02
+
+### Fixed
+
+- **Pop-up for new headphones** works on its own: turning off **Offer new devices** (the card inside the Orbit view) no longer hides the pop-up without a word.
+
 ## 1.10.3 - 2026-10-02
 
 ### Added

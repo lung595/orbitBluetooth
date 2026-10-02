@@ -115,7 +115,7 @@ PluginSettings {
     ToggleSetting {
         settingKey: "offerNew"
         label: "Offer new devices"
-        description: "A card with Connect when an unpaired device shows up while scanning"
+        description: "A card with Connect inside the Orbit view when an unpaired device shows up while scanning (the pop-up below has its own switch)"
         defaultValue: true
     }
 

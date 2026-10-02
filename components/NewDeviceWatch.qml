@@ -36,7 +36,9 @@ Item {
     // AncService of the daemon: noise-control modes once connected
     property var anc: null
 
-    readonly property bool offering: prefs.offerNew && prefs.offerPopup
+    // The pop-up has its own switch: "Offer new devices" is only the card
+    // inside the Orbit view (OrbitScene), turning it off must not hide this
+    readonly property bool offering: prefs.offerPopup
     readonly property var adapter: BluetoothService.adapter
     readonly property bool btOn: BluetoothService.enabled
     readonly property bool asleep: SessionService.locked || IdleService.isShellLocked || IdleService.monitorsOff

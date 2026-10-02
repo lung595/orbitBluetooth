@@ -120,7 +120,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Quick disconnect button (× on hover) | Off |
 | | Center device | Automatic |
 | Scanning | Scan automatically | On |
-| | Offer new devices (a *Connect* card) | On |
+| | Offer new devices (a *Connect* card in the view) | On |
 | | Pop-up for new headphones (listens to any search, free) | On |
 | | Background scan (Orbit searches by itself) ⚡ | Off |
 | | Background scan interval / battery threshold (shown when the scan is on) | Every minute / 30 % |

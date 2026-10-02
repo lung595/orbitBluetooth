@@ -118,7 +118,12 @@ Item {
         // by itself, yet still offers what another tool's scan finds
         () => { prefs.offerScan = false; w.scanOnce(); check("no scan of its own", BluetoothService.adapter.discovering, false); check("says why", w.lastSkip !== "", true); },
         () => { BluetoothService.adapter.discovering = true; add("00:00:00:00:00:0A", "Momentum 4", "audio-headphones"); },
-        () => { check("offered from another tool's scan", w.current, "00:00:00:00:00:0A"); w.close(); BluetoothService.adapter.discovering = false; },
+        () => { check("offered from another tool's scan", w.current, "00:00:00:00:00:0A"); w.later(); BluetoothService.adapter.discovering = false; },
+        // The pop-up switch alone is enough: "Offer new devices" off (the
+        // in-view card) must not hide it
+        () => { check("previous pop-up gone", w.current, ""); },
+        () => { prefs.offerNew = false; BluetoothService.adapter.discovering = true; add("00:00:00:00:00:0B", "WH-1000XM6", "audio-headset"); },
+        () => { check("pop-up without Offer new devices", w.current, "00:00:00:00:00:0B"); w.close(); BluetoothService.adapter.discovering = false; },
         () => { print(h.failures ? h.failures + " failures" : "all passed"); Qt.exit(h.failures ? 1 : 0); }
     ]
     property int i: 0
