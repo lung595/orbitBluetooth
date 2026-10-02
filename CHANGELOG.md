@@ -5,6 +5,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## Unreleased
 
+## 1.10.2 - 2026-10-02
+
+### Security
+
+- **Real device pictures** looks up only devices you have paired: the model name of a stranger's device nearby is never sent.
+- A picture that arrives after you turn the option off is dropped, and turning it off erases the cache.
+- The picture cache is private (folder 0700, files 0600).
+- The pairing log no longer contains the device name.
+
+### Fixed
+
+- The pairing sheet's animation pauses while the session is locked or the screens are off.
+
 ## 1.10.1 - 2026-10-02
 
 ### Fixed

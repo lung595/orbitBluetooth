@@ -75,7 +75,10 @@ Item {
     property bool exitToBar: false
 
     // --- Motion -----------------------------------------------------------------------
-    readonly property bool moving: shown && !reduceMotion
+    // Locked or screens off (set by the window): the loop would redraw the
+    // whole shell at the screen's rate for nobody
+    property bool asleep: false
+    readonly property bool moving: shown && !reduceMotion && !asleep
     // Seconds since the sheet appeared: drives every loop (float, moon,
     // twinkle, sonar, shooting star) from one animation
     property real clock: 0

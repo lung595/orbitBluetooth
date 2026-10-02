@@ -173,7 +173,7 @@ Some Sony headsets do not report charging, or drop Bluetooth while charging: thi
 - **No telemetry.** Connection times and battery history stay in memory; settings, hidden and ignored devices are stored by DMS.
 - **Noise control**: a small helper talks to your headset over a local Bluetooth socket, only while needed.
 - **New headphones pop-up**: a local Bluetooth scan of 8 s about once a minute, only while the screen is on, no Bluetooth audio is connected and the battery is above the threshold (30 % by default, unplugged). Turn it off in **Scanning**.
-- **Network: only one opt-in feature, off by default.** **Real device pictures** sends the *model name* of your paired devices, and of headphones the pop-up offers, never the Bluetooth address. It contacts `commons.wikimedia.org`, then `api.sketchfab.com`, and downloads the picture from `upload.wikimedia.org` or `media.sketchfab.com`. Pictures are credited in the card, kept in `~/.cache/orbitBluetooth/pictures` and deleted from the settings.
+- **Network: only one opt-in feature, off by default.** **Real device pictures** sends only the *model name* of devices you have paired, never a stranger's device nearby, never the Bluetooth address. It contacts `commons.wikimedia.org`, then `api.sketchfab.com`, and downloads the picture from `upload.wikimedia.org` or `media.sketchfab.com`. Pictures are credited in the card, kept in `~/.cache/orbitBluetooth/pictures` (readable by you only) and erased when you turn the option off or from the settings.
 
 Details in the [user guide](docs/GUIDE.md#privacy).
 

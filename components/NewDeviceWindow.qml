@@ -73,6 +73,7 @@ PanelWindow {
         id: sheet
         anchors.fill: parent
         shown: win.watch.shown
+        asleep: win.watch.asleep
         phase: win.watch.phase
         reduceMotion: win.watch.prefs.reduceMotion
         exitToBar: win.watch.phase === "done"

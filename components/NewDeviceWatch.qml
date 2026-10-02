@@ -204,7 +204,14 @@ Item {
     property bool _ancWatching: false
     readonly property var ancInfo: anc && current && !_demo ? (anc.states[current] || null) : null
     readonly property var device: _demo ? demoDevice : current ? deviceFor(current) : null
-    readonly property string query: prefs.realPictures && device ? Pictures.queryFor(Catalog.modelName(device), true) : ""
+    // Only for a device that is paired with this computer: one merely seen
+    // in pairing mode may be a stranger's, and its name is not ours to send
+    readonly property string query: prefs.realPictures && device && (device.paired || device.bonded) ? Pictures.queryFor(Catalog.modelName(device), true) : ""
+    // Asked once the device pairs (and again if the sheet moves to another)
+    onQueryChanged: {
+        if (query && pictureLookup)
+            pictureLookup.request(query);
+    }
     readonly property var picture: query && pictureLookup ? (pictureLookup.pictures[query] || null) : null
 
     // --- Demo (dms ipc call orbitBluetooth newDeviceDemo) ---------------------
@@ -239,8 +246,6 @@ Item {
         phase = "offer";
         pendingName = "";
         current = "demo";
-        if (query && pictureLookup)
-            pictureLookup.request(query);
         showDelay.restart();
         return "OK";
     }
@@ -272,8 +277,6 @@ Item {
             phase = "offer";
             pendingName = "";
             current = address;
-            if (query && pictureLookup)
-                pictureLookup.request(query);
             // Mapped first, then shown: the entrance animates from the bar
             showDelay.restart();
             return;
@@ -346,7 +349,8 @@ Item {
                 return;
             if (res && res.error) {
                 root.lastError = String(res.error);
-                console.warn("orbitBluetooth: pairing " + Catalog.deviceName(d) + " failed: " + root.lastError);
+                // No device name in the journal: it may be a person's name
+                console.warn("orbitBluetooth: pairing failed: " + root.lastError);
                 root.phase = "failed";
                 connectTimeout.stop();
                 return;

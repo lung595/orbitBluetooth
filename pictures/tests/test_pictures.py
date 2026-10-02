@@ -123,6 +123,25 @@ class FindTest(unittest.TestCase):
         self.assertIn("gsrsearch=WH-1000XM6+filetype%3Abitmap", calls[0])
         self.assertIn("q=WH-1000XM6", calls[1])
 
+    def test_cache_is_private(self):
+        # Even a cache folder an older version made world-readable is closed
+        def fake_get(url):
+            if url.startswith(P.COMMONS_API):
+                return b"{}"
+            if url.startswith(P.SKETCHFAB_API):
+                return json.dumps({"results": [model("Sony WH-1000XM6")]}).encode()
+            return b"jpegdata"
+
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(P, "get", fake_get):
+            folder = os.path.join(d, "pictures")
+            os.makedirs(folder, mode=0o755)
+            os.chmod(folder, 0o755)
+            found = P.find("WH-1000XM6", folder)
+            self.assertEqual(os.stat(folder).st_mode & 0o777, 0o700)
+            self.assertEqual(os.stat(found["image"]).st_mode & 0o777, 0o600)
+            meta = found["image"][:-4] + ".json"
+            self.assertEqual(os.stat(meta).st_mode & 0o777, 0o600)
+
     def test_nothing_found_is_remembered(self):
         calls = []
 

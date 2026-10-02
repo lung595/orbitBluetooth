@@ -48,7 +48,8 @@ Item {
         } catch (e) {
             return;
         }
-        if (!msg.image)
+        // Turned off while a search ran: its answer is dropped
+        if (!msg.image || !enabled)
             return;
         const next = Object.assign({}, pictures);
         next[msg.name] = {
@@ -82,7 +83,8 @@ Item {
         eraser.running = true;
     }
 
-    // Turned off: forget what is shown (the cache stays until cleared)
+    // Turned off: forget what is shown and erase the cache, which would
+    // otherwise keep a list of every model ever looked up
     onEnabledChanged: {
         if (enabled)
             return;
@@ -90,6 +92,9 @@ Item {
         _asked = ({});
         pictures = ({});
         publish(pictures);
+        finder.running = false;
+        eraser.command = ["python3", _helper, "clear"];
+        eraser.running = true;
     }
 
     Component.onDestruction: finder.running = false

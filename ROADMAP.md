@@ -1,6 +1,6 @@
 # Roadmap
 
-Ideas, not promises, and no dates. Anything that would need the network or send data somewhere is out of scope.
+Ideas, not promises, and no dates. Anything that would need the network or send data somewhere is out of scope, except an opt-in option that is off by default and sends the bare minimum (like *Real device pictures*).
 
 ## Planned
 

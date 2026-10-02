@@ -213,19 +213,27 @@ def find(name, folder=None):
     except (OSError, ValueError):
         # Offline or rate limited: not remembered, so it is tried again later
         return {"name": name, "image": None, "credit": None}
-    os.makedirs(folder, exist_ok=True)
+    os.makedirs(folder, mode=0o700, exist_ok=True)
+    # Made by an older version with the default (world-readable) mode
+    os.chmod(folder, 0o700)
     if not found:
         with open(meta_path, "w", encoding="utf-8") as f:
             json.dump({}, f)
+        os.chmod(meta_path, 0o600)
         return {"name": name, "image": None, "credit": None}
     with open(image_path, "wb") as f:
         f.write(data)
     with open(meta_path, "w", encoding="utf-8") as f:
         json.dump(found[1], f)
+    # Private whatever the umask: the cache tells which devices were looked up
+    os.chmod(image_path, 0o600)
+    os.chmod(meta_path, 0o600)
     return {"name": name, "image": image_path, "credit": found[1]}
 
 
 def main(argv):
+    # The cache tells which devices were looked up: only this user may read it
+    os.umask(0o077)
     if len(argv) == 2 and argv[1] == "clear":
         shutil.rmtree(cache_dir(), ignore_errors=True)
         return 0
