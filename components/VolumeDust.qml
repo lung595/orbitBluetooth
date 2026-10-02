@@ -1,72 +1,77 @@
 import QtQuick
 import qs.Common
+import "VolumeFx.js" as Fx
 
-// A puff of stardust from the volume ring's moon, once per 5 % step. Each
-// spark is thrown along the moon's path (the way the volume went), then
-// pulled back toward the planet like a small body in its gravity:
-// position = start + speed * t + gravity * t² / 2.
-// One short animation per puff; nothing runs between steps.
+// Fine stardust shed by the volume ring's moon while it moves: the faster
+// it goes, the more grains (VolumeFx.emission). Each grain is thrown along
+// the moon's path, pulled back by the planet's gravity and fades out; it is
+// drawn as a short streak along its speed, so motion reads as motion.
+// The grains live in a fixed pool and are moved by the ring's clock
+// (advance), so nothing runs once the last one has faded.
 Item {
     id: dust
 
     property real centerX: 0
     property real centerY: 0
     property real radius: 0
-    property real angle: 0 // radians, where the moon is
-    property bool motion: true
 
-    readonly property real duration: 0.6 // seconds
-    readonly property real gravity: 140 // px/s², toward the planet
+    readonly property int pool: 48
+    readonly property real gravity: 60 // px/s², toward the planet
+    readonly property NightColors night: NightColors {}
 
-    // Where and which way the last puff left
-    property real fromX: 0
-    property real fromY: 0
-    property real heading: 0
-    property real t: 1 // 0..1 through the puff
+    property var grains: []
+    property real carry: 0
+    // Bumped each frame so the grains below re-read the pool
+    property int frame: 0
+    readonly property int alive: grains.length
 
-    function puff(rising) {
-        if (!motion)
-            return;
-        fromX = centerX + Math.cos(angle) * radius;
-        fromY = centerY + Math.sin(angle) * radius;
-        // Angles grow clockwise on screen, the way the level grows
-        heading = angle + (rising ? 1 : -1) * Math.PI / 2;
-        burst.restart();
+    // One frame: move the living grains, then shed new ones at the moon
+    // (angle `deg`) according to its speed (degrees per second) and way
+    function advance(dt, deg, speed, dir) {
+        const next = [];
+        for (const p of grains)
+            if (Fx.step(p, dt, centerX, centerY, gravity))
+                next.push(p);
+        const e = Fx.emission(speed, dt, carry);
+        carry = e.carry;
+        for (let i = 0; i < e.count && next.length < pool; i++)
+            next.push(Fx.spawn(centerX, centerY, radius, deg, dir, Math.random(), Math.random(), Math.random(), Math.random()));
+        grains = next;
+        frame++;
     }
 
-    NumberAnimation {
-        id: burst
-        target: dust
-        property: "t"
-        from: 0
-        to: 1
-        duration: dust.duration * 1000
+    function clear() {
+        grains = [];
+        carry = 0;
+        frame++;
     }
 
-    visible: t < 1
     Repeater {
-        model: 8
+        model: dust.pool
         Rectangle {
             required property int index
-            // A fan of slightly different directions and speeds, fixed per
-            // spark so every puff has the same pleasant shape
-            readonly property real spread: (index - 3.5) * 0.26
-            readonly property real speed: 46 + (index * 37 % 5) * 9
-            readonly property real dir: dust.heading + spread
-            readonly property real s: dust.t * dust.duration
-            // Unit vector from the moon to the planet's center
-            readonly property real ux: (dust.centerX - dust.fromX) / Math.max(1, dust.radius)
-            readonly property real uy: (dust.centerY - dust.fromY) / Math.max(1, dust.radius)
-            readonly property real px: dust.fromX + Math.cos(dir) * speed * s + ux * dust.gravity * s * s / 2
-            readonly property real py: dust.fromY + Math.sin(dir) * speed * s + uy * dust.gravity * s * s / 2
-            readonly property real d: index % 2 ? 3 : 4
-            x: px - d / 2
-            y: py - d / 2
-            width: d
-            height: d
-            radius: d / 2
-            color: index % 3 ? Theme.primary : Theme.surfaceText
-            opacity: (1 - dust.t) * (1 - dust.t)
+            readonly property var p: dust.frame >= 0 && index < dust.grains.length ? dust.grains[index] : null
+            readonly property real t: p ? Fx.lifeT(p) : 1
+            readonly property real speed: p ? Math.sqrt(p.vx * p.vx + p.vy * p.vy) : 0
+            visible: p !== null
+            // A streak: as thick as the grain, stretched by its speed
+            height: p ? p.size : 0
+            width: p ? p.size + Math.min(7, speed * 0.06) : 0
+            radius: height / 2
+            x: p ? p.x - width / 2 : 0
+            y: p ? p.y - height / 2 : 0
+            rotation: p ? Math.atan2(p.vy, p.vx) * 180 / Math.PI : 0
+            // Born white hot, cools to the theme's color, twinkles on the way
+            color: t < 0.35 ? Qt.lighter(dust.night.ringAccent, 1.6) : dust.night.ringAccent
+            opacity: p ? (1 - t) * (0.75 + 0.25 * Math.sin(p.twinkle + p.age * 22)) : 0
+            // A soft glow around the grain, so fine dust still catches the eye
+            Rectangle {
+                anchors.centerIn: parent
+                width: parent.width + 4
+                height: parent.height + 4
+                radius: height / 2
+                color: Theme.withAlpha(dust.night.ringAccent, 0.22)
+            }
         }
     }
 }

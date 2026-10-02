@@ -80,7 +80,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 
 - **New headphones? Orbit notices.** Put them in pairing mode and a pairing sheet unfolds from the bar: the headset falls into orbit and floats above a planet, *Connect* pairs it on the spot, shows its battery and its noise-control modes. Deep space in a dark theme, stratosphere in a light one, with any DMS palette. Works with Orbit closed.
 - **Drag to connect** with a magnet snap, elastic tether to disconnect.
-- **Volume ring**: open a connected audio device and a ring floats around it. Scroll for 5 % steps, drag the moon along the ring, click the planet to mute. The percentage rolls in the ring's gap, stardust flies at each step, and a soft tick plays in the device itself.
+- **Volume ring**: open a connected audio device and a ring of aurora floats around it. Scroll for 5 % steps, drag the moon along the ring, click the planet to eclipse it (mute). The percentage rolls in the ring's gap, the moon trails a comet tail and stardust, each step sends a sound wave, and a soft tick plays in the device itself.
 - **Live charging**: energy beam, time to full, charge speed, session chart.
 - **Earbuds trio**: the case and both buds in their own mini orbit, each with its battery.
 - **Noise control** for 13 headphone brands (Sony, Apple, Samsung, Bose, Huawei…).

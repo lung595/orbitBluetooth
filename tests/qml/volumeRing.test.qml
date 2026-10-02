@@ -3,7 +3,8 @@ import Quickshell.Services.Pipewire
 
 // Test of VolumeRing: the pointer mask lets the ring and the planet take
 // presses (and nothing else, so the card's buttons stay clickable); a step
-// sets the sink's volume and unmutes it; a click on the planet mutes.
+// sets the sink's volume and unmutes it; with motion on, a step starts the
+// effects clock, which then stops by itself (nothing runs at rest).
 // The mask once used an Item, which Qt asks for its own empty rectangle:
 // every press was refused and the ring could not be dragged.
 // Run with tests/qml/run.sh.
@@ -29,7 +30,9 @@ Item {
         property real focusGlyphSize: 64
         property real focusGlyphScale: 1
         property bool motion: false
-        property var prefs: ({ volumeTick: false })
+        property var prefs: ({
+                volumeTick: false
+            })
     }
     VolumeRing {
         id: ring
@@ -66,7 +69,23 @@ Item {
         ring.set(1.4);
         check("set is clamped", sink.volume, 1);
 
-        print(failures ? failures + " failure(s)" : "all passed");
-        Qt.exit(failures ? 1 : 0);
+        // Effects: a step wakes the clock and sends a wave...
+        scene.motion = true;
+        ring.set(0.3);
+        check("a step starts the effects clock", ring.animating, true);
+        check("a step sends a wave", ring.children.some(c => c.alive === 1 && c.planetRadius === 32), true);
+        settle.start();
+    }
+    // ...and once everything has settled the clock is stopped
+    Timer {
+        id: settle
+        interval: 3000
+        onTriggered: {
+            check("the clock stops by itself", ring.animating, false);
+            check("energy back to zero", ring.energy, 0);
+            check("tail caught up", ring.tailEnd, ring.level);
+            print(h.failures ? h.failures + " failure(s)" : "all passed");
+            Qt.exit(h.failures ? 1 : 0);
+        }
     }
 }

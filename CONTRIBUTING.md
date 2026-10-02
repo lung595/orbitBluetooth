@@ -69,7 +69,12 @@ orbitBluetooth/
 │   ├── VolumeRing.qml           # volume ring around the focused device (PipeWire)
 │   ├── Volume.js                # its pure logic (tested)
 │   ├── VolumeReadout.qml        # the percentage rolling in the ring's gap
-│   ├── VolumeDust.qml           # stardust thrown from the moon at each step
+│   ├── VolumeFx.js              # pure geometry and physics of its effects (tested)
+│   ├── VolumePlasma.qml         # the level as a band of aurora
+│   ├── VolumeTail.qml           # comet tail behind the moon
+│   ├── VolumeDust.qml           # stardust shed by the moon while it moves
+│   ├── VolumeWaves.qml          # sound waves off the planet at each step
+│   ├── VolumeEclipse.qml        # mute as an eclipse of the planet
 │   ├── BatteryCard.qml          # gauge, chart and stat tiles
 │   ├── StatTiles.qml            # READY AT / SPEED / HEALTH tiles
 │   ├── EarbudsTrio.qml, EarbudArt.qml, Earbuds.js   # case + buds mini orbit

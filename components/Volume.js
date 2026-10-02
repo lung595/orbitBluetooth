@@ -1,6 +1,6 @@
 .pragma library
 
-// Pure logic of the volume ring (VolumeRing.qml), tested in tests/volume.test.js.
+// Pure logic of the volume ring (VolumeRing.qml), tested in tests/anc.test.js.
 
 // The ring is open at the bottom (where the glyph meets the card): it starts
 // at bottom-left and runs clockwise over the top to bottom-right.

@@ -20,6 +20,7 @@ const Pictures = load("Pictures.js", ["queryFor", "creditText"]);
 const Catalog = load("DeviceCatalog.js", ["deviceName", "modelName", "resolve"]);
 const Guide = load("Guide.js", ["url", "connectNote"]);
 const Volume = load("Volume.js", ["start", "sweep", "clamp", "step", "nudge", "valueAt", "zone", "findSink", "validSink"]);
+const Fx = load("VolumeFx.js", ["clamp01", "ripple", "band", "filament", "emission", "spawn", "step", "lifeT", "follow", "wave"]);
 const Guard = load("Guard.js", ["offerFamily", "hasInput", "refused", "validPath", "parseUuids"]);
 
 let count = 0, failures = 0;
@@ -185,6 +186,44 @@ eq("bad address", Volume.findSink(nodes, "02:00"), null);
 eq("node name ok for pw-play", Volume.validSink("bluez_output.02_00_00_00_10_06.1"), true);
 eq("no shell characters", Volume.validSink("x; rm -rf ~"), false);
 eq("no option smuggling", Volume.validSink("--target=x y"), false);
+
+// Volume ring effects (VolumeFx.js)
+eq("no aurora at 0 %", Fx.band(100, 100, 40, 6, 120, 300, 0, 0, 2), []);
+const aurora = Fx.band(100, 100, 40, 6, 120, 300, 0.5, 1.3, 2);
+eq("aurora is a closed ribbon (outer + inner edge)", aurora.length % 2, 0);
+eq("aurora stays near the ring", aurora.every(p => Math.abs(Math.hypot(p.x - 100, p.y - 100) - 40) < 3 + 2 * 1.5 + 0.01), true);
+const calm = Fx.band(100, 100, 40, 6, 120, 300, 0.5, 1.3, 0);
+eq("still aurora: outer edge outside, inner inside", Math.hypot(calm[1].x - 100, calm[1].y - 100) > 40 && Math.hypot(calm[calm.length - 2].x - 100, calm[calm.length - 2].y - 100) < 40, true);
+eq("aurora ends where the level is", Math.round(Math.atan2(calm[calm.length / 2 - 1].y - 100, calm[calm.length / 2 - 1].x - 100) * 180 / Math.PI), 270 - 360);
+eq("filament follows the level", Fx.filament(0, 0, 40, 120, 300, 1, 0, 0).length > 50, true);
+eq("ripple is bounded", [0, 50, 123, 300].every(d => Math.abs(Fx.ripple(d, 2.2)) <= 1.5), true);
+eq("still moon emits no dust", Fx.emission(0, 0.016, 0).count, 0);
+let slow = { carry: 0, count: 0 }, slowGrains = 0;
+for (let i = 0; i < 12; i++) { slow = Fx.emission(30, 1 / 60, slow.carry); slowGrains += slow.count; }
+eq("a slow move still emits, over a few frames", slowGrains, 4);
+let carry = 0, grains = 0;
+for (let i = 0; i < 60; i++) { const e = Fx.emission(1000, 1 / 60, carry); carry = e.carry; grains += e.count; }
+eq("a wild drag is capped at 120 grains a second", grains, 120);
+const grain = Fx.spawn(100, 100, 40, 0, 1, 0.5, 0.5, 0.5, 0.5);
+eq("grain is born on the moon", [Math.round(grain.x), Math.round(grain.y)], [140, 100]);
+eq("going up throws it ahead (down on the right side) and outward", grain.vy > 0 && grain.vx > 0, true);
+eq("going down throws it the other way", Fx.spawn(100, 100, 40, 0, -1, 0.5, 0.5, 0.5, 0.5).vy < 0, true);
+const g = Fx.spawn(100, 100, 40, 0, 1, 0.5, 0, 0.5, 0.5);
+let alive = true, steps = 0;
+while (alive && steps < 1000) { alive = Fx.step(g, 1 / 60, 100, 100, 140); steps++; }
+eq("grain fades within its life", steps, Math.ceil(g.life * 60));
+eq("gravity pulls it toward the planet", Math.hypot(g.x - 100, g.y - 100) < 60, true);
+eq("life goes 0 to 1", [Fx.lifeT({ age: 0, life: 1 }), Fx.lifeT({ age: 2, life: 1 })], [0, 1]);
+// The comet tail closes on the moon without overshooting, faster with time
+eq("tail stays put with no time", Math.abs(Fx.follow(0.2, 0.8, 0, 9) - 0.2) < 1e-9, true);
+eq("tail moves toward the moon", Fx.follow(0.2, 0.8, 0.05, 9) > 0.2 && Fx.follow(0.2, 0.8, 0.05, 9) < 0.8, true);
+eq("tail has caught up after a second", Math.abs(Fx.follow(0.2, 0.8, 1, 9) - 0.8) < 0.001, true);
+eq("two half frames = one frame", Math.abs(Fx.follow(Fx.follow(0.2, 0.8, 0.02, 9), 0.8, 0.02, 9) - Fx.follow(0.2, 0.8, 0.04, 9)) < 1e-9, true);
+const w0 = Fx.wave(30, 0.5, false, 0), w1 = Fx.wave(30, 0.5, false, 1);
+eq("wave leaves the planet edge", w0.radius, 30);
+eq("wave fades out", w1.alpha, 0);
+eq("louder = wider wave", Fx.wave(30, 1, false, 1).radius > Fx.wave(30, 0.2, false, 1).radius, true);
+eq("corona goes further", Fx.wave(30, 1, true, 1).radius > Fx.wave(30, 1, false, 1).radius, true);
 
 print(failures ? failures + "/" + count + " failed" : count + " tests passed");
 imports.system.exit(failures ? 1 : 0);

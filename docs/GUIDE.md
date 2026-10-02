@@ -85,17 +85,21 @@ Click any device to open it: its glyph flies onto the card.
 
 ## Volume ring
 
-Open a **connected** audio device (headphones, speaker, earbuds, TV…) and a thin ring settles around its planet, with a small moon at the current level. Devices that are not connected, or have no sound output, get no ring.
+Open a **connected** audio device (headphones, speaker, earbuds, TV…) and a ring of aurora settles around its planet, with a small moon at the current level. Devices that are not connected, or have no sound output, get no ring.
 
 ![The volume ring around an open headset](../screenshots/volume.png)
 
 - **Scroll** over the planet or the ring: 5 % per notch.
 - **Drag along the ring** for any level in between. The gap at the bottom is the stop between 0 % and 100 %: dragging into it holds the nearest end.
-- **Click the planet** to mute or unmute. The ring dims and the gap reads *Muted*; changing the volume unmutes.
-- While you change it, the **percentage** drops into the gap at the bottom of the ring. Its digits roll like an odometer on a spring, the level swings a little past and settles, and a puff of stardust leaves the moon at each step, bent back by the planet's pull. A second after you stop, the percentage floats back up and fades. With *Reduce motion*, it all changes at once, without the stardust.
+- **Click the planet** to mute or unmute: a shadow slides over the planet like an **eclipse**, leaving a corona of light around its rim, the aurora dims and the gap reads *Muted*. Changing the volume unmutes and the shadow slides away.
+- The level is a band of **aurora**: cooler where it starts, glowing toward the moon, with a bright filament through its middle. Its edges ripple gently; move the volume fast and the aurora flares.
+- **Moving it** leaves a **comet tail** behind the moon, which shrinks back into it when you stop, and sheds fine **stardust**: the faster you go, the more grains, thrown ahead and outward, then bent back by the planet's pull.
+- Each 5 % step sends a **sound wave** off the planet, wider and brighter the louder it gets. Reaching **100 %** sends a corona instead, a stronger flare.
+- While you change it, the **percentage** drops into the gap at the bottom of the ring. Its digits roll like an odometer on a spring and the level swings a little past and settles. A second after you stop, the percentage floats back up and fades.
+- With *Reduce motion*, everything changes at once: no ripple, tail, stardust or waves, and the eclipse is instant.
 - **Volume tick**: a soft, short tick plays **in the device itself** at each 5 % step, so you hear the level where it matters. Turn it off in **Look & sound → Volume tick**. It needs `pw-play` (part of PipeWire).
 
-The ring talks to the local sound server (PipeWire) only. Nothing runs while the ring is idle.
+The ring talks to the local sound server (PipeWire) only. The effects move on one clock that runs only while something moves and stops by itself a moment after you let go: nothing runs while the ring is idle.
 
 ## Earbuds: the trio
 

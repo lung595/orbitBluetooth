@@ -24,6 +24,13 @@ QtObject {
         return lift ? Qt.hsla(c.hslHue, c.hslSaturation, 0.14, 1) : fallback;
     }
 
+    // An accent that reads both on the night sky and on a light card: the
+    // volume ring straddles the two. Mid lightness in a light theme.
+    function both(c) {
+        return lift ? Qt.hsla(c.hslHue, c.hslSaturation, Math.min(0.56, Math.max(c.hslLightness, 0.46)), c.a) : c;
+    }
+    readonly property color ringAccent: both(Theme.primary)
+
     readonly property color primary: night(Theme.primary)
     readonly property color tertiary: night(Theme.tertiary)
     readonly property color error: night(Theme.error)

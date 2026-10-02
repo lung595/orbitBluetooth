@@ -5,6 +5,7 @@ import Quickshell.Services.Pipewire
 import qs.Common
 import qs.Widgets
 import "Volume.js" as Volume
+import "VolumeFx.js" as Fx
 
 // Volume of the focused audio device, drawn as a ring floating around its
 // glyph (like a planet's ring). Wheel = 5 % steps, drag along the ring =
@@ -13,8 +14,11 @@ import "Volume.js" as Volume
 // Bluetooth has no volume the shell can set: the sound server does, so the
 // ring drives the device's PipeWire sink, found by its address. No sink
 // (keyboard, mouse, not connected): no ring at all.
-// Nothing runs at rest: no timer, no animation, the tick player starts only
-// on a step.
+// The level is a band of aurora; moving it sheds stardust and a comet tail,
+// each step sends a sound wave off the planet (a corona at 100 %), and mute
+// eclipses the planet. These move on one clock (60 Hz, only this window
+// redraws) that runs while something moves and stops by itself: nothing
+// runs at rest. Reduce motion: no clock, no effects, the eclipse is instant.
 Item {
     id: ring
 
@@ -72,12 +76,14 @@ Item {
             return;
         const next = Volume.clamp(v);
         const step = Volume.step(volume) !== Volume.step(next);
-        const rising = next > volume;
         sink.audio.muted = false;
         sink.audio.volume = next;
         if (step) {
             tick();
-            dust.puff(rising);
+            // Reaching the top sends a corona instead of a plain wave
+            if (scene.motion)
+                waves.ping(next, next >= 1 && volume < 1);
+            wake();
         }
         talking = true;
         quiet.restart();
@@ -109,57 +115,120 @@ Item {
         onTriggered: ring.talking = false
     }
 
-    // --- Drawing --------------------------------------------------------------
-    Shape {
-        anchors.fill: parent
-        preferredRendererType: Shape.CurveRenderer
-        opacity: ring.muted ? 0.35 : 1
+    // --- Effects clock ----------------------------------------------------------
+    // One Timer moves every effect, at 60 Hz, and only while there is
+    // something to move: the level changing, grains or waves alive, the
+    // tail catching up. An animation running in QML would make the whole
+    // shell redraw at the screen's rate; this redraws this window only.
+    property real energy: 0 // 0..1, how fast the level moves
+    property real phase: 0 // drift of the aurora's ripple
+    property real tailEnd: level
+    property real _prevLevel: level
+    property double _last: 0
+    onLevelChanged: wake()
 
-        // Track: the whole ring, faint
-        ShapePath {
-            strokeColor: Theme.withAlpha(Theme.primary, 0.18)
-            strokeWidth: ring.thickness
-            fillColor: "transparent"
-            capStyle: ShapePath.RoundCap
-            PathAngleArc {
-                centerX: ring.cx
-                centerY: ring.cy
-                radiusX: ring.radius
-                radiusY: ring.radius
-                startAngle: Volume.start
-                sweepAngle: Volume.sweep
+    function wake() {
+        if (!scene.motion || !visible || clock.running)
+            return;
+        _last = Date.now();
+        _prevLevel = level;
+        clock.start();
+    }
+    function frame() {
+        const now = Date.now();
+        const dt = Math.max(0.001, Math.min(0.05, (now - _last) / 1000));
+        _last = now;
+        const moved = level - _prevLevel;
+        _prevLevel = level;
+        const speed = Math.abs(moved) / dt * Volume.sweep; // degrees per second
+        energy += (Math.min(1, speed / 240) - energy) * Math.min(1, dt * 8);
+        phase += dt * (1 + 5 * energy);
+        tailEnd = Fx.follow(tailEnd, level, dt, 9);
+        dust.advance(dt, Volume.start + Volume.sweep * level, speed, moved >= 0 ? 1 : -1);
+        waves.advance(dt);
+        const still = energy < 0.01 && dust.alive === 0 && waves.alive === 0 && Math.abs(tailEnd - level) * Volume.sweep < 0.3;
+        if (still)
+            rest();
+    }
+    function rest() {
+        clock.stop();
+        energy = 0;
+        tailEnd = level;
+        dust.clear();
+        waves.clear();
+    }
+    // Exposed for tests/qml/volumeRing.test.qml: the clock must stop alone
+    readonly property bool animating: clock.running
+    Timer {
+        id: clock
+        interval: 16
+        repeat: true
+        onTriggered: ring.frame()
+    }
+    onVisibleChanged: if (!visible)
+        rest()
+    Connections {
+        target: ring.scene
+        function onMotionChanged() {
+            if (!ring.scene.motion)
+                ring.rest();
+        }
+    }
+
+    // --- Drawing --------------------------------------------------------------
+    readonly property real planetRadius: scene.focusGlyphSize * 0.5
+
+    VolumeWaves {
+        id: waves
+        anchors.fill: parent
+        centerX: ring.cx
+        centerY: ring.cy
+        planetRadius: ring.planetRadius
+    }
+
+    VolumePlasma {
+        anchors.fill: parent
+        centerX: ring.cx
+        centerY: ring.cy
+        radius: ring.radius
+        level: ring.level
+        phase: ring.phase
+        energy: ring.energy
+        motion: ring.scene.motion
+        muted: ring.muted
+        opacity: ring.muted ? 0.3 : 1
+        Behavior on opacity {
+            enabled: ring.scene.motion
+            NumberAnimation {
+                duration: 450
             }
         }
-        // Halo under the level: the light of the ring
-        ShapePath {
-            strokeColor: Theme.withAlpha(Theme.primary, 0.22)
-            strokeWidth: ring.thickness + 6
-            fillColor: "transparent"
-            capStyle: ShapePath.RoundCap
-            PathAngleArc {
-                centerX: ring.cx
-                centerY: ring.cy
-                radiusX: ring.radius
-                radiusY: ring.radius
-                startAngle: Volume.start
-                sweepAngle: Math.max(0.01, Volume.sweep * ring.level)
-            }
-        }
-        // Level
-        ShapePath {
-            strokeColor: Theme.primary
-            strokeWidth: ring.thickness
-            fillColor: "transparent"
-            capStyle: ShapePath.RoundCap
-            PathAngleArc {
-                centerX: ring.cx
-                centerY: ring.cy
-                radiusX: ring.radius
-                radiusY: ring.radius
-                startAngle: Volume.start
-                sweepAngle: Math.max(0.01, Volume.sweep * ring.level)
-            }
-        }
+    }
+
+    VolumeTail {
+        anchors.fill: parent
+        centerX: ring.cx
+        centerY: ring.cy
+        radius: ring.radius
+        level: ring.level
+        end: ring.tailEnd
+    }
+
+    VolumeDust {
+        id: dust
+        anchors.fill: parent
+        centerX: ring.cx
+        centerY: ring.cy
+        radius: ring.radius
+    }
+
+    VolumeEclipse {
+        anchors.fill: parent
+        centerX: ring.cx
+        centerY: ring.cy
+        planetRadius: ring.planetRadius
+        muted: ring.muted
+        motion: ring.scene.motion
     }
 
     // The moon at the end of the level: what you grab
@@ -190,18 +259,6 @@ Item {
         value: Math.round(ring.volume * 100)
         muted: ring.muted
         active: ring.talking || ring.dragging || ring.muted
-        motion: ring.scene.motion
-    }
-
-    // Stardust: a few sparks leave the moon at each step, thrown along its
-    // path and bent back by the planet's pull
-    VolumeDust {
-        id: dust
-        anchors.fill: parent
-        centerX: ring.cx
-        centerY: ring.cy
-        radius: ring.radius
-        angle: (Volume.start + Volume.sweep * ring.level) * Math.PI / 180
         motion: ring.scene.motion
     }
 
