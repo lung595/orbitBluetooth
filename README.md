@@ -22,7 +22,7 @@ Drag a device to the center to connect it, pull it away to disconnect it.
 | DankMaterialShell | 1.6.0 or newer | Everything |
 | BlueZ | Any recent version, adapter powered on | Everything |
 | UPower | Any | *Optional*: real charging states |
-| PipeWire | Any | *Optional*: volume slider of audio devices |
+| PipeWire | Any | *Optional*: volume ring of audio devices (`pw-play` for its tick) |
 | Python 3 | Standard library only | *Optional*: headphone noise control |
 
 ### 1. Install
@@ -65,7 +65,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 
 1. **Open the orbit** from the widget you added. Discovery starts on its own.
 2. **Drag a device into the inner ring** to pair and connect it; drag it back out to disconnect.
-3. **Click a device** for its detail card: battery, charging, volume, noise control.
+3. **Click a device** for its detail card: battery, charging, noise control, and a volume ring around audio devices.
 4. **New headphones?** Put them in pairing mode: within a minute a pairing sheet unfolds from the bar and offers to connect them, even with Orbit closed.
 
 ## Features
@@ -80,6 +80,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 
 - **New headphones? Orbit notices.** Put them in pairing mode and a pairing sheet unfolds from the bar: the headset falls into orbit and floats above a planet, *Connect* pairs it on the spot, shows its battery and its noise-control modes. Deep space in a dark theme, stratosphere in a light one, with any DMS palette. Works with Orbit closed.
 - **Drag to connect** with a magnet snap, elastic tether to disconnect.
+- **Volume ring**: open a connected audio device and a ring floats around it. Scroll for 5 % steps, drag along the ring, click the planet to mute; a soft tick plays in the device itself at each step.
 - **Live charging**: energy beam, time to full, charge speed, session chart.
 - **Earbuds trio**: the case and both buds in their own mini orbit, each with its battery.
 - **Noise control** for 13 headphone brands (Sony, Apple, Samsung, Bose, Huawei…).
@@ -97,6 +98,8 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 | Drag a device inside the inner ring | Pair and connect |
 | Drag a connected device outward | Disconnect |
 | Click a device | Open its detail card |
+| Scroll over an open audio device, or drag along its ring | Volume, 5 % per notch (a soft tick plays in the device) |
+| Click the planet of an open audio device | Mute or unmute |
 | Right-click a device | Menu: connect, noise-control modes, hide, forget |
 | Forget a device (unpair) | Right-click → **Forget**, click again to confirm; or the 🗑 button of its detail card |
 | Drag a device into the black hole | Hide it (it stays connected) |
@@ -138,6 +141,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Custom images folder | — |
 | Sounds | Sounds | Off |
 | | Volume | 60 % |
+| | Volume tick (a soft tick in the device while you change its volume) | On |
 
 ## Command line and keybindings
 
@@ -175,6 +179,7 @@ Some Sony headsets do not report charging, or drop Bluetooth while charging: thi
 - **No telemetry.** Connection times and battery history stay in memory; settings, hidden and ignored devices are stored by DMS.
 - **Noise control**: a small helper talks to your headset over a local Bluetooth socket, only while needed.
 - **New headphones pop-up**: by default Orbit only listens to searches you start yourself; nothing runs in the background. The optional **Background scan** (off by default) does a local scan of 8 s about once a minute, only while the screen is on, no Bluetooth audio is connected and the battery is above the threshold.
+- **Volume ring**: talks to the local sound server (PipeWire) only; its tick is a sound file shipped with Orbit.
 - **Guide links**: the GitHub mark opens the guide in your browser only when you click it; Orbit itself makes no request.
 - **Network: only one opt-in feature, off by default.** **Real device pictures** sends only the *model name* of devices you have paired, never a stranger's device nearby, never the Bluetooth address. It contacts `commons.wikimedia.org`, then `api.sketchfab.com`, and downloads the picture from `upload.wikimedia.org` or `media.sketchfab.com`. Pictures are credited in the card, kept in `~/.cache/orbitBluetooth/pictures` (readable by you only) and erased when you turn the option off or from the settings.
 

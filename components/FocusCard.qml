@@ -415,17 +415,6 @@ Item {
                 }
             }
 
-            // Output volume of audio devices (hides itself when there is no sink)
-            Loader {
-                width: parent.width
-                active: !card.picking && !!card.body?.connected
-                visible: active && item && item.visible
-                sourceComponent: VolumeRow {
-                    width: parent ? parent.width : 0
-                    address: card.body?.address ?? ""
-                }
-            }
-
             // Credit of the downloaded picture: its licenses ask for it
             StyledText {
                 width: parent.width

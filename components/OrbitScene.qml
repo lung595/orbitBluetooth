@@ -1483,6 +1483,12 @@ Item {
         }
 
         // Focus card (bodies are siblings, so the focused glyph can sit above it)
+        // Volume ring around the focused device, above the card
+        VolumeRing {
+            scene: orbitRoot
+            z: 20001
+        }
+
         FocusCard {
             id: focusCard
             scene: orbitRoot

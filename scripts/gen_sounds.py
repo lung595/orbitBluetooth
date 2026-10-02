@@ -71,3 +71,10 @@ b = empty(0.3)
 tone(392.0, 0.12, 0.0, b, gain=0.6, decay=26, bell=0.08)
 tone(349.2, 0.16, 0.11, b, gain=0.6, decay=22, bell=0.08)
 write("error.wav", b, peak=0.26)
+
+# Volume: a soft, round glass tick played in the device being adjusted, at
+# its new volume, so the level is heard where it matters. Short enough to
+# repeat on every 5 % step without blurring.
+b = empty(0.07)
+tone(1760.0, 0.065, 0.0, b, gain=0.6, attack=0.002, decay=55, bell=0.18)
+write("volume.wav", b, peak=0.3)

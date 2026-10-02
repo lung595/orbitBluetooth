@@ -472,6 +472,13 @@ PluginSettings {
             defaultValue: false
         }
 
+        ToggleSetting {
+            settingKey: "volumeTick"
+            label: "Volume tick"
+            description: "A soft tick in the device on each 5 % step of its volume ring, so you hear the level where it plays"
+            defaultValue: true
+        }
+
         SliderSetting {
             settingKey: "soundVolume"
             label: "Volume"

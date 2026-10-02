@@ -66,7 +66,8 @@ orbitBluetooth/
 │   ├── OfferCard.qml, ScanChip.qml, AdapterNotice.qml  # the scene's chrome: pairing offer, scan chip, Bluetooth off
 │   ├── DeviceBody.qml           # one orbiting device, charging beam
 │   ├── FocusCard.qml            # detail card
-│   ├── VolumeRow.qml            # output volume slider (PipeWire)
+│   ├── VolumeRing.qml           # volume ring around the focused device (PipeWire)
+│   ├── Volume.js                # its pure logic (tested)
 │   ├── BatteryCard.qml          # gauge, chart and stat tiles
 │   ├── StatTiles.qml            # READY AT / SPEED / HEALTH tiles
 │   ├── EarbudsTrio.qml, EarbudArt.qml, Earbuds.js   # case + buds mini orbit

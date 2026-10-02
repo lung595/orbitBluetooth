@@ -37,6 +37,8 @@ QtObject {
     readonly property bool quickDisconnect: _get("quickDisconnect", false)
     readonly property int scanSeconds: parseInt(_get("scanSeconds", "45"))
     readonly property bool sounds: _get("sounds", false)
+    // A soft tick in the device on each 5 % volume step: on, since you asked for the volume yourself
+    readonly property bool volumeTick: _get("volumeTick", true)
     readonly property real soundVolume: _get("soundVolume", 60) / 100
     readonly property bool shootingStars: _get("shootingStars", true)
     readonly property string starDensity: _get("starDensity", "normal")

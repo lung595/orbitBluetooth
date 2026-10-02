@@ -7,6 +7,7 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 - [Widgets](#widgets)
 - [The orbit](#the-orbit) · [If it does not connect](#if-it-does-not-connect)
 - [The detail card](#the-detail-card)
+- [Volume ring](#volume-ring)
 - [Earbuds: the trio](#earbuds-the-trio)
 - [Hiding devices: the black hole](#hiding-devices-the-black-hole)
 - [Noise control](#noise-control)
@@ -76,11 +77,25 @@ Click any device to open it: its glyph flies onto the card.
 - **Name, type and state** (connected, paired, available).
 - **Rename**: click the name of a paired device. <kbd>Enter</kbd> saves, <kbd>Esc</kbd> cancels, an empty name restores the device's own name. The new name is the Bluetooth alias, so every app shows it; icon, noise control and battery estimates still follow the device's own name.
 - **Connection time and battery level.**
-- **Volume** of audio devices: a slider and a mute button on the device's PipeWire output (hidden for devices with no sound output).
+- **Volume** of connected audio devices: a ring floats around the device, see [Volume ring](#volume-ring).
 - **Actions**: change icon, connect or disconnect, hide, forget (asks twice).
 - **Forget** unpairs the device (BlueZ removes it) and clears what Orbit kept about it: its icon choice and a *Don't offer again* mark, so it can be offered as new next time. Also in the right-click menu: **Forget**, then click again to confirm.
 - **Battery gauge, session chart and stats** (see [Charging and battery](#charging-and-battery)).
 - The **earbuds trio** and **noise control** when the device supports them.
+
+## Volume ring
+
+Open a **connected** audio device (headphones, speaker, earbuds, TV…) and a thin ring settles around its planet, with a small moon at the current level. Devices that are not connected, or have no sound output, get no ring.
+
+![The volume ring around an open headset](../screenshots/volume.png)
+
+- **Scroll** over the planet or the ring: 5 % per notch.
+- **Drag along the ring** for any level in between. The gap at the bottom is the stop between 0 % and 100 %: dragging into it holds the nearest end.
+- **Click the planet** to mute or unmute. The ring dims and the planet reads *Muted*; changing the volume unmutes.
+- While you change it, the planet shows the **percentage**, then goes back to its icon a second later.
+- **Volume tick**: a soft, short tick plays **in the device itself** at each 5 % step, so you hear the level where it matters. Turn it off in **Look & sound → Volume tick**. It needs `pw-play` (part of PipeWire).
+
+The ring talks to the local sound server (PipeWire) only. Nothing runs while the ring is idle.
 
 ## Earbuds: the trio
 
@@ -291,6 +306,7 @@ Grouped in tabs: **Orbit** (with Reset), **Scanning**, **Headphones** (with devi
 | | Custom images folder | — | PNG files that replace built-in icons |
 | Sounds | Sounds | Off | Short cues on snap, connect and disconnect |
 | | Volume | 60 % | |
+| | Volume tick | On | A soft tick in the device at each 5 % step of its [volume ring](#volume-ring) |
 
 Three buttons at the end reset custom device icons, bring back every hidden device and offer ignored devices again. DMS's *Reduce motion* is respected.
 
@@ -298,7 +314,7 @@ Three buttons at the end reset custom device icons, bring back every hidden devi
 
 - **No telemetry. No network access, except one opt-in feature, off by default**: [Real device pictures](#real-device-pictures), which sends only the model name of paired devices to `commons.wikimedia.org` and `api.sketchfab.com`.
 - **Background scan** (the new headphones pop-up, on by default): Bluetooth discovery for 8 s about once a minute, local only, under the conditions in [New headphones pop-up](#new-headphones-pop-up). Devices you *Ignore* are stored with the plugin settings.
-- **The volume slider** talks to the local sound server (PipeWire) only.
+- **The volume ring** talks to the local sound server (PipeWire) only; its tick is a sound file shipped with Orbit, played with `pw-play`.
 - **One helper process**: the noise-control helper opens a local Bluetooth socket to your headset and nothing else, only while needed. `ORBIT_ANC_DEBUG=1` prints its raw packets on stderr; nothing is logged to a file.
 - **Nothing written to disk by Orbit**, except the pictures cache of that opt-in feature (`~/.cache/orbitBluetooth/pictures`): connection times and battery history live in memory for the session.
 - **Files read**: only the sysfs `uevent` of kernel batteries, once each.

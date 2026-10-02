@@ -19,6 +19,7 @@ const Offer = load("Offer.js", ["scanBlocker", "isCandidate", "offerable", "head
 const Pictures = load("Pictures.js", ["queryFor", "creditText"]);
 const Catalog = load("DeviceCatalog.js", ["deviceName", "modelName", "resolve"]);
 const Guide = load("Guide.js", ["url", "connectNote"]);
+const Volume = load("Volume.js", ["start", "sweep", "clamp", "step", "nudge", "valueAt", "zone", "findSink", "validSink"]);
 const Guard = load("Guard.js", ["offerFamily", "hasInput", "refused", "validPath", "parseUuids"]);
 
 let count = 0, failures = 0;
@@ -158,6 +159,32 @@ const anchors = guide.split("\n").filter(l => /^#{2,3} /.test(l)).map(l => l.rep
 ["noise-control", "pairing-safety", "if-it-does-not-connect", "new-headphones-pop-up"].forEach(a => eq("guide has #" + a, anchors.indexOf(a) >= 0, true));
 eq("guide url", Guide.url("noise-control"), "https://github.com/lung595/orbitBluetooth/blob/main/docs/GUIDE.md#noise-control");
 eq("a nameless device", Guide.connectNote("pair", "").title, "Could not pair this device");
+
+// --- Volume ring ---------------------------------------------------------------
+eq("wheel up lands on the 5 % grid", Volume.nudge(0.62, 1), 0.65);
+eq("wheel down", Math.round(Volume.nudge(0.6, -2) * 100), 50);
+eq("never above 100 %", Volume.nudge(0.98, 3), 1);
+eq("never below 0 %", Volume.nudge(0.02, -3), 0);
+eq("same step: no tick", Volume.step(0.61) === Volume.step(0.62), true);
+eq("next step: tick", Volume.step(0.62) === Volume.step(0.68), false);
+eq("top of the ring is half", Math.round(Volume.valueAt(0, -100, 0.3) * 100), 50);
+eq("start of the ring is 0", Math.round(Volume.valueAt(Math.cos(Math.PI * 2 / 3) * 100, Math.sin(Math.PI * 2 / 3) * 100, 0.5) * 100), 0);
+eq("gap keeps a high level at 100 %", Volume.valueAt(0, 100, 0.9), 1);
+eq("gap keeps a low level at 0 %", Volume.valueAt(0, 100, 0.1), 0);
+eq("on the ring", Volume.zone(0, -60, 60, 45), "ring");
+eq("on the glyph", Volume.zone(5, 5, 60, 45), "glyph");
+eq("outside", Volume.zone(0, -90, 60, 45), "");
+const nodes = [
+    { name: "alsa_output.pci-0000_00_1f.3", isSink: true, isStream: false },
+    { name: "bluez_output.02_00_00_00_10_06.1", isSink: true, isStream: true },
+    { name: "bluez_output.02_00_00_00_10_06.1", isSink: true, isStream: false }
+];
+eq("sink found by address", Volume.findSink(nodes, "02:00:00:00:10:06"), nodes[2]);
+eq("no sink, no ring", Volume.findSink(nodes, "02:00:00:00:10:07"), null);
+eq("bad address", Volume.findSink(nodes, "02:00"), null);
+eq("node name ok for pw-play", Volume.validSink("bluez_output.02_00_00_00_10_06.1"), true);
+eq("no shell characters", Volume.validSink("x; rm -rf ~"), false);
+eq("no option smuggling", Volume.validSink("--target=x y"), false);
 
 print(failures ? failures + "/" + count + " failed" : count + " tests passed");
 imports.system.exit(failures ? 1 : 0);

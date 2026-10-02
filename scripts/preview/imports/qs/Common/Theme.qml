@@ -17,6 +17,7 @@ QtObject {
     property real fontSizeSmall: 12
     property real fontSizeMedium: 14
     property real fontSizeLarge: 16
+    property real fontSizeXLarge: 20
     property real spacingXS: 4
     property real spacingS: 8
     property real spacingM: 12

@@ -5,6 +5,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## Unreleased
 
+## 1.11.0 - 2026-10-03
+
+### Added
+
+- **Volume ring**: open a connected audio device and a ring floats around its planet. Scroll for 5 % steps, drag along the ring for anything in between, click the planet to mute. The planet shows the percentage while you change it.
+- **Volume tick** (Look & sound, on by default): a soft, short tick plays in the device itself at each 5 % step, so you can hear where you are.
+
+### Removed
+
+- The volume slider of the detail card, replaced by the ring.
+
 ## 1.10.4 - 2026-10-02
 
 ### Fixed
