@@ -1,5 +1,6 @@
 #!/bin/sh
-# Runs the QML tests of the "new device" pop-up without Quickshell or a
+# Runs the QML tests (the "new device" pop-up, the volume ring) without
+# Quickshell or a
 # Bluetooth adapter: stubs/ stands in for Quickshell and the DMS services,
 # Device.qml for a BlueZ device, and NewDeviceWindow.qml replaces the real
 # layer-shell window. Needs Qt 6 (qml, qml6, qml-qt6 or PySide6).
@@ -11,16 +12,19 @@ here=$(cd "$(dirname "$0")" && pwd)
 root=$(dirname "$(dirname "$here")")
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
-cp "$root"/components/NewDeviceWatch.qml "$root"/components/*.js "$work"/
+cp "$root"/components/NewDeviceWatch.qml "$root"/components/VolumeRing.qml "$root"/components/VolumeReadout.qml "$root"/components/VolumeDust.qml "$root"/components/PaperColors.qml "$root"/components/*.js "$work"/
 # Quickshell's device list is a model with .values; the stub keeps a plain list
 sed -i 's/Bluetooth\.devices\.values/Bluetooth.list/g' "$work"/NewDeviceWatch.qml
-cp "$here"/Device.qml "$here"/ProfileCheck.qml "$here"/NewDeviceWindow.qml "$here"/newDevice.test.qml "$work"/
+cp "$here"/Device.qml "$here"/ProfileCheck.qml "$here"/NewDeviceWindow.qml "$here"/*.test.qml "$work"/
 export QT_QPA_PLATFORM=offscreen
 # Print to the terminal, not to journald, including print() lines
 export QT_FORCE_STDERR_LOGGING=1 QT_LOGGING_RULES='qml.debug=true;js.debug=true'
 for tool in qml6 qml-qt6 qml; do
     if command -v "$tool" >/dev/null 2>&1; then
-        exec "$tool" -I "$root/scripts/preview/imports" -I "$here/stubs" "$work/newDevice.test.qml"
+        for test in "$work"/*.test.qml; do
+            "$tool" -I "$root/scripts/preview/imports" -I "$here/stubs" "$test"
+        done
+        exit 0
     fi
 done
 python3 - "$root/scripts/preview/imports" "$here/stubs" "$work/newDevice.test.qml" <<'PY'

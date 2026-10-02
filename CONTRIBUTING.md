@@ -68,6 +68,8 @@ orbitBluetooth/
 │   ├── FocusCard.qml            # detail card
 │   ├── VolumeRing.qml           # volume ring around the focused device (PipeWire)
 │   ├── Volume.js                # its pure logic (tested)
+│   ├── VolumeReadout.qml        # the percentage rolling in the ring's gap
+│   ├── VolumeDust.qml           # stardust thrown from the moon at each step
 │   ├── BatteryCard.qml          # gauge, chart and stat tiles
 │   ├── StatTiles.qml            # READY AT / SPEED / HEALTH tiles
 │   ├── EarbudsTrio.qml, EarbudArt.qml, Earbuds.js   # case + buds mini orbit
@@ -107,7 +109,7 @@ orbitBluetooth/
 ```sh
 (cd anc && python3 -m unittest discover -s tests -t .)   # noise-control protocols
 (cd pictures && python3 -m unittest discover -s tests -t .)   # picture lookup, without network
-sh tests/qml/run.sh                                       # new-device pop-up scenario (Qt 6)
+sh tests/qml/run.sh                                       # new-device pop-up scenario and volume ring (Qt 6)
 gjs tests/anc.test.js                                     # brand detection, modes, pairing guard
 ```
 

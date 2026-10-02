@@ -78,7 +78,7 @@ Click any device to open it: its glyph flies onto the card.
 - **Rename**: click the name of a paired device. <kbd>Enter</kbd> saves, <kbd>Esc</kbd> cancels, an empty name restores the device's own name. The new name is the Bluetooth alias, so every app shows it; icon, noise control and battery estimates still follow the device's own name.
 - **Connection time and battery level.**
 - **Volume** of connected audio devices: a ring floats around the device, see [Volume ring](#volume-ring).
-- **Actions**: change icon, connect or disconnect, hide, forget (asks twice).
+- **Actions**: on the left, back and change icon (the card); on the right, connect or disconnect, hide, forget (asks twice) (the device).
 - **Forget** unpairs the device (BlueZ removes it) and clears what Orbit kept about it: its icon choice and a *Don't offer again* mark, so it can be offered as new next time. Also in the right-click menu: **Forget**, then click again to confirm.
 - **Battery gauge, session chart and stats** (see [Charging and battery](#charging-and-battery)).
 - The **earbuds trio** and **noise control** when the device supports them.
@@ -91,8 +91,8 @@ Open a **connected** audio device (headphones, speaker, earbuds, TV…) and a th
 
 - **Scroll** over the planet or the ring: 5 % per notch.
 - **Drag along the ring** for any level in between. The gap at the bottom is the stop between 0 % and 100 %: dragging into it holds the nearest end.
-- **Click the planet** to mute or unmute. The ring dims and the planet reads *Muted*; changing the volume unmutes.
-- While you change it, the planet shows the **percentage**, then goes back to its icon a second later.
+- **Click the planet** to mute or unmute. The ring dims and the gap reads *Muted*; changing the volume unmutes.
+- While you change it, the **percentage** drops into the gap at the bottom of the ring. Its digits roll like an odometer on a spring, the level swings a little past and settles, and a puff of stardust leaves the moon at each step, bent back by the planet's pull. A second after you stop, the percentage floats back up and fades. With *Reduce motion*, it all changes at once, without the stardust.
 - **Volume tick**: a soft, short tick plays **in the device itself** at each 5 % step, so you hear the level where it matters. Turn it off in **Look & sound → Volume tick**. It needs `pw-play` (part of PipeWire).
 
 The ring talks to the local sound server (PipeWire) only. Nothing runs while the ring is idle.

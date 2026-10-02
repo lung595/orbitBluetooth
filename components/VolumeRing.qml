@@ -51,15 +51,19 @@ Item {
         }
     }
 
-    // What the arc shows: follows the volume with a short glide (wheel
-    // steps), straight under the finger while dragging
+    // What the arc shows: follows the volume on a spring (a wheel step
+    // swings a little past and settles), straight under the finger while
+    // dragging. `level` keeps the arc inside the ring when the spring
+    // overshoots an end.
     property bool dragging: false
     property real shown: volume
+    readonly property real level: Math.max(0, Math.min(1, shown))
     Behavior on shown {
         enabled: ring.scene.motion && !ring.dragging
-        NumberAnimation {
-            duration: 160
-            easing.type: Easing.OutCubic
+        SpringAnimation {
+            spring: 4.5
+            damping: 0.32
+            epsilon: 0.002
         }
     }
 
@@ -68,10 +72,13 @@ Item {
             return;
         const next = Volume.clamp(v);
         const step = Volume.step(volume) !== Volume.step(next);
+        const rising = next > volume;
         sink.audio.muted = false;
         sink.audio.volume = next;
-        if (step)
+        if (step) {
             tick();
+            dust.puff(rising);
+        }
         talking = true;
         quiet.restart();
     }
@@ -135,7 +142,7 @@ Item {
                 radiusX: ring.radius
                 radiusY: ring.radius
                 startAngle: Volume.start
-                sweepAngle: Math.max(0.01, Volume.sweep * ring.shown)
+                sweepAngle: Math.max(0.01, Volume.sweep * ring.level)
             }
         }
         // Level
@@ -150,14 +157,14 @@ Item {
                 radiusX: ring.radius
                 radiusY: ring.radius
                 startAngle: Volume.start
-                sweepAngle: Math.max(0.01, Volume.sweep * ring.shown)
+                sweepAngle: Math.max(0.01, Volume.sweep * ring.level)
             }
         }
     }
 
     // The moon at the end of the level: what you grab
     Rectangle {
-        readonly property real a: (Volume.start + Volume.sweep * ring.shown) * Math.PI / 180
+        readonly property real a: (Volume.start + Volume.sweep * ring.level) * Math.PI / 180
         property real knob: ring.dragging || drag.containsMouse && drag.onRing ? 14 : 11
         width: knob
         height: knob
@@ -175,44 +182,33 @@ Item {
         }
     }
 
-    // While adjusting (or muted), the level takes the glyph's place: big,
-    // right where you look
-    Rectangle {
-        readonly property real d: ring.scene.focusGlyphSize * 0.86
-        x: ring.cx - d / 2
-        y: ring.cy - d / 2
-        width: d
-        height: d
-        radius: d / 2
-        color: Theme.surfaceContainerHigh
-        opacity: ring.talking || ring.dragging || ring.muted ? 1 : 0
-        visible: opacity > 0.01
-        Behavior on opacity {
-            enabled: ring.scene.motion
-            NumberAnimation {
-                duration: 160
-            }
-        }
-        Column {
-            anchors.centerIn: parent
-            DankIcon {
-                anchors.horizontalCenter: parent.horizontalCenter
-                visible: ring.muted
-                name: "volume_off"
-                size: 22
-                color: Theme.surfaceVariantText
-            }
-            StyledText {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: ring.muted ? "Muted" : Math.round(ring.volume * 100) + "%"
-                font.pixelSize: ring.muted ? Theme.fontSizeSmall : Theme.fontSizeXLarge
-                font.weight: Font.Bold
-                color: ring.muted ? Theme.surfaceVariantText : Theme.surfaceText
-            }
-        }
+    // The level, read in the gap at the bottom of the ring
+    VolumeReadout {
+        x: ring.cx - width / 2
+        // Inside the gap, on the planet's lower edge, clear of the name below
+        y: ring.cy + ring.radius - 9 - height / 2
+        value: Math.round(ring.volume * 100)
+        muted: ring.muted
+        active: ring.talking || ring.dragging || ring.muted
+        motion: ring.scene.motion
+    }
+
+    // Stardust: a few sparks leave the moon at each step, thrown along its
+    // path and bent back by the planet's pull
+    VolumeDust {
+        id: dust
+        anchors.fill: parent
+        centerX: ring.cx
+        centerY: ring.cy
+        radius: ring.radius
+        angle: (Volume.start + Volume.sweep * ring.level) * Math.PI / 180
+        motion: ring.scene.motion
     }
 
     // --- Gestures ---------------------------------------------------------------
+    // Exposed for tests/qml/volumeRing.test.qml
+    property alias pointer: drag
+
     WheelHandler {
         enabled: ring.ready
         acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
@@ -236,7 +232,9 @@ Item {
         preventStealing: true
         // Only the ring and the glyph take the pointer: the card's buttons
         // right next to the glyph stay reachable
-        containmentMask: Item {
+        // A QtObject, not an Item: Qt asks an Item mask its own (empty)
+        // rectangle and never calls this function
+        containmentMask: QtObject {
             function contains(point: point): bool {
                 return drag.zone(point) !== "";
             }

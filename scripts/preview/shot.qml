@@ -6,7 +6,7 @@ import "../../components"
 
 // Offscreen renders for the README, with mock devices and services.
 // Usage: QT_QPA_PLATFORM=offscreen qml -I imports shot.qml -- <mode> <out.png>
-// Modes: orbit, zoom, orbitfocus, desktop, desktopfocus, ancfocus,
+// Modes: orbit, zoom, orbitfocus, volumefocus (a volume step, mid-puff), desktop, desktopfocus, ancfocus,
 //        buds, budsdock, hole, holetess, hiddencard, hiddenempty, connecting, menu, feed
 Window {
     id: win
@@ -174,8 +174,29 @@ Window {
                     scene.updateDrag(Qt.point(scene.holeX + 26, scene.holeY - 22));
                 }
             }
-            grabTimer.interval = win.mode.startsWith("buds") ? 2600 : win.mode.endsWith("focus") || win.mode.startsWith("hidden") ? 1800 : win.mode === "connecting" ? 700 : win.mode === "feed" || win.mode === "menu" ? 900 : 50;
+            grabTimer.interval = win.mode.startsWith("buds") ? 2600 : win.mode === "volumefocus" ? 1760 : win.mode.endsWith("focus") || win.mode.startsWith("hidden") ? 1800 : win.mode === "connecting" ? 700 : win.mode === "feed" || win.mode === "menu" ? 900 : 50;
             grabTimer.start();
+        }
+    }
+    // volumefocus: once the glyph has landed, one wheel-like step up, so the
+    // readout rolls and the stardust flies when the grab happens
+    Timer {
+        running: win.mode === "volumefocus"
+        interval: 2600 + 1550
+        onTriggered: {
+            const seek = item => {
+                if (item.objectName === "volumeRing")
+                    return item;
+                for (const c of item.children) {
+                    const r = seek(c);
+                    if (r)
+                        return r;
+                }
+                return null;
+            };
+            const ring = seek(win.contentItem);
+            if (ring)
+                ring.set(0.67);
         }
     }
     Timer {

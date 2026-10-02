@@ -140,11 +140,22 @@ Item {
         }
     }
 
-    CardButton {
+    // Left: the card itself (back, look); right: the device (connect,
+    // hide, forget). Two sides keep the header balanced around the glyph.
+    Row {
         x: Theme.spacingM
         y: Theme.spacingM
-        icon: "arrow_back"
-        onClicked: card.scene.clearFocus()
+        spacing: Theme.spacingXS
+
+        CardButton {
+            icon: "arrow_back"
+            onClicked: card.scene.clearFocus()
+        }
+        CardButton {
+            icon: "palette"
+            active: card.picking
+            onClicked: card.picking = !card.picking
+        }
     }
 
     Row {
@@ -152,11 +163,6 @@ Item {
         y: Theme.spacingM
         spacing: Theme.spacingXS
 
-        CardButton {
-            icon: "palette"
-            active: card.picking
-            onClicked: card.picking = !card.picking
-        }
         CardButton {
             visible: !!card.device
             icon: card.body?.phase === "connecting" ? "close" : card.body?.connected ? "link_off" : "link"

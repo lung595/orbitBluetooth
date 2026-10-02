@@ -1485,6 +1485,7 @@ Item {
         // Focus card (bodies are siblings, so the focused glyph can sit above it)
         // Volume ring around the focused device, above the card
         VolumeRing {
+        objectName: "volumeRing" // found by the offscreen previews
             scene: orbitRoot
             z: 20001
         }

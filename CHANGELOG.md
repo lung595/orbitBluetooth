@@ -9,8 +9,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
-- **Volume ring**: open a connected audio device and a ring floats around its planet. Scroll for 5 % steps, drag along the ring for anything in between, click the planet to mute. The planet shows the percentage while you change it.
+- **Volume ring**: open a connected audio device and a ring floats around its planet. Scroll for 5 % steps, drag along the ring for anything in between, click the planet to mute. While you change it, the percentage drops into the ring's gap: digits roll on a spring, the level swings past and settles, and stardust leaves the moon at each step.
 - **Volume tick** (Look & sound, on by default): a soft, short tick plays in the device itself at each 5 % step, so you can hear where you are.
+
+### Changed
+
+- Detail card buttons are balanced: back and change icon on the left, connect, hide and forget on the right.
 
 ### Removed
 
