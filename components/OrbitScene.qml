@@ -1499,166 +1499,19 @@ Item {
     }
 
     // Offer card for a newly found, unpaired device
-    Rectangle {
-        id: offer
-        readonly property var device: scene.offerAddress ? scene.deviceMap[scene.offerAddress] ?? null : null
-        readonly property bool shown: !!device && !device.connected && !(device.paired || device.bonded) && !scene.focusBody && !scene.hiddenOpen && !scene.dragBody
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: (scene.glass ? Math.round(scene.height * 0.1) : Theme.spacingS) + Theme.spacingXL
-        width: Math.min(parent.width - Theme.spacingL * 2, offerRow.implicitWidth + Theme.spacingL * 2)
-        height: Theme.fontSizeSmall + Theme.spacingXL
-        radius: height / 2
-        color: scene.night.smoke(0.8)
-        border.width: 1
-        border.color: Theme.withAlpha(scene.night.primary, 0.45)
-        opacity: shown ? 1 : 0
-        visible: opacity > 0.01
-        z: 20
-        Behavior on opacity {
-            NumberAnimation {
-                duration: 220
-            }
-        }
-
-        Row {
-            id: offerRow
-            anchors.centerIn: parent
-            spacing: Theme.spacingS
-            StyledText {
-                anchors.verticalCenter: parent.verticalCenter
-                text: offer.device ? Catalog.deviceName(offer.device) + " can be paired" : ""
-                color: scene.night.ink(0.85)
-                elide: Text.ElideRight
-                width: Math.min(implicitWidth, scene.width * 0.5)
-                font.pixelSize: Theme.fontSizeSmall - 1
-            }
-            Rectangle {
-                anchors.verticalCenter: parent.verticalCenter
-                width: connectText.implicitWidth + Theme.spacingL
-                height: Theme.fontSizeSmall + Theme.spacingM
-                radius: height / 2
-                color: connectArea.containsMouse ? Theme.withAlpha(scene.night.primary, 0.4) : Theme.withAlpha(scene.night.primary, 0.25)
-                StyledText {
-                    id: connectText
-                    anchors.centerIn: parent
-                    text: "Connect"
-                    color: scene.night.primary
-                    font.pixelSize: Theme.fontSizeSmall - 1
-                    font.weight: Font.Medium
-                }
-                MouseArea {
-                    id: connectArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: scene.acceptOffer()
-                }
-            }
-            DankIcon {
-                anchors.verticalCenter: parent.verticalCenter
-                name: "close"
-                size: 15
-                color: scene.night.ink(0.55)
-                MouseArea {
-                    anchors.fill: parent
-                    anchors.margins: -4
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: scene.dismissOffer()
-                }
-            }
-        }
+    OfferCard {
+        scene: orbitRoot
     }
 
     // Scan chip. On glass it is centered, carries its own smoky pill so it
     // reads on any wallpaper, and only shows while the widget is in use.
-    Rectangle {
-        anchors.top: parent.top
-        anchors.right: scene.glass ? undefined : parent.right
-        anchors.horizontalCenter: scene.glass ? parent.horizontalCenter : undefined
-        anchors.margins: Theme.spacingS
-        anchors.topMargin: scene.glass ? Math.round(scene.height * 0.07) : Theme.spacingS
-        height: Theme.fontSizeSmall + Theme.spacingM
-        width: chipRow.implicitWidth + Theme.spacingL
-        radius: height / 2
-        color: scene.glass ? (chipArea.containsMouse ? Qt.tint(scene.night.smoke(0.78), scene.night.ink(0.06)) : scene.night.smoke(0.6)) : chipArea.containsMouse ? scene.night.ink(0.12) : scene.night.ink(0.06)
-        border.width: scene.glass ? 1 : 0
-        border.color: scene.night.ink(0.08)
-        readonly property bool shown: scene.btOn && !scene.focusBody && !scene.hiddenOpen && (!scene.glass || scene.interacting || scene.discovering)
-        opacity: shown ? 1 : 0
-        visible: opacity > 0.01
-        Behavior on opacity {
-            NumberAnimation {
-                duration: 220
-            }
-        }
-
-        Row {
-            id: chipRow
-            anchors.centerIn: parent
-            spacing: Theme.spacingXS
-            Rectangle {
-                id: scanDot
-                width: Theme.spacingXS + 2
-                height: width
-                radius: width / 2
-                anchors.verticalCenter: parent.verticalCenter
-                color: scene.discovering ? scene.night.primary : scene.night.ink(0.35)
-                // Blinks 1 → 0.25 → 1 every 1.4 s while scanning (effects clock)
-                opacity: scene.discovering && scene.active && scene.motion ? 0.25 + 0.75 * Math.abs(1 - (scene.fxTime % 1.4) / 0.7) : 1
-            }
-            StyledText {
-                text: scene.discovering ? "Scanning" : "Scan"
-                color: scene.night.ink(0.75)
-                font.pixelSize: Theme.fontSizeSmall - 1
-                anchors.verticalCenter: parent.verticalCenter
-            }
-        }
-        MouseArea {
-            id: chipArea
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: scene.discovering ? scene.stopScan() : scene.startScan()
-        }
+    ScanChip {
+        scene: orbitRoot
     }
 
     // Bluetooth off / missing adapter
-    Column {
-        anchors.horizontalCenter: parent.horizontalCenter
-        y: scene.cy + scene.coreSize * 0.5 + 26
-        spacing: Theme.spacingS
-        visible: !scene.btOn
-
-        StyledText {
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: BluetoothService.available ? "Bluetooth is off" : "No Bluetooth adapter"
-            color: scene.night.ink(0.6)
-            font.pixelSize: Theme.fontSizeSmall
-        }
-        Rectangle {
-            anchors.horizontalCenter: parent.horizontalCenter
-            visible: BluetoothService.available
-            width: onText.implicitWidth + Theme.spacingXL
-            height: Theme.fontSizeSmall + Theme.spacingL
-            radius: height / 2
-            color: onArea.containsMouse ? Theme.withAlpha(scene.night.primary, 0.35) : Theme.withAlpha(scene.night.primary, 0.2)
-            StyledText {
-                id: onText
-                anchors.centerIn: parent
-                text: "Turn on"
-                color: scene.night.primary
-                font.pixelSize: Theme.fontSizeSmall
-                font.weight: Font.Medium
-            }
-            MouseArea {
-                id: onArea
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: BluetoothService.setBluetoothEnabled(true)
-            }
-        }
+    AdapterNotice {
+        scene: orbitRoot
     }
 
     // Right-click menu, above everything else

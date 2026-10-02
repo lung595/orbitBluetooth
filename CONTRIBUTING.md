@@ -38,7 +38,7 @@ Tools: `gjs` (JS tests), Python 3 (helper and its tests), `ffmpeg` (GIFs), Qt 6 
 | Desktop | `OrbitBluetoothDesktop.qml` | Desktop widget, frozen until the pointer is over it |
 | Settings | `OrbitBluetoothSettings.qml` | Settings page |
 
-Every surface shows the same scene, `components/OrbitScene.qml`. It integrates the physics of every device (`DeviceBody.qml`) in one pass per frame, handles drag and focus, and opens the cards (`FocusCard.qml`, `HiddenCard.qml`, `OrbitMenu.qml`).
+Every surface shows the same scene, `components/OrbitScene.qml`. It integrates the physics of every device (`DeviceBody.qml`) in one pass per frame, handles drag and focus, and opens the cards (`FocusCard.qml`, `HiddenCard.qml`, `OrbitMenu.qml`); its chrome lives in `OfferCard.qml`, `ScanChip.qml` and `AdapterNotice.qml`.
 
 Logic that can be tested lives in **pure `.js` files** with no QML: `Charge.js` (charge analysis), `Endurance.js` (rated battery life), `Anc.js` (noise-control decisions), `Earbuds.js`, `DeviceCatalog.js` and `Glyphs.js` (icons).
 
@@ -60,7 +60,8 @@ orbitBluetooth/
 ├── OrbitBluetoothDesktop.qml    # desktop widget
 ├── OrbitBluetoothSettings.qml   # settings page
 ├── components/
-│   ├── OrbitScene.qml           # the scene: physics, drag, focus, chrome
+│   ├── OrbitScene.qml           # the scene: physics, drag, focus
+│   ├── OfferCard.qml, ScanChip.qml, AdapterNotice.qml  # the scene's chrome: pairing offer, scan chip, Bluetooth off
 │   ├── DeviceBody.qml           # one orbiting device, charging beam
 │   ├── FocusCard.qml            # detail card
 │   ├── VolumeRow.qml            # output volume slider (PipeWire)
@@ -76,7 +77,7 @@ orbitBluetooth/
 │   ├── DeviceCatalog.js, Glyphs.js, DeviceGlyph.qml # device icons
 │   ├── NightColors.qml, PaperColors.qml             # light-theme colors
 │   ├── PictureService.qml, Pictures.js              # real device pictures (opt-in)
-│   ├── NewDeviceWatch.qml, NewDeviceWindow.qml, PairingSheet.qml, Offer.js, Palette.js  # new device pop-up
+│   ├── NewDeviceWatch.qml, NewDeviceWindow.qml, PairingSheet.qml, PairingMiddle.qml, Offer.js, Palette.js  # new device pop-up (PairingMiddle: the card's tiles, steps and quick actions)
 │   ├── Prefs.qml                # settings, shared by every surface
 │   └── Starfield.qml, Vignette.qml, LabelGlow.qml, SoundFx.qml
 ├── anc/

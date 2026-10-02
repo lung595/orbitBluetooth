@@ -3,6 +3,16 @@
 All notable changes to Orbit Bluetooth are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Fixed
+
+- The offscreen previews (`scripts/preview/`) render again: they lacked a stand-in for PipeWire, which the volume row needs since 1.10.0.
+
+### Changed
+
+- Shorter files, same behaviour: the scene's chrome (pairing offer, scan chip, "Bluetooth is off") and the middle of the pairing card are now their own components. Every preview renders pixel for pixel as before.
+
 ## 1.10.0 - 2026-10-01
 
 ### Added
