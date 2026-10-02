@@ -83,6 +83,28 @@ Item {
         () => { w.connect(); },
         () => { check("pair failure", w.phase, "failed"); BluetoothService.adapter.discovering = false; UPower.onBattery = true; UPower.displayDevice = { isLaptopBattery: true, percentage: 0.2 }; w.scanOnce(); check("low battery blocks", w.lastSkip, "battery below 30%"); },
         () => { BluetoothService.failPair = false; w.later(); },
+        // P115: a name is not a class, and a "headset" that can type is refused
+        () => { BluetoothService.adapter.discovering = true; add("00:00:00:00:00:07", "AirPods Pro", ""); },
+        () => { check("headset name without audio class not offered", w.current, ""); h.calls = BluetoothService.log.length; add("00:00:00:00:00:08", "Bose QC45", "audio-headset", { uuids: ["0000110b-0000-1000-8000-00805f9b34fb", "00001124-0000-1000-8000-00805f9b34fb"] }); },
+        () => { check("fake headset offered", w.current, "00:00:00:00:00:08"); w.connect(); },
+        () => {},
+        () => {
+            check("keyboard profile asks first", w.phase, "confirm");
+            check("blocked while asking", w.device.blocked, true);
+            check("never connected nor trusted", BluetoothService.log.slice(h.calls), ["pair Bose QC45"]);
+            w.cancel();
+            check("cancel forgets it", [w.device.forgotten, w.device.blocked, w.device.trusted], [true, false, false]);
+        },
+        () => {},
+        // A real headset that sends its buttons as keys: "Pair anyway"
+        () => { h.calls = BluetoothService.log.length; add("00:00:00:00:00:09", "Jabra Elite", "audio-headset", { uuids: ["00001124-0000-1000-8000-00805f9b34fb"] }); },
+        () => { check("second headset offered", w.current, "00:00:00:00:00:09"); w.connect(); },
+        () => {},
+        () => { check("asks", w.phase, "confirm"); w.confirmInput(); check("unblocked", w.device.blocked, false); },
+        () => {},
+        () => { check("pair anyway connects", w.phase, "done"); check("calls", BluetoothService.log.slice(h.calls), ["pair Jabra Elite", "connect Jabra Elite"]); check("not forgotten", w.device.forgotten, false); w.close(); },
+        () => {},
+        () => { BluetoothService.adapter.discovering = false; },
         () => { h.calls = BluetoothService.log.length; check("demo starts", w.demo(), "OK"); check("demo device", w.device.name, "WH-1000XM6"); },
         () => { w.connect(); check("demo pairing", w.phase, "pairing"); },
         () => {},

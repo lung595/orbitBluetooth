@@ -14,8 +14,10 @@ trap 'rm -rf "$work"' EXIT
 cp "$root"/components/NewDeviceWatch.qml "$root"/components/*.js "$work"/
 # Quickshell's device list is a model with .values; the stub keeps a plain list
 sed -i 's/Bluetooth\.devices\.values/Bluetooth.list/g' "$work"/NewDeviceWatch.qml
-cp "$here"/Device.qml "$here"/NewDeviceWindow.qml "$here"/newDevice.test.qml "$work"/
+cp "$here"/Device.qml "$here"/ProfileCheck.qml "$here"/NewDeviceWindow.qml "$here"/newDevice.test.qml "$work"/
 export QT_QPA_PLATFORM=offscreen
+# Print to the terminal, not to journald, including print() lines
+export QT_FORCE_STDERR_LOGGING=1 QT_LOGGING_RULES='qml.debug=true;js.debug=true'
 for tool in qml6 qml-qt6 qml; do
     if command -v "$tool" >/dev/null 2>&1; then
         exec "$tool" -I "$root/scripts/preview/imports" -I "$here/stubs" "$work/newDevice.test.qml"

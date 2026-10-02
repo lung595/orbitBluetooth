@@ -108,6 +108,7 @@ PanelWindow {
             win.watch.connect();
         }
         onRetry: win.watch.connect()
+        onConfirmed: win.watch.confirmInput()
         onLater: win.watch.phase === "done" ? win.watch.close() : win.watch.later()
         onIgnored: win.watch.ignore()
         onCancelled: win.watch.cancel()

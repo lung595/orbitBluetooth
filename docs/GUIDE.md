@@ -12,6 +12,7 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 - [Noise control](#noise-control)
 - [Charging and battery](#charging-and-battery)
 - [New headphones pop-up](#new-headphones-pop-up)
+- [Pairing safety](#pairing-safety)
 - [Real device pictures](#real-device-pictures)
 - [Device icons](#device-icons)
 - [Light theme](#light-theme)
@@ -194,11 +195,26 @@ The device falls out of the bar along a comet trail, is caught by an orbit with 
 - on battery, only above **No background scan below** (30 % by default); plugged in, always;
 - not while an Orbit view is already scanning (the pop-up uses that scan, and never stops it).
 
-With **Real device pictures** on, the sheet shows the headset's picture and its light takes the picture's colour. That means the model name of an *unpaired* audio device is looked up too, under the same rules as below.
+With **Real device pictures** on, the headset's picture appears once it is paired, and the sheet's light takes the picture's colour. A device that is only nearby is never looked up.
 
 To see it without new headphones: `dms ipc call orbitBluetooth newDeviceDemo` (a made-up headset; *Connect* plays the pairing, nothing is paired, nothing is renamed). `dms ipc call orbitBluetooth newDeviceStatus` says whether the last background scan ran, or why it was skipped.
 
 Turn it all off with **Scanning → Pop-up for new headphones**; Orbit then only finds devices while a view is open, as before. While it is on, the small *Connect* card inside the orbit gives way to the sheet. Sounds (if on): a soft cue on arrival, the connect sound on success.
+
+## Pairing safety
+
+Orbit only trusts a new device once it has checked that it is what it looks like.
+
+- **What is offered**: a device is offered only when Bluetooth itself says it is audio. A name such as "AirPods" is not enough, since any device can pick any name.
+- **After pairing, before connecting**, Orbit reads which kinds of service the device offers. Headphones, earbuds and speakers normally offer sound only, and connect straight away.
+- **Headphones that can also send key presses**: some do, so that their buttons can play, pause or change the volume. Orbit then asks first: *"It can also send key presses, often for its buttons. Only continue if it is yours."*
+  - **Pair anyway** connects it as usual. It is not asked again.
+  - **Cancel**, **Later** or closing the sheet forgets it.
+  - While you decide, Bluetooth keeps the device at a distance: it cannot connect, or type, until you say yes.
+- **Dragging a device into the orbit** checks the same way. If it can send key presses, a short message asks you to drag it in once more within a minute to pair it anyway; otherwise it is forgotten.
+- **If Orbit cannot read its services**, it does not pair it and says so. Try again close to the device, or pair it from DMS's Bluetooth settings.
+
+Devices you paired before (from Orbit or DMS) are never asked about again, and keyboards and mice are never asked about at all.
 
 ## Real device pictures
 

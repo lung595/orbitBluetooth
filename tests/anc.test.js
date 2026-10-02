@@ -18,6 +18,7 @@ const Palette = load("Palette.js", ["contrast", "ensureContrast", "onColor", "li
 const Offer = load("Offer.js", ["scanBlocker", "isCandidate", "offerable", "headline", "features", "errorText"]);
 const Pictures = load("Pictures.js", ["queryFor", "creditText"]);
 const Catalog = load("DeviceCatalog.js", ["deviceName", "modelName", "resolve"]);
+const Guard = load("Guard.js", ["offerFamily", "hasInput", "refused", "validPath", "parseUuids"]);
 
 let count = 0, failures = 0;
 function eq(what, got, expected) {
@@ -124,6 +125,25 @@ for (const accent of ["#F2B8C6", "#1A3A8F", "#C5E66A", "#4B6818", "#00FFD1", "#B
 eq("hue kept when fixed", Math.round(Palette.toHsl(Palette.ensureContrast(hex("#F2B8C6"), pearl, 4.5)).h * 100), Math.round(Palette.toHsl(hex("#F2B8C6")).h * 100));
 eq("lift", Math.round(Palette.toHsl(Palette.lift(hex("#4B6818"), 0.66)).l * 100), 66);
 eq("grey", Palette.isGrey(hex("#BDBDBD")), true);
+
+// Pairing guard (P115): a fake "headset" that can type is refused
+const HID = "00001124-0000-1000-8000-00805f9b34fb", HOG = "00001812-0000-1000-8000-00805F9B34FB", A2DP = "0000110b-0000-1000-8000-00805f9b34fb";
+eq("offer: audio class", Guard.offerFamily("audio-headset"), "audio");
+eq("offer: no class, headset name is not enough", Guard.offerFamily(""), "");
+eq("offer: keyboard class", Guard.offerFamily("input-keyboard"), "");
+eq("refuse: headset with HID", Guard.refused("audio", [A2DP, HID]), true);
+eq("refuse: headset with HID over LE (upper case)", Guard.refused("audio", [HOG]), true);
+eq("refuse: unknown family with HID", Guard.refused("", [HID]), true);
+eq("allow: real headset", Guard.refused("audio", [A2DP]), false);
+eq("allow: real keyboard", Guard.refused("keyboard", [HID]), false);
+eq("allow: real mouse", Guard.refused("pointer", [HOG]), false);
+eq("path ok", Guard.validPath("/org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF"), true);
+eq("path: injection", Guard.validPath("/org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF; rm"), false);
+eq("path: option", Guard.validPath("--help"), false);
+eq("path: empty", Guard.validPath(undefined), false);
+eq("uuids parsed", Guard.parseUuids('{"type":"as","data":["0000110B-x"]}'), ["0000110b-x"]);
+eq("uuids: garbage", Guard.parseUuids("nope"), null);
+eq("uuids: wrong type", Guard.parseUuids('{"type":"s","data":"x"}'), null);
 
 print(failures ? failures + "/" + count + " failed" : count + " tests passed");
 imports.system.exit(failures ? 1 : 0);

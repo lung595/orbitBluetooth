@@ -14,6 +14,11 @@ QtObject {
     property bool batteryAvailable: connected
     property real battery: 0.8
     property bool blocked: false
+    property bool trusted: false
+    property bool forgotten: false
+    // Bluetooth profiles the device exposes (BlueZ Device1.UUIDs)
+    property var uuids: ["0000110b-0000-1000-8000-00805f9b34fb"]
     function disconnect() { connected = false }
+    function forget() { forgotten = true; paired = false }
     function cancelPair() {}
 }

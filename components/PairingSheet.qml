@@ -51,6 +51,8 @@ Item {
     signal ignored
     signal retry
     signal cancelled
+    // "Pair anyway" after the keyboard-profile question (phase "confirm")
+    signal confirmed
     signal renamed(string text)
     signal modeRequested(string mode)
 
@@ -1173,8 +1175,11 @@ Item {
             }
             StyledText {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: root.phase === "failed" ? root.errorText : root.renaming ? "Enter or click away to keep · Escape to cancel" : root.subtitle
-                color: root.phase === "failed" ? Theme.error : skin.ink(0.5)
+                text: root.phase === "failed" ? root.errorText : root.phase === "confirm" ? "It can also send key presses, often for its buttons. Only continue if it is yours." : root.renaming ? "Enter or click away to keep · Escape to cancel" : root.subtitle
+                color: root.phase === "failed" ? Theme.error : root.phase === "confirm" ? skin.ink(0.78) : skin.ink(0.5)
+                width: Math.min(implicitWidth, root.width - 48)
+                wrapMode: Text.WordWrap
+                horizontalAlignment: Text.AlignHCenter
                 font.pixelSize: Theme.fontSizeSmall
                 font.letterSpacing: 0.2
             }
@@ -1285,6 +1290,7 @@ Item {
                             "pairing": "bluetooth_searching",
                             "connecting": "bluetooth_searching",
                             "done": "check",
+                            "confirm": "keyboard",
                             "failed": "refresh"
                         })[root.phase] || "bluetooth"
                     size: 19
@@ -1297,6 +1303,7 @@ Item {
                             "pairing": "Pairing",
                             "connecting": "Connecting",
                             "done": "Done",
+                            "confirm": "Pair anyway",
                             "failed": "Try again"
                         })[root.phase] || ""
                     color: mainButton.quiet ? skin.ink(0.92) : skin.inkOnAccent
@@ -1308,7 +1315,7 @@ Item {
                 anchors.fill: parent
                 enabled: !root.busy
                 cursorShape: Qt.PointingHandCursor
-                onClicked: root.phase === "failed" ? root.retry() : root.phase === "done" ? root.later() : root.accepted()
+                onClicked: root.phase === "failed" ? root.retry() : root.phase === "done" ? root.later() : root.phase === "confirm" ? root.confirmed() : root.accepted()
             }
         }
 
@@ -1355,7 +1362,7 @@ Item {
                 onClicked: root.ignored()
             }
             Quiet {
-                visible: root.busy
+                visible: root.busy || root.phase === "confirm"
                 text: "Cancel"
                 onClicked: root.cancelled()
             }

@@ -6,6 +6,7 @@ import Quickshell.Services.UPower
 import qs.Services
 import "DeviceCatalog.js" as Catalog
 import "Offer.js" as Offer
+import "Guard.js" as Guard
 import "Pictures.js" as Pictures
 import "Anc.js" as Anc
 
@@ -141,7 +142,7 @@ Item {
             "name": Catalog.deviceName(d),
             "paired": d.paired || d.bonded,
             "connected": d.connected
-        }, _family(d), prefs.ignoredDevices);
+        }, Guard.offerFamily(d.icon), prefs.ignoredDevices);
     }
 
     function _snooze(address) {
@@ -255,7 +256,9 @@ Item {
         interval: 1100
         onTriggered: {
             if (root.phase === "pairing") {
+                // The demo has no real device to check: it moves on itself
                 root.demoDevice.paired = true;
+                root.phase = "connecting";
                 restart();
             } else if (root.phase === "connecting") {
                 root.demoDevice.connected = true;
@@ -290,6 +293,7 @@ Item {
     }
 
     function close() {
+        _dropUnconfirmed();
         shown = false;
         connectTimeout.stop();
         if (_ancWatching && anc)
@@ -333,12 +337,15 @@ Item {
         const address = current;
         lastError = "";
         connectTimeout.restart();
+        _checked = false;
         if (_demo) {
             phase = "pairing";
             demoStep.restart();
             return;
         }
         if (d.paired || d.bonded) {
+            // Paired before, from here or DMS: the user already chose it
+            _checked = true;
             phase = "connecting";
             BluetoothService.connectDeviceWithTrust(d);
             return;
@@ -355,14 +362,56 @@ Item {
                 connectTimeout.stop();
                 return;
             }
-            root.phase = "connecting";
-            if (!d.connected)
-                BluetoothService.connectDeviceWithTrust(d);
+            root._checkThenConnect(d, address);
         });
+    }
+
+    // Trust only after checking it cannot also type (P115)
+    function _checkThenConnect(d, address) {
+        profileCheck.check(d, _family(d), verdict => {
+            if (root.current !== address)
+                return;
+            if (verdict === "input") {
+                // Blocked by ProfileCheck until the user answers in the sheet
+                root.phase = "confirm";
+                connectTimeout.stop();
+            } else if (verdict === "refused") {
+                root.lastError = "could not check";
+                root.phase = "failed";
+                connectTimeout.stop();
+            } else if (root.phase === "pairing" || root.phase === "confirm") {
+                root.phase = "connecting";
+                if (d.connected)
+                    root._connected();
+                else
+                    BluetoothService.connectDeviceWithTrust(d);
+            } else if (root.phase === "done") {
+                root._checked = true;
+            }
+        });
+    }
+
+    // "Pair anyway": the user knows this headset sends its buttons as keys
+    function confirmInput() {
+        const d = device;
+        if (phase !== "confirm" || !d)
+            return;
+        profileCheck.allow(d);
+        _checked = true;
+        phase = "connecting";
+        connectTimeout.restart();
+        BluetoothService.connectDeviceWithTrust(d);
+    }
+
+    // Leaving the question unanswered means no: the device is forgotten
+    function _dropUnconfirmed() {
+        if (phase === "confirm" && device && !_demo)
+            profileCheck.deny(device);
     }
 
     function cancel() {
         demoStep.stop();
+        _dropUnconfirmed();
         const d = device;
         if (d) {
             if (d.pairing)
@@ -372,27 +421,33 @@ Item {
         later();
     }
 
+    // Connected after the check: Bluetooth LE lists its profiles only once
+    // connected, so look once more (it may still turn out to type)
+    property bool _checked: false
+    function _connected() {
+        phase = "done";
+        connectTimeout.stop();
+        if (!_checked && !_demo)
+            _checkThenConnect(device, current);
+        // The name typed in the sheet becomes the BlueZ alias, like a
+        // rename in the detail card
+        if (pendingName && pendingName !== Catalog.deviceName(device))
+            device.name = pendingName;
+        // Ask the headset for its modes, for the selector in the sheet
+        if (anc && !_demo && Anc.family(Catalog.modelName(device))) {
+            anc.watch(current, true);
+            _ancWatching = true;
+        }
+    }
+
     Connections {
         target: root.device
         function onConnectedChanged() {
-            if (root.device.connected && (root.phase === "pairing" || root.phase === "connecting")) {
-                root.phase = "done";
-                connectTimeout.stop();
-                // The name typed in the sheet becomes the BlueZ alias, like a
-                // rename in the detail card
-                if (root.pendingName && root.pendingName !== Catalog.deviceName(root.device))
-                    root.device.name = root.pendingName;
-                // Ask the headset for its modes, for the selector in the sheet
-                if (root.anc && !root._demo && Anc.family(Catalog.modelName(root.device))) {
-                    root.anc.watch(root.current, true);
-                    root._ancWatching = true;
-                }
-            }
+            if (root.device.connected && root.phase === "connecting")
+                root._connected();
         }
-        function onPairedChanged() {
-            if (root.device.paired && root.phase === "pairing")
-                root.phase = "connecting";
-        }
+        // Stay in "pairing" until ProfileCheck has run: it moves to "connecting"
+        function onPairedChanged() {}
     }
 
     // Pairing waits for the user in DMS's pairing dialog: be patient
@@ -422,4 +477,8 @@ Item {
     }
 
     Component.onDestruction: _stopOwnScan()
+
+    ProfileCheck {
+        id: profileCheck
+    }
 }

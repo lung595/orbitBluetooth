@@ -170,6 +170,7 @@ Some Sony headsets do not report charging, or drop Bluetooth while charging: thi
 
 ## Privacy
 
+- **Safe pairing.** A new device is only trusted once Orbit has checked it is what it looks like; headphones that can also send key presses (for their buttons) are paired only if you say so. [More](docs/GUIDE.md#pairing-safety)
 - **No telemetry.** Connection times and battery history stay in memory; settings, hidden and ignored devices are stored by DMS.
 - **Noise control**: a small helper talks to your headset over a local Bluetooth socket, only while needed.
 - **New headphones pop-up**: a local Bluetooth scan of 8 s about once a minute, only while the screen is on, no Bluetooth audio is connected and the battery is above the threshold (30 % by default, unplugged). Turn it off in **Scanning**.

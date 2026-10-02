@@ -484,6 +484,12 @@ Item {
         pendingTimer.restart();
         wake();
         if (d.paired || d.bonded) {
+            // Second drag of a headset that can also type: the user confirms
+            if (d === _confirm) {
+                confirmWait.stop();
+                _confirm = null;
+                profileCheck.allow(d);
+            }
             BluetoothService.connectDeviceWithTrust(d);
             return;
         }
@@ -495,9 +501,36 @@ Item {
                 failConnect(b);
                 return;
             }
-            if (!d.connected)
-                BluetoothService.connectDeviceWithTrust(d);
+            // Trust only after checking it cannot also type (P115)
+            profileCheck.check(d, Catalog.families[Catalog.resolve(d, ({}))] || "", verdict => {
+                if (verdict === "input") {
+                    // Blocked until it is dragged in again, or forgotten
+                    root._confirm = d;
+                    confirmWait.restart();
+                    if (typeof ToastService !== "undefined")
+                        ToastService.showWarning("Orbit: it can also send key presses, often for its buttons. Drag it in again within a minute to pair it anyway", profileCheck.guideUrl);
+                    failConnect(b);
+                    return;
+                }
+                if (verdict !== "ok") {
+                    failConnect(b);
+                    return;
+                }
+                if (b.phase === "connecting" && !d.connected)
+                    BluetoothService.connectDeviceWithTrust(d);
+            });
         });
+    }
+
+    // A "headset" with a keyboard profile, waiting for a second drag (P115)
+    property var _confirm: null
+    Timer {
+        id: confirmWait
+        interval: 60000
+        onTriggered: {
+            profileCheck.deny(root._confirm);
+            root._confirm = null;
+        }
     }
 
     function failConnect(b) {
@@ -1519,5 +1552,9 @@ Item {
         id: menu
         scene: orbitRoot
         z: 30000
+    }
+
+    ProfileCheck {
+        id: profileCheck
     }
 }

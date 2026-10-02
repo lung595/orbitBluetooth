@@ -13,6 +13,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - A picture that arrives after you turn the option off is dropped, and turning it off erases the cache.
 - The picture cache is private (folder 0700, files 0600).
 - The pairing log no longer contains the device name.
+- **Safe pairing**: a device is offered only when Bluetooth says it is audio, not because of its name. After pairing, Orbit checks its services before trusting it; headphones that can also send key presses (often for their buttons) wait, unable to connect, until you choose **Pair anyway**, and are forgotten otherwise. Same check when dragging a device into the orbit.
 
 ### Fixed
 
