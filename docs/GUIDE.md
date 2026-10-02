@@ -262,6 +262,7 @@ Orbit keeps its night sky in every theme. With a light DMS theme, devices turn i
 | ![White devices on the night sky](../screenshots/light.png) | ![Soft off-white detail card](../screenshots/light-detail.png) |
 
 ## Settings
+Grouped in tabs: **Orbit** (with Reset), **Scanning**, **Headphones** (with device pictures), **Desktop**, **Look & sound** (with sounds).
 
 | Section | Setting | Default | Description |
 | --- | --- | --- | --- |

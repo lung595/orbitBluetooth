@@ -7,6 +7,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## 1.10.4 - 2026-10-02
 
+### Changed
+
+- Settings are grouped into tabs (Orbit, Scanning, Headphones, Desktop, Look & sound), one shown at a time.
+
 ### Fixed
 
 - **Pop-up for new headphones** works on its own: turning off **Offer new devices** (the card inside the Orbit view) no longer hides the pop-up without a word.

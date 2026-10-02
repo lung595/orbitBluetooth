@@ -110,7 +110,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 
 ## Settings
 
-**Settings → Plugins → Orbit Bluetooth.** Options marked ⚡ use more battery.
+**Settings → Plugins → Orbit Bluetooth**, grouped in tabs: Orbit, Scanning, Headphones (with device pictures), Desktop, Look & sound. Options marked ⚡ use more battery.
 
 | Section | Setting | Default |
 | --- | --- | --- |
