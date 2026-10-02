@@ -122,14 +122,24 @@ PluginSettings {
     ToggleSetting {
         settingKey: "offerPopup"
         label: "Pop-up for new headphones"
-        description: "A short scan in the background finds headphones in pairing mode and offers them under the bar, even with Orbit closed · " + root.batteryNote
+        description: "Headphones in pairing mode found by any scan (Orbit, DMS's Bluetooth panel, system settings) are offered under the bar, even with Orbit closed. Free: it only listens"
         defaultValue: true
+    }
+
+    ToggleSetting {
+        id: offerScan
+        settingKey: "offerScan"
+        label: "Background scan"
+        description: "Also look for new headphones by itself, 8 s at a time, so the pop-up finds them without any panel open · " + root.batteryNote
+        defaultValue: false
     }
 
     SelectionSetting {
         settingKey: "offerEvery"
-        label: "Background scan"
-        description: "How often the pop-up looks for new headphones (8 s each time). Skipped while Bluetooth audio is connected, since scanning makes it stutter"
+        // Only matters once the background scan is on
+        visible: offerScan.value
+        label: "Background scan interval"
+        description: "How often the background scan looks for new headphones (8 s each time). Skipped while Bluetooth audio is connected, since scanning makes it stutter"
         options: [
             {
                 label: "Every 30 seconds",
@@ -153,6 +163,8 @@ PluginSettings {
 
     SliderSetting {
         settingKey: "offerMinBattery"
+        // Only matters once the background scan is on
+        visible: offerScan.value
         label: "No background scan below"
         description: "Battery level of this computer, when it is not plugged in"
         defaultValue: 30

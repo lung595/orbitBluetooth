@@ -18,6 +18,7 @@ const Palette = load("Palette.js", ["contrast", "ensureContrast", "onColor", "li
 const Offer = load("Offer.js", ["scanBlocker", "isCandidate", "offerable", "headline", "features", "errorText"]);
 const Pictures = load("Pictures.js", ["queryFor", "creditText"]);
 const Catalog = load("DeviceCatalog.js", ["deviceName", "modelName", "resolve"]);
+const Guide = load("Guide.js", ["url", "connectNote"]);
 const Guard = load("Guard.js", ["offerFamily", "hasInput", "refused", "validPath", "parseUuids"]);
 
 let count = 0, failures = 0;
@@ -144,6 +145,19 @@ eq("path: empty", Guard.validPath(undefined), false);
 eq("uuids parsed", Guard.parseUuids('{"type":"as","data":["0000110B-x"]}'), ["0000110b-x"]);
 eq("uuids: garbage", Guard.parseUuids("nope"), null);
 eq("uuids: wrong type", Guard.parseUuids('{"type":"s","data":"x"}'), null);
+
+// Guide links (value 10): every anchor used must exist in docs/GUIDE.md
+const GLibG = imports.gi.GLib;
+const guide = new TextDecoder().decode(GLibG.file_get_contents(GLibG.build_filenamev([GLibG.path_get_dirname(GLibG.path_get_dirname(imports.system.programPath ?? "tests/anc.test.js")), "docs", "GUIDE.md"]))[1]);
+const anchors = guide.split("\n").filter(l => /^#{2,3} /.test(l)).map(l => l.replace(/^#+ /, "").toLowerCase().replace(/[^a-z0-9 -]/g, "").replace(/ /g, "-"));
+["pair", "check", "connect"].forEach(why => {
+    const n = Guide.connectNote(why, "Momentum 4");
+    eq("note " + why + " has a title and a hint", !!(n.title && n.hint), true);
+    eq("note " + why + " links to a real section", anchors.indexOf(n.anchor) >= 0, true);
+});
+["noise-control", "pairing-safety", "if-it-does-not-connect", "new-headphones-pop-up"].forEach(a => eq("guide has #" + a, anchors.indexOf(a) >= 0, true));
+eq("guide url", Guide.url("noise-control"), "https://github.com/lung595/orbitBluetooth/blob/main/docs/GUIDE.md#noise-control");
+eq("a nameless device", Guide.connectNote("pair", "").title, "Could not pair this device");
 
 print(failures ? failures + "/" + count + " failed" : count + " tests passed");
 imports.system.exit(failures ? 1 : 0);

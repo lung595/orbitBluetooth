@@ -3,6 +3,7 @@ import QtQuick.Shapes
 import qs.Common
 import qs.Services
 import qs.Widgets
+import "Guide.js" as Guide
 import "DeviceCatalog.js" as Catalog
 import "Anc.js" as Anc
 
@@ -498,7 +499,7 @@ Item {
             if (b.phase !== "connecting")
                 return;
             if (res && res.error) {
-                failConnect(b);
+                failConnect(b, "pair");
                 return;
             }
             // Trust only after checking it cannot also type (P115)
@@ -513,7 +514,7 @@ Item {
                     return;
                 }
                 if (verdict !== "ok") {
-                    failConnect(b);
+                    failConnect(b, "check");
                     return;
                 }
                 if (b.phase === "connecting" && !d.connected)
@@ -533,9 +534,19 @@ Item {
         }
     }
 
-    function failConnect(b) {
+    // What did not work, said under the core (OrbitNote), null when nothing
+    property var note: null
+    function explain(info) {
+        note = info;
+    }
+
+    // why: "pair", "check" or "connect" (Guide.connectNote); omitted when
+    // something else already said why (the keyboard-profile toast)
+    function failConnect(b, why) {
         if (!b || b.phase !== "connecting")
             return;
+        if (why)
+            explain(Guide.connectNote(why, b.device ? Catalog.deviceName(b.device) : ""));
         b.phase = "idle";
         b.shake();
         sounds.play("error");
@@ -612,7 +623,7 @@ Item {
             for (let i = 0; i < bodies.count; i++) {
                 const b = bodies.itemAt(i);
                 if (b && b.phase === "connecting" && !b.connected)
-                    scene.failConnect(b);
+                    scene.failConnect(b, b.device && (b.device.paired || b.device.bonded) ? "connect" : "pair");
             }
         }
     }
@@ -1539,6 +1550,11 @@ Item {
     // Scan chip. On glass it is centered, carries its own smoky pill so it
     // reads on any wallpaper, and only shows while the widget is in use.
     ScanChip {
+        scene: orbitRoot
+    }
+
+    // What did not work, with a link to the guide
+    OrbitNote {
         scene: orbitRoot
     }
 

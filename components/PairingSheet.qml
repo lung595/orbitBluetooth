@@ -28,6 +28,8 @@ Item {
     property string subtitle: ""
     // Shown when pairing failed, in plain words (Offer.errorText)
     property string errorText: "Could not connect. Is it still in pairing mode?"
+    // The guide section that explains the failure
+    property string errorAnchor: "if-it-does-not-connect"
     property string kind: "headphonesSlim"
     property url pictureSource: ""
     property string credit: ""
@@ -1182,6 +1184,14 @@ Item {
                 horizontalAlignment: Text.AlignHCenter
                 font.pixelSize: Theme.fontSizeSmall
                 font.letterSpacing: 0.2
+            }
+            // Why it failed, explained in the guide (value 10)
+            GuideLink {
+                anchors.horizontalCenter: parent.horizontalCenter
+                visible: root.phase === "failed"
+                anchor: root.errorAnchor
+                color: skin.ink(0.5)
+                hoverColor: skin.accent
             }
         }
 

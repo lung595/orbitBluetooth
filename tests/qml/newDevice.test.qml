@@ -13,6 +13,7 @@ Item {
         id: prefs
         property bool offerNew: true
         property bool offerPopup: true
+        property bool offerScan: true
         property int offerEvery: 60
         property int offerMinBattery: 30
         property bool realPictures: false
@@ -113,6 +114,11 @@ Item {
         () => { check("demo done", w.phase, "done"); check("demo paired nothing", BluetoothService.log.length, h.calls); w.close(); },
         () => {},
         () => { check("demo over", [w.current, w._demo], ["", false]); },
+        // P103: with the background scan off (the default), Orbit never scans
+        // by itself, yet still offers what another tool's scan finds
+        () => { prefs.offerScan = false; w.scanOnce(); check("no scan of its own", BluetoothService.adapter.discovering, false); check("says why", w.lastSkip !== "", true); },
+        () => { BluetoothService.adapter.discovering = true; add("00:00:00:00:00:0A", "Momentum 4", "audio-headphones"); },
+        () => { check("offered from another tool's scan", w.current, "00:00:00:00:00:0A"); w.close(); BluetoothService.adapter.discovering = false; },
         () => { print(h.failures ? h.failures + " failures" : "all passed"); Qt.exit(h.failures ? 1 : 0); }
     ]
     property int i: 0

@@ -40,6 +40,7 @@ Column {
 
     // Status while the helper connects, or why it cannot
     StyledText {
+        id: status
         width: parent.width
         visible: text !== ""
         horizontalAlignment: Text.AlignHCenter
@@ -53,6 +54,14 @@ Column {
                 return Anc.errorText(panel.info.error);
             return panel.ready && !panel.modes.length ? "No noise control on this model" : "";
         }
+    }
+    // When noise control cannot work, the guide says why and what to try
+    GuideLink {
+        anchors.horizontalCenter: parent.horizontalCenter
+        visible: status.visible && panel.info && (panel.info.status === "error" || (panel.ready && !panel.modes.length))
+        anchor: "noise-control"
+        color: panel.muted
+        hoverColor: Theme.primary
     }
 
     // Segmented modes; the highlight slides under the active one

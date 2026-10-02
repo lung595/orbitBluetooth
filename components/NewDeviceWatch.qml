@@ -12,8 +12,10 @@ import "Anc.js" as Anc
 
 // "New device nearby" pop-up. Lives in the daemon, so it works while every
 // Orbit view is closed:
-// - a short background scan every minute or so (setting), only while it is
-//   cheap and harmless: Bluetooth on, screen awake, no Bluetooth audio
+// - it listens to every scan, whoever starts it (DMS's Bluetooth panel,
+//   system settings, an Orbit view): that costs nothing;
+// - its own short background scan every minute or so is opt-in (P103),
+//   and even then only runs while it is cheap and harmless: Bluetooth on, screen awake, no Bluetooth audio
 //   playing (discovery makes it stutter), battery above the chosen level
 //   (Offer.scanBlocker);
 // - a named, unpaired audio device that shows up is offered in a sheet
@@ -67,7 +69,7 @@ Item {
         const display = UPower.displayDevice;
         const hasBattery = !!display && display.isLaptopBattery;
         lastSkip = Offer.scanBlocker({
-            "enabled": offering,
+            "enabled": offering && prefs.offerScan,
             "btOn": btOn && !!adapter,
             "asleep": asleep,
             "busy": !!adapter && adapter.discovering,
@@ -94,7 +96,7 @@ Item {
         id: scanCycle
         interval: Math.max(30, prefs.offerEvery) * 1000
         repeat: true
-        running: root.offering && root.btOn && !root.asleep
+        running: root.offering && root.prefs.offerScan && root.btOn && !root.asleep
         onTriggered: root.scanOnce()
     }
 

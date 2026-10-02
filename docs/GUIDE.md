@@ -5,7 +5,7 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 ## Contents
 
 - [Widgets](#widgets)
-- [The orbit](#the-orbit)
+- [The orbit](#the-orbit) · [If it does not connect](#if-it-does-not-connect)
 - [The detail card](#the-detail-card)
 - [Earbuds: the trio](#earbuds-the-trio)
 - [Hiding devices: the black hole](#hiding-devices-the-black-hole)
@@ -56,6 +56,16 @@ Connected devices orbit on the inner ring, drawn 15 % smaller so the ring stays 
 4. Release. They pair, connect and settle on the inner ring with their battery arc.
 
 ![Dragging earbuds toward the center: magnet snap, connecting, connected](../screenshots/connect.gif)
+
+### If it does not connect
+
+When a device you dragged in does not connect, it springs back out and a short note under the center says what happened, with the GitHub mark linking here:
+
+- **Could not pair…** — the device did not answer or declined. Put it back in pairing mode (often a long press on its button, until a light blinks), keep it close, and drag it in again. If it was paired with another computer or phone, turn that one's Bluetooth off first.
+- **…did not connect** — it is paired, but did not answer in 25 s. Check that it is on, charged and nearby; some earbuds only connect once out of their case.
+- **…was not paired** — Orbit could not read what the device does, so it did not trust it. See [Pairing safety](#pairing-safety).
+
+The note goes away by itself after a few seconds, or stays while the pointer is on it. From the command line, `dms ipc call orbitBluetooth …` replies that something cannot be done with the same link.
 
 ## The detail card
 
@@ -166,14 +176,14 @@ When not charging, the readout shows the time left and the tiles switch to **EMP
 
 ![The pairing sheet in a dark and a light theme: the headset falls into orbit, then connects](../screenshots/newdevice.gif)
 
-Switch on new headphones, earbuds or a speaker and put them in pairing mode: within about a minute a tall **pairing sheet** unfolds from the right end of the bar, even with every Orbit view closed.
+Switch on new headphones, earbuds or a speaker and put them in pairing mode, then open any Bluetooth panel (Orbit, DMS's Bluetooth panel, your system settings): a tall **pairing sheet** unfolds from the right end of the bar, even with every Orbit view closed. Orbit only listens to that search, so this costs nothing. With **Background scan** on, it also looks by itself, and the sheet comes within about a minute without opening anything.
 
 The device falls out of the bar along a comet trail, is caught by an orbit with a flash, then floats above the horizon of a planet, tilting a little towards the pointer, while sonar rings leave it and a small moon goes round. Stars twinkle and, now and then, one shoots across.
 
 ![The sheet offering, then connected, in a dark and a light theme](../screenshots/newdevice.png)
 
 - **What you get**: up to three tiles Orbit knows before anything is paired: noise control when the brand is supported, the rated battery life when the model is known, the earbuds' case and buds, volume, and charging for anything with a battery (not a soundbar or a smart speaker).
-- **If pairing fails**, the sheet says why in plain words (declined, wrong code, no answer, busy) and offers **Try again**.
+- **If pairing fails**, the sheet says why in plain words (declined, wrong code, no answer, busy), offers **Try again**, and the GitHub mark under the message opens [If it does not connect](#if-it-does-not-connect).
 - **Connect** (or <kbd>Enter</kbd>) pairs and connects it right there; accept the code in DMS's pairing dialog if the device asks. The button turns into a progress bar and the steps *Pair → Connect → Ready* follow along.
 - **Connected**: a burst of stars, a battery ring filling up to the real level, and the noise-control modes to pick one straight away. After 6 s without the pointer on it, the sheet folds back into the corner of the bar.
 - **Rename it first**: click the pencil next to the name, type, then <kbd>Enter</kbd> or click anywhere else (<kbd>Escape</kbd> gives the old name back). The name is given to the device once it is connected (as a rename in the detail card would).
@@ -188,7 +198,7 @@ The device falls out of the bar along a comet trail, is caught by an orbit with 
 
 **When it stays quiet**: no sheet while a window is full screen (it waits, then shows), or while the screen is locked or off. On the screen of the active window; with *Reduce motion* it simply appears, without any movement.
 
-**The background scan** runs for 8 s every minute (**Background scan**: 30 s to 5 min), and only when it is harmless:
+**The background scan** is off by default: the sheet already catches what any other search finds, for free. Turned on (**Background scan**), it runs for 8 s every minute (**Background scan interval**: 30 s to 5 min), and only when it is harmless:
 
 - Bluetooth on, screen on and unlocked;
 - no Bluetooth audio device connected: discovery shares the radio with the audio link and makes music stutter on many adapters, so while you listen it waits;
@@ -262,9 +272,10 @@ Orbit keeps its night sky in every theme. With a light DMS theme, devices turn i
 | | Center device | Automatic | Icon of this machine (laptop or desktop is detected) |
 | Scanning | Scan automatically | On | Start discovery when a view opens; otherwise click the center |
 | | Offer new devices | On | A card with *Connect* when an unpaired device shows up while scanning |
-| | Pop-up for new headphones | On | Background scan and a pop-up under the bar, see [New headphones pop-up](#new-headphones-pop-up) ⚡ |
-| | Background scan | Every minute | 30 s, 1, 2 or 5 min; 8 s each time |
-| | No background scan below | 30 % | Battery of this computer, when unplugged |
+| | Pop-up for new headphones | On | A pop-up under the bar for new headphones any search finds, see [New headphones pop-up](#new-headphones-pop-up); it only listens |
+| | Background scan | Off | Orbit also searches by itself, 8 s at a time ⚡ |
+| | Background scan interval | Every minute | 30 s, 1, 2 or 5 min (shown once *Background scan* is on) |
+| | No background scan below | 30 % | Battery of this computer, when unplugged (shown once *Background scan* is on) |
 | | Scan duration | 45 s | 20 s, 45 s, 90 s or *While open* ⚡ |
 | Headphones | Noise control | On | Supported headphones (needs Python 3) |
 | | Turn off conversation awareness on disconnect | On | Turns *Conversation* off before Orbit disconnects a headset, and after it reconnects |

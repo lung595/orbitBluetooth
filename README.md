@@ -121,9 +121,9 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Center device | Automatic |
 | Scanning | Scan automatically | On |
 | | Offer new devices (a *Connect* card) | On |
-| | Pop-up for new headphones (background scan) ⚡ | On |
-| | Background scan | Every minute |
-| | No background scan below (battery, unplugged) | 30 % |
+| | Pop-up for new headphones (listens to any search, free) | On |
+| | Background scan (Orbit searches by itself) ⚡ | Off |
+| | Background scan interval / battery threshold (shown when the scan is on) | Every minute / 30 % |
 | | Scan duration: 20 s, 45 s, 90 s or *While open* ⚡ | 45 s |
 | Headphones | Noise control | On |
 | | Turn off conversation awareness on disconnect | On |
@@ -159,7 +159,8 @@ Bind them in your compositor, for example in niri: `Mod+N { spawn "dms" "ipc" "c
 | --- | --- |
 | Nothing changed after installing | Add one of its widgets, see [Add a widget](#3-add-a-widget) |
 | Earbuds disconnect after a few seconds | Accept the pairing code dialog once |
-| No pop-up for new headphones | Turn off Bluetooth audio you are using (scanning would make it stutter, so it waits); check the battery threshold; the pop-up waits for full-screen windows |
+| No pop-up for new headphones | It appears when any tool searches for devices (Orbit's **Scan**, your system settings); turn on **Background scan** to have Orbit search by itself; the pop-up waits for full-screen windows |
+| Something did not work | A short note says why, and the GitHub mark next to it opens the matching section of the guide |
 | No devices appear while scanning | Put the device in pairing mode; turn on **Show unnamed devices** |
 | A device charges but shows no lightning | Wait for its first level increase: the estimate starts then |
 | Noise control does not appear | Headset must be paired and supported, Python 3 installed; reopen the card |
@@ -173,7 +174,8 @@ Some Sony headsets do not report charging, or drop Bluetooth while charging: thi
 - **Safe pairing.** A new device is only trusted once Orbit has checked it is what it looks like; headphones that can also send key presses (for their buttons) are paired only if you say so. [More](docs/GUIDE.md#pairing-safety)
 - **No telemetry.** Connection times and battery history stay in memory; settings, hidden and ignored devices are stored by DMS.
 - **Noise control**: a small helper talks to your headset over a local Bluetooth socket, only while needed.
-- **New headphones pop-up**: a local Bluetooth scan of 8 s about once a minute, only while the screen is on, no Bluetooth audio is connected and the battery is above the threshold (30 % by default, unplugged). Turn it off in **Scanning**.
+- **New headphones pop-up**: by default Orbit only listens to searches you start yourself; nothing runs in the background. The optional **Background scan** (off by default) does a local scan of 8 s about once a minute, only while the screen is on, no Bluetooth audio is connected and the battery is above the threshold.
+- **Guide links**: the GitHub mark opens the guide in your browser only when you click it; Orbit itself makes no request.
 - **Network: only one opt-in feature, off by default.** **Real device pictures** sends only the *model name* of devices you have paired, never a stranger's device nearby, never the Bluetooth address. It contacts `commons.wikimedia.org`, then `api.sketchfab.com`, and downloads the picture from `upload.wikimedia.org` or `media.sketchfab.com`. Pictures are credited in the card, kept in `~/.cache/orbitBluetooth/pictures` (readable by you only) and erased when you turn the option off or from the settings.
 
 Details in the [user guide](docs/GUIDE.md#privacy).

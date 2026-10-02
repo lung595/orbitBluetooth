@@ -5,6 +5,7 @@ import Quickshell.Io
 import Quickshell.Services.UPower
 import qs.Services
 import "components"
+import "components/Guide.js" as Guide
 import "components/Anc.js" as Anc
 
 // Event-driven bookkeeping shared by every surface. BlueZ exposes neither a
@@ -100,6 +101,7 @@ Item {
         function newDeviceStatus(): string {
             return JSON.stringify({
                 "enabled": newDeviceWatch.offering,
+                "backgroundScan": newDeviceWatch.prefs.offerScan,
                 "lastScan": newDeviceWatch.lastSkip ? "skipped: " + newDeviceWatch.lastSkip : "ran",
                 "showing": newDeviceWatch.current,
                 "phase": newDeviceWatch.current ? newDeviceWatch.phase : "",
@@ -110,9 +112,9 @@ Item {
         function anc(mode: string): string {
             const address = ancService.primary();
             if (!address)
-                return "No supported headset connected";
+                return "No supported headset connected · " + Guide.url("noise-control");
             if (Anc.ORDER.indexOf(mode) < 0)
-                return "Modes: " + Anc.ORDER.join(", ");
+                return "Modes: " + Anc.ORDER.join(", ") + " · " + Guide.url("noise-control");
             ancService.send(address, "mode", mode);
             return "OK";
         }
@@ -121,7 +123,7 @@ Item {
         function ancCycle(): string {
             const address = ancService.primary();
             if (!address)
-                return "No supported headset connected";
+                return "No supported headset connected · " + Guide.url("noise-control");
             ancService.cycle(address);
             return "OK";
         }
@@ -143,9 +145,9 @@ Item {
             const address = ancService.primary();
             const s = ancService.states[address];
             if (!address)
-                return "No supported headset connected";
+                return "No supported headset connected · " + Guide.url("noise-control");
             if (!s || !s.state)
-                return "Unknown (open the headset card once, or use the always-connected engine)";
+                return "Unknown (open the headset card once, or use the always-connected engine) · " + Guide.url("noise-control");
             return JSON.stringify(s.state);
         }
     }

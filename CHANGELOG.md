@@ -5,6 +5,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## Unreleased
 
+## 1.10.3 - 2026-10-02
+
+### Added
+
+- When pairing, connecting or noise control does not work, a short note says why and what to do, with a GitHub mark that opens the matching section of the guide (in your browser, on click only). The `anc` commands print the guide link too.
+
+### Changed
+
+- **Background scan** is now a separate option, **off by default**: the new-headphones pop-up listens to any search you start (free), and Orbit only scans by itself if you turn it on. Its interval and battery settings appear only then.
+
 ## 1.10.2 - 2026-10-02
 
 ### Security

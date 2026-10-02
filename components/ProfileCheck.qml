@@ -1,8 +1,8 @@
 import QtQuick
-import Quickshell
 import Quickshell.Io
 import qs.Services
 import "Guard.js" as Guard
+import "Guide.js" as Guide
 
 // Runs after pairing and before trust: reads the device's Bluetooth
 // profiles from BlueZ (P115). A "headset" that can also send key presses
@@ -12,7 +12,7 @@ import "Guard.js" as Guard
 Item {
     id: root
 
-    readonly property string guideUrl: "https://github.com/lung595/orbitBluetooth/blob/main/docs/GUIDE.md#pairing-safety"
+    readonly property string guideUrl: Guide.url("pairing-safety")
 
     property var _device: null
     property string _family: ""

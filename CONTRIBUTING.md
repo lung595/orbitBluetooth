@@ -46,6 +46,8 @@ Logic that can be tested lives in **pure `.js` files** with no QML: `Charge.js` 
 
 **New headphones pop-up**: `components/NewDeviceWatch.qml` (in the daemon) runs the short background scan, picks what to offer (`Offer.js`, pure) and drives pairing; `NewDeviceWindow.qml` is its layer-shell window and `PairingSheet.qml` the sheet itself (two skins, colours from `Palette.js`), which `scripts/preview/sheet.qml` renders offscreen with six test palettes, or records frame by frame. Before a new device is trusted, `ProfileCheck.qml` reads its Bluetooth profiles with `busctl` and `Guard.js` (pure, tested) decides: a non-input device that can also send key presses stays blocked until the user confirms. Never trust a device from its name alone.
 
+**Guided, never blocked**: `components/Guide.js` (pure, tested) builds the guide links and the short notes (`connectNote`); `OrbitNote.qml` shows them at the bottom of the sky and `GuideLink.qml` is the GitHub mark that opens a guide section on click. A new refusal gets a note and an anchor that exists in `docs/GUIDE.md` (the tests check it). Every new Quickshell import or service used by a component needs its mock in `scripts/preview/imports/`, or the previews break.
+
 **Real device pictures** (opt-in) is the only network use: `components/PictureService.qml` runs `pictures/orbit_pictures.py` (Wikimedia Commons, then Sketchfab; standard library only), and `components/Pictures.js` decides which names may be sent. Keep the list of hosts in sync between the helper header, the settings description, the README and the GUIDE.
 
 Settings are read through `components/Prefs.qml`, a reactive view shared by every surface.

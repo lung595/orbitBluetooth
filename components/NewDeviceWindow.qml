@@ -82,6 +82,7 @@ PanelWindow {
         rightGap: typeof SettingsData.dankBarSpacing === "number" ? Math.max(2, SettingsData.dankBarSpacing) : Theme.spacingXS
         topGap: Theme.spacingS
         errorText: Offer.errorText(win.watch.lastError)
+        errorAnchor: win.watch.lastError === "could not check" ? "pairing-safety" : "if-it-does-not-connect"
         name: win.watch.pendingName || Catalog.deviceName(win.device)
         subtitle: [Offer.BRANDS[win.family] || "", Glyphs.label(win.kind)].filter(x => x).join(" · ")
         kind: win.kind

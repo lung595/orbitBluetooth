@@ -23,6 +23,10 @@ QtObject {
     // The same offer as a pop-up under the bar, found by a short background
     // scan while no view is open (see NewDeviceWatch)
     readonly property bool offerPopup: _get("offerPopup", true)
+    // Orbit's own short scan every offerEvery seconds. Off by default: the
+    // pop-up already catches what any other scan finds (DMS's Bluetooth
+    // panel, system settings, an Orbit view), at no cost (P103)
+    readonly property bool offerScan: _get("offerScan", false)
     readonly property int offerEvery: parseInt(_get("offerEvery", "60"))
     // No background scan on battery below this level (%)
     readonly property int offerMinBattery: _get("offerMinBattery", 30)
