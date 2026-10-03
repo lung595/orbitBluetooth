@@ -306,113 +306,16 @@ Item {
     }
 
     // --- Tether to the host core (lives in the scene's tether layer) ---------
-    Item {
+    BodyTether {
         id: tetherRoot
-        parent: body.scene.tetherLayer
-        visible: opacity > 0.01
-        x: body.scene.cx
-        y: body.scene.cy
-        rotation: Math.atan2(body.py - body.scene.cy, body.px - body.scene.cx) * 180 / Math.PI
-        opacity: body.leaving || body.focused || body.swallowing ? 0 : tetherAlpha * (body.scene.focusBody || body.scene.hiddenOpen ? 0.15 : 1)
-
-        readonly property real dist: Math.hypot(body.px - body.scene.cx, body.py - body.scene.cy)
-        readonly property real tetherAlpha: {
-            if (body.dragging && body.holding)
-                return body.armed ? 0.25 : 0.7;
-            // Connecting: steady here, the pulse is on the line below (a
-            // per-step value under this Behavior would restart it every step,
-            // a never-ending animation that redraws the whole shell)
-            if (body.phase === "connecting")
-                return 0.7;
-            if (body.connected)
-                return body.charging ? 0 : 0.4;   // the energy beam replaces it
-            return 0;
-        }
-        property real reach: 1   // animated to retract / extend
-        property real thickness: 1.5
-
-        Behavior on opacity {
-            NumberAnimation {
-                duration: 260
-            }
-        }
-
-        Rectangle {
-            x: body.scene.coreSize / 2
-            y: -height / 2
-            // Connecting: pulses between half and full (0.35 to 0.7 overall)
-            opacity: body.phase === "connecting" ? 0.5 + 0.5 * Math.abs(Math.sin(body.scene.clock * 4)) : 1
-            height: tetherRoot.thickness * (body.dragging && body.holding ? Math.max(0.4, 1.4 - (tetherRoot.dist / (body.scene.rx * body.scene.innerNorm) - 1) * 1.2) : 1)
-            width: Math.max(0, (tetherRoot.dist - body.scene.coreSize / 2 - body.diameter * body.baseScale / 2) * tetherRoot.reach)
-            radius: height / 2
-            gradient: Gradient {
-                orientation: Gradient.Horizontal
-                GradientStop {
-                    position: 0
-                    color: body.armed && body.holding ? Theme.withAlpha(body.night.error, 0.9) : Theme.withAlpha(body.night.primary, 0.9)
-                }
-                GradientStop {
-                    position: 1
-                    color: body.armed && body.holding ? Theme.withAlpha(body.night.error, 0.15) : Theme.withAlpha(body.night.primary, 0.2)
-                }
-            }
-        }
+        body: body
     }
 
     // --- Charging: an energy beam from the host to the device --------------
-    // A softly waving beam (EnergyBeam) with a flare where it leaves the host.
-    // It follows the scene's effects clock, only while someone is looking.
-    Item {
-        id: chargeFlow
-        // Above the host's halo, below every device
-        parent: body.scene.world
-        z: 60
-        x: body.scene.cx
-        y: body.scene.cy
+    ChargeBeam {
+        body: body
         rotation: tetherRoot.rotation
-        opacity: body.charging && !body.leaving && !body.focused ? (body.scene.focusBody ? 0.15 : 1) : 0
-        visible: opacity > 0.01
-
-        readonly property real start: body.scene.coreSize / 2
-        readonly property real span: Math.max(0, tetherRoot.dist - start - body.diameter * body.baseScale / 2)
-        readonly property bool running: visible && body.scene.awake && body.scene.motion
-        readonly property color glow: body.night.primary
-
-        Behavior on opacity {
-            NumberAnimation {
-                duration: 500
-            }
-        }
-
-        // The beam itself: waving light strands with pulses flowing toward
-        // the device (shaders/beam.frag), animated only while visible
-        EnergyBeam {
-            x: chargeFlow.start
-            y: -height / 2
-            width: chargeFlow.span
-            height: 44
-            amplitude: 2
-            wavelength: 38
-            running: chargeFlow.running
-            time: body.scene.fxTime
-        }
-
-        // Source flare where the beam leaves the host
-        Rectangle {
-            x: chargeFlow.start - width / 2
-            y: -height / 2
-            width: 12
-            height: width
-            radius: width / 2
-            color: Theme.withAlpha(chargeFlow.glow, 0.35)
-            Rectangle {
-                anchors.centerIn: parent
-                width: 4
-                height: 4
-                radius: 2
-                color: "white"
-            }
-        }
+        dist: tetherRoot.dist
     }
 
     // --- Visual ---------------------------------------------------------------
@@ -492,119 +395,9 @@ Item {
             }
         }
 
-        // Noise-control halo: solid = cancelling, dashed = ambient,
-        // double = adaptive; nothing when off or unknown. Static art, it only
-        // fades when the mode changes.
-        Shape {
-            id: ancHalo
-            anchors.centerIn: parent
-            width: parent.width + 17
-            height: width
-            opacity: body.ancMode && body.ancMode !== "off" && !body.focused ? 1 : 0
-            visible: opacity > 0
-            preferredRendererType: Shape.CurveRenderer
-            readonly property real r: width / 2 - 1.5
-            Behavior on opacity {
-                enabled: body.scene.motion
-                NumberAnimation {
-                    duration: 260
-                }
-            }
-
-            ShapePath {
-                strokeColor: Theme.withAlpha(body.night.primary, body.ancMode === "nc" ? 0.75 : 0.6)
-                strokeWidth: 1.5
-                strokeStyle: body.ancMode === "ambient" ? ShapePath.DashLine : ShapePath.SolidLine
-                dashPattern: [1.5, 3]
-                fillColor: "transparent"
-                capStyle: ShapePath.RoundCap
-                PathAngleArc {
-                    centerX: ancHalo.width / 2
-                    centerY: centerX
-                    radiusX: ancHalo.r
-                    radiusY: radiusX
-                    startAngle: 0
-                    sweepAngle: 359.9
-                }
-            }
-            ShapePath {
-                strokeColor: body.ancMode === "adaptive" ? Theme.withAlpha(body.night.primary, 0.35) : "transparent"
-                strokeWidth: 1
-                fillColor: "transparent"
-                PathAngleArc {
-                    centerX: ancHalo.width / 2
-                    centerY: centerX
-                    radiusX: ancHalo.r + 3.5
-                    radiusY: radiusX
-                    startAngle: 0
-                    sweepAngle: 359.9
-                }
-            }
-        }
-
-        // Battery arc (connected devices that report a level)
-        Shape {
-            anchors.centerIn: parent
-            width: parent.width + 7
-            height: width
-            visible: body.connected && body.battery >= 0 && !body.focused
-            preferredRendererType: Shape.CurveRenderer
-
-            ShapePath {
-                strokeColor: Qt.rgba(1, 1, 1, 0.08)
-                strokeWidth: 2
-                fillColor: "transparent"
-                capStyle: ShapePath.RoundCap
-                PathAngleArc {
-                    centerX: (body.diameter + 7) / 2
-                    centerY: centerX
-                    radiusX: centerX - 1
-                    radiusY: radiusX
-                    startAngle: -90
-                    sweepAngle: 359.9
-                }
-            }
-            ShapePath {
-                strokeColor: body.battery <= 15 ? body.night.error : body.night.primary
-                strokeWidth: 2
-                fillColor: "transparent"
-                capStyle: ShapePath.RoundCap
-                PathAngleArc {
-                    centerX: (body.diameter + 7) / 2
-                    centerY: centerX
-                    radiusX: centerX - 1
-                    radiusY: radiusX
-                    startAngle: -90
-                    sweepAngle: 360 * Math.max(0.02, body.battery / 100)
-                }
-            }
-        }
-
-        // Charging: the level arc breathes (0.15 ↔ 1 every 1.8 s, effects clock)
-        Shape {
-            id: chargeGlow
-            anchors.centerIn: parent
-            width: parent.width + 7
-            height: width
-            visible: body.charging && !body.focused
-            preferredRendererType: Shape.CurveRenderer
-
-            ShapePath {
-                strokeColor: Theme.withAlpha(body.night.primary, 0.55)
-                strokeWidth: 5
-                fillColor: "transparent"
-                capStyle: ShapePath.RoundCap
-                PathAngleArc {
-                    centerX: (body.diameter + 7) / 2
-                    centerY: centerX
-                    radiusX: centerX - 1
-                    radiusY: radiusX
-                    startAngle: -90
-                    sweepAngle: 360 * Math.max(0.02, body.battery / 100)
-                }
-            }
-
-            opacity: body.scene.awake && body.scene.motion ? 0.575 - 0.425 * Math.cos(body.scene.fxTime * Math.PI / 0.9) : 1
+        BodyArcs {
+            anchors.fill: parent
+            body: body
         }
 
         // Charging badge
@@ -811,78 +604,9 @@ Item {
         }
     }
 
-    // A soft glow behind the name: stronger for connected devices, and for
-    // every device while nothing is connected
-    LabelGlow {
-        x: label.x + label.width / 2 - width / 2
-        y: label.y + label.height / 2 - height / 2
-        spanX: label.width + 30
-        spanY: label.height + 14
-        color: body.night.primary
-        strength: body.connected || body.hovered ? 0.26 : body.scene.anyConnected ? 0.1 : 0.18
-        visible: label.visible && label.opacity > 0
-    }
-
-    // Name + connection timer. Orbiting bodies in the upper half put their
-    // label above so it never collides with the host core.
-    Column {
-        id: label
-        readonly property bool above: body.inSlot && body.py < body.scene.cy
-        readonly property real gap: body.diameter * body.baseScale / 2 + 5
-        y: above ? body.height / 2 - gap - height : body.height / 2 + gap
-        anchors.horizontalCenter: parent.horizontalCenter
-        spacing: 1
-        visible: body.scene.prefs.showLabels || body.hovered || body.dragging
-        opacity: body.scene.focusBody || body.scene.hiddenOpen || body.swallowing || body.hideArmed ? 0 : 1
-
-        StyledText {
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: Math.min(implicitWidth, body.diameter * 2.1)
-            horizontalAlignment: Text.AlignHCenter
-            text: body.name
-            elide: Text.ElideRight
-            color: Qt.rgba(1, 1, 1, body.connected || body.hovered ? 0.95 : body.scene.anyConnected ? 0.68 : 0.85)
-            font.pixelSize: Math.max(9, Math.round(body.diameter * 0.2))
-            font.weight: body.connected ? Font.Medium : Font.Normal
-        }
-
-        // Time left under the name: a bolt and the time to full while
-        // charging, an hourglass and the time to empty on battery (the
-        // level itself is the arc around the device). Replaces the
-        // connection timer, which stays in the detail card.
-        Row {
-            anchors.horizontalCenter: parent.horizontalCenter
-            spacing: 2
-            readonly property real minutes: body.charging ? (body.charge?.minutesToFull ?? 0) : body.minutesLeft
-            visible: minutes > 0
-
-            DankIcon {
-                anchors.verticalCenter: parent.verticalCenter
-                name: body.charging ? "bolt" : "hourglass_bottom"
-                size: timeText.font.pixelSize + 1
-                color: Theme.withAlpha(body.night.primary, 0.8)
-            }
-            StyledText {
-                id: timeText
-                anchors.verticalCenter: parent.verticalCenter
-                text: Charge.formatShort(parent.minutes)
-                color: Theme.withAlpha(body.night.primary, 0.8)
-                                                font.pixelSize: Math.max(8, Math.round(body.diameter * 0.18))
-                font.weight: Font.Medium
-                font.features: {
-                    "tnum": 1
-                }
-            }
-        }
-
-        StyledText {
-            anchors.horizontalCenter: parent.horizontalCenter
-            visible: !body.charging && !(body.minutesLeft > 0) && body.connected && body.scene.sinceFor(body.address) > 0 && !(body.charge?.minutesToFull > 0)
-            text: Catalog.formatDuration(body.scene.now - body.scene.sinceFor(body.address))
-            color: Theme.withAlpha(body.night.primary, 0.75)
-                                    font.family: "monospace"
-            font.pixelSize: Math.max(8, Math.round(body.diameter * 0.17))
-        }
+    BodyLabel {
+        anchors.fill: parent
+        body: body
     }
 
     // Quick disconnect
