@@ -10,13 +10,14 @@ import "../pairing"
 import "../common/Guide.js" as Guide
 import "../device/DeviceCatalog.js" as Catalog
 import "../noise/Anc.js" as Anc
+import "Physics.js" as Physics
 
 // The planetary Bluetooth scene shared by the Control Center panel, the bar
 // popout and the desktop widget.
 //
 // Performance model:
-//  - one FrameAnimation drives everything (physics, orbits, twinkles) and only
-//    runs while the scene is active and not settled;
+//  - one step (OrbitPhysics) drives everything (physics, orbits, twinkles)
+//    and only runs while the scene is active and not settled;
 //  - bodies are plain items whose px/py are written in a single JS pass;
 //  - static art (stars, nebulae, orbit rings) is painted once;
 //  - discovery only runs while the scene is open and stops on its own.
@@ -670,7 +671,7 @@ Item {
 
     // --- Drag ------------------------------------------------------------------
     function norm(x, y) {
-        return Math.hypot((x - cx) / rx, (y - cy) / ry);
+        return Physics.norm(scene, x, y);
     }
 
     function beginDrag(b, p) {
@@ -866,336 +867,14 @@ Item {
     }
 
     // --- Physics ---------------------------------------------------------------
-    function _spring(b, tx, ty, k, zeta, dt) {
-        const c = 2 * zeta * Math.sqrt(k);
-        b.vx += (k * (tx - b.px) - c * b.vx) * dt;
-        b.vy += (k * (ty - b.py) - c * b.vy) * dt;
-        b.px += b.vx * dt;
-        b.py += b.vy * dt;
+    OrbitPhysics {
+        id: physics
+        scene: orbitRoot
+        repeater: bodies
+        card: focusCard
     }
-
-    function step(dt) {
-        dt = Math.min(dt, 1 / 30);
-        // Effects clock (charge glow and beam, comet, earbuds, gauge, scan):
-        // effects are plain bindings on it, never looping QML animations
-        fxTime += dt;
-        // Time-driven motion (orbits, float, twinkles) only while awake: asleep,
-        // the targets hold still so the bodies can settle and the loop stops.
-        const timeDriven = motion && awake;
-        if (timeDriven) {
-            clock += dt;
-            orbitTime += dt;
-            holeSpin += dt * (0.32 + 1.8 * holeFeed);
-        }
-
-        const n = bodies.count;
-        const all = [];
-        for (let i = 0; i < n; i++) {
-            const b = bodies.itemAt(i);
-            if (b)
-                all.push(b);
-        }
-
-        // Slot assignment: connected ring and outer field, both address-sorted for stability
-        const inner = all.filter(b => b.inSlot && !b.leaving).sort((a, b) => a.address < b.address ? -1 : 1);
-        const outer = all.filter(b => !b.inSlot && !b.leaving && !b.swallowing).concat([_hole]).sort((a, b) => a.homeHash - b.homeHash);
-        const innerPhase = orbitTime * 0.11 - Math.PI / 2;
-        const outerPhase = orbitTime * 0.018 - Math.PI / 2;
-        const floatAmp = timeDriven ? (dragBody ? 7 : 3.5) : 0;
-
-        let moving = !!dragBody;
-        let maxLag = 0;     // px, farthest any body is from where it should be
-
-        for (const b of all) {
-            let tx, ty, k = 70, zeta = 0.58;
-
-            if (!b.spawned) {
-                const from = spawnFrom[b.address];
-                if (from) {
-                    // Spat back out of the black hole
-                    b.px = from.x;
-                    b.py = from.y;
-                    const next = Object.assign({}, spawnFrom);
-                    delete next[b.address];
-                    spawnFrom = next;
-                    b.pop();
-                } else {
-                    const a = b.homeHash * Math.PI * 2;
-                    b.px = cx + Math.cos(a) * rx * 1.25;
-                    b.py = cy + Math.sin(a) * ry * 1.25;
-                }
-                b.spawned = true;
-            }
-
-            if (b.focused) {
-                tx = cx;
-                ty = focusCard.y + focusGlyphLift;
-                k = 150;
-                zeta = 0.78;
-            } else if (b.dragging) {
-                tx = dragX;
-                ty = dragY;
-                k = 700;
-                zeta = 0.85;
-                const nrm = norm(dragX, dragY);
-                // Nearest point on the connected ring, at the pointer's angle
-                const ang = Math.atan2((dragY - ringCy) / ringRy, (dragX - cx) / (rx * innerNorm));
-                const sx = cx + Math.cos(ang) * rx * innerNorm;
-                const sy = ringCy + Math.sin(ang) * ringRy;
-                let pull = 0;
-                if (b.holding) {
-                    // Elastic resistance: gravity holds it until it tears free
-                    pull = b.armed ? 0.08 : Math.max(0, 0.5 - (nrm - innerNorm) * 1.4);
-                } else if (b.armed) {
-                    // Magnet: the closer it gets, the harder the ring pulls
-                    const t = Math.min(1, Math.max(0, (snapNorm - nrm) / (snapNorm - innerNorm * 0.6)));
-                    pull = 0.45 + 0.4 * t * t * (3 - 2 * t);
-                    k = 380;
-                    zeta = 0.62;
-                }
-                tx += (sx - tx) * pull;
-                ty += (sy - ty) * pull;
-                // The black hole pulls it in, over any ring attraction
-                if (b.hideArmed) {
-                    tx += (holeX - tx) * 0.55;
-                    ty += (holeY - ty) * 0.55;
-                    k = 420;
-                    zeta = 0.7;
-                }
-            } else if (b.inSlot) {
-                const i = inner.indexOf(b);
-                const a = innerPhase + (i / Math.max(1, inner.length)) * Math.PI * 2;
-                tx = cx + Math.cos(a) * rx * innerNorm;
-                ty = ringCy + Math.sin(a) * ringRy;
-                b.depth = Math.sin(a);
-                k = 80;
-                zeta = 0.7;
-            } else {
-                const i = outer.indexOf(b);
-                const a = outerPhase + ((i + 0.5) / Math.max(1, outer.length)) * Math.PI * 2 + (b.homeHash - 0.5) * 0.35;
-                const r = 1 - (1 - outerMinNorm) * Math.min(1, b.signal);
-                const ph = b.homeHash * 40;
-                tx = cx + Math.cos(a) * rx * r + Math.sin(clock * 0.8 + ph) * floatAmp;
-                ty = cy + Math.sin(a) * ry * r + Math.cos(clock * 0.63 + ph) * floatAmp * 0.8;
-                b.depth = 0;
-            }
-
-            if (b.swallowing) {
-                tx = holeX;
-                ty = holeY;
-                k = 260;
-                zeta = 0.9;
-            } else if (b.leaving) {
-                const a = Math.atan2(b.py - cy, b.px - cx);
-                tx = cx + Math.cos(a) * rx * 1.3;
-                ty = cy + Math.sin(a) * ry * 1.3;
-                k = 30;
-            }
-
-            // Gentle repulsion from the dragged body + soft collisions
-            if (!b.dragging && !b.focused && !b.swallowing) {
-                for (const o of all) {
-                    if (o === b || o.leaving)
-                        continue;
-                    const dx = b.px - o.px, dy = b.py - o.py;
-                    const d = Math.max(0.001, Math.hypot(dx, dy));
-                    const R = o.dragging ? bodySize * 2.1 : bodySize * 1.05;
-                    if (d < R) {
-                        const push = (R - d) / R * (o.dragging ? 30 : 12);
-                        tx += dx / d * push;
-                        ty += dy / d * push;
-                    }
-                }
-                // Keep clear of the host core (the ring may pass behind it)
-                const cd = Math.max(0.001, Math.hypot(tx - cx, ty - cy));
-                const minD = coreSize * 0.5 + bodySize * 0.55;
-                if (cd < minD && !focusBody && !b.inSlot) {
-                    tx = cx + (tx - cx) / cd * minD;
-                    ty = cy + (ty - cy) / cd * minD;
-                }
-                // ... and of the black hole, which only takes what is dropped in
-                const hd = Math.max(0.001, Math.hypot(tx - holeX, ty - holeY));
-                const holeD = holeHorizon * 2.2 + bodySize * 0.6;
-                if (hd < holeD && !focusBody) {
-                    tx = holeX + (tx - holeX) / hd * holeD;
-                    ty = holeY + (ty - holeY) / hd * holeD;
-                }
-            }
-
-            if (!motion && !b.dragging)
-                zeta = 1;
-
-            _spring(b, tx, ty, k, zeta, dt);
-            if (!b.dragging)
-                maxLag = Math.max(maxLag, Math.hypot(tx - b.px, ty - b.py));
-
-            if (Math.abs(b.vx) + Math.abs(b.vy) > 0.6 || Math.abs(tx - b.px) + Math.abs(ty - b.py) > 0.6)
-                moving = true;
-        }
-
-        // The black hole: an outer-belt slot, floating like the others
-        {
-            const h = _hole;
-            const i = outer.indexOf(h);
-            const a = outerPhase + ((i + 0.5) / outer.length) * Math.PI * 2 + (h.homeHash - 0.5) * 0.35;
-            const r = 1 - (1 - outerMinNorm) * 0.2;
-            const ph = h.homeHash * 40;
-            const tx = cx + Math.cos(a) * rx * r + Math.sin(clock * 0.8 + ph) * floatAmp;
-            const ty = cy + Math.sin(a) * ry * r + Math.cos(clock * 0.63 + ph) * floatAmp * 0.8;
-            if (!h.spawned) {
-                h.px = tx;
-                h.py = ty;
-                h.spawned = true;
-            }
-            _spring(h, tx, ty, motion ? 70 : 120, motion ? 0.58 : 1, dt);
-            holeX = h.px;
-            holeY = h.py;
-            if (Math.abs(h.vx) + Math.abs(h.vy) > 0.6 || Math.abs(tx - h.px) + Math.abs(ty - h.py) > 0.6)
-                moving = true;
-        }
-
-        // A body far from its place (released, snapping, flying to a card)
-        // switches to display-synced frames; back to the timer after 0.25 s
-        // with every body tracking its place (a few px of lag while orbiting,
-        // whatever the orbit speed or the view size)
-        if (maxLag > 24)
-            _kick();
-        else if (_lively && !dragBody && maxLag < 6) {
-            _calmFor += dt;
-            if (_calmFor > 0.25)
-                _lively = false;
-        } else
-            _calmFor = 0;
-
-        // Sleep when nothing moves and time-driven motion is off
-        // Visible effects keep the steps coming: a comet while connecting (even
-        // with Reduce motion, it is the progress indicator), the rest only
-        // with motion on
-        let fx = false, comet = false;
-        if (awake) {
-            fx = (discovering && motion) || (!!focusBody && motion);
-            for (const b of all) {
-                if (b.phase === "connecting")
-                    comet = true;
-                if (b.charging && motion)
-                    fx = true;
-            }
-            fx = fx || comet;
-        }
-        // 60 Hz for the fast effects (comet, an open card), 30 Hz otherwise
-        const fast = comet || !!focusBody;
-        if (_fxFast !== fast)
-            _fxFast = fast;
-        // 20 Hz for Ambient's slow drift on the desktop with nobody around:
-        // bodies move a few px per second, more frames would not show (P123)
-        const ambientOnly = freezeWhenIdle && !interacting && !dragBody && !focusBody && !fx;
-        if (_ambientOnly !== ambientOnly)
-            _ambientOnly = ambientOnly;
-
-        if (!moving && !timeDriven && !fx) {
-            settled = true;
-            _lively = false;
-        }
-    }
-
-    readonly property bool _stepping: active && visible && width > 0 && !settled
-    // Display-synced steps only where they are felt: a gesture and its
-    // aftermath, on every surface. A running QML animation keeps every shell
-    // window (bars, wallpaper...) redrawing at the display rate, a plain
-    // timer only repaints what actually changed.
-    readonly property bool _fullRate: !!dragBody || _lively
-    // Lively: a gesture's aftermath (a device released, snapping into or out
-    // of the ring, flying to its card) stays display-synced until everything
-    // has slowed down, so the motion is smooth to the very end.
-    property bool _lively: false
-    property real _calmFor: 0
-    function _kick() {
-        _lively = true;
-        _calmFor = 0;
-        settled = false;
-    }
-    onDragBodyChanged: _kick()
-    onFocusBodyChanged: _kick()
-    FrameAnimation {
-        running: scene._stepping && scene._fullRate
-        onTriggered: scene.step(frameTime)
-    }
-    // Otherwise a 30 Hz drift (slow: more frames would not show), 60 Hz
-    // while a fast effect runs (a comet, an open card), 20 Hz for Ambient
-    // alone on the desktop
-    property bool _fxFast: false
-    property bool _ambientOnly: false
-    Timer {
-        interval: scene._fxFast ? 16 : (scene._ambientOnly ? 50 : 33)
-        repeat: true
-        running: scene._stepping && !scene._fullRate
-        property double last: 0
-        onRunningChanged: last = Date.now()
-        onTriggered: {
-            const t = Date.now();
-            scene.step((t - last) / 1000);
-            last = t;
-        }
-    }
-
-    component Wave: Shape {
-        id: wave
-        property bool busy: anim.running
-        property bool outward: true
-        // Centered on the ring (not the scene), so it grows from the ring's middle
-        width: parent.width
-        height: scene.ringCy * 2
-        preferredRendererType: Shape.CurveRenderer
-        opacity: 0
-        transformOrigin: Item.Center
-
-        function fire(out) {
-            outward = out;
-            anim.restart();
-        }
-
-        ShapePath {
-            strokeColor: scene.night.primary
-            strokeWidth: 1.6
-            fillColor: "transparent"
-            PathAngleArc {
-                centerX: scene.cx
-                centerY: scene.ringCy
-                radiusX: scene.rx * scene.innerNorm
-                radiusY: scene.ringRy
-                startAngle: 0
-                sweepAngle: 360
-            }
-        }
-
-        ParallelAnimation {
-            id: anim
-            NumberAnimation {
-                target: wave
-                property: "scale"
-                from: wave.outward ? 0.35 : 1.15
-                to: wave.outward ? 1.35 : 0.3
-                duration: 900
-                easing.type: Easing.OutCubic
-            }
-            SequentialAnimation {
-                NumberAnimation {
-                    target: wave
-                    property: "opacity"
-                    from: 0
-                    to: 0.75
-                    duration: 120
-                }
-                NumberAnimation {
-                    target: wave
-                    property: "opacity"
-                    to: 0
-                    duration: 780
-                    easing.type: Easing.InQuad
-                }
-            }
-        }
-    }
+    onDragBodyChanged: physics.kick()
+    onFocusBodyChanged: physics.kick()
 
     // --- Background --------------------------------------------------------------
     // Desktop glass: a theme-tinted smoky veil that dissolves into the wallpaper
@@ -1366,11 +1045,13 @@ Item {
         }
 
         // Connection waves (elliptical, follow the orbit's perspective)
-        Wave {
+        RingWave {
             id: waveA
+            scene: orbitRoot
         }
-        Wave {
+        RingWave {
             id: waveB
+            scene: orbitRoot
         }
 
         Item {

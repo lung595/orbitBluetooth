@@ -29,6 +29,7 @@ const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNo
 const Volume = load("Volume.js", ["clamp", "step", "validSink"]);
 const Guard = load("Guard.js", ["offerFamily", "hasInput", "refused", "validPath", "parseUuids"]);
 const Cover = load("Cover.js", ["covered"]);
+const Physics = load("Physics.js", ["spring", "norm", "ringSlot", "beltSlot", "beltRadius", "dragTarget", "separate", "moving"]);
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "arc", "end", "point", "angleOf", "valueAt", "zone", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "levelAt", "reach", "rayAngles", "follow", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
 const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded", "note"]);
@@ -362,6 +363,49 @@ eq("one level, this PC's (not Bluetooth, or no own volume)", [Route.shownLevels(
     eq("DMS's action, step kept in 1..20", [Keys.dmsAction("up", 3), Keys.dmsAction("up", 0)], ["spawn dms ipc call audio increment 3", "spawn dms ipc call audio increment 3"]);
     eq("only a success answer counts", [Keys.succeeded('{"success":true}'), Keys.succeeded('{"success":false}'), Keys.succeeded(""), Keys.succeeded("null")], [true, false, false, false]);
     eq("notes", [Keys.note("offer").action, Keys.note("done").action, Keys.note("nope")], ["Enable", "Undo", null]);
+}
+
+// Orbit physics: a 200x100 scene, ring at 0.5, black hole far away
+{
+    const g = { cx: 100, cy: 50, rx: 80, ry: 40, ringCy: 50, ringRy: 20, innerNorm: 0.5, snapNorm: 0.7, outerMinNorm: 0.8,
+        bodySize: 20, coreSize: 20, holeX: 1000, holeY: 1000, holeHorizon: 5 };
+    const r = v => Math.round(v * 100) / 100;
+    eq("norm: center 0, belt edge 1", [Physics.norm(g, 100, 50), Physics.norm(g, 180, 50), Physics.norm(g, 100, 90)], [0, 1, 1]);
+    eq("first ring slot at the phase angle", (s => [r(s.x), r(s.y), r(s.depth)])(Physics.ringSlot(g, 0, 4, 0)), [140, 50, 0]);
+    eq("ring slots split the turn evenly", (s => [r(s.x), r(s.y), r(s.depth)])(Physics.ringSlot(g, 1, 4, 0)), [100, 70, 1]);
+    eq("an empty ring does not divide by zero", r(Physics.ringSlot(g, 0, 0, 0).x), 140);
+    eq("belt radius: stronger signal, closer (clamped)", [Physics.beltRadius(g, 0), Physics.beltRadius(g, 1), Physics.beltRadius(g, 5)].map(r), [1, 0.8, 0.8]);
+    eq("belt slot without float: on the ellipse", (s => [r(s.x), r(s.y)])(Physics.beltSlot(g, 0, 2, 0, 0.5, 1, 0, 0)), [100, 90]);
+    eq("float stays within its amplitude", Math.abs(Physics.beltSlot(g, 0, 2, 0, 0.5, 1, 3.7, 4).x - 100) <= 4, true);
+
+    const b = { px: 0, py: 0, vx: 0, vy: 0 };
+    for (let i = 0; i < 300; i++)
+        Physics.spring(b, 10, -5, 70, 0.58, 1 / 60);
+    eq("the spring settles on its target", [r(b.px), r(b.py)], [10, -5]);
+    eq("a settled body is not moving", Physics.moving(b, 10, -5), false);
+    const c = { px: 0, py: 0, vx: 0, vy: 0 };
+    let over = 0;
+    for (let i = 0; i < 300; i++) {
+        Physics.spring(c, 10, 0, 70, 1, 1 / 60);
+        over = Math.max(over, c.px);
+    }
+    eq("critical damping (Reduce motion) never overshoots", over <= 10.001, true);
+
+    eq("a free drag follows the pointer", Physics.dragTarget(g, {}, 30, 20), { x: 30, y: 20, k: 700, zeta: 0.85 });
+    const magnet = Physics.dragTarget(g, { armed: true }, 145, 50);
+    eq("the ring's magnet pulls a new device in", [magnet.x < 145, magnet.k, magnet.zeta], [true, 380, 0.62]);
+    const torn = Physics.dragTarget(g, { holding: true }, 140, 50);
+    eq("a connected device dragged on its ring stays on it", [r(torn.x), r(torn.y)], [140, 50]);
+    const hidden = Physics.dragTarget(Object.assign({}, g, { holeX: 0, holeY: 0 }), { hideArmed: true }, 100, 100);
+    eq("aimed at the black hole, it is pulled in", [r(hidden.x), r(hidden.y), hidden.k], [45, 45, 420]);
+
+    const me = { px: 100, py: 50, inSlot: false }, other = { px: 110, py: 50 };
+    const t = { x: 100, y: 50 };
+    Physics.separate(g, me, t, [me, other], false);
+    eq("neighbours push apart, the core pushes out", t.x < 100 - 10, true);
+    const t2 = { x: 100, y: 50 };
+    Physics.separate(g, me, t2, [me], true);
+    eq("with a card open, the center is allowed", t2, { x: 100, y: 50 });
 }
 
 print(failures ? failures + "/" + count + " failed" : count + " tests passed");
