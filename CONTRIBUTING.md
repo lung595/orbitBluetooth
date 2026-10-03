@@ -71,6 +71,7 @@ orbitBluetooth/
 │   ├── FocusCard.qml            # detail card
 │   ├── TwoLevels.qml            # an output's two volumes (base of CardVolume, VolumeOverlay)
 │   ├── CardVolume.qml           # the detail card's two volumes, tick and sound feed
+│   ├── VolumeStrip.qml          # menus: the two volumes folded into a thin line, unfolds on click
 │   ├── PlanetControl.qml        # focused glyph: click to mute, wheel for the volume
 │   ├── Volume.js                # the tick's pure logic (tested)
 │   ├── AudioRoute.qml, RouteDevice.qml, Route.js    # the two levels of each output: PC filter, absolute volume, IPC (Route.js pure, tested)
