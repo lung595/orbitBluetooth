@@ -19,7 +19,7 @@ function load(file, names) {
 }
 
 const Anc = load("Anc.js", ["family", "nextMode", "ordered"]);
-const Charge = load("Charge.js", ["analyze", "formatShort"]);
+const Charge = load("Charge.js", ["analyze", "formatShort", "timeText", "levelText", "statItems", "footnote"]);
 const Endurance = load("Endurance.js", ["ratedHours"]);
 const Palette = load("Palette.js", ["contrast", "ensureContrast", "onColor", "lift", "isGrey", "toHsl"]);
 const Offer = load("Offer.js", ["scanBlocker", "isCandidate", "offerable", "headline", "features", "errorText"]);
@@ -85,6 +85,25 @@ const late = Charge.analyze([[now - 180 * 60000, 90], [now, 60]], 60, null, now,
 eq("after 3 h the measure wins", Charge.formatShort(late.minutesLeft), "6h00");
 eq("days", Charge.formatShort(3 * 1440), "3d");
 
+// The card's lines and tiles: "≈" only on an estimate, nothing made up
+const drain = { source: "rated", minutesLeft: 90, ratePerHour: -12, health: 0 };
+const fill = { source: "system", minutesToFull: 30, fullAt: now + 30 * 60000, watts: 0, ratePerHour: 40, gained: 8, since: now - 20 * 60000, health: 92 };
+eq("time left, estimated", Charge.timeText(drain, false), "≈ 1 h 30 left");
+eq("time to full, reported", Charge.timeText(fill, true), "30 min to full");
+eq("charging, no speed yet", Charge.timeText({ source: "estimated" }, true), "Measuring…");
+eq("draining, no figure", Charge.timeText({ source: "estimated" }, false), "");
+eq("level line, draining", Charge.levelText(60, drain, false), "60%  •  ≈ 1 h 30 left");
+eq("level line, charging", Charge.levelText(80, fill, true), "80%  •  Full in 30 min");
+eq("level line, unknown", Charge.levelText(40, null, false), "40%");
+eq("tiles, draining", Charge.statItems(drain, false, now).map(t => t.label).join(","), "EMPTY AT,DRAIN");
+const tiles = Charge.statItems(fill, true, now);
+eq("tiles, charging", tiles.map(t => t.label).join(","), "READY AT,SPEED,+8% IN,HEALTH");
+eq("tiles, charging values", tiles.slice(1).map(t => t.value).join(","), "+40 %/h,20 min,92%");
+eq("ready at, reported: no ≈", tiles[0].value.startsWith("≈"), false);
+eq("tiles, full", Charge.statItems({ source: "system", state: "full", health: 0 }, false, now).length, 0);
+eq("footnote, reported", Charge.footnote(fill, true), "Reported by the device");
+eq("footnote, rated", Charge.footnote(drain, false), "From the rated battery life · refines as it drains");
+
 
 // Rename: the alias is shown, but the device is still recognized by its own
 // name (icon, noise control family)
@@ -140,6 +159,7 @@ for (const accent of ["#F2B8C6", "#1A3A8F", "#C5E66A", "#4B6818", "#00FFD1", "#B
 eq("hue kept when fixed", Math.round(Palette.toHsl(Palette.ensureContrast(hex("#F2B8C6"), pearl, 4.5)).h * 100), Math.round(Palette.toHsl(hex("#F2B8C6")).h * 100));
 eq("lift", Math.round(Palette.toHsl(Palette.lift(hex("#4B6818"), 0.66)).l * 100), 66);
 eq("grey", Palette.isGrey(hex("#BDBDBD")), true);
+
 
 // Pairing guard (P115): a fake "headset" that can type is refused
 const HID = "00001124-0000-1000-8000-00805f9b34fb", HOG = "00001812-0000-1000-8000-00805F9B34FB", A2DP = "0000110b-0000-1000-8000-00805f9b34fb";

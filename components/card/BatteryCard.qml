@@ -16,8 +16,7 @@ Rectangle {
     property string statusIcon: "bluetooth_connected"
     property string statusText: ""
     property string detailText: ""      // shown only when there is no level
-    property string timeValue: ""       // e.g. "1h04"
-    property string timeSuffix: ""      // e.g. "left", "to full"
+    property string timeText: ""        // e.g. "≈ 1 h 04 left"
     property bool framed: true          // false when embedded in another card
     property real gaugeRatio: 0.1       // bar height / width
     property bool charging: false
@@ -107,8 +106,8 @@ Rectangle {
                     font.weight: Font.DemiBold
                 }
                 StyledText {
-                    visible: root.timeValue !== ""
-                    text: root.timeValue + (root.timeSuffix ? " " + root.timeSuffix : "")
+                    visible: root.timeText !== ""
+                    text: root.timeText
                     color: root.muted
                     font.pixelSize: Theme.fontSizeSmall - 1
                 }

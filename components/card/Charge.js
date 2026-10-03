@@ -166,6 +166,70 @@ function formatClock(ms) {
     return p(d.getHours()) + ":" + p(d.getMinutes());
 }
 
+// "≈ " in front of a figure Orbit estimated (level changes, rated life)
+function approxMark(c) {
+    return c && (c.source === "estimated" || c.source === "rated") ? "≈ " : "";
+}
+
+// The card's time line: "≈ 2 h 08 to full", "1 h 30 left", "Measuring…" or ""
+function timeText(c, charging) {
+    if (!c)
+        return "";
+    const time = formatMinutes(charging ? c.minutesToFull : c.minutesLeft);
+    if (time)
+        return approxMark(c) + time + (charging ? " to full" : " left");
+    return charging ? "Measuring…" : "";
+}
+
+// The line under the status: "80%  •  Full in ≈ 1 h", "60%  •  ≈ 3 h left"
+function levelText(level, c, charging) {
+    if (charging) {
+        const full = c ? formatMinutes(c.minutesToFull) : "";
+        return level + "%" + (full ? "  •  Full in " + approxMark(c) + full : "  •  Measuring speed...");
+    }
+    const left = c ? formatMinutes(c.minutesLeft) : "";
+    return level + "%" + (left ? "  •  " + approxMark(c) + left + " left" : "");
+}
+
+// The stat tiles: READY AT, POWER or SPEED, CHARGING FOR while charging;
+// EMPTY AT and DRAIN while draining; HEALTH whenever it is known
+function statItems(c, charging, now) {
+    if (!c)
+        return [];
+    const approx = approxMark(c);
+    const out = [];
+    const tile = (label, value) => out.push({ "label": label, "value": value });
+    if (charging) {
+        tile("READY AT", c.fullAt > 0 ? approx + formatClock(c.fullAt) : "Measuring…");
+        if (c.watts > 0)
+            tile("POWER", c.watts.toFixed(1) + " W");
+        else
+            tile("SPEED", c.ratePerHour > 0 ? "+" + Math.round(c.ratePerHour) + " %/h" : "—");
+        tile(c.gained > 0 ? "+" + c.gained + "% IN" : "CHARGING FOR", c.since > 0 ? (formatMinutes((now - c.since) / 60000) || "< 1 min") : "—");
+    } else if (c.state !== "full") {
+        if (c.minutesLeft > 0)
+            tile("EMPTY AT", approx + formatClock(now + c.minutesLeft * 60000));
+        if (c.ratePerHour < 0)
+            tile("DRAIN", Math.round(-c.ratePerHour) + " %/h");
+    }
+    if (c.health > 0)
+        tile("HEALTH", c.health + "%");
+    return out;
+}
+
+// Where the figures come from, under the battery chart
+function footnote(c, charging) {
+    if (!c)
+        return "";
+    if (c.source === "system")
+        return "Reported by the device";
+    if (charging || c.state === "full")
+        return "Estimated from level changes · refines as it charges";
+    if (c.source === "rated")
+        return "From the rated battery life · refines as it drains";
+    return c.source === "estimated" ? "Estimated from level changes" : "";
+}
+
 // Aurora ramp shared by every battery visual: red when critical, through
 // amber and gold, to lime and a cool aqua when full.
 const RAMP = [[0, [255, 84, 104]], [15, [255, 84, 104]], [30, [255, 159, 67]], [50, [255, 214, 92]], [72, [184, 240, 106]], [100, [92, 242, 196]]];

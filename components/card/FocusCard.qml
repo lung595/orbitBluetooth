@@ -28,17 +28,8 @@ Item {
     readonly property color ink: card.paper.ink
     readonly property color muted: card.paper.fg(0.42)
 
-    // Time to full / time left, e.g. "≈ 2 h 08" + "to full"
-    readonly property string timeValue: {
-        const c = body?.charge ?? null;
-        if (!c || !(body?.connected) || (body?.battery ?? -1) < 0)
-            return "";
-        const approx = c.source === "estimated" || c.source === "rated" ? "≈ " : "";
-        if (body.charging)
-            return c.minutesToFull > 0 ? approx + Charge.formatMinutes(c.minutesToFull) : "Measuring…";
-        return c.minutesLeft > 0 ? approx + Charge.formatMinutes(c.minutesLeft) : "";
-    }
-    readonly property string timeSuffix: timeValue === "" || timeValue === "Measuring…" ? "" : body?.charging ? "to full" : "left"
+    // Time to full / time left, e.g. "≈ 2 h 08 to full"
+    readonly property string timeText: body?.connected && (body?.battery ?? -1) >= 0 ? Charge.timeText(body.charge ?? null, body.charging) : ""
 
     // Per-part batteries reported by the headset (earbuds and case)
     readonly property var parts: body?.ancFresh ? (body.ancInfo?.state?.battery ?? null) : null
@@ -46,48 +37,7 @@ Item {
 
     // Charging / drain stats, shown in the battery card, or under the noise
     // control panel for headsets with ANC
-    readonly property var statItems: {
-        const c = body?.charge ?? null;
-        const charging = body?.charging ?? false;
-        const approx = c && (c.source === "estimated" || c.source === "rated") ? "≈ " : "";
-        if (!c || !card.body?.connected)
-            return [];
-        const out = [];
-        if (charging) {
-            out.push({
-                "label": "READY AT",
-                "value": c.fullAt > 0 ? approx + Charge.formatClock(c.fullAt) : "Measuring…"
-            });
-            out.push(c.watts > 0 ? {
-                "label": "POWER",
-                "value": c.watts.toFixed(1) + " W"
-            } : {
-                "label": "SPEED",
-                "value": c.ratePerHour > 0 ? "+" + Math.round(c.ratePerHour) + " %/h" : "—"
-            });
-            out.push({
-                "label": c.gained > 0 ? "+" + c.gained + "% IN" : "CHARGING FOR",
-                "value": c.since > 0 ? (Charge.formatMinutes((card.scene.now - c.since) / 60000) || "< 1 min") : "—"
-            });
-        } else if (c.state !== "full") {
-            if (c.minutesLeft > 0)
-                out.push({
-                    "label": "EMPTY AT",
-                    "value": approx + Charge.formatClock(card.scene.now + c.minutesLeft * 60000)
-                });
-            if (c.ratePerHour < 0)
-                out.push({
-                    "label": "DRAIN",
-                    "value": Math.round(-c.ratePerHour) + " %/h"
-                });
-        }
-        if (c.health > 0)
-            out.push({
-                "label": "HEALTH",
-                "value": c.health + "%"
-            });
-        return out;
-    }
+    readonly property var statItems: body?.connected ? Charge.statItems(body.charge ?? null, body.charging, scene.now) : []
 
     implicitHeight: frameContent.implicitHeight + scene.focusOverlap + Theme.spacingL
 
@@ -381,7 +331,7 @@ Item {
                     width: parent ? parent.width : 0
                     parts: card.parts
                     name: card.body?.model ?? ""
-                    caption: card.timeValue + (card.timeSuffix ? " " + card.timeSuffix : "")
+                    caption: card.timeText
                     animate: card.scene.awake && card.scene.motion
                     time: card.scene.fxTime
                     caseImage: card.scene.prefs.partImageFor(card.device, "case")
@@ -398,15 +348,13 @@ Item {
                     width: parent ? parent.width : 0
                     framed: false
                     gaugeRatio: card.ancShown ? 0.035 : 0.1
-                    timeValue: card.timeValue
-                    timeSuffix: card.timeSuffix
+                    timeText: card.timeText
                     showMeter: !card.trioShown
                     animate: card.scene.awake && card.scene.motion
                     time: card.scene.fxTime
 
                     readonly property var c: card.body?.charge ?? null
                     readonly property real since: card.scene.sinceFor(card.body?.address)
-                    readonly property string approx: c && (c.source === "estimated" || c.source === "rated") ? "≈ " : ""
 
                     level: card.body?.connected ? card.body.battery : -1
                     charging: card.body?.charging ?? false
@@ -414,17 +362,7 @@ Item {
                         const log = card.scene.batteryLogFor(card.body?.address);
                         return log.length && level >= 0 ? log.concat([[card.scene.now, level]]) : [];
                     }
-                    footnote: {
-                        if (!c || !card.body?.connected || level < 0 || card.ancShown)
-                            return "";
-                        if (c.source === "system")
-                            return "Reported by the device";
-                        if (charging || c.state === "full")
-                            return "Estimated from level changes · refines as it charges";
-                        if (c.source === "rated")
-                            return "From the rated battery life · refines as it drains";
-                        return c.source === "estimated" ? "Estimated from level changes" : "";
-                    }
+                    footnote: card.body?.connected && level >= 0 && !card.ancShown ? Charge.footnote(c, charging) : ""
                     statusIcon: {
                         if (card.body?.phase === "connecting")
                             return "sync";
@@ -452,12 +390,8 @@ Item {
                     detailText: {
                         if (!card.body)
                             return "";
-                        if (level >= 0) {
-                            if (charging)
-                                return level + "%" + (c.minutesToFull > 0 ? "  •  Full in " + approx + Charge.formatMinutes(c.minutesToFull) : "  •  Measuring speed...");
-                            const left = c ? Charge.formatMinutes(c.minutesLeft) : "";
-                            return level + "%" + (left ? "  •  " + approx + left + " left" : "");
-                        }
+                        if (level >= 0)
+                            return Charge.levelText(level, c, charging);
                         if (card.body.connected)
                             return "No battery info";
                         const sig = card.body.rawSignal;
