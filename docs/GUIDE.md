@@ -339,6 +339,17 @@ Three buttons at the end reset custom device icons, bring back every hidden devi
 - **Settings** (choices, custom icons, hidden devices) are stored by DMS with your other plugin settings.
 - **Device names** you set are stored by BlueZ, like any Bluetooth alias.
 
+### Uninstalling
+
+Removing Orbit leaves your machine exactly as it was before:
+
+- Orbit changes nothing in your sound setup: no default output, no setting of PipeWire or WirePlumber. What it creates for the sound (the filter that carries this PC's level) belongs to the shell and disappears with it, even after a crash.
+- DMS deletes the plugin folder but keeps what it stored for the plugin. So when Orbit is unloaded and finds its folder gone, it erases its settings, its widgets (bars, Control Center, desktop and their positions) and its pictures cache.
+- It waits a few seconds first and checks again: an update that re-downloads the folder keeps everything.
+- Disabling Orbit, reloading or restarting the shell erase nothing.
+
+If you deleted the folder while DMS was not running, Orbit could not clean up: install it again, then remove it from DMS while it runs.
+
 ## Performance
 
 Orbit costs nothing while you are not looking at it: no frames at rest, nothing running while views are closed (except the pop-up's short background scan, which you can turn off), everything paused while the session is locked. CPU of the whole shell (% of one core, 240 Hz screen; the first row is the baseline of each run):

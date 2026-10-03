@@ -170,6 +170,7 @@ Bind them in your compositor, for example in niri: `Mod+N { spawn "dms" "ipc" "c
 | A device charges but shows no lightning | Wait for its first level increase: the estimate starts then |
 | Noise control does not appear | Headset must be paired and supported, Python 3 installed; reopen the card |
 | A device vanished | It is in the black hole: click it, or `dms ipc call orbitBluetooth unhideAll` |
+| Settings or widgets of Orbit left after removing it while DMS was not running | Install it again, then remove it from DMS while it runs: it cleans up after itself, see [Uninstalling](docs/GUIDE.md#uninstalling) |
 | Time to full looks off | Some headsets report in 10 % steps; it improves over time |
 
 Some Sony headsets do not report charging, or drop Bluetooth while charging: this is a hardware limit.
@@ -183,6 +184,8 @@ Some Sony headsets do not report charging, or drop Bluetooth while charging: thi
 - **Volume ring**: talks to the local sound server (PipeWire) only; its tick is a sound file shipped with Orbit.
 - **Guide links**: the GitHub mark opens the guide in your browser only when you click it; Orbit itself makes no request.
 - **Network: only one opt-in feature, off by default.** **Real device pictures** sends only the *model name* of devices you have paired, never a stranger's device nearby, never the Bluetooth address. It contacts `commons.wikimedia.org`, then `api.sketchfab.com`, and downloads the picture from `upload.wikimedia.org` or `media.sketchfab.com`. Pictures are credited in the card, kept in `~/.cache/orbitBluetooth/pictures` (readable by you only) and erased when you turn the option off or from the settings.
+
+- **Uninstalling leaves nothing.** When you remove Orbit from DMS, it erases what DMS keeps for it (its settings, its bar, Control Center and desktop widgets) and its pictures cache, and your sound goes back exactly as before. [More](docs/GUIDE.md#uninstalling)
 
 Details in the [user guide](docs/GUIDE.md#privacy).
 

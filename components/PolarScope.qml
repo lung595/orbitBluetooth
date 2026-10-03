@@ -29,11 +29,12 @@ Item {
     property bool motion: true
     property int fps: 60
     property bool interactive: true
-    // Where the cloud's sound comes from (a PipeWire sink node)
-    property var feedNode: null
 
     // A level was dragged or scrolled: "device" or "pc", 0..1
     signal moved(string part, real level)
+    // Its icon was clicked: "device" or "pc"
+    signal muteClicked(string part)
+    readonly property bool hovered: pointer.containsMouse || dragging !== ""
 
     readonly property bool hasDevice: deviceLevel >= 0
     // Geometry: the center sits on the bottom edge, above the icons
@@ -164,12 +165,14 @@ Item {
         quiet: scope.hasDevice ? scope.deviceMuted || scope.pcMuted : scope.pcMuted
     }
 
-    ScopeFeed {
-        id: feed
-        node: scope.feedNode
-        fps: scope.fps
-        active: scope.live && scope.motion && !!scope.feedNode
-        onArrived: scope.wake()
+    // The sound to show: a ScopeFeed owned by the caller, which turns it on
+    // only while the scope is shown (one feed for every screen's pop-up)
+    property var feed: null
+    Connections {
+        target: scope.feed
+        function onArrived() {
+            scope.wake();
+        }
     }
 
     // Exposed for tests: the clock must stop alone
@@ -190,7 +193,7 @@ Item {
             const dt = Math.max(0.001, Math.min(0.1, (now - scope._last) / 1000));
             scope._last = now;
             // A frame older than a few of cava's is silence (paused player)
-            const fresh = feed.frame && now - feed.stamp < 250 ? feed.frame : null;
+            const fresh = scope.feed && scope.feed.frame && now - scope.feed.stamp < 250 ? scope.feed.frame : null;
             cloud.advance(dt, fresh);
             if (!fresh && cloud.alive === 0)
                 clock.stop();
@@ -250,6 +253,7 @@ Item {
         name: scope.deviceMuted ? "volume_off" : scope.deviceIcon
         size: scope.iconSize
         color: scope.deviceMuted ? Theme.outline : scope.deviceColor
+        rotation: -scope.rotation
         x: scope.cx - scope.outer - width / 2
         y: scope.cy + 6
     }
@@ -257,6 +261,7 @@ Item {
         name: scope.pcMuted ? "volume_off" : scope.pcIcon
         size: scope.iconSize
         color: scope.pcMuted ? Theme.outline : scope.pcColor
+        rotation: -scope.rotation
         x: scope.cx - scope.inner - width / 2
         y: scope.cy + 6
     }
@@ -274,6 +279,7 @@ Item {
         readonly property real py: scope.cy + Math.sin(deg * Math.PI / 180) * (radiusAt + _out)
         x: Math.max(0, Math.min(scope.width - width, px - width / 2))
         y: Math.max(0, py - height / 2)
+        rotation: -scope.rotation
         font.pixelSize: Math.max(11, Math.round(scope.outer * 0.1))
         font.weight: Font.DemiBold
         opacity: shown ? 1 : 0
@@ -326,10 +332,22 @@ Item {
                 scope.moved(scope.dragging, valueAt(scope.dragging, m));
         }
         onExited: hover = ""
+        // The icons at the feet of the half circles mute or unmute their level
+        function iconAt(m) {
+            const near = (x, y) => Math.abs(m.x - x) <= scope.iconSize && Math.abs(m.y - y) <= scope.iconSize;
+            const footY = scope.cy + 6 + scope.iconSize / 2;
+            if (scope.hasDevice && near(scope.cx - scope.outer, footY))
+                return "device";
+            return near(scope.cx - scope.inner, footY) ? "pc" : "";
+        }
         onPressed: m => {
             const part = partAt(m);
             if (!part) {
-                m.accepted = false;
+                const icon = iconAt(m);
+                if (icon)
+                    scope.muteClicked(icon);
+                else
+                    m.accepted = false;
                 return;
             }
             scope.dragging = part;

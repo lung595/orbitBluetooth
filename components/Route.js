@@ -80,35 +80,25 @@ function description(deviceName) {
     return (clean || "Bluetooth") + " (Orbit)";
 }
 
-// Arguments of `pactl load-module` for the device's virtual sink. Each one
-// is its own argv entry; null if anything does not check out.
-function loadArgs(address, master, deviceName) {
+// The command that puts this PC's level in front of the device (D259): a
+// WirePlumber smart filter, a virtual sink that WirePlumber itself slips
+// between every app and the device. The default output stays the device,
+// so nothing in WirePlumber's saved state changes, and the filter lives
+// exactly as long as this process: bash watches its standard input (a pipe
+// from the shell) and stops pw-loopback the moment the shell goes away, even
+// after a crash (value 12). Data only as "$1" and "$2" (value 11).
+// Returns an argv list, or null if anything does not check out.
+const FILTER_SCRIPT = '{ cat >/dev/null; kill "$$" 2>/dev/null; } <&0 & exec pw-loopback --capture-props="$1" --playback-props="$2" </dev/null';
+
+function filterArgs(address, master, deviceName) {
     const name = virtualName(address);
     if (!name || !isDeviceSink(master))
         return null;
-    return ["pactl", "load-module", "module-remap-sink",
-        "sink_name=" + name,
-        "master=" + master,
-        "sink_properties=device.description=\"" + description(deviceName) + "\""];
-}
-
-// Module indexes of Orbit's virtual sinks in `pactl list modules short`
-// (left behind by a shell that crashed, for example)
-function ownModules(text) {
-    const out = [];
-    const lines = String(text || "").split("\n");
-    for (let i = 0; i < lines.length; i++) {
-        const cols = lines[i].split("\t");
-        if (cols.length >= 3 && cols[1] === "module-remap-sink" && /(^|\s)sink_name=orbit_pc_/.test(cols[2]) && /^[0-9]+$/.test(cols[0]))
-            out.push(cols[0]);
-    }
-    return out;
-}
-
-// A module index printed by `pactl load-module`
-function moduleIndex(text) {
-    const t = String(text || "").trim();
-    return /^[0-9]{1,10}$/.test(t) ? t : "";
+    // Nothing remembered by WirePlumber for these two nodes
+    const keep = " state.restore-props=false state.restore-target=false";
+    const capture = "media.class=Audio/Sink node.name=" + name + " node.description=\"" + description(deviceName) + "\"" + " filter.smart=true filter.smart.name=" + name + " filter.smart.target={ node.name = \"" + master + "\" }" + keep;
+    const playback = "node.name=" + name + ".out node.passive=true" + keep;
+    return ["bash", "-c", FILTER_SCRIPT, "orbit", capture, playback];
 }
 
 // Clicking the planet: with one Bluetooth audio device connected, this PC
@@ -166,4 +156,28 @@ function transportVolume(json) {
     } catch (e) {
         return -1;
     }
+}
+
+// The Material Symbols icon at the foot of the device's half circle, from
+// Orbit's device kind (DeviceCatalog.resolve)
+function iconFor(kind) {
+    const k = String(kind || "");
+    if (/^earbuds/.test(k))
+        return "earbuds";
+    if (/^headphones|^headset/.test(k))
+        return "headphones";
+    if (k === "tv")
+        return "tv";
+    if (k === "car")
+        return "directions_car";
+    return "speaker";
+}
+
+// Pop-up sizes (D258): width x height of the horizontal pop-up
+function popupSize(size) {
+    if (size === "compact")
+        return { "w": 280, "h": 150 };
+    if (size === "large")
+        return { "w": 480, "h": 260 };
+    return { "w": 360, "h": 200 };
 }

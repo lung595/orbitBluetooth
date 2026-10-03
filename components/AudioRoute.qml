@@ -1,14 +1,13 @@
 import QtQuick
 import QtQml
 import Quickshell.Bluetooth
-import Quickshell.Io
 import Quickshell.Services.Pipewire
 import "Route.js" as Route
 
 // The two volumes of a Bluetooth audio device (D249): the device's own
 // level, and this PC's level, what the PC sends to it. One RouteDevice per
-// Bluetooth device does the work; this keeps the list, cleans up after a
-// crashed shell, and answers "which level does this change?".
+// Bluetooth device does the work; this keeps the list and answers "which
+// level does this change?".
 Item {
     id: root
 
@@ -16,37 +15,12 @@ Item {
     // Called with address -> { sink, pc, absolute } whenever it changes
     property var publish: function (map) {}
 
-    // Virtual sinks left by a shell that did not stop cleanly go first
-    property bool ready: false
     // address -> RouteDevice
     property var _devices: ({})
 
     // The default output, to set this PC's level without a Bluetooth device
     PwObjectTracker {
         objects: Pipewire.defaultAudioSink ? [Pipewire.defaultAudioSink] : []
-    }
-
-    Process {
-        id: orphans
-        running: true
-        command: ["pactl", "list", "modules", "short"]
-        stdout: StdioCollector {
-            id: orphansOut
-        }
-        onExited: code => {
-            const own = code === 0 ? Route.ownModules(orphansOut.text) : [];
-            if (own.length) {
-                // Indexes are digits only, passed as positional parameters
-                sweeper.command = ["sh", "-c", 'for m; do pactl unload-module "$m"; done', "sh"].concat(own);
-                sweeper.running = true;
-            } else {
-                root.ready = true;
-            }
-        }
-    }
-    Process {
-        id: sweeper
-        onExited: root.ready = true
     }
 
     Instantiator {
@@ -56,7 +30,6 @@ Item {
             required property var modelData
             device: modelData
             separate: root.prefs ? root.prefs.separatePc : true
-            ready: root.ready
             levels: root.prefs ? root.prefs.pcLevels : ({})
             saveLevel: (address, level) => root._saveLevel(address, level)
             onChanged: root._refresh()
@@ -109,10 +82,22 @@ Item {
         return list;
     }
 
+    // The Bluetooth device that is the current output (itself or its
+    // virtual sink), or null: the pop-up then shows this PC's level only
+    readonly property var current: {
+        const def = Pipewire.defaultAudioSink;
+        for (const a in _devices) {
+            const d = _devices[a];
+            if (d.sink && def && (d.sink === def || d.pc === def))
+                return d;
+        }
+        return null;
+    }
+
     function find(address) {
         if (address)
             return _devices[address] && _devices[address].sink ? _devices[address] : null;
-        return audioDevices()[0] || null;
+        return current || audioDevices()[0] || null;
     }
 
     // The node holding the device's own level, or null when the device

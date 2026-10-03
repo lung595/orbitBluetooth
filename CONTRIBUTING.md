@@ -48,6 +48,8 @@ Logic that can be tested lives in **pure `.js` files** with no QML: `Charge.js` 
 
 **Guided, never blocked**: `components/Guide.js` (pure, tested) builds the guide links and the short notes (`connectNote`); `OrbitNote.qml` shows them at the bottom of the sky and `GuideLink.qml` is the GitHub mark that opens a guide section on click. A new refusal gets a note and an anchor that exists in `docs/GUIDE.md` (the tests check it). Every new Quickshell import or service used by a component needs its mock in `scripts/preview/imports/`, or the previews break.
 
+**Uninstalling leaves nothing** (value 12): `components/UninstallSweep.qml` (in the daemon) reads `uninstall/orbit_uninstall.py` when Orbit loads; when Orbit is unloaded and its `plugin.json` is gone, it starts that script detached, from memory (`python3 -c`), since the folder no longer exists. The script waits 4 s, checks again (an update may re-clone the folder) and only then edits the shell's JSON files, which DMS watches. Never create QML objects in `Component.onDestruction`: it crashed the shell.
+
 **Real device pictures** (opt-in) is the only network use: `components/PictureService.qml` runs `pictures/orbit_pictures.py` (Wikimedia Commons, then Sketchfab; standard library only), and `components/Pictures.js` decides which names may be sent. Keep the list of hosts in sync between the helper header, the settings description, the README and the GUIDE.
 
 Settings are read through `components/Prefs.qml`, a reactive view shared by every surface.
@@ -99,6 +101,9 @@ orbitBluetooth/
 ├── pictures/
 │   ├── orbit_pictures.py        # picture lookup (Wikimedia Commons, Sketchfab)
 │   └── tests/                   # unittest, no network
+├── uninstall/
+│   ├── orbit_uninstall.py       # erases what DMS keeps once Orbit is removed
+│   └── tests/                   # unittest, on fake shell files
 ├── tests/qml/                   # pop-up scenario test, stubs for Quickshell/DMS
 ├── tests/anc.test.js            # gjs: brand detection, modes, time left
 ├── shaders/                     # .frag sources, compiled .qsb, build.sh
@@ -115,6 +120,7 @@ orbitBluetooth/
 ```sh
 (cd anc && python3 -m unittest discover -s tests -t .)   # noise-control protocols
 (cd pictures && python3 -m unittest discover -s tests -t .)   # picture lookup, without network
+(cd uninstall && python3 -m unittest discover -s tests -t .)  # uninstall sweep, on fake shell files
 sh tests/qml/run.sh                                       # new-device pop-up scenario and volume ring (Qt 6)
 gjs tests/anc.test.js                                     # brand detection, modes, pairing guard
 ```

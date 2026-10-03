@@ -35,6 +35,11 @@ Item {
 
     readonly property int maxSamples: 64
 
+    // Uninstalling erases what DMS keeps for the plugin (value 12, D259)
+    UninstallSweep {
+        pluginId: root.pluginId
+    }
+
     // Noise control (ANC) for headphones: address -> helper snapshot
     Prefs {
         id: prefs

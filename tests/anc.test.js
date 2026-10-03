@@ -24,7 +24,7 @@ const Fx = load("VolumeFx.js", ["clamp01", "ripple", "band", "filament", "emissi
 const Guard = load("Guard.js", ["offerFamily", "hasInput", "refused", "validPath", "parseUuids"]);
 const Cover = load("Cover.js", ["covered"]);
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "arc", "end", "point", "angleOf", "valueAt", "zone", "parseFrame", "loudness", "spawn", "cavaConfig"]);
-const Route = load("Route.js", ["addressKey", "virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "loadArgs", "ownModules", "moduleIndex", "muteTarget", "ipcLevel", "transportPath", "transportVolume"]);
+const Route = load("Route.js", ["addressKey", "virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "filterArgs", "muteTarget", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize"]);
 
 let count = 0, failures = 0;
 function eq(what, got, expected) {
@@ -281,12 +281,11 @@ eq("nothing for another device", [Route.deviceSink(pwNodes, "AA:BB:CC:DD:EE:02")
 eq("description keeps the name", Route.description("WH-1000XM6"), "WH-1000XM6 (Orbit)");
 eq("description drops quotes and escapes", Route.description('My "Buds" \\ $(x)'), "My Buds (x) (Orbit)");
 eq("empty name falls back", Route.description(""), "Bluetooth (Orbit)");
-eq("load-module arguments", Route.loadArgs(MAC, "bluez_output.AA_BB_CC_DD_EE_01.1", "Buds"),
-   ["pactl", "load-module", "module-remap-sink", "sink_name=orbit_pc_AA_BB_CC_DD_EE_01", "master=bluez_output.AA_BB_CC_DD_EE_01.1", "sink_properties=device.description=\"Buds (Orbit)\""]);
-eq("bad master or address: no command", [Route.loadArgs(MAC, "x y", "B"), Route.loadArgs("nope", "bluez_output.AA_BB_CC_DD_EE_01.1", "B")], [null, null]);
-const modules = "12\tmodule-null-sink\tsink_name=x\t\n31\tmodule-remap-sink\tsink_name=orbit_pc_AA_BB_CC_DD_EE_01 master=bluez_output.AA_BB_CC_DD_EE_01.1\t\n32\tmodule-remap-sink\tsink_name=someone_else master=y\t\n";
-eq("orphans: only Orbit's remap sinks", Route.ownModules(modules), ["31"]);
-eq("module index", [Route.moduleIndex("536870913\n"), Route.moduleIndex("Failure: x")], ["536870913", ""]);
+const filter = Route.filterArgs(MAC, "bluez_output.AA_BB_CC_DD_EE_01.1", "Buds \"Pro\"");
+eq("smart filter: bash watches stdin, data only in $1 and $2", [filter.slice(0, 2), filter[3]], [["bash", "-c"], "orbit"]);
+eq("smart filter: targets the device, nothing remembered", [/filter\.smart\.target=\{ node\.name = "bluez_output\.AA_BB_CC_DD_EE_01\.1" \}/.test(filter[4]), /node\.name=orbit_pc_AA_BB_CC_DD_EE_01 /.test(filter[4]), /state\.restore-props=false state\.restore-target=false$/.test(filter[5])], [true, true, true]);
+eq("smart filter: quotes stripped from the name", /description="Buds Pro \(Orbit\)"/.test(filter[4]), true);
+eq("bad master or address: no command", [Route.filterArgs(MAC, "x y", "B"), Route.filterArgs("nope", "bluez_output.AA_BB_CC_DD_EE_01.1", "B")], [null, null]);
 eq("mute: one device mutes this PC, two mute the device", [Route.muteTarget(1), Route.muteTarget(2), Route.muteTarget(0)], ["pc", "device", "pc"]);
 eq("ipc up/down in 5 % steps", [Route.ipcLevel("up", 0.5), Route.ipcLevel("down", 0.5), Route.ipcLevel("UP", 0.52)], [0.55, 0.45, 0.55]);
 eq("ipc capped at the ends", [Route.ipcLevel("up", 1), Route.ipcLevel("down", 0), Route.ipcLevel("+20", 0.9), Route.ipcLevel("-20", 0.1)], [1, 0, 1, 0]);
@@ -321,6 +320,8 @@ eq("louder goes further", Polar.spawn({ l: [1], r: [1] }, 0, 100, 0.5, 1, 0).dis
 eq("silence spawns nothing", [Polar.spawn({ l: [0], r: [0.01] }, 0, 100, 0.5, 0.5, 0.5), Polar.spawn(mono, 4, 100, 0.5, 0.5, 0.5)], [null, null]);
 eq("cava config", Polar.cavaConfig("orbit_pc_AA.monitor", 60, 8).split("\n").filter(l => /source|bars|framerate|channels/.test(l)), ["framerate = 60", "bars = 16", "source = orbit_pc_AA.monitor", "channels = stereo"]);
 eq("cava config refuses odd names", [Polar.cavaConfig("x\nmethod = fifo", 60, 8), Polar.cavaConfig("", 60, 8)], [null, null]);
+eq("foot icons", [Route.iconFor("headphonesPremium"), Route.iconFor("earbudsStem"), Route.iconFor("soundbar"), Route.iconFor("bluetooth")], ["headphones", "earbuds", "speaker", "speaker"]);
+eq("pop-up sizes, medium by default", [Route.popupSize("compact"), Route.popupSize("x"), Route.popupSize("large").h], [{ w: 280, h: 150 }, { w: 360, h: 200 }, 260]);
 
 print(failures ? failures + "/" + count + " failed" : count + " tests passed");
 imports.system.exit(failures ? 1 : 0);
