@@ -23,7 +23,7 @@ const Volume = load("Volume.js", ["start", "sweep", "clamp", "step", "nudge", "v
 const Fx = load("VolumeFx.js", ["clamp01", "ripple", "band", "filament", "emission", "spawn", "step", "lifeT", "follow", "wave"]);
 const Guard = load("Guard.js", ["offerFamily", "hasInput", "refused", "validPath", "parseUuids"]);
 const Cover = load("Cover.js", ["covered"]);
-const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "arc", "end", "point", "angleOf", "valueAt", "zone", "parseFrame", "loudness", "spawn", "cavaConfig"]);
+const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "arc", "end", "point", "angleOf", "valueAt", "zone", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "levelAt", "reach", "rayAngles", "follow"]);
 const Route = load("Route.js", ["addressKey", "virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "filterArgs", "muteTarget", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "shownLevels"]);
 
 let count = 0, failures = 0;
@@ -318,14 +318,23 @@ eq("mono sits on the vertical", Polar.spawn(mono, 0, 100, 0.5, 1, 0).deg, 270);
 eq("hard left / right go to the sides", [Polar.spawn(hardL, 0, 100, 0.5, 1, 0).deg, Polar.spawn(hardR, 0, 100, 0.5, 1, 0).deg], [183, 357]);
 eq("louder goes further", Polar.spawn({ l: [1], r: [1] }, 0, 100, 0.5, 1, 0).dist > Polar.spawn({ l: [0.2], r: [0.2] }, 0, 100, 0.5, 1, 0).dist, true);
 eq("silence spawns nothing", [Polar.spawn({ l: [0], r: [0.01] }, 0, 100, 0.5, 0.5, 0.5), Polar.spawn(mono, 4, 100, 0.5, 0.5, 0.5)], [null, null]);
+eq("visualizer style: unknown falls back to points", [Polar.styleOf("rays"), Polar.styleOf("waves"), Polar.styleOf("none"), Polar.styleOf("x")], ["rays", "waves", "none", "points"]);
+const sp = { l: [1, 0.5, 0], r: [0.2, 0.4, 0.6] };
+eq("level at the top is the left bass, at the sides the highs", [Polar.levelAt(sp, 269.999) > 0.99, Polar.levelAt(sp, 180), Polar.levelAt(sp, 360)], [true, 0, 0.6]);
+eq("level interpolates between bands", Math.round(Polar.levelAt(sp, 225) * 100) / 100, 0.5);
+eq("no frame: no level", Polar.levelAt(null, 200), 0);
+eq("silence keeps a faint ring, full reaches the edge", [Polar.reach(0, 100), Polar.reach(1, 100)], [16, 100]);
+const ra = Polar.rayAngles(4);
+eq("rays: two per band, inside the half circle, symmetric", [ra.length, ra.every(d => d > 180 && d < 360), ra[0] + ra[1]], [8, true, 540]);
+eq("meter: up at once, down slowly", [Polar.follow(0, 1, 0.05), Polar.follow(1, 0, 0.05) > 0.6], [1, true]);
 eq("cava config", Polar.cavaConfig("orbit_pc_AA.monitor", 60, 8).split("\n").filter(l => /source|bars|framerate|channels/.test(l)), ["framerate = 60", "bars = 16", "source = orbit_pc_AA.monitor", "channels = stereo"]);
 eq("cava config refuses odd names", [Polar.cavaConfig("x\nmethod = fifo", 60, 8), Polar.cavaConfig("", 60, 8)], [null, null]);
 eq("foot icons", [Route.iconFor("headphonesPremium"), Route.iconFor("earbudsStem"), Route.iconFor("soundbar"), Route.iconFor("bluetooth")], ["headphones", "earbuds", "speaker", "speaker"]);
-eq("pop-up sizes, medium by default", [Route.popupSize("compact"), Route.popupSize("x"), Route.popupSize("large").h], [{ w: 280, h: 150 }, { w: 360, h: 200 }, 260]);
+eq("pop-up sizes, medium by default", [Route.popupSize("compact"), Route.popupSize("x"), Route.popupSize("large").h], [{ w: 300, h: 172 }, { w: 420, h: 236 }, 300]);
 
 // The volume pop-up (D258): where it stands, which levels it shows
-eq("pop-up lies flat in place of DMS's OSD", Route.popupLayout("replace", false, false, "medium"), { w: 360, h: 200, upright: false, rotation: 0 });
-eq("upright on the right edge, flat side against it", Route.popupLayout("edge", false, false, "large"), { w: 260, h: 480, upright: true, rotation: -90 });
+eq("pop-up lies flat in place of DMS's OSD", Route.popupLayout("replace", false, false, "medium"), { w: 420, h: 236, upright: false, rotation: 0 });
+eq("upright on the right edge, flat side against it", Route.popupLayout("edge", false, false, "large"), { w: 300, h: 540, upright: true, rotation: -90 });
 eq("follows DMS's OSD on a side", [Route.popupLayout("replace", true, true, "compact").rotation, Route.popupLayout("replace", true, false, "x").rotation, Route.popupLayout("bar", true, true, "x").upright], [90, -90, false]);
 const nd = { n: "dev" }, np = { n: "pc" };
 eq("two levels", Route.shownLevels(nd, np), { device: nd, pc: np, ownIcon: false });

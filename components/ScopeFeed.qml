@@ -4,7 +4,7 @@ import Quickshell.Services.Pipewire
 import "Polar.js" as Polar
 
 // What the vectorscope's cloud is made of: the sound going to an output,
-// left and right, in 8 frequency bands per side, read by cava from the
+// left and right, in 16 frequency bands per side, read by cava from the
 // output's monitor. cava runs only while `active` (the scope is on screen
 // and something moves on it); its configuration goes in through a file
 // descriptor, never a file on disk (value 5) nor a shell string (value 11).
@@ -16,7 +16,7 @@ Item {
     property var node: null
     property bool active: false
     property int fps: 60
-    readonly property int bars: 8
+    readonly property int bars: 16
 
     // Latest frame { l: [..], r: [..] } (0..1, low notes first), and when
     property var frame: null

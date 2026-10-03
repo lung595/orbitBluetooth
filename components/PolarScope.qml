@@ -10,10 +10,11 @@ import "Polar.js" as Polar
 // to drag; an icon sits at the foot of each, the number only shows while
 // the level moves. A cloud of points shows where the sound is going: its
 // angle is left/right, its distance how loud.
-// The cloud moves on one Timer (60 Hz, or 30 with "Light"), only while
-// `live` and sound is playing or points are still fading; it stops by
-// itself. A QML animation would redraw the whole shell (rule 23).
-// Reduce motion: no cloud, levels jump.
+// The sound is drawn by PolarVisual in the chosen style (points, rays,
+// waves or none), over an optional Ozone-like grid. It moves on one Timer
+// (60 Hz, or 30 with "Light"), only while `live` and sound is playing or
+// light is still fading; it stops by itself. A QML animation would redraw
+// the whole shell (rule 23). Reduce motion: no picture, levels jump.
 Item {
     id: scope
 
@@ -29,6 +30,10 @@ Item {
     property bool motion: true
     property int fps: 60
     property bool interactive: true
+    // "points", "rays", "waves" or "none" (Polar.styleOf)
+    property string style: "points"
+    // The scope's own screen behind it: guide rings and L / R lines
+    property bool grid: false
 
     // A level was dragged or scrolled: "device" or "pc", 0..1
     signal moved(string part, real level)
@@ -46,9 +51,14 @@ Item {
     readonly property real inner: hasDevice ? outer * 0.44 : outer * 0.82
     readonly property real stroke: Math.max(3, outer * 0.035)
 
-    readonly property color deviceColor: Theme.primary
-    readonly property color pcColor: Theme.tertiary
-    readonly property color trackColor: Theme.withAlpha(Theme.outline, 0.22)
+    // The caller may pass night colors when the scope sits on a dark screen
+    property color deviceColor: Theme.primary
+    property color pcColor: Theme.tertiary
+    property color trackColor: Theme.withAlpha(Theme.outline, 0.22)
+    property color inkColor: Theme.surfaceText
+    property color mutedColor: Theme.outline
+    // Inside a muted moon
+    property color hollowColor: Theme.surfaceContainer
 
     // Which number shows, and for how long
     property string talking: ""
@@ -82,6 +92,85 @@ Item {
         }
     }
 
+    // --- Grid and picture ---------------------------------------------------------
+    // Painted once per size or color change, never per frame
+    Canvas {
+        id: gridCanvas
+        anchors.fill: parent
+        visible: scope.grid
+        renderStrategy: Canvas.Cooperative
+        onWidthChanged: requestPaint()
+        onHeightChanged: requestPaint()
+        onVisibleChanged: requestPaint()
+        Connections {
+            target: scope
+            function onInkColorChanged() {
+                gridCanvas.requestPaint();
+            }
+            function onOuterChanged() {
+                gridCanvas.requestPaint();
+            }
+            function onDeviceColorChanged() {
+                gridCanvas.requestPaint();
+            }
+        }
+        onPaint: {
+            const ctx = getContext("2d");
+            ctx.reset();
+            if (!scope.grid)
+                return;
+            const c = scope.inkColor;
+            const ink = a => "rgba(" + Math.round(c.r * 255) + "," + Math.round(c.g * 255) + "," + Math.round(c.b * 255) + "," + a + ")";
+            const R = scope.outer - scope.stroke * 2;
+            // A faint glow where the sound rises from, like a lit phosphor screen
+            const d = scope.deviceColor;
+            const glow = ctx.createRadialGradient(scope.cx, scope.cy, 0, scope.cx, scope.cy, scope.outer * 1.15);
+            glow.addColorStop(0, "rgba(" + Math.round(d.r * 255) + "," + Math.round(d.g * 255) + "," + Math.round(d.b * 255) + ",0.13)");
+            glow.addColorStop(1, "rgba(0,0,0,0)");
+            ctx.fillStyle = glow;
+            ctx.fillRect(0, 0, width, height);
+            ctx.lineWidth = 1;
+            // Rings at a quarter, half and three quarters, dashed
+            ctx.setLineDash([2, 4]);
+            ctx.strokeStyle = ink(0.09);
+            for (const f of [0.25, 0.5, 0.75]) {
+                ctx.beginPath();
+                ctx.arc(scope.cx, scope.cy, R * f, Math.PI, Math.PI * 2);
+                ctx.stroke();
+            }
+            // Mono up the middle, hard left and right at ±45° (as on a goniometer)
+            ctx.setLineDash([]);
+            for (const deg of [225, 270, 315]) {
+                const a = deg * Math.PI / 180;
+                ctx.beginPath();
+                ctx.moveTo(scope.cx, scope.cy);
+                ctx.lineTo(scope.cx + Math.cos(a) * R, scope.cy + Math.sin(a) * R);
+                ctx.strokeStyle = ink(deg === 270 ? 0.12 : 0.08);
+                ctx.stroke();
+            }
+            ctx.fillStyle = ink(0.32);
+            ctx.font = "600 " + Math.max(9, Math.round(scope.outer * 0.075)) + "px sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            for (const [deg, t] of [[225, "L"], [315, "R"]]) {
+                const a = deg * Math.PI / 180;
+                ctx.fillText(t, scope.cx + Math.cos(a) * (R * 0.62), scope.cy + Math.sin(a) * (R * 0.62) - 9);
+            }
+        }
+    }
+
+    PolarVisual {
+        id: cloud
+        anchors.fill: parent
+        style: Polar.styleOf(scope.style)
+        centerX: scope.cx
+        centerY: scope.cy
+        radius: scope.outer - scope.stroke
+        color: scope.hasDevice ? scope.deviceColor : scope.pcColor
+        color2: scope.pcColor
+        quiet: scope.hasDevice ? scope.deviceMuted || scope.pcMuted : scope.pcMuted
+    }
+
     // A faint baseline, as on a goniometer
     Rectangle {
         x: scope.cx - scope.outer - 6
@@ -111,26 +200,26 @@ Item {
             radius: scope.outer
             sweep: Polar.arc("outer", scope._dev).sweep
             strokeWidth: scope.stroke * 3.2
-            strokeColor: scope.hasDevice && scope._dev > 0.001 ? Theme.withAlpha(scope.deviceMuted ? Theme.outline : scope.deviceColor, 0.16) : "transparent"
+            strokeColor: scope.hasDevice && scope._dev > 0.001 ? Theme.withAlpha(scope.deviceMuted ? scope.mutedColor : scope.deviceColor, 0.16) : "transparent"
         }
         Arc {
             radius: scope.inner
             sweep: Polar.arc("inner", scope._pc).sweep
             strokeWidth: scope.stroke * 3.2
-            strokeColor: scope._pc > 0.001 ? Theme.withAlpha(scope.pcMuted ? Theme.outline : scope.pcColor, 0.16) : "transparent"
+            strokeColor: scope._pc > 0.001 ? Theme.withAlpha(scope.pcMuted ? scope.mutedColor : scope.pcColor, 0.16) : "transparent"
         }
         // The levels
         Arc {
             radius: scope.outer
             sweep: Polar.arc("outer", scope._dev).sweep
             strokeWidth: scope.stroke
-            strokeColor: scope.hasDevice && scope._dev > 0.001 ? (scope.deviceMuted ? Theme.withAlpha(Theme.outline, 0.6) : scope.deviceColor) : "transparent"
+            strokeColor: scope.hasDevice && scope._dev > 0.001 ? (scope.deviceMuted ? Theme.withAlpha(scope.mutedColor, 0.6) : scope.deviceColor) : "transparent"
         }
         Arc {
             radius: scope.inner
             sweep: Polar.arc("inner", scope._pc).sweep
             strokeWidth: scope.stroke
-            strokeColor: scope._pc > 0.001 ? (scope.pcMuted ? Theme.withAlpha(Theme.outline, 0.6) : scope.pcColor) : "transparent"
+            strokeColor: scope._pc > 0.001 ? (scope.pcMuted ? Theme.withAlpha(scope.mutedColor, 0.6) : scope.pcColor) : "transparent"
         }
     }
 
@@ -154,17 +243,6 @@ Item {
         }
     }
 
-    // --- Cloud --------------------------------------------------------------------
-    PolarCloud {
-        id: cloud
-        anchors.fill: parent
-        centerX: scope.cx
-        centerY: scope.cy
-        radius: scope.outer - scope.stroke
-        color: scope.hasDevice ? scope.deviceColor : scope.pcColor
-        quiet: scope.hasDevice ? scope.deviceMuted || scope.pcMuted : scope.pcMuted
-    }
-
     // The sound to show: a ScopeFeed owned by the caller, which turns it on
     // only while the scope is shown (one feed for every screen's pop-up)
     property var feed: null
@@ -179,7 +257,7 @@ Item {
     readonly property bool animating: clock.running
     property double _last: 0
     function wake() {
-        if (clock.running || !live || !motion)
+        if (clock.running || !live || !motion || cloud.style === "none")
             return;
         _last = Date.now();
         clock.start();
@@ -226,7 +304,7 @@ Item {
         radius: knob / 2
         x: scope.cx + Math.cos(deg * Math.PI / 180) * radiusAt - knob / 2
         y: scope.cy + Math.sin(deg * Math.PI / 180) * radiusAt - knob / 2
-        color: hollow ? Theme.surfaceContainer : Theme.surfaceText
+        color: hollow ? scope.hollowColor : scope.inkColor
         border.width: 2
         border.color: tint
     }
@@ -235,14 +313,14 @@ Item {
         visible: scope.hasDevice
         radiusAt: scope.outer
         deg: Polar.end("outer", scope._dev)
-        tint: scope.deviceMuted ? Theme.outline : scope.deviceColor
+        tint: scope.deviceMuted ? scope.mutedColor : scope.deviceColor
         hollow: scope.deviceMuted
         big: scope.dragging === "device" || pointer.hover === "device"
     }
     Moon {
         radiusAt: scope.inner
         deg: Polar.end("inner", scope._pc)
-        tint: scope.pcMuted ? Theme.outline : scope.pcColor
+        tint: scope.pcMuted ? scope.mutedColor : scope.pcColor
         hollow: scope.pcMuted
         big: scope.dragging === "pc" || pointer.hover === "pc"
     }
@@ -252,7 +330,7 @@ Item {
         visible: scope.hasDevice
         name: scope.deviceMuted ? "volume_off" : scope.deviceIcon
         size: scope.iconSize
-        color: scope.deviceMuted ? Theme.outline : scope.deviceColor
+        color: scope.deviceMuted ? scope.mutedColor : scope.deviceColor
         rotation: -scope.rotation
         x: scope.cx - scope.outer - width / 2
         y: scope.cy + 6
@@ -260,7 +338,7 @@ Item {
     DankIcon {
         name: scope.pcMuted ? "volume_off" : scope.pcIcon
         size: scope.iconSize
-        color: scope.pcMuted ? Theme.outline : scope.pcColor
+        color: scope.pcMuted ? scope.mutedColor : scope.pcColor
         rotation: -scope.rotation
         x: scope.cx - scope.inner - width / 2
         y: scope.cy + 6

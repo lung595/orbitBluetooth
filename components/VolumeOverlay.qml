@@ -23,6 +23,7 @@ Item {
     readonly property string mode: prefs.popupMode
     readonly property string size: prefs.popupSize
     readonly property int fps: prefs.scopeFps
+    readonly property string style: prefs.scopeStyle
     readonly property bool reduceMotion: prefs.reduceMotion
 
     // The Bluetooth device in use, or null for any other output (sound
@@ -155,7 +156,7 @@ Item {
     ScopeFeed {
         id: soundFeed
         node: root.dev ? root.dev.sink : Pipewire.defaultAudioSink
-        active: root.anyShown && !root.reduceMotion
+        active: root.anyShown && !root.reduceMotion && root.style !== "none"
         fps: root.fps
     }
 }

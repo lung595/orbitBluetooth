@@ -116,13 +116,13 @@ function spawn(frame, band, radius, u1, u2, u3) {
     if (a < 0.03)
         return null;
     const pan = (r - l) / (l + r);
-    const spread = 34 * (1 - 0.6 * Math.abs(pan));
+    const spread = 52 * (1 - 0.6 * Math.abs(pan));
     const deg = Math.max(LEFT + 3, Math.min(RIGHT - 3, TOP + pan * 87 + (u1 - 0.5) * spread));
     const dist = radius * Math.pow(a, 0.7) * (0.55 + 0.45 * u2);
     return {
         "deg": deg,
         "dist": dist,
-        "size": 1.6 + 2.2 * u3 * (1 - band / frame.l.length * 0.5),
+        "size": 2 + 2.6 * u3 * (1 - band / frame.l.length * 0.45),
         "life": 0
     };
 }
@@ -136,4 +136,51 @@ function cavaConfig(source, fps, bars) {
         "[input]", "method = pulse", "source = " + source,
         "[output]", "method = raw", "channels = stereo", "data_format = ascii", "ascii_max_range = 100",
         "bar_delimiter = 59", "frame_delimiter = 10", ""].join("\n");
+}
+
+// --- Visualizer styles (scopeStyle: "points", "rays", "waves", "none") -------
+
+function styleOf(name) {
+    return ["points", "rays", "waves", "none"].indexOf(name) >= 0 ? name : "points";
+}
+
+// Rays and waves lay the spectrum over the half circle: the left channel on
+// the left quarter, the right one on the right, low notes at the top (where
+// a centered bass sits on a scope) and high notes toward each side. The
+// level (0..1) at an angle, interpolated between bands.
+function levelAt(frame, deg) {
+    if (!frame || !frame.l || !frame.l.length)
+        return 0;
+    const side = deg < TOP ? frame.l : frame.r;
+    const t = Math.max(0, Math.min(1, Math.abs(deg - TOP) / 90));
+    const x = t * (side.length - 1);
+    const i = Math.floor(x);
+    const j = Math.min(side.length - 1, i + 1);
+    return clamp01(side[i] + (side[j] - side[i]) * (x - i));
+}
+
+// Where a ray or a wave reaches at that level: never quite at the center,
+// so silence still draws a faint ring of light
+function reach(level, radius) {
+    return radius * (0.16 + 0.84 * Math.pow(clamp01(level), 0.7));
+}
+
+// The angles of `count` rays per side, from the top outward
+function rayAngles(count) {
+    const out = [];
+    const n = Math.max(1, count | 0);
+    for (let i = 0; i < n; i++) {
+        const off = (i + 0.5) / n * 87;
+        out.push(TOP - off, TOP + off);
+    }
+    return out;
+}
+
+// Meter ballistics: a level jumps up at once and falls back slowly, as
+// on a studio meter, so the picture breathes instead of flickering
+function follow(prev, target, dt) {
+    const p = clamp01(prev), t = clamp01(target);
+    if (t >= p)
+        return p + (t - p) * Math.min(1, dt * 40);
+    return p + (t - p) * Math.min(1, dt * 7);
 }

@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Common
 import qs.Services
+import "Polar.js" as Polar
 
 // Reactive view over the plugin's saved settings, shared by every surface.
 QtObject {
@@ -74,6 +75,8 @@ QtObject {
     readonly property string popupSize: _get("popupSize", "medium")
     // The vectorscope's cloud: 60 frames a second ("Smooth") or 30 ("Light")
     readonly property int scopeFps: parseInt(_get("scopeFps", "60")) === 30 ? 30 : 60
+    // How the vectorscope draws the sound: "points", "rays", "waves", "none"
+    readonly property string scopeStyle: Polar.styleOf(_get("scopeStyle", "points"))
 
     readonly property bool reduceMotion: SettingsData.reduceMotion
 

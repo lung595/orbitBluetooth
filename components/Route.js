@@ -176,10 +176,10 @@ function iconFor(kind) {
 // Pop-up sizes (D258): width x height of the horizontal pop-up
 function popupSize(size) {
     if (size === "compact")
-        return { "w": 280, "h": 150 };
+        return { "w": 300, "h": 172 };
     if (size === "large")
-        return { "w": 480, "h": 260 };
-    return { "w": 360, "h": 200 };
+        return { "w": 540, "h": 300 };
+    return { "w": 420, "h": 236 };
 }
 
 // How the pop-up sits (D258): "replace" takes the place of DMS's volume OSD

@@ -373,9 +373,34 @@ PluginSettings {
         }
 
         SelectionSetting {
+            settingKey: "scopeStyle"
+            label: "Visualizer"
+            description: "How the sound is drawn inside the half circles: a cloud of points (where it sits left or right), a fan of rays or waves (its notes, bass at the top)"
+            options: [
+                {
+                    label: "Points",
+                    value: "points"
+                },
+                {
+                    label: "Rays",
+                    value: "rays"
+                },
+                {
+                    label: "Waves",
+                    value: "waves"
+                },
+                {
+                    label: "None",
+                    value: "none"
+                }
+            ]
+            defaultValue: "points"
+        }
+
+        SelectionSetting {
             settingKey: "scopeFps"
-            label: "Sound cloud"
-            description: "Where the sound goes, while the pop-up or a card shows. \"Light\" draws half as often"
+            label: "Visualizer motion"
+            description: "While the pop-up or a card shows, nothing otherwise. \"Light\" draws half as often"
             options: [
                 {
                     label: "Smooth",
