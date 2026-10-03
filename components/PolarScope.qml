@@ -245,25 +245,28 @@ Item {
         }
     }
 
-    // Shown levels: follow the real ones on a short ease (a Behavior, not a
-    // running animation: it lasts 260 ms per change), straight while dragging
+    // Shown levels: follow the real ones on a short ease, straight while
+    // dragging. Eased on the scope's own clock, not a Behavior: a QML
+    // animation would redraw the whole shell at the screen's rate on every
+    // volume step (rule 23)
     property string dragging: ""
     property real _dev: Math.max(0, deviceLevel)
     property real _pc: pcLevel
-    Behavior on _dev {
-        enabled: scope.motion && scope.dragging !== "device"
-        NumberAnimation {
-            duration: 260
-            easing.type: Easing.OutQuint
+    readonly property bool _settled: Math.abs(_dev - Math.max(0, deviceLevel)) < 0.002 && Math.abs(_pc - pcLevel) < 0.002
+    function _follow() {
+        if (!motion || !live || dragging !== "") {
+            _dev = Math.max(0, deviceLevel);
+            _pc = pcLevel;
+            return;
+        }
+        if (!clock.running) {
+            _last = Date.now();
+            clock.start();
         }
     }
-    Behavior on _pc {
-        enabled: scope.motion && scope.dragging !== "pc"
-        NumberAnimation {
-            duration: 260
-            easing.type: Easing.OutQuint
-        }
-    }
+    onDeviceLevelChanged: _follow()
+    onPcLevelChanged: _follow()
+    onDraggingChanged: _follow()
 
     // The sound to show: a ScopeFeed owned by the caller, which turns it on
     // only while the scope is shown (one feed for every screen's pop-up)
@@ -294,8 +297,11 @@ Item {
             scope._last = now;
             // A frame older than a few of cava's is silence (paused player)
             const fresh = scope.feed && scope.feed.frame && now - scope.feed.stamp < 250 ? scope.feed.frame : null;
-            cloud.advance(dt, fresh);
-            if (!fresh && cloud.alive === 0)
+            scope._dev = scope._settled ? Math.max(0, scope.deviceLevel) : Polar.ease(scope._dev, Math.max(0, scope.deviceLevel), dt, 16);
+            scope._pc = scope._settled ? scope.pcLevel : Polar.ease(scope._pc, scope.pcLevel, dt, 16);
+            if (cloud.style !== "none")
+                cloud.advance(dt, fresh);
+            if (!fresh && cloud.alive === 0 && scope._settled)
                 clock.stop();
         }
     }
@@ -382,14 +388,7 @@ Item {
         rotation: -scope.rotation
         font.pixelSize: Math.max(11, Math.round(scope.outer * 0.1))
         font.weight: Font.DemiBold
-        opacity: shown ? 1 : 0
-        visible: opacity > 0.01
-        Behavior on opacity {
-            enabled: scope.motion
-            NumberAnimation {
-                duration: 160
-            }
-        }
+        visible: shown
     }
     Readout {
         radiusAt: scope.outer
