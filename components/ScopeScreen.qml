@@ -105,8 +105,9 @@ Item {
             screenItem.touched();
         }
     }
-    // A one-line note at the foot of the screen (the volume keys, D265),
-    // with a word to click and the guide's link. On the right, so the mute
+    // A one-line note at the foot of the screen (the volume keys, D265; a
+    // device with no level of its own, D249), with an optional word to
+    // click and the guide's link. On the right, so the mute
     // icons on the left stay reachable.
     readonly property var note: overlay.note || null
     Rectangle {
@@ -155,7 +156,7 @@ Item {
             }
             GuideLink {
                 anchors.verticalCenter: parent.verticalCenter
-                anchor: "volume-keys"
+                anchor: screenItem.note && screenItem.note.anchor ? screenItem.note.anchor : "volume-keys"
                 size: 12
                 color: screenItem.light ? screenItem.paper.fg(0.5) : screenItem.night.ink(0.5)
                 hoverColor: screenItem.light ? screenItem.paper.ink : screenItem.night.ink(0.95)

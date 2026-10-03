@@ -29,7 +29,7 @@ function blockedNote() {
 
 // Scrolled over a connected device that has no sound output to set
 function noVolumeNote(name) {
-    return { "title": (name || "This device") + " has no volume", "hint": "It does not play sound, or its audio is not ready yet", "anchor": "volume-ring" };
+    return { "title": (name || "This device") + " has no volume", "hint": "It does not play sound, or its audio is not ready yet", "anchor": "the-two-volumes" };
 }
 
 // Pulled out of its orbit, but still connected a while later

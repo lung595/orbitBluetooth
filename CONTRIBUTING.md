@@ -69,15 +69,10 @@ orbitBluetooth/
 │   ├── OfferCard.qml, ScanChip.qml, AdapterNotice.qml  # the scene's chrome: pairing offer, scan chip, Bluetooth off
 │   ├── DeviceBody.qml           # one orbiting device, charging beam
 │   ├── FocusCard.qml            # detail card
-│   ├── VolumeRing.qml           # volume ring around the focused device (PipeWire)
-│   ├── Volume.js                # its pure logic (tested)
-│   ├── VolumeReadout.qml        # the percentage rolling in the ring's gap
-│   ├── VolumeFx.js              # pure geometry and physics of its effects (tested)
-│   ├── VolumePlasma.qml         # the level as a band of aurora
-│   ├── VolumeTail.qml           # comet tail behind the moon
-│   ├── VolumeDust.qml           # stardust shed by the moon while it moves
-│   ├── VolumeWaves.qml          # sound waves off the planet at each step
-│   ├── VolumeEclipse.qml        # mute as an eclipse of the planet
+│   ├── TwoLevels.qml            # an output's two volumes (base of CardVolume, VolumeOverlay)
+│   ├── CardVolume.qml           # the detail card's two volumes, tick and sound feed
+│   ├── PlanetControl.qml        # focused glyph: click to mute, wheel for the volume
+│   ├── Volume.js                # the tick's pure logic (tested)
 │   ├── BatteryCard.qml          # gauge, chart and stat tiles
 │   ├── StatTiles.qml            # READY AT / SPEED / HEALTH tiles
 │   ├── EarbudsTrio.qml, EarbudArt.qml, Earbuds.js   # case + buds mini orbit
@@ -121,7 +116,7 @@ orbitBluetooth/
 (cd anc && python3 -m unittest discover -s tests -t .)   # noise-control protocols
 (cd pictures && python3 -m unittest discover -s tests -t .)   # picture lookup, without network
 (cd uninstall && python3 -m unittest discover -s tests -t .)  # uninstall sweep, on fake shell files
-sh tests/qml/run.sh                                       # new-device pop-up scenario and volume ring (Qt 6)
+sh tests/qml/run.sh                                       # new-device pop-up scenario and polar scope (Qt 6)
 gjs tests/anc.test.js                                     # brand detection, modes, pairing guard
 ```
 

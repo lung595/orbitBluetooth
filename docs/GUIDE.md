@@ -7,7 +7,7 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 - [Widgets](#widgets)
 - [The orbit](#the-orbit) · [If it does not connect](#if-it-does-not-connect) · [If it does not disconnect](#if-it-does-not-disconnect) · [Bluetooth is off](#bluetooth-is-off)
 - [The detail card](#the-detail-card)
-- [Volume ring](#volume-ring) · [Volume keys](#volume-keys)
+- [The two volumes](#the-two-volumes) · [Volume keys](#volume-keys)
 - [Earbuds: the trio](#earbuds-the-trio)
 - [Hiding devices: the black hole](#hiding-devices-the-black-hole)
 - [Noise control](#noise-control)
@@ -90,29 +90,28 @@ Click any device to open it: its glyph flies onto the card.
 - **Name, type and state** (connected, paired, available).
 - **Rename**: click the name of a paired device. <kbd>Enter</kbd> saves, <kbd>Esc</kbd> cancels, an empty name restores the device's own name. The new name is the Bluetooth alias, so every app shows it; icon, noise control and battery estimates still follow the device's own name.
 - **Connection time and battery level.**
-- **Volume** of connected audio devices: a ring floats around the device, see [Volume ring](#volume-ring).
+- **Volume** of connected audio devices: the device's own level and this PC's, see [The two volumes](#the-two-volumes).
 - **Actions**: on the left, back and change icon (the card); on the right, connect or disconnect, hide, forget (asks twice) (the device).
 - **Forget** unpairs the device (BlueZ removes it) and clears what Orbit kept about it: its icon choice and a *Don't offer again* mark, so it can be offered as new next time. Also in the right-click menu: **Forget**, then click again to confirm.
 - **Battery gauge, session chart and stats** (see [Charging and battery](#charging-and-battery)).
 - The **earbuds trio** and **noise control** when the device supports them.
 
-## Volume ring
+## The two volumes
 
-Open a **connected** audio device (headphones, speaker, earbuds, TV…) and a ring of aurora settles around its planet, with a small moon at the current level. Devices that are not connected, or have no sound output, get no ring: scrolling over a connected keyboard or mouse says **…has no volume** instead of doing nothing. Right after a headset connects, its audio can take a second to appear; scroll again once the ring is there.
+Open a **connected** audio device (headphones, speaker, earbuds, TV…) and its card shows **two volumes** on a small dark screen, the same one as Orbit's volume pop-up:
 
-![The volume ring around an open headset](../screenshots/volume.png)
+![The two volumes on an open headset's card](../screenshots/volume.png)
 
-- **Scroll** over the planet or the ring: 5 % per notch.
-- **Drag along the ring** for any level in between. The gap at the bottom is the stop between 0 % and 100 %: dragging into it holds the nearest end.
-- **Click the planet** to mute or unmute: a shadow slides over the planet like an **eclipse**, leaving a corona of light around its rim, the aurora dims and the gap reads *Muted*. Changing the volume unmutes and the shadow slides away.
-- The level is a band of **aurora**: cooler where it starts, glowing toward the moon, with a bright filament through its middle. Its edges ripple gently; move the volume fast and the aurora flares.
-- **Moving it** leaves a **comet tail** behind the moon, which shrinks back into it when you stop, and sheds fine **stardust**: the faster you go, the more grains, thrown ahead and outward, then bent back by the planet's pull.
-- Each 5 % step sends a **sound wave** off the planet, wider and brighter the louder it gets. Reaching **100 %** sends a corona instead, a stronger flare.
-- While you change it, the **percentage** drops into the gap at the bottom of the ring. Its digits roll like an odometer on a spring and the level swings a little past and settles. A second after you stop, the percentage floats back up and fades.
-- With *Reduce motion*, everything changes at once: no ripple, tail, stardust or waves, and the eclipse is instant.
-- **Volume tick**: a soft, short tick plays **in the device itself** at each 5 % step, so you hear the level where it matters. Turn it off in **Look & sound → Volume tick**. It needs `pw-play` (part of PipeWire).
+- **The outer half circle is the device's own level** (`primary` color), the one its buttons change. **The inner one is this PC's**: what the PC sends to it (`tertiary` color). The icon at the foot of each says which is which, and the percentages stay next to them.
+- **Inside, the sound itself**: where it goes, left or right, and how loud. Pick the style in the settings (*Points*, *Rays*, *Waves* or *None*). It only moves while the card is on screen and sound is playing.
+- **Drag a moon** along its half circle for any level; **scroll** over it for Orbit's smart steps (1 % per slow notch, bigger when you scroll fast).
+- **Click an icon** to mute that level. **Click the planet** to mute too: with one audio device connected it mutes this PC, with several it mutes that device only.
+- **Scroll over the planet** to change the level you hear move first (the device's own when it has one).
+- **A device with no level of its own** (no *absolute volume* over Bluetooth): its volume is this PC's, so the screen shows this PC's half circle alone and says *Its volume follows this PC*.
+- **Volume tick**: a soft, short tick plays **in the device itself** at each 5 % step you make on the card, so you hear the level where it matters. Turn it off in **Look & sound → Volume tick**. It needs `pw-play` (part of PipeWire).
+- Devices that are not connected, or have no sound output, show no screen: scrolling over a connected keyboard or mouse says **…has no volume** instead of doing nothing. Right after a headset connects, its audio can take a second to appear.
 
-The ring talks to the local sound server (PipeWire) only. The effects move on one clock that runs only while something moves and stops by itself a moment after you let go: nothing runs while the ring is idle.
+Everything talks to the local sound server (PipeWire) only. The picture of the sound is read with `cava` from the device's output, only while the card is open; with *Reduce motion* it does not run and the levels change at once.
 
 ## Volume keys
 
@@ -340,7 +339,7 @@ Grouped in tabs: **Orbit** (with Reset), **Scanning**, **Headphones** (with devi
 | | Custom images folder | — | PNG files that replace built-in icons |
 | Sounds | Sounds | Off | Short cues on snap, connect and disconnect |
 | | Volume | 60 % | |
-| | Volume tick | On | A soft tick in the device at each 5 % step of its [volume ring](#volume-ring) |
+| | Volume tick | On | A soft tick in the device at each 5 % step made on its [card](#the-two-volumes) |
 
 Three buttons at the end reset custom device icons, bring back every hidden device and offer ignored devices again. DMS's *Reduce motion* is respected.
 
@@ -348,7 +347,7 @@ Three buttons at the end reset custom device icons, bring back every hidden devi
 
 - **No telemetry. No network access, except one opt-in feature, off by default**: [Real device pictures](#real-device-pictures), which sends only the model name of paired devices to `commons.wikimedia.org` and `api.sketchfab.com`.
 - **Background scan** (the new headphones pop-up, on by default): Bluetooth discovery for 8 s about once a minute, local only, under the conditions in [New headphones pop-up](#new-headphones-pop-up). Devices you *Ignore* are stored with the plugin settings.
-- **The volume ring** talks to the local sound server (PipeWire) only; its tick is a sound file shipped with Orbit, played with `pw-play`.
+- **The two volumes** talk to the local sound server (PipeWire) only; the tick is a sound file shipped with Orbit, played with `pw-play`, and the picture of the sound is read locally with `cava`.
 - **One helper process**: the noise-control helper opens a local Bluetooth socket to your headset and nothing else, only while needed. `ORBIT_ANC_DEBUG=1` prints its raw packets on stderr; nothing is logged to a file.
 - **Nothing written to disk by Orbit**, except the pictures cache of that opt-in feature (`~/.cache/orbitBluetooth/pictures`): connection times and battery history live in memory for the session.
 - **Files read**: only the sysfs `uevent` of kernel batteries, once each.
@@ -385,6 +384,6 @@ Since 1.11.2, *Ambient motion* pauses on a screen whose desktop is hidden by win
 
 The pairing sheet cost 67 % of a core before 1.11.0: two long QML animations made every shell window repaint at 240 Hz. They now run on timers, and only the sheet repaints.
 
-The volume ring's effects only run while the level moves and stop by themselves; on an offscreen bench, 6 s of continuous dragging costs 0.16 s of CPU for all its effects.
+The card's picture of the sound runs only while the card is on screen; closed, `cava` is stopped and nothing redraws.
 
 How this is achieved, and earlier measurements, are in [CONTRIBUTING.md](../CONTRIBUTING.md#performance-rules).

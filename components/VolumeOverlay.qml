@@ -3,8 +3,6 @@ import Quickshell
 import Quickshell.Services.Pipewire
 import qs.Common
 import qs.Services
-import "Route.js" as Route
-import "DeviceCatalog.js" as Catalog
 import "Keys.js" as Keys
 
 // The volume pop-up, without opening anything (D252, D258): whenever a
@@ -14,66 +12,19 @@ import "Keys.js" as Keys
 // Island where there is one (IslandFace, D263), else in a VolumePopup. Event-driven: it listens to PipeWire's change signals, nothing polls.
 // Hidden, nothing runs: the pop-ups' content is unloaded and the one sound
 // feed they share (cava) is stopped.
-Item {
+TwoLevels {
     id: root
 
-    required property var route
-    required property var prefs
     // VolumeKeys: the volume keys and Orbit's smart steps (D265)
     property var keys: null
 
     // "replace" (DMS's OSD place), "bar", "edge" or "off"
     readonly property string mode: prefs.popupMode
     readonly property string size: prefs.popupSize
-    readonly property int fps: prefs.scopeFps
-    readonly property string style: prefs.scopeStyle
-    readonly property bool reduceMotion: prefs.reduceMotion
 
     // The Bluetooth device in use, or null for any other output (sound
     // card, HDMI): then only this PC's half circle shows (D258)
-    readonly property var dev: route.current
-    readonly property var shown: Route.shownLevels(route.deviceNode(dev), route.pcNode(dev))
-    readonly property var deviceAudio: shown.device && shown.device.audio ? shown.device.audio : null
-    readonly property var pcAudio: shown.pc && shown.pc.audio ? shown.pc.audio : null
-
-    readonly property real deviceLevel: deviceAudio ? Math.min(1, deviceAudio.volume) : -1
-    readonly property real pcLevel: pcAudio ? Math.min(1, pcAudio.volume) : 0
-    readonly property bool deviceMuted: deviceAudio ? deviceAudio.muted : false
-    readonly property bool pcMuted: pcAudio ? pcAudio.muted : false
-    readonly property string deviceIcon: dev ? Route.iconFor(Catalog.resolve(dev.device, prefs.glyphOverrides)) : "speaker"
-    readonly property string pcIcon: shown.ownIcon ? deviceIcon : "computer"
-    // The device's name as the user sees it in Orbit (shown, never logged)
-    readonly property string deviceName: dev ? Catalog.deviceName(dev.device) : ""
-
-    // --- Gestures from a pop-up -------------------------------------------------
-    // DMS's own OSD would answer a level we set: keep it quiet a moment, as
-    // DMS's slider does
-    function _node(part) {
-        return part === "device" ? shown.device : shown.pc;
-    }
-    function setLevel(part, level) {
-        const node = _node(part);
-        if (!node || !node.audio)
-            return;
-        SessionData.suppressOSDTemporarily();
-        node.audio.muted = false;
-        node.audio.volume = Math.max(0, Math.min(1, level));
-    }
-    // One wheel notch over the scope: a smart step, as the keys
-    function stepLevel(part, dir) {
-        const node = _node(part);
-        if (!node || !node.audio)
-            return;
-        SessionData.suppressOSDTemporarily();
-        route.stepNode(node, dir);
-    }
-    function toggleMute(part) {
-        const node = _node(part);
-        if (!node || !node.audio)
-            return;
-        SessionData.suppressOSDTemporarily();
-        node.audio.muted = !node.audio.muted;
-    }
+    dev: route.current
 
     // --- The volume keys, offered once (D265) ------------------------------------------
     // The first time the scope shows, a one-line note offers to bind the

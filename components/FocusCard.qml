@@ -94,6 +94,16 @@ Item {
         scene.renaming = false;
     }
 
+    // The device's two volumes; its picture of the sound runs only while
+    // the card is on screen
+    CardVolume {
+        id: volumes
+        route: card.scene.audioRoute
+        prefs: card.scene.prefs
+        address: card.body && card.body.connected ? card.body.address : ""
+        live: card.visible && card.scene.awake && !card.picking
+    }
+
     // Swallow clicks so they don't reach the scene's "click outside" handler
     MouseArea {
         anchors.fill: parent
@@ -302,6 +312,22 @@ Item {
 
             // One gap between the title block, the battery and the controls
             Item {
+                width: 1
+                height: Theme.spacingS
+            }
+
+            // The two volumes (D250), on the same screen as the pop-up's
+            ScopeScreen {
+                objectName: "cardScope" // found by the offscreen previews
+                visible: volumes.ready && !card.picking
+                width: parent.width
+                height: Math.round(width * 0.44)
+                overlay: volumes
+                live: volumes.live
+            }
+
+            Item {
+                visible: volumes.ready && !card.picking
                 width: 1
                 height: Theme.spacingS
             }

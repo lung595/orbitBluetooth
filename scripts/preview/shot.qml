@@ -7,7 +7,7 @@ import "../../components/Guide.js" as Guide
 
 // Offscreen renders for the README, with mock devices and services.
 // Usage: QT_QPA_PLATFORM=offscreen qml -I imports shot.qml -- <mode> <out.png>
-// Modes: orbit, zoom, orbitfocus, volumefocus (a volume step, mid-puff), desktop, desktopfocus, ancfocus,
+// Modes: orbit, zoom, orbitfocus, volumefocus (the card with its two volumes), desktop, desktopfocus, ancfocus,
 //        buds, budsdock, hole, holetess, hiddencard, hiddenempty, connecting, menu, feed,
 //        btblocked (Turn on did nothing: note), noadapter
 Window {
@@ -17,7 +17,8 @@ Window {
     // "-bright" puts the desktop shots on a pale, busy wallpaper (the
     // hardest case for label contrast), "-none" disconnects every device,
     // "-fit" sizes the window like the bar popout (grows to the open card),
-    // "-cc" like the Control Center tile (same, from a smaller minimum)
+    // "-cc" like the Control Center tile (same, from a smaller minimum),
+    // "-follow" gives the headset no level of its own (no absolute volume)
     readonly property string rawMode: args[args.length - 2]
     readonly property var flags: rawMode.split("-")
     readonly property bool bright: flags.indexOf("bright") > 0
@@ -25,6 +26,7 @@ Window {
     readonly property bool none: flags.indexOf("none") > 0
     readonly property bool cc: flags.indexOf("cc") > 0
     readonly property bool fit: flags.indexOf("fit") > 0 || cc
+    readonly property bool follow: flags.indexOf("follow") > 0
     readonly property string mode: flags[0]
     readonly property string out: args[args.length - 1]
     readonly property bool glass: mode.startsWith("desktop")
@@ -307,6 +309,7 @@ Window {
             active: true
             autoScan: false
             previewDevices: win.devices
+            audioRoute: fakeRoute
             cornerRadius: win.glass ? 0 : 16
         }
     }
@@ -347,14 +350,59 @@ Window {
             grabTimer.start();
         }
     }
-    // volumefocus: once the glyph has landed, one wheel-like step up, so the
-    // readout rolls and the stardust flies when the grab happens
+    // What the daemon's AudioRoute gives the card, made up: the headset
+    // (02:00:00:00:10:06) at 62 % with this PC at 85 %
+    QtObject {
+        id: fakeRoute
+        readonly property var headset: ({
+                "device": scene.focusBody ? scene.focusBody.device : null,
+                "absolute": win.follow ? 0 : 1,
+                "sink": {
+                    "name": "bluez_output.02_00_00_00_10_06.1",
+                    "audio": {
+                        "volume": win.follow ? 0.85 : 0.62,
+                        "muted": false
+                    }
+                },
+                "pc": win.follow ? null : {
+                    "audio": {
+                        "volume": 0.85,
+                        "muted": false
+                    }
+                }
+            })
+        function find(address) {
+            return address === "02:00:00:00:10:06" ? headset : null;
+        }
+        function deviceNode(dev) {
+            return dev && dev.absolute === 1 ? dev.sink : null;
+        }
+        function pcNode(dev) {
+            return dev ? (dev.pc || (dev.absolute === 1 ? null : dev.sink)) : null;
+        }
+        function mainPart(address) {
+            return "device";
+        }
+        function stepNode(node, dir) {
+        }
+        function setLevel(which, arg, address) {
+            return "";
+        }
+        function toggleMute(address) {
+            return "pc";
+        }
+    }
+    readonly property var soundFrame: ({
+            "l": [0.92, 0.85, 0.8, 0.72, 0.66, 0.62, 0.55, 0.5, 0.44, 0.4, 0.33, 0.28, 0.22, 0.18, 0.12, 0.08],
+            "r": [0.9, 0.8, 0.7, 0.66, 0.58, 0.5, 0.47, 0.4, 0.36, 0.3, 0.26, 0.2, 0.16, 0.12, 0.08, 0.05]
+        })
+    // Focused shots: once the card is up, a made-up sound fills its scope
     Timer {
-        running: win.mode === "volumefocus"
-        interval: 2600 + 1550
+        running: win.mode.endsWith("focus")
+        interval: 2600 + 1400
         onTriggered: {
             const seek = item => {
-                if (item.objectName === "volumeRing")
+                if (item.objectName === "cardScope")
                     return item;
                 for (const c of item.children) {
                     const r = seek(c);
@@ -363,9 +411,9 @@ Window {
                 }
                 return null;
             };
-            const ring = seek(win.contentItem);
-            if (ring)
-                ring.set(0.67);
+            const scope = seek(win.contentItem);
+            if (scope && scope.visible)
+                scope.simulate(win.soundFrame, 0.7);
         }
     }
     Timer {

@@ -19,8 +19,7 @@ const Offer = load("Offer.js", ["scanBlocker", "isCandidate", "offerable", "head
 const Pictures = load("Pictures.js", ["queryFor", "creditText"]);
 const Catalog = load("DeviceCatalog.js", ["deviceName", "modelName", "resolve"]);
 const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNote", "stuckNote", "levelNote"]);
-const Volume = load("Volume.js", ["start", "sweep", "clamp", "step", "nudge", "valueAt", "zone", "findSink", "validSink"]);
-const Fx = load("VolumeFx.js", ["clamp01", "ripple", "band", "filament", "emission", "spawn", "step", "lifeT", "follow", "wave"]);
+const Volume = load("Volume.js", ["clamp", "step", "validSink"]);
 const Guard = load("Guard.js", ["offerFamily", "hasInput", "refused", "validPath", "parseUuids"]);
 const Cover = load("Cover.js", ["covered"]);
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "arc", "end", "point", "angleOf", "valueAt", "zone", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "levelAt", "reach", "rayAngles", "follow", "scaleFor", "ease"]);
@@ -168,74 +167,17 @@ const anchors = guide.split("\n").filter(l => /^#{2,3} /.test(l)).map(l => l.rep
 });
 eq("a nameless device has no volume", Guide.noVolumeNote("").title, "This device has no volume");
 eq("a nameless device stuck", Guide.stuckNote("").title, "This device is still connected");
-["noise-control", "pairing-safety", "if-it-does-not-connect", "if-it-does-not-disconnect", "bluetooth-is-off", "volume-ring", "new-headphones-pop-up"].forEach(a => eq("guide has #" + a, anchors.indexOf(a) >= 0, true));
+["noise-control", "pairing-safety", "if-it-does-not-connect", "if-it-does-not-disconnect", "bluetooth-is-off", "the-two-volumes", "new-headphones-pop-up"].forEach(a => eq("guide has #" + a, anchors.indexOf(a) >= 0, true));
 eq("guide url", Guide.url("noise-control"), "https://github.com/lung595/orbitBluetooth/blob/main/docs/GUIDE.md#noise-control");
 eq("a nameless device", Guide.connectNote("pair", "").title, "Could not pair this device");
 
-// --- Volume ring ---------------------------------------------------------------
-eq("wheel up lands on the 5 % grid", Volume.nudge(0.62, 1), 0.65);
-eq("wheel down", Math.round(Volume.nudge(0.6, -2) * 100), 50);
-eq("never above 100 %", Volume.nudge(0.98, 3), 1);
-eq("never below 0 %", Volume.nudge(0.02, -3), 0);
+// --- Volume tick (Volume.js) ------------------------------------------------------
 eq("same step: no tick", Volume.step(0.61) === Volume.step(0.62), true);
 eq("next step: tick", Volume.step(0.62) === Volume.step(0.68), false);
-eq("top of the ring is half", Math.round(Volume.valueAt(0, -100, 0.3) * 100), 50);
-eq("start of the ring is 0", Math.round(Volume.valueAt(Math.cos(Math.PI * 2 / 3) * 100, Math.sin(Math.PI * 2 / 3) * 100, 0.5) * 100), 0);
-eq("gap keeps a high level at 100 %", Volume.valueAt(0, 100, 0.9), 1);
-eq("gap keeps a low level at 0 %", Volume.valueAt(0, 100, 0.1), 0);
-eq("on the ring", Volume.zone(0, -60, 60, 45), "ring");
-eq("on the glyph", Volume.zone(5, 5, 60, 45), "glyph");
-eq("outside", Volume.zone(0, -90, 60, 45), "");
-const nodes = [
-    { name: "alsa_output.pci-0000_00_1f.3", isSink: true, isStream: false },
-    { name: "bluez_output.02_00_00_00_10_06.1", isSink: true, isStream: true },
-    { name: "bluez_output.02_00_00_00_10_06.1", isSink: true, isStream: false }
-];
-eq("sink found by address", Volume.findSink(nodes, "02:00:00:00:10:06"), nodes[2]);
-eq("no sink, no ring", Volume.findSink(nodes, "02:00:00:00:10:07"), null);
-eq("bad address", Volume.findSink(nodes, "02:00"), null);
+eq("levels are clamped", [Volume.clamp(-1), Volume.clamp(2), Volume.clamp("x")], [0, 1, 0]);
 eq("node name ok for pw-play", Volume.validSink("bluez_output.02_00_00_00_10_06.1"), true);
 eq("no shell characters", Volume.validSink("x; rm -rf ~"), false);
 eq("no option smuggling", Volume.validSink("--target=x y"), false);
-
-// Volume ring effects (VolumeFx.js)
-eq("no aurora at 0 %", Fx.band(100, 100, 40, 6, 120, 300, 0, 0, 2), []);
-const aurora = Fx.band(100, 100, 40, 6, 120, 300, 0.5, 1.3, 2);
-eq("aurora is a closed ribbon (outer + inner edge)", aurora.length % 2, 0);
-eq("aurora stays near the ring", aurora.every(p => Math.abs(Math.hypot(p.x - 100, p.y - 100) - 40) < 3 + 2 * 1.5 + 0.01), true);
-const calm = Fx.band(100, 100, 40, 6, 120, 300, 0.5, 1.3, 0);
-eq("still aurora: outer edge outside, inner inside", Math.hypot(calm[1].x - 100, calm[1].y - 100) > 40 && Math.hypot(calm[calm.length - 2].x - 100, calm[calm.length - 2].y - 100) < 40, true);
-eq("aurora ends where the level is", Math.round(Math.atan2(calm[calm.length / 2 - 1].y - 100, calm[calm.length / 2 - 1].x - 100) * 180 / Math.PI), 270 - 360);
-eq("filament follows the level", Fx.filament(0, 0, 40, 120, 300, 1, 0, 0).length > 50, true);
-eq("ripple is bounded", [0, 50, 123, 300].every(d => Math.abs(Fx.ripple(d, 2.2)) <= 1.5), true);
-eq("still moon emits no dust", Fx.emission(0, 0.016, 0).count, 0);
-let slow = { carry: 0, count: 0 }, slowGrains = 0;
-for (let i = 0; i < 12; i++) { slow = Fx.emission(30, 1 / 60, slow.carry); slowGrains += slow.count; }
-eq("a slow move still emits, over a few frames", slowGrains, 4);
-let carry = 0, grains = 0;
-for (let i = 0; i < 60; i++) { const e = Fx.emission(1000, 1 / 60, carry); carry = e.carry; grains += e.count; }
-// Float carry can land one grain short over a second, so the cap is a bound, not an exact count.
-eq("a wild drag is capped at 80 grains a second", grains <= 80 && grains >= 79, true);
-const grain = Fx.spawn(100, 100, 40, 0, 1, 0.5, 0.5, 0.5, 0.5);
-eq("grain is born on the moon", [Math.round(grain.x), Math.round(grain.y)], [140, 100]);
-eq("going up throws it ahead (down on the right side) and outward", grain.vy > 0 && grain.vx > 0, true);
-eq("going down throws it the other way", Fx.spawn(100, 100, 40, 0, -1, 0.5, 0.5, 0.5, 0.5).vy < 0, true);
-const g = Fx.spawn(100, 100, 40, 0, 1, 0.5, 0, 0.5, 0.5);
-let alive = true, steps = 0;
-while (alive && steps < 1000) { alive = Fx.step(g, 1 / 60, 100, 100, 140); steps++; }
-eq("grain fades within its life", steps, Math.ceil(g.life * 60));
-eq("gravity pulls it toward the planet", Math.hypot(g.x - 100, g.y - 100) < 60, true);
-eq("life goes 0 to 1", [Fx.lifeT({ age: 0, life: 1 }), Fx.lifeT({ age: 2, life: 1 })], [0, 1]);
-// The comet tail closes on the moon without overshooting, faster with time
-eq("tail stays put with no time", Math.abs(Fx.follow(0.2, 0.8, 0, 9) - 0.2) < 1e-9, true);
-eq("tail moves toward the moon", Fx.follow(0.2, 0.8, 0.05, 9) > 0.2 && Fx.follow(0.2, 0.8, 0.05, 9) < 0.8, true);
-eq("tail has caught up after a second", Math.abs(Fx.follow(0.2, 0.8, 1, 9) - 0.8) < 0.001, true);
-eq("two half frames = one frame", Math.abs(Fx.follow(Fx.follow(0.2, 0.8, 0.02, 9), 0.8, 0.02, 9) - Fx.follow(0.2, 0.8, 0.04, 9)) < 1e-9, true);
-const w0 = Fx.wave(30, 0.5, false, 0), w1 = Fx.wave(30, 0.5, false, 1);
-eq("wave leaves the planet edge", w0.radius, 30);
-eq("wave fades out", w1.alpha, 0);
-eq("louder = wider wave", Fx.wave(30, 1, false, 1).radius > Fx.wave(30, 0.2, false, 1).radius, true);
-eq("corona goes further", Fx.wave(30, 1, true, 1).radius > Fx.wave(30, 1, false, 1).radius, true);
 
 // Ambient motion pauses on a screen hidden behind windows (P123).
 // Made-up layout: three screens, sizes in logical pixels.

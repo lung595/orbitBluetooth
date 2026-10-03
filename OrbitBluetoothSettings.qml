@@ -696,7 +696,7 @@ PluginSettings {
         ToggleSetting {
             settingKey: "volumeTick"
             label: "Volume tick"
-            description: "A soft tick in the device on each 5 % step of its volume ring, so you hear the level where it plays"
+            description: "A soft tick in the device on each 5 % step made on its card, so you hear the level where it plays"
             defaultValue: true
         }
 

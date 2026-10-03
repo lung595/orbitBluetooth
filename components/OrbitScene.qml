@@ -62,12 +62,11 @@ Item {
     readonly property real focusGlyphScale: focusGlyphSize / bodySize
     readonly property real focusGlyphLift: focusGlyphSize * 0.2      // glyph center relative to card top
     readonly property real focusOverlap: focusGlyphLift + focusGlyphSize * 0.5 + 8
-    // Room above the card for the volume ring around the glyph: its radius
-    // (glyph / 2 + 8, VolumeRing) above the glyph center, which sits 0.2
-    // glyph below the card top, plus half the grabbed moon (14 px) and a
-    // margin. Less than this and the ring's top is cut by the window.
+    // Room above the card for the glyph, which breaks out of its top edge:
+    // its center sits 0.2 glyph below the card top, so 0.3 glyph rises
+    // above it, plus a margin. Less than this and the window cuts it.
     function focusHeadroomFor(glyph) {
-        return glyph * 0.3 + 8 + 7 + Theme.spacingS;
+        return glyph * 0.3 + Theme.spacingS;
     }
     readonly property real focusHeadroom: focusHeadroomFor(focusGlyphSize)
     // Scene height at which the open detail card fits without scrolling (0
@@ -155,6 +154,10 @@ Item {
         if (query)
             _pictureService?.request(query);
     }
+
+    // --- The two volumes (the daemon's AudioRoute, D249) ----------------------
+    // Not read-only: the offscreen previews give a made-up one
+    property var audioRoute: PluginService.pluginDaemonInstances[prefs.pluginId]?.route ?? null
 
     // --- Noise control (the daemon runs the helper, see AncService) ----------
     readonly property var _ancService: PluginService.pluginDaemonInstances[prefs.pluginId]?.anc ?? null
@@ -838,7 +841,8 @@ Item {
         enabled: scene.active && (scene.menuOpen || scene.hiddenOpen || !!scene.focusBody)
         onActivated: {
             if (scene.renaming)
-                scene.renaming = false; // cancel the rename, keep the card
+                scene.renaming = false;
+                // cancel the rename, keep the card
             else if (scene.menuOpen)
                 menu.close();
             else if (scene.hiddenOpen)
@@ -1521,9 +1525,8 @@ Item {
         }
 
         // Focus card (bodies are siblings, so the focused glyph can sit above it)
-        // Volume ring around the focused device, above the card
-        VolumeRing {
-        objectName: "volumeRing" // found by the offscreen previews
+        // Over the focused glyph: click to mute, wheel for the volume
+        PlanetControl {
             scene: orbitRoot
             z: 20001
         }
