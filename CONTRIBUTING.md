@@ -66,17 +66,22 @@ orbitBluetooth/
 ├── OrbitBluetoothDaemon.qml     # shared bookkeeping (see Architecture)
 ├── OrbitBluetoothWidget.qml     # Control Center tile, bar pill and popout
 ├── OrbitBluetoothDesktop.qml    # desktop widget
-├── OrbitBluetoothSettings.qml   # settings page
+├── OrbitBluetoothSettings.qml   # settings page: the chip tabs, one file each in components/settings/
 ├── components/
+│   ├── settings/                # one tab per file (Look, Sound, Orbit, Headphones, Desktop, Scanning) and their shared rows
 │   ├── scene/                   # the sky every surface shows
-│   │   ├── OrbitScene.qml       # the scene: device list, drag, focus, cards
+│   │   ├── OrbitScene.qml       # the scene: composition and wiring of the files below
+│   │   ├── Orbit.js, OrbitDevices.qml  # which devices the orbit shows (Orbit.js pure, tested), one model entry per body
+│   │   ├── OrbitConnections.qml, OrbitDiscovery.qml, OrbitOffer.qml  # connection flow, scan only while viewed, offer to connect
+│   │   ├── OrbitBackdrop.qml, OrbitWorld.qml, OrbitCore.qml, OrbitHint.qml  # sky, orbits and bodies, host core, drag hint
 │   │   ├── OrbitPhysics.qml, Physics.js  # one motion step for every body (Physics.js pure, tested)
 │   │   ├── Cover.js             # is the desktop hidden behind windows? (pure, tested)
 │   │   ├── ScanChip.qml, AdapterNotice.qml, OrbitNote.qml, OrbitMenu.qml  # chrome: scan chip, Bluetooth off, notes, right-click menu
 │   │   ├── BlackHole.qml, RingWave.qml   # the "Hidden" black hole (two shaders), the connected ring's wave
 │   │   └── Starfield.qml, Vignette.qml, NightColors.qml
 │   ├── device/                  # one orbiting device
-│   │   ├── DeviceBody.qml, EnergyBeam.qml, LabelGlow.qml  # body, charging beam (shaders/beam.frag), label
+│   │   ├── DeviceBody.qml, EnergyBeam.qml, LabelGlow.qml  # body (drag, interaction), charging beam (shaders/beam.frag), label glow
+│   │   ├── BodyTether.qml, ChargeBeam.qml, BodyArcs.qml, BodyLabel.qml  # tether to the core, charge beam, rings (noise control, battery), caption
 │   │   ├── DeviceGlyph.qml, DeviceCatalog.js, Glyphs.js   # device icons
 │   │   └── EarbudsTrio.qml, EarbudArt.qml, Earbuds.js     # case + buds mini orbit
 │   ├── card/                    # the detail and hidden-devices cards
@@ -91,12 +96,14 @@ orbitBluetooth/
 │   │   ├── VolumeStrip.qml      # menus: the two volumes folded into a thin line, unfolds on click
 │   │   ├── ScopeScreen.qml      # the dark scope screen shared by card, pop-up and island
 │   │   ├── PolarScope.qml, PolarVisual.qml, Polar.js   # half circles, moons, the painted picture (Polar.js pure, tested)
+│   │   ├── PolarGrid.qml, PolarReadouts.qml  # the scope's screen (grid), icons and numbers
 │   │   ├── ScopeFeed.qml, ScopeModel.qml     # live stereo bands from cava; the picture they move, once for every screen
 │   │   ├── AudioRoute.qml, RouteDevice.qml, Route.js   # the two levels of each output: PC filter, absolute volume, IPC
 │   │   └── VolumeKeys.qml, Keys.js, Steps.js # volume keys through `dms keybinds`, smart steps (pure, tested)
 │   ├── pairing/                 # new device pop-up and pairing offer
 │   │   ├── NewDeviceWatch.qml, Offer.js, Guard.js, ProfileCheck.qml  # background scan, what to offer, the input-device guard
 │   │   ├── NewDeviceWindow.qml, PairingSheet.qml, PairingMiddle.qml, Palette.js  # the sheet (PairingMiddle: tiles, steps, quick actions)
+│   │   ├── PairingStage.qml, PairingIdentity.qml, PairingButton.qml, Light.qml  # stage, name and subtitle, actions, round light
 │   │   └── OfferCard.qml        # the scene's pairing offer
 │   ├── noise/                   # noise control
 │   │   └── AncService.qml, AncPanel.qml, Anc.js
