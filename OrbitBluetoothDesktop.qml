@@ -2,7 +2,9 @@ import QtQuick
 import Quickshell.Wayland
 import qs.Common
 import qs.Modules.Plugins
+import qs.Services
 import "components"
+import "components/Cover.js" as Cover
 
 // Desktop surface: a frameless orbit that dissolves into the wallpaper.
 // Idle by default: the scene freezes (zero frames) until the pointer is over
@@ -21,6 +23,12 @@ DesktopPluginComponent {
     readonly property bool acceptsKeyboardFocus: !!scene.focusBody
     // Keeps discovery alive a little after the pointer leaves
     property bool lingering: false
+    // Set by DMS's desktop wrapper: the screen this copy of the widget is on
+    property var screen: null
+    // Behind a fullscreen or maximized window nobody sees the drift, so
+    // Ambient motion pauses there (niri only; elsewhere it never pauses).
+    readonly property bool covered: CompositorService.isNiri && !!screen
+        && Cover.covered(NiriService.workspaces, NiriService.windows, screen.name, screen.width, screen.height, NiriService.inOverview)
 
     onHotChanged: {
         if (hot) {
@@ -72,6 +80,7 @@ DesktopPluginComponent {
         active: true
         autoScan: root.lingering
         freezeWhenIdle: true
+        covered: root.covered
         interacting: root.hot
     }
 }

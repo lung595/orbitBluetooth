@@ -24,6 +24,7 @@ Item {
     property bool active: true               // visible to the user right now
     property bool autoScan: true             // start discovery when active
     property bool freezeWhenIdle: false      // desktop: stop animating when idle
+    property bool covered: false             // desktop: hidden behind a window, Ambient pauses
     property bool interacting: false         // desktop: pointer is over the widget
     property bool glass: false               // desktop: frameless, fades into the wallpaper
     // Names of connected devices read stronger than the others; with nothing
@@ -118,7 +119,7 @@ Item {
     readonly property bool screenAsleep: SessionService.locked || IdleService.isShellLocked || IdleService.monitorsOff
     // Time-driven motion (orbits, float, twinkles) runs only while awake;
     // otherwise the clock stops as soon as every body has settled.
-    readonly property bool awake: active && visible && width > 0 && !screenAsleep && (!freezeWhenIdle || interacting || prefs.desktopAmbient || !!dragBody || !!focusBody)
+    readonly property bool awake: active && visible && width > 0 && !screenAsleep && (!freezeWhenIdle || interacting || (prefs.desktopAmbient && !covered) || !!dragBody || !!focusBody)
     readonly property Item orbitRoot: scene
 
     readonly property var _globals: PluginService.globalVars[prefs.pluginId] || ({})
@@ -1066,6 +1067,11 @@ Item {
         const fast = comet || !!focusBody;
         if (_fxFast !== fast)
             _fxFast = fast;
+        // 20 Hz for Ambient's slow drift on the desktop with nobody around:
+        // bodies move a few px per second, more frames would not show (P123)
+        const ambientOnly = freezeWhenIdle && !interacting && !dragBody && !focusBody && !fx;
+        if (_ambientOnly !== ambientOnly)
+            _ambientOnly = ambientOnly;
 
         if (!moving && !timeDriven && !fx) {
             settled = true;
@@ -1096,10 +1102,12 @@ Item {
         onTriggered: scene.step(frameTime)
     }
     // Otherwise a 30 Hz drift (slow: more frames would not show), 60 Hz
-    // while a fast effect runs (a comet, an open card)
+    // while a fast effect runs (a comet, an open card), 20 Hz for Ambient
+    // alone on the desktop
     property bool _fxFast: false
+    property bool _ambientOnly: false
     Timer {
-        interval: scene._fxFast ? 16 : 33
+        interval: scene._fxFast ? 16 : (scene._ambientOnly ? 50 : 33)
         repeat: true
         running: scene._stepping && !scene._fullRate
         property double last: 0

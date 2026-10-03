@@ -22,6 +22,7 @@ const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNo
 const Volume = load("Volume.js", ["start", "sweep", "clamp", "step", "nudge", "valueAt", "zone", "findSink", "validSink"]);
 const Fx = load("VolumeFx.js", ["clamp01", "ripple", "band", "filament", "emission", "spawn", "step", "lifeT", "follow", "wave"]);
 const Guard = load("Guard.js", ["offerFamily", "hasInput", "refused", "validPath", "parseUuids"]);
+const Cover = load("Cover.js", ["covered"]);
 
 let count = 0, failures = 0;
 function eq(what, got, expected) {
@@ -231,6 +232,26 @@ eq("wave leaves the planet edge", w0.radius, 30);
 eq("wave fades out", w1.alpha, 0);
 eq("louder = wider wave", Fx.wave(30, 1, false, 1).radius > Fx.wave(30, 0.2, false, 1).radius, true);
 eq("corona goes further", Fx.wave(30, 1, true, 1).radius > Fx.wave(30, 1, false, 1).radius, true);
+
+// Ambient motion pauses on a screen hidden behind a window (P123).
+// Made-up layout: two screens, the active window of each workspace in front.
+const spaces = {
+    1: { output: "OUT-1", is_active: true, active_window_id: 10 },
+    2: { output: "OUT-1", is_active: false, active_window_id: 11 },
+    3: { output: "OUT-2", is_active: true, active_window_id: 12 },
+    4: { output: "OUT-3", is_active: true, active_window_id: null }
+};
+const tile = (id, w, h, floating) => ({ id: id, is_floating: !!floating, layout: { tile_size: [w, h] } });
+const wins = [tile(10, 2560, 1440), tile(11, 2560, 1440), tile(12, 846, 1388)];
+eq("fullscreen window covers its screen", Cover.covered(spaces, wins, "OUT-1", 2560, 1440, false), true);
+eq("maximized column (gaps, bar) covers", Cover.covered(spaces, [tile(10, 2528, 1388)], "OUT-1", 2560, 1440, false), true);
+eq("a narrow column leaves the desktop visible", Cover.covered(spaces, wins, "OUT-2", 2560, 1440, false), false);
+eq("an empty workspace is not covered", Cover.covered(spaces, wins, "OUT-3", 2560, 1440, false), false);
+eq("the overview shows the desktop", Cover.covered(spaces, wins, "OUT-1", 2560, 1440, true), false);
+eq("a floating window never covers", Cover.covered(spaces, [tile(10, 2560, 1440, true)], "OUT-1", 2560, 1440, false), false);
+eq("a full window on an inactive workspace does not count", Cover.covered({ 2: spaces[2] }, wins, "OUT-1", 2560, 1440, false), false);
+eq("unknown screen or no niri: never covered", [Cover.covered(spaces, wins, "", 2560, 1440, false), Cover.covered({}, [], "OUT-1", 2560, 1440, false), Cover.covered(spaces, wins, "OUT-1", 0, 0, false)], [false, false, false]);
+eq("a window without layout yet does not cover", Cover.covered(spaces, [{ id: 10 }], "OUT-1", 2560, 1440, false), false);
 
 print(failures ? failures + "/" + count + " failed" : count + " tests passed");
 imports.system.exit(failures ? 1 : 0);
