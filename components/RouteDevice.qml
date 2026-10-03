@@ -27,7 +27,8 @@ Item {
     readonly property string name: device?.deviceName || device?.name || ""
     readonly property bool connected: device?.connected ?? false
     readonly property var sink: connected ? Route.deviceSink(Pipewire.nodes.values, address) : null
-    readonly property var pc: Route.virtualSink(Pipewire.nodes.values, address)
+    // Disconnected, the filter is gone: no need to look through every node
+    readonly property var pc: connected ? Route.virtualSink(Pipewire.nodes.values, address) : null
     // -1 unknown yet, 0 the device follows this PC's level, 1 it has its own
     property int absolute: -1
     readonly property bool wanted: separate && absolute === 1 && !!sink

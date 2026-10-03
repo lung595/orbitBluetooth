@@ -24,6 +24,8 @@ Item {
     signal arrived
 
     property bool _noCava: false
+    // Set while Orbit itself stops cava to move it to another output
+    property bool _moving: false
     readonly property string _conf: node && !_noCava ? (Polar.cavaConfig(node.name + ".monitor", fps, bars) || "") : ""
 
     function _take(f) {
@@ -44,13 +46,17 @@ Item {
         }
         // 127: not installed. Anything else that fails early also falls back
         onExited: code => {
-            if (code !== 0 && feed.active)
+            const moved = feed._moving;
+            feed._moving = false;
+            if (code !== 0 && feed.active && !moved)
                 feed._noCava = true;
         }
     }
 
-    // Another output while running: start again on it
+    // Another output while running: start again on it. Its exit is ours,
+    // not a sign that cava is missing (it used to stick to the fallback)
     on_ConfChanged: if (cava.running) {
+        _moving = true;
         cava.running = false;
         cava.running = Qt.binding(() => feed.active && feed._conf !== "");
     }
