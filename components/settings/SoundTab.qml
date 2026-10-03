@@ -4,8 +4,6 @@ import qs.Modules.Plugins
 
 // Sound tab: the two volumes, volume steps and keys, and the volume pop-up.
 Column {
-    id: tab
-
     width: parent ? parent.width : 0
     spacing: Theme.spacingM
 

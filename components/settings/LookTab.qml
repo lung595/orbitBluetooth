@@ -4,8 +4,6 @@ import qs.Modules.Plugins
 
 // Look tab: the black hole, stars and custom images.
 Column {
-    id: tab
-
     width: parent ? parent.width : 0
     spacing: Theme.spacingM
 
