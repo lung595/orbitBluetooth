@@ -1,0 +1,169 @@
+.pragma library
+
+// Pure logic of the two volumes (AudioRoute.qml), tested in tests/anc.test.js.
+//
+// A Bluetooth audio device has two levels Orbit keeps apart:
+// - the device's own level (inside the headset or amplifier), which PipeWire
+//   sets on the device's sink when the device has absolute volume (AVRCP);
+// - this PC's level, what the PC sends to it. PipeWire cannot hold a
+//   software level of its own on that sink (it resets it to 100 % whenever
+//   the device's level moves), so this PC's level lives on a small virtual
+//   sink placed in front of the device: "orbit_pc_<address>", made by
+//   PipeWire's module-remap-sink inside the sound server (no process).
+
+var PREFIX = "orbit_pc_";
+
+// "AA:BB:CC:DD:EE:FF" -> "AA_BB_CC_DD_EE_FF", or "" if it is not an address
+function addressKey(address) {
+    const key = String(address || "").replace(/:/g, "_").toUpperCase();
+    return /^([0-9A-F]{2}_){5}[0-9A-F]{2}$/.test(key) ? key : "";
+}
+
+function virtualName(address) {
+    const key = addressKey(address);
+    return key ? PREFIX + key : "";
+}
+
+function isVirtual(name) {
+    return typeof name === "string" && name.indexOf(PREFIX) === 0;
+}
+
+// "orbit_pc_AA_BB_CC_DD_EE_FF" -> "AA:BB:CC:DD:EE:FF"
+function addressOfVirtual(name) {
+    if (!isVirtual(name))
+        return "";
+    const key = name.slice(PREFIX.length);
+    return addressKey(key) ? key.replace(/_/g, ":") : "";
+}
+
+// A Bluetooth device's own output sink: bluez_output.AA_BB_CC_DD_EE_FF.1
+function isDeviceSink(name) {
+    return typeof name === "string" && /^bluez_output\.([0-9A-Fa-f]{2}_){5}[0-9A-Fa-f]{2}(\.[0-9]+)?$/.test(name);
+}
+
+function addressOfSink(name) {
+    if (!isDeviceSink(name))
+        return "";
+    return name.split(".")[1].toUpperCase().replace(/_/g, ":");
+}
+
+// The device's sink among PipeWire's nodes (never Orbit's virtual one)
+function deviceSink(nodes, address) {
+    const key = addressKey(address);
+    if (!key || !nodes)
+        return null;
+    for (let i = 0; i < nodes.length; i++) {
+        const n = nodes[i];
+        if (n && n.isSink && !n.isStream && isDeviceSink(n.name) && addressOfSink(n.name).replace(/:/g, "_") === key)
+            return n;
+    }
+    return null;
+}
+
+function virtualSink(nodes, address) {
+    const name = virtualName(address);
+    if (!name || !nodes)
+        return null;
+    for (let i = 0; i < nodes.length; i++) {
+        const n = nodes[i];
+        if (n && n.isSink && !n.isStream && n.name === name)
+            return n;
+    }
+    return null;
+}
+
+// What DMS's output list shows for the virtual sink. Only letters, digits,
+// spaces and a few marks of the device's name survive: the text goes into
+// a module argument, never into a shell (value 11).
+function description(deviceName) {
+    const clean = String(deviceName || "").replace(/[^\p{L}\p{N} ()+._-]/gu, "").replace(/\s+/g, " ").trim().slice(0, 48);
+    return (clean || "Bluetooth") + " (Orbit)";
+}
+
+// Arguments of `pactl load-module` for the device's virtual sink. Each one
+// is its own argv entry; null if anything does not check out.
+function loadArgs(address, master, deviceName) {
+    const name = virtualName(address);
+    if (!name || !isDeviceSink(master))
+        return null;
+    return ["pactl", "load-module", "module-remap-sink",
+        "sink_name=" + name,
+        "master=" + master,
+        "sink_properties=device.description=\"" + description(deviceName) + "\""];
+}
+
+// Module indexes of Orbit's virtual sinks in `pactl list modules short`
+// (left behind by a shell that crashed, for example)
+function ownModules(text) {
+    const out = [];
+    const lines = String(text || "").split("\n");
+    for (let i = 0; i < lines.length; i++) {
+        const cols = lines[i].split("\t");
+        if (cols.length >= 3 && cols[1] === "module-remap-sink" && /(^|\s)sink_name=orbit_pc_/.test(cols[2]) && /^[0-9]+$/.test(cols[0]))
+            out.push(cols[0]);
+    }
+    return out;
+}
+
+// A module index printed by `pactl load-module`
+function moduleIndex(text) {
+    const t = String(text || "").trim();
+    return /^[0-9]{1,10}$/.test(t) ? t : "";
+}
+
+// Clicking the planet: with one Bluetooth audio device connected, this PC
+// goes quiet (the device keeps its level for later); with several (two
+// headsets on one film), only that device does.
+function muteTarget(audioDevices) {
+    return audioDevices > 1 ? "device" : "pc";
+}
+
+// The level asked by `dms ipc call orbitBluetooth deviceVolume|pcVolume <arg>`:
+// "up", "down", "+10", "-5", "40" or "40%". Steps of 5 %, capped to 0..1.
+// Returns -1 for anything else (value 11: checked and capped).
+function ipcLevel(arg, current) {
+    const a = String(arg === undefined || arg === null ? "" : arg).trim().toLowerCase();
+    if (a.length === 0 || a.length > 5)
+        return -1;
+    const now = Math.max(0, Math.min(1, Number(current) || 0));
+    const snap = v => Math.max(0, Math.min(1, Math.round(v * 100) / 100));
+    if (a === "up")
+        return snap(Math.round(now * 20 + 1) / 20);
+    if (a === "down")
+        return snap(Math.round(now * 20 - 1) / 20);
+    const m = /^([+-]?)([0-9]{1,3})%?$/.exec(a);
+    if (!m)
+        return -1;
+    const n = parseInt(m[2], 10) / 100;
+    if (m[1] === "+")
+        return snap(now + n);
+    if (m[1] === "-")
+        return snap(now - n);
+    return n > 1 ? -1 : snap(n);
+}
+
+// Absolute volume (AVRCP): BlueZ gives the device's audio transport a
+// "Volume" property only when the device takes its level from the PC.
+// `busctl tree --list org.bluez` lists object paths; the transport is
+// "<device path>/sepN/fdM".
+function transportPath(tree, devicePath) {
+    if (!/^\/org\/bluez\/hci[0-9]+\/dev_([0-9A-F]{2}_){5}[0-9A-F]{2}$/.test(String(devicePath || "")))
+        return "";
+    const lines = String(tree || "").split("\n");
+    for (let i = 0; i < lines.length; i++) {
+        const p = lines[i].trim();
+        if (p.indexOf(devicePath + "/") === 0 && /^\/sep[0-9]+\/fd[0-9]+$/.test(p.slice(devicePath.length)))
+            return p;
+    }
+    return "";
+}
+
+// `busctl --json=short get-property ... Volume` -> 0..127, or -1
+function transportVolume(json) {
+    try {
+        const v = JSON.parse(json);
+        return v && v.type === "q" && v.data >= 0 && v.data <= 127 ? v.data : -1;
+    } catch (e) {
+        return -1;
+    }
+}

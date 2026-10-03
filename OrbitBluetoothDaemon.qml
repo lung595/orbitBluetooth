@@ -60,6 +60,16 @@ Item {
 
     readonly property alias pictureLookup: pictureService
 
+    // The two volumes of Bluetooth audio devices: the device's own level and
+    // this PC's level (D249, D255)
+    AudioRoute {
+        id: audioRoute
+        prefs: prefs
+        publish: map => root._publish("route", map)
+    }
+
+    readonly property alias route: audioRoute
+
     // "New device nearby" pop-up, with its own background scan
     NewDeviceWatch {
         id: newDeviceWatch
@@ -95,6 +105,7 @@ Item {
     }
 
     // dms ipc call orbitBluetooth anc nc | ambient | off | adaptive
+    // dms ipc call orbitBluetooth deviceVolume | pcVolume up | down | +5 | -5 | 40
     // dms ipc call orbitBluetooth hidden | unhideAll
     // dms ipc call orbitBluetooth newDeviceDemo | newDeviceStatus
     IpcHandler {
@@ -134,6 +145,18 @@ Item {
                 return "No supported headset connected · " + Guide.url("noise-control");
             ancService.cycle(address);
             return "OK";
+        }
+
+        // The level inside the Bluetooth device in use (absolute volume)
+        function deviceVolume(level: string): string {
+            const why = audioRoute.setLevel("device", level, "");
+            return why ? Guide.levelNote(why) + " · " + Guide.url("two-volumes") : "OK";
+        }
+
+        // What this PC sends to it (or to the current output with no device)
+        function pcVolume(level: string): string {
+            const why = audioRoute.setLevel("pc", level, "");
+            return why ? Guide.levelNote(why) + " · " + Guide.url("two-volumes") : "OK";
         }
 
         // Names of the devices hidden in the black hole, one per line

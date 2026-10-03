@@ -18,11 +18,12 @@ const Palette = load("Palette.js", ["contrast", "ensureContrast", "onColor", "li
 const Offer = load("Offer.js", ["scanBlocker", "isCandidate", "offerable", "headline", "features", "errorText"]);
 const Pictures = load("Pictures.js", ["queryFor", "creditText"]);
 const Catalog = load("DeviceCatalog.js", ["deviceName", "modelName", "resolve"]);
-const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNote", "stuckNote"]);
+const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNote", "stuckNote", "levelNote"]);
 const Volume = load("Volume.js", ["start", "sweep", "clamp", "step", "nudge", "valueAt", "zone", "findSink", "validSink"]);
 const Fx = load("VolumeFx.js", ["clamp01", "ripple", "band", "filament", "emission", "spawn", "step", "lifeT", "follow", "wave"]);
 const Guard = load("Guard.js", ["offerFamily", "hasInput", "refused", "validPath", "parseUuids"]);
 const Cover = load("Cover.js", ["covered"]);
+const Route = load("Route.js", ["addressKey", "virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "loadArgs", "ownModules", "moduleIndex", "muteTarget", "ipcLevel", "transportPath", "transportVolume"]);
 
 let count = 0, failures = 0;
 function eq(what, got, expected) {
@@ -256,6 +257,46 @@ eq("the overview shows the desktop", Cover.covered(spaces, [tile(1, 1, W, H)], "
 eq("a floating window never counts", Cover.covered(spaces, [tile(1, 1, W, H, true)], "OUT-1", W, H, false), false);
 eq("unknown screen or no niri: never covered", [Cover.covered(spaces, [tile(1, 1, W, H)], "", W, H, false), Cover.covered({}, [], "OUT-1", W, H, false), Cover.covered(spaces, [tile(1, 1, W, H)], "OUT-1", 0, 0, false)], [false, false, false]);
 eq("a window without layout yet does not count", Cover.covered(spaces, [{ workspace_id: 1 }], "OUT-1", W, H, false), false);
+
+// Two volumes (D249, D255): this PC's level lives on a virtual sink in front of
+// the device. Made-up address and names.
+const MAC = "AA:BB:CC:DD:EE:01";
+eq("virtual sink name", Route.virtualName(MAC), "orbit_pc_AA_BB_CC_DD_EE_01");
+eq("lower-case address is accepted", Route.virtualName("aa:bb:cc:dd:ee:01"), "orbit_pc_AA_BB_CC_DD_EE_01");
+eq("not an address: no name", [Route.virtualName("AA:BB"), Route.virtualName("x; rm -rf"), Route.virtualName(null)], ["", "", ""]);
+eq("name back to address", Route.addressOfVirtual("orbit_pc_AA_BB_CC_DD_EE_01"), MAC);
+eq("other sinks are not Orbit's", [Route.isVirtual("bluez_output.AA_BB_CC_DD_EE_01.1"), Route.addressOfVirtual("orbit_pc_nope")], [false, ""]);
+eq("device sink recognised", [Route.isDeviceSink("bluez_output.AA_BB_CC_DD_EE_01.1"), Route.isDeviceSink("bluez_output.AA_BB_CC_DD_EE_01"), Route.isDeviceSink("alsa_output.usb-Card")], [true, true, false]);
+eq("device sink address", Route.addressOfSink("bluez_output.aa_bb_cc_dd_ee_01.1"), MAC);
+const pwNodes = [
+    { name: "alsa_output.usb-Card", isSink: true, isStream: false },
+    { name: "bluez_output.AA_BB_CC_DD_EE_01.1", isSink: true, isStream: false },
+    { name: "orbit_pc_AA_BB_CC_DD_EE_01", isSink: true, isStream: false },
+    { name: "bluez_output.AA_BB_CC_DD_EE_01.1", isSink: true, isStream: true }
+];
+eq("finds the device's sink, not a stream", Route.deviceSink(pwNodes, MAC), pwNodes[1]);
+eq("finds the virtual sink", Route.virtualSink(pwNodes, MAC), pwNodes[2]);
+eq("nothing for another device", [Route.deviceSink(pwNodes, "AA:BB:CC:DD:EE:02"), Route.virtualSink(pwNodes, "AA:BB:CC:DD:EE:02")], [null, null]);
+eq("description keeps the name", Route.description("WH-1000XM6"), "WH-1000XM6 (Orbit)");
+eq("description drops quotes and escapes", Route.description('My "Buds" \\ $(x)'), "My Buds (x) (Orbit)");
+eq("empty name falls back", Route.description(""), "Bluetooth (Orbit)");
+eq("load-module arguments", Route.loadArgs(MAC, "bluez_output.AA_BB_CC_DD_EE_01.1", "Buds"),
+   ["pactl", "load-module", "module-remap-sink", "sink_name=orbit_pc_AA_BB_CC_DD_EE_01", "master=bluez_output.AA_BB_CC_DD_EE_01.1", "sink_properties=device.description=\"Buds (Orbit)\""]);
+eq("bad master or address: no command", [Route.loadArgs(MAC, "x y", "B"), Route.loadArgs("nope", "bluez_output.AA_BB_CC_DD_EE_01.1", "B")], [null, null]);
+const modules = "12\tmodule-null-sink\tsink_name=x\t\n31\tmodule-remap-sink\tsink_name=orbit_pc_AA_BB_CC_DD_EE_01 master=bluez_output.AA_BB_CC_DD_EE_01.1\t\n32\tmodule-remap-sink\tsink_name=someone_else master=y\t\n";
+eq("orphans: only Orbit's remap sinks", Route.ownModules(modules), ["31"]);
+eq("module index", [Route.moduleIndex("536870913\n"), Route.moduleIndex("Failure: x")], ["536870913", ""]);
+eq("mute: one device mutes this PC, two mute the device", [Route.muteTarget(1), Route.muteTarget(2), Route.muteTarget(0)], ["pc", "device", "pc"]);
+eq("ipc up/down in 5 % steps", [Route.ipcLevel("up", 0.5), Route.ipcLevel("down", 0.5), Route.ipcLevel("UP", 0.52)], [0.55, 0.45, 0.55]);
+eq("ipc capped at the ends", [Route.ipcLevel("up", 1), Route.ipcLevel("down", 0), Route.ipcLevel("+20", 0.9), Route.ipcLevel("-20", 0.1)], [1, 0, 1, 0]);
+eq("ipc absolute and relative", [Route.ipcLevel("40", 0.9), Route.ipcLevel("40%", 0), Route.ipcLevel("+5", 0.4), Route.ipcLevel("-10", 0.4)], [0.4, 0.4, 0.45, 0.3]);
+eq("ipc rejects the rest", [Route.ipcLevel("150", 0), Route.ipcLevel("", 0), Route.ipcLevel("abc", 0), Route.ipcLevel("1000000", 0), Route.ipcLevel("4 0", 0), Route.ipcLevel(undefined, 0)], [-1, -1, -1, -1, -1, -1]);
+const DEV = "/org/bluez/hci0/dev_AA_BB_CC_DD_EE_01";
+const tree = "/org/bluez\n/org/bluez/hci0\n" + DEV + "\n" + DEV + "/sep1\n" + DEV + "/sep1/fd0\n/org/bluez/hci0/dev_AA_BB_CC_DD_EE_02/sep1/fd1\n";
+eq("transport of the device", Route.transportPath(tree, DEV), DEV + "/sep1/fd0");
+eq("no transport: no absolute volume", [Route.transportPath("/org/bluez\n" + DEV + "\n", DEV), Route.transportPath(tree, "/org/bluez/hci0/dev_x")], ["", ""]);
+eq("transport volume", [Route.transportVolume('{"type":"q","data":65}'), Route.transportVolume("oops"), Route.transportVolume('{"type":"q","data":300}')], [65, -1, -1]);
+eq("level notes say why", [Guide.levelNote("no-device").length > 0, Guide.levelNote("bad-level").indexOf("0 to 100") > 0], [true, true]);
 
 print(failures ? failures + "/" + count + " failed" : count + " tests passed");
 imports.system.exit(failures ? 1 : 0);

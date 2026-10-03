@@ -62,6 +62,12 @@ QtObject {
     // Look of the black hole: "blackhole" (realistic) or "tesseract"
     readonly property string holeStyle: _get("holeStyle", "blackhole")
 
+    // Two volumes (D249, D255): this PC's level on a virtual sink in front
+    // of a device that has its own volume. Off: one level, as before
+    readonly property bool separatePc: _get("separatePc", true)
+    // This PC's level per device, address -> 0..1 (D256)
+    readonly property var pcLevels: _get("pcLevels", ({}))
+
     readonly property bool reduceMotion: SettingsData.reduceMotion
 
     function set(key, value) {
