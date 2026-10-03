@@ -5,6 +5,7 @@ import qs.Common
 import qs.Services
 import "Route.js" as Route
 import "DeviceCatalog.js" as Catalog
+import "Keys.js" as Keys
 
 // The volume pop-up, without opening anything (D252, D258): whenever a
 // level of the output in use changes (volume keys, `dms ipc call`, the
@@ -18,6 +19,8 @@ Item {
 
     required property var route
     required property var prefs
+    // VolumeKeys: the volume keys and Orbit's smart steps (D265)
+    property var keys: null
 
     // "replace" (DMS's OSD place), "bar", "edge" or "off"
     readonly property string mode: prefs.popupMode
@@ -72,6 +75,51 @@ Item {
         node.audio.muted = !node.audio.muted;
     }
 
+    // --- The volume keys, offered once (D265) ------------------------------------------
+    // The first time the scope shows, a one-line note offers to bind the
+    // volume keys to Orbit. Nothing changes without the user's click, and
+    // the note never comes back.
+    property string keysNote: ""
+    readonly property var note: Keys.note(keysNote)
+    property bool _offered: false
+    function _offerKeys() {
+        if (!keys || prefs.keysOffered || _offered)
+            return;
+        _offered = true;
+        keys.refresh(() => {
+            const k = root.keys.keys;
+            if (k === "dms")
+                root.keysNote = "offer";
+            else if (k === "unsupported")
+                root.keysNote = "manual";
+            // Unreadable: try again next session
+            if (k !== "unknown")
+                root.prefs.set("keysOffered", true);
+        });
+    }
+    function noteAction() {
+        if (keysNote === "offer")
+            keys.enable();
+        else if (keysNote === "done")
+            keys.disable();
+    }
+    Connections {
+        target: root.keys
+        function onKeysChanged() {
+            const k = root.keys.keys;
+            if (k === "orbit" && (root.keysNote === "offer" || root.keysNote === "undone"))
+                root.keysNote = "done";
+            else if (k === "dms" && root.keysNote === "done")
+                root.keysNote = "undone";
+        }
+        function onFailedChanged() {
+            if (root.keys.failed && root.keysNote !== "")
+                root.keysNote = "failed";
+        }
+    }
+    onAnyShownChanged: if (!anyShown)
+        keysNote = ""
+
     // --- When to show -------------------------------------------------------------
     // A new output, or this PC's saved level coming back on its filter, is
     // not the user turning a knob: no pop-up for a moment after the shown
@@ -87,6 +135,7 @@ Item {
         Qt.callLater(_showAll);
     }
     function _showAll() {
+        _offerKeys();
         const inIsland = _showInIslands();
         const list = popups.instances;
         for (let i = 0; i < list.length; i++) {

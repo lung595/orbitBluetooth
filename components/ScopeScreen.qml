@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Common
+import qs.Widgets
 
 // The vectorscope on its own screen (D262, D263), as the volume pop-up and
 // the Dank Island sheet both show it: DMS's themed frame around it is the
@@ -104,6 +105,64 @@ Item {
             screenItem.touched();
         }
     }
+    // A one-line note at the foot of the screen (the volume keys, D265),
+    // with a word to click and the guide's link. On the right, so the mute
+    // icons on the left stay reachable.
+    readonly property var note: overlay.note || null
+    Rectangle {
+        id: notePill
+        visible: !!screenItem.note && !screenItem.upright
+        anchors.right: screen.right
+        anchors.rightMargin: Theme.spacingM
+        anchors.bottom: screen.bottom
+        anchors.bottomMargin: Theme.spacingXS
+        height: noteRow.height + 4
+        width: noteRow.width + Theme.spacingM * 2
+        radius: height / 2
+        color: screenItem.light ? Theme.withAlpha(screenItem.paper.fill(0.92), 0.92) : Theme.withAlpha(screenItem.night.sky, 0.86)
+        border.width: 1
+        border.color: screenItem.light ? screenItem.paper.fg(0.12) : screenItem.night.ink(0.12)
+
+        Row {
+            id: noteRow
+            anchors.centerIn: parent
+            spacing: Theme.spacingS
+            StyledText {
+                anchors.verticalCenter: parent.verticalCenter
+                text: screenItem.note ? screenItem.note.text : ""
+                font.pixelSize: Theme.fontSizeSmall
+                color: screenItem.light ? screenItem.paper.fg(0.7) : screenItem.night.ink(0.72)
+            }
+            StyledText {
+                id: noteAction
+                anchors.verticalCenter: parent.verticalCenter
+                visible: text !== ""
+                text: screenItem.note ? screenItem.note.action : ""
+                font.pixelSize: Theme.fontSizeSmall
+                font.weight: Font.DemiBold
+                color: noteArea.containsMouse ? (screenItem.light ? Theme.primary : screenItem.night.ink(1)) : (screenItem.light ? Theme.primary : screenItem.night.primary)
+                MouseArea {
+                    id: noteArea
+                    anchors.fill: parent
+                    anchors.margins: -6
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        screenItem.overlay.noteAction();
+                        screenItem.touched();
+                    }
+                }
+            }
+            GuideLink {
+                anchors.verticalCenter: parent.verticalCenter
+                anchor: "volume-keys"
+                size: 12
+                color: screenItem.light ? screenItem.paper.fg(0.5) : screenItem.night.ink(0.5)
+                hoverColor: screenItem.light ? screenItem.paper.ink : screenItem.night.ink(0.95)
+            }
+        }
+    }
+
     onLiveChanged: if (live)
         scope.wake()
 }

@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Window
 import qs.Common
 import "../../components"
+import "../../components/Keys.js" as Keys
 
 // Offscreen render of the volume vectorscope in each visualizer style, at
 // the Dank Island sheet size (460 x 176, flat top corners), from a made-up
@@ -42,6 +43,8 @@ Window {
         property var feed: null
         property bool reduceMotion: false
         property int fps: 60
+        property var note: null
+        function noteAction() {}
         function setLevel(part, level) {}
         function toggleMute(part) {}
     }
@@ -70,6 +73,8 @@ Window {
                     radii: [4, 4, Theme.cornerRadius * 2, Theme.cornerRadius * 2]
                     overlay: FakeOverlay {
                         style: sheet.modelData
+                        // The one-time volume keys note (D265) on two sheets
+                        note: Keys.note(({ "waves": "offer", "none": "done" })[sheet.modelData] || "")
                     }
                     live: true
                 }

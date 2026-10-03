@@ -49,8 +49,20 @@ class Shell:
         })
         write(self.session, {"desktopWidgetInstancePositions": {"dw_1": {"x": 1}, "dw_2": {"x": 2}}, "other": 1})
 
+        # dms commands asked for, answered from a made-up keybind listing
+        self.calls = []
+        self.listing = {"binds": {"Audio": [
+            {"key": "XF86AudioRaiseVolume", "action": 'spawn "sh" "-c" "case ... dms ipc call orbitBluetooth volume ..." "orbit" "up"'},
+            {"key": "XF86AudioLowerVolume", "action": "spawn dms ipc call audio decrement 3"},
+            {"key": "Mod+V", "action": "spawn dms ipc call orbitBluetooth volume up"},
+        ]}}
+
+    def dms(self, args):
+        self.calls.append(args)
+        return json.dumps(self.listing) if args[:2] == ["keybinds", "show"] else '{"success": true}'
+
     def run(self):
-        return U.sweep(ID, self.manifest, self.cache, self.settings, self.plugin_settings, self.session, grace=0)
+        return U.sweep(ID, self.manifest, self.cache, self.settings, self.plugin_settings, self.session, grace=0, run=self.dms)
 
 
 class SweepTest(unittest.TestCase):
@@ -118,6 +130,26 @@ class SweepTest(unittest.TestCase):
         self.assertFalse(U.sweep(ID, s.manifest, s.cache, "settings.json", s.plugin_settings, s.session, grace=0))
         self.assertTrue(os.path.isdir(s.cache))
         self.assertIn(ID, read(s.plugin_settings))
+
+
+class KeysTest(unittest.TestCase):
+    def test_uninstall_gives_the_volume_keys_back(self):
+        s = Shell()
+        self.addCleanup(s.tmp.cleanup)
+        os.remove(s.manifest)
+        self.assertTrue(s.run())
+        # Only the volume key still bound to Orbit, never another shortcut
+        self.assertEqual([c for c in s.calls if c[1] == "reset"], [["keybinds", "reset", "niri", "XF86AudioRaiseVolume", "--json"]])
+
+    def test_nothing_reset_while_installed(self):
+        s = Shell()
+        self.addCleanup(s.tmp.cleanup)
+        s.run()
+        self.assertEqual(s.calls, [])
+
+    def test_unreadable_listing_resets_nothing(self):
+        self.assertEqual(U.give_back_keys(ID, lambda a: None), [])
+        self.assertEqual(U.give_back_keys(ID, lambda a: "not json"), [])
 
 
 class IdTest(unittest.TestCase):

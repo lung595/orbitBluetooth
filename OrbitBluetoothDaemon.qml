@@ -76,9 +76,15 @@ Item {
     readonly property alias route: audioRoute
 
     // The pop-up that shows both levels whenever one changes (D252, D258)
+    // The volume keys and Orbit's smart steps, on the user's click (D265)
+    VolumeKeys {
+        id: keyBinder
+    }
+
     VolumeOverlay {
         route: audioRoute
         prefs: prefs
+        keys: keyBinder
     }
 
     // "New device nearby" pop-up, with its own background scan
@@ -173,6 +179,19 @@ Item {
 
         // The level heard: the device's own when it has one, else this PC's.
         // Bound to the volume keys, a slow press is 1 %, a fast run speeds up
+        // Binds the volume keys to Orbit's smart steps ("on"), gives them
+        // back to DMS ("off"), or tells what they do now ("status")
+        function volumeKeys(arg: string): string {
+            const a = String(arg || "").trim().toLowerCase();
+            if (a === "on")
+                keyBinder.enable();
+            else if (a === "off")
+                keyBinder.disable();
+            else if (a !== "status")
+                return "Use: volumeKeys on | off | status · " + Guide.url("volume-keys");
+            return a === "status" ? keyBinder.keys : "OK";
+        }
+
         function volume(direction: string): string {
             const d = String(direction || "").trim().toLowerCase();
             if (d !== "up" && d !== "down")

@@ -14,6 +14,9 @@ memory with "python3 -c" and depends on nothing in it:
 
 It waits a few seconds and checks again, because an update may delete the
 folder and clone it back: nothing is erased if plugin.json came back.
+If the volume keys were bound to Orbit on the user's click (D265), they are
+given back to DMS's default with DMS's own command (`dms keybinds reset`),
+only those whose action is still Orbit's.
 The shell watches these three files and reloads them when they change, so
 editing them here is the same as a user editing them by hand. Each file is
 written atomically and only if something of Orbit's was found in it.
@@ -23,6 +26,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 import time
@@ -129,6 +133,48 @@ def edit(path, change):
     return result
 
 
+VOLUME_KEYS = ("XF86AudioRaiseVolume", "XF86AudioLowerVolume")
+
+
+def run_dms(args):
+    """Runs a dms command (argument list, no shell); its output, or None."""
+    try:
+        done = subprocess.run(["dms"] + args, capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return done.stdout if done.returncode == 0 else None
+
+
+def orbit_keys(plugin_id, listing):
+    """The volume keys whose action calls this plugin, from
+    `dms keybinds show niri`."""
+    try:
+        data = json.loads(listing or "")
+    except ValueError:
+        return []
+    groups = data.get("binds") if isinstance(data, dict) else None
+    if not isinstance(groups, dict):
+        return []
+    mark = "ipc call " + plugin_id + " volume"
+    found = []
+    for binds in groups.values():
+        for bind in binds if isinstance(binds, list) else []:
+            if not isinstance(bind, dict):
+                continue
+            key, action = bind.get("key"), bind.get("action")
+            if key in VOLUME_KEYS and isinstance(action, str) and mark in action and key not in found:
+                found.append(key)
+    return found
+
+
+def give_back_keys(plugin_id, run=run_dms):
+    """Resets the volume keys still bound to this plugin to DMS's default."""
+    keys = orbit_keys(plugin_id, run(["keybinds", "show", "niri"]))
+    for key in keys:
+        run(["keybinds", "reset", "niri", key, "--json"])
+    return keys
+
+
 def valid(plugin_id, manifest, cache, files):
     if not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", plugin_id):
         return False
@@ -140,7 +186,7 @@ def valid(plugin_id, manifest, cache, files):
     return all(os.path.isabs(p) for p in [manifest, cache] + files)
 
 
-def sweep(plugin_id, manifest, cache, settings, plugin_settings, session, grace=GRACE_SECONDS):
+def sweep(plugin_id, manifest, cache, settings, plugin_settings, session, grace=GRACE_SECONDS, run=run_dms):
     """Returns True when the plugin was found uninstalled and swept."""
     if not valid(plugin_id, manifest, cache, [settings, plugin_settings, session]):
         return False
@@ -153,6 +199,7 @@ def sweep(plugin_id, manifest, cache, settings, plugin_settings, session, grace=
     removed = result[1] if isinstance(result, tuple) else []
     if removed:
         edit(session, lambda d: drop_positions(removed, d))
+    give_back_keys(plugin_id, run)
     return True
 
 

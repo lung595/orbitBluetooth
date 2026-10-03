@@ -86,6 +86,9 @@ QtObject {
     readonly property string volumeSpeed: Steps.speedOf(_get("volumeSpeed", "balanced"))
     readonly property int volumeStep: Steps.fixedStep(_get("volumeStep", 5))
 
+    // The volume keys were offered once (D265): never again
+    readonly property bool keysOffered: _get("keysOffered", false)
+
     readonly property bool reduceMotion: SettingsData.reduceMotion
 
     function set(key, value) {
