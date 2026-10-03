@@ -44,6 +44,19 @@ Window {
         property bool reduceMotion: false
         property int fps: 60
         property var note: null
+        property string factsLine: "USB · 192 kHz · 32 bit"
+        property var factsRows: [
+            {
+                "label": "Connection",
+                "text": "USB"
+            },
+            {
+                "label": "Sample rate",
+                "text": "192 kHz"
+            }
+        ]
+        function refreshFacts() {
+        }
         function noteAction() {
         }
         function setLevel(part, level) {

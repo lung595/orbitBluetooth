@@ -1,6 +1,8 @@
 import QtQuick
 import qs.Common
+import qs.Widgets
 import qs.Modules.Plugins
+import "../volume/Audiophile.js" as Audiophile
 
 // Sound tab: the two volumes, volume steps and keys, and the volume pop-up.
 Column {
@@ -14,6 +16,38 @@ Column {
         label: "Separate PC volume"
         description: "For devices with a volume of their own: the device's level and what this PC sends to it, set apart"
         defaultValue: true
+    }
+
+    // --- What the output is (D260) -----------------------------------------------
+    Section {
+        text: "Audio details"
+    }
+
+    StyledText {
+        width: parent.width
+        wrapMode: Text.WordWrap
+        font.pixelSize: Theme.fontSizeSmall
+        color: Theme.surfaceVariantText
+        text: "Read from PipeWire when the card or the pop-up shows, never otherwise. On the line: under the device's name and in the pop-up. More info: unfolded by the info button"
+    }
+
+    Repeater {
+        model: Audiophile.INFOS
+        Column {
+            required property var modelData
+            width: parent.width
+            spacing: Theme.spacingXS
+            ToggleSetting {
+                settingKey: "factCard_" + modelData.key
+                label: modelData.label + ": on the line"
+                defaultValue: modelData.card
+            }
+            ToggleSetting {
+                settingKey: "factMore_" + modelData.key
+                label: modelData.label + ": more info"
+                defaultValue: modelData.more
+            }
+        }
     }
 
     // --- Volume steps (D264) --------------------------------------------------------

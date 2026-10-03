@@ -122,6 +122,27 @@ Item {
     // click and the guide's link. On the right, so the mute
     // icons on the left stay reachable; centered under it with noteBelow.
     readonly property var note: overlay.note || null
+
+    // What the output is (D260), in a pill at the foot on the right, where
+    // the note goes, so the mute icons stay reachable. Not on the card,
+    // which has its own line under the name, and not while a note shows
+    property bool showFacts: true
+    FactsLine {
+        visible: screenItem.showFacts && !screenItem.note && !screenItem.upright
+        source: screenItem.overlay
+        up: true
+        width: implicitWidth
+        height: implicitHeight
+        anchors.right: screen.right
+        anchors.rightMargin: Theme.spacingM
+        anchors.bottom: screen.bottom
+        anchors.bottomMargin: Theme.spacingXS
+        ink: screenItem.light ? screenItem.paper.ink : screenItem.night.ink(0.95)
+        muted: screenItem.light ? screenItem.paper.fg(0.6) : screenItem.night.ink(0.62)
+        fill: screenItem.light ? Theme.withAlpha(screenItem.paper.fill(0.92), 0.92) : Theme.withAlpha(screenItem.night.sky, 0.86)
+        stroke: screenItem.light ? screenItem.paper.fg(0.12) : screenItem.night.ink(0.12)
+        onTouched: screenItem.touched()
+    }
     Rectangle {
         id: notePill
         visible: !!screenItem.note && !screenItem.upright

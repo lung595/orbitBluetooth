@@ -20,7 +20,7 @@ Window {
     // "-cc" like the Control Center tile (same, from a smaller minimum),
     // "-follow" gives the headset no level of its own (no absolute volume),
     // "-fold" starts the card's volumes folded, as in the menus, and
-    // "-unfold" shows them unfolded there
+    // "-unfold" shows them unfolded there, "-facts" opens the audio details
     readonly property string rawMode: args[args.length - 2]
     readonly property var flags: rawMode.split("-")
     readonly property bool bright: flags.indexOf("bright") > 0
@@ -31,6 +31,7 @@ Window {
     readonly property bool follow: flags.indexOf("follow") > 0
     readonly property bool fold: flags.indexOf("fold") > 0 || unfold
     readonly property bool unfold: flags.indexOf("unfold") > 0
+    readonly property bool facts: flags.indexOf("facts") > 0
     readonly property string mode: flags[0]
     readonly property string out: args[args.length - 1]
     readonly property bool glass: mode.startsWith("desktop")
@@ -371,6 +372,7 @@ Window {
                     }
                 },
                 "pc": win.follow ? null : {
+                    "name": "orbit_pc_filter",
                     "audio": {
                         "volume": 0.85,
                         "muted": false
@@ -398,6 +400,22 @@ Window {
             return "pc";
         }
     }
+    readonly property var fakeSinks: ({
+            "bluez_output.02_00_00_00_10_06.1": {
+                "connection": "Bluetooth",
+                "codec": "LDAC",
+                "rate": 96000,
+                "bits": 24,
+                "channels": 2
+            },
+            "orbit_pc_filter": {
+                "connection": "",
+                "codec": "",
+                "rate": 48000,
+                "bits": 32,
+                "channels": 2
+            }
+        })
     readonly property var soundFrame: ({
             "l": [0.92, 0.85, 0.8, 0.72, 0.66, 0.62, 0.55, 0.5, 0.44, 0.4, 0.33, 0.28, 0.22, 0.18, 0.12, 0.08],
             "r": [0.9, 0.8, 0.7, 0.66, 0.58, 0.5, 0.47, 0.4, 0.36, 0.3, 0.26, 0.2, 0.16, 0.12, 0.08, 0.05]
@@ -407,19 +425,27 @@ Window {
         running: win.mode.endsWith("focus")
         interval: 2600 + 1400
         onTriggered: {
-            const seek = item => {
-                if (item.objectName === "cardScope")
+            const seek = (item, name) => {
+                if (item.objectName === name)
                     return item;
                 for (const c of item.children) {
-                    const r = seek(c);
+                    const r = seek(c, name);
                     if (r)
                         return r;
                 }
                 return null;
             };
-            const scope = seek(win.contentItem);
+            const scope = seek(win.contentItem, "cardScope");
             if (scope && scope.visible)
                 scope.simulate(win.soundFrame, 0.7);
+            // What PipeWire would say of the headset and this PC's filter
+            // (the preview runs no command)
+            const facts = seek(win.contentItem, "audioFacts");
+            if (facts)
+                facts._all = win.fakeSinks;
+            const line = seek(win.contentItem, "factsLine");
+            if (line)
+                line.expanded = win.facts;
         }
     }
     Timer {

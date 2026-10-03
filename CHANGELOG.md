@@ -5,6 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## Unreleased
 
+### Added
+
+- **What really plays.** Under a device's name on its card, and in the volume pop-up for any output, one short line says what the sound is: how it is connected (Bluetooth, USB, HDMI, S/PDIF, analog), the codec (LDAC, AAC, aptX HD, SBC...), the sample rate and the bit depth, for example *Bluetooth · LDAC · 96 kHz · 24 bit*. A small info button unfolds the rest: channels, and a note when this PC resamples on the way to the device. *Settings → Sound → Audio details* chooses, fact by fact, what shows on the line and what shows when unfolded. It is read from PipeWire (`pactl`) only while the card or the pop-up is on screen; nothing runs otherwise, and nothing leaves the PC.
+
+## 1.12.1 - 2026-10-03
+
 ### Fixed
 
 - **Changing the volume no longer costs the whole shell.** The levels eased with QML animations, which made every shell window (bars, wallpaper) redraw at the screen's rate while the pop-up showed; they now ease on the scope's own 60 Hz clock, and the sound picture is computed once for every screen, each screen only painting it. Measured while stepping the volume three times a second, sound playing, Dank Island on two screens: the shell used **92 %** of one core with 1.12.0, **≈ 21 %** now; DMS alone, same test, uses ≈ 10 %. The rest is the live sound picture itself, drawn 60 times a second while the pop-up shows (*Light*, 30 images per second, or *None* in *Settings → Sound* make it cheaper); at rest nothing runs, as before.

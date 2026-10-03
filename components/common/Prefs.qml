@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Common
 import qs.Services
+import "../volume/Audiophile.js" as Audiophile
 import "../volume/Polar.js" as Polar
 import "../volume/Steps.js" as Steps
 
@@ -99,6 +100,17 @@ QtObject {
     // How fast smart steps grow: "gentle", "balanced" or "fast"
     readonly property string volumeSpeed: Steps.speedOf(_get("volumeSpeed", "balanced"))
     readonly property int volumeStep: Steps.fixedStep(_get("volumeStep", 5))
+
+    // What the output is (D260): which facts show on the card's line
+    // (factCard_<key>) and in the unfolded detail (factMore_<key>)
+    function _facts(prefix, field) {
+        const chosen = {};
+        for (const info of Audiophile.INFOS)
+            chosen[info.key] = _get(prefix + info.key, info[field]);
+        return chosen;
+    }
+    readonly property var factsLine: _facts("factCard_", "card")
+    readonly property var factsMore: _facts("factMore_", "more")
 
     // The volume keys were offered once (D265): never again
     readonly property bool keysOffered: _get("keysOffered", false)

@@ -4,7 +4,7 @@ Ideas, not promises, and no dates. Anything that would need the network or send 
 
 ## Planned
 
-- **What really plays, on the card**: one short line under the device name (for example *LDAC · 96 kHz · 24 bit*), and a button that unfolds the rest: codec and bit rate; sample rate, bits and channels; the path from this PC to the device (with a note when the sound is resampled on the way); profile, latency and quantum. A setting per item chooses whether it shows on the card, under the button, or not at all. The same line in the volume pop-up, for any output. Read from PipeWire only while the card or pop-up is open.
+- **More about what plays**: the Bluetooth codec's bit rate, the profile, the latency and the quantum in the unfolded details (the line, the sample rate, depth and resampling note ship in 1.13.0).
 - **An option to swap the two volumes' roles**: DMS's volume slider would set this PC's level, and the device's own level would be set in Orbit only.
 - **Listen together**: two headsets on one film. Bring a second headset next to the first and Orbit makes a shared PipeWire output for both. It comes apart by itself when one disconnects.
   - **Look**: the outer half circle splits at its top. The left quarter is the first headset and the right quarter the second. Each one lights up from its bottom corner toward the top, and both meet at the top at 100 %. Each quarter has its own cloud of points and its own theme color (`primary` and `secondary`). The inner half circle stays below, shared by both: the level this PC sends (`tertiary`).
