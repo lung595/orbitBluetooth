@@ -331,7 +331,7 @@ PluginSettings {
             id: volumeSteps
             settingKey: "volumeSteps"
             label: "Steps"
-            description: "For the volume keys bound to Orbit (dms ipc call orbitBluetooth volume up or down) and the wheel over the pop-up. Smart: one press alone is 1 % for precision, quick presses or a held key speed up"
+            description: "For the volume keys bound to Orbit (dms ipc call orbitBluetooth volume up or down) and the wheel over the pop-up. Smart: slow notches move by 1 % for precision, a quick run builds up speed, and turning back to look for a spot holds it a little"
             options: [
                 {
                     label: "Smart",
@@ -349,7 +349,7 @@ PluginSettings {
             settingKey: "volumeSpeed"
             visible: volumeSteps.value !== "fixed"
             label: "Speed-up"
-            description: "How fast quick presses grow the step: Gentle up to 4 %, Balanced up to 8 %, Fast from 2 % up to 12 %. Under 10 % the steps always stay fine"
+            description: "How far a quick run can go per notch: Gentle up to 3 %, Balanced up to 4 %, Fast up to 6 %. Slow notches are always 1 %, and so is every step under 10 %"
             options: [
                 {
                     label: "Gentle",
