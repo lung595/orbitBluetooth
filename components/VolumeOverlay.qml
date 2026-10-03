@@ -141,21 +141,15 @@ TwoLevels {
     }
 
     function _faceFor(host) {
-        const sheet = _volumeSheet(host);
-        if (!sheet)
-            return null;
-        const kept = [];
-        let face = null;
-        for (let i = 0; i < _faces.length; i++) {
-            const f = _faces[i];
-            // A screen gone takes its island, and the face in it, along
-            if (!f)
-                continue;
-            kept.push(f);
-            if (f.parent === sheet)
-                face = f;
-        }
+        // A screen gone takes its island, and the face in it, along
+        const kept = _faces.filter(f => !!f && !!f.parent);
+        // The face already made for this island: no walk through its items
+        // on every volume step
+        let face = kept.find(f => f.controller === host.islandController) || null;
         if (!face) {
+            const sheet = _volumeSheet(host);
+            if (!sheet)
+                return null;
             face = faceComponent.createObject(sheet, {
                 "overlay": root,
                 "controller": host.islandController

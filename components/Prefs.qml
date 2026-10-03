@@ -17,6 +17,20 @@ QtObject {
         return v === undefined || v === null ? def : v;
     }
 
+    // The settings that hold a map change only when their content does: a
+    // fresh object on every save (a volume level, a hidden device) would
+    // wake every view bound to any of them (P137)
+    readonly property var _maps: ["ignoredDevices", "glyphOverrides", "hiddenDevices", "pcLevels"]
+    function _load() {
+        _data = SettingsData.getPluginSettingsForPlugin(pluginId) || ({});
+        for (const key of _maps) {
+            const next = _get(key, ({}));
+            if (JSON.stringify(next) !== JSON.stringify(root[key]))
+                root[key] = next;
+        }
+    }
+    Component.onCompleted: _load()
+
     readonly property bool showUnnamed: _get("showUnnamed", false)
     readonly property bool showLabels: _get("showLabels", true)
     readonly property int maxDevices: parseInt(_get("maxDevices", "8"))
@@ -33,7 +47,7 @@ QtObject {
     // No background scan on battery below this level (%)
     readonly property int offerMinBattery: _get("offerMinBattery", 30)
     // Devices the pop-up must never offer again: address -> name
-    readonly property var ignoredDevices: _get("ignoredDevices", ({}))
+    property var ignoredDevices: ({})
     readonly property bool autoScan: _get("autoScan", true)
     // Hover × on connected devices; off by default (drag away or right-click instead)
     readonly property bool quickDisconnect: _get("quickDisconnect", false)
@@ -48,7 +62,7 @@ QtObject {
     readonly property real desktopBackdrop: _get("desktopBackdrop", 72) / 100
     readonly property string hostGlyph: _get("hostGlyph", "auto")
     readonly property string imageFolder: _get("imageFolder", "")
-    readonly property var glyphOverrides: _get("glyphOverrides", ({}))
+    property var glyphOverrides: ({})
     readonly property bool ancEnabled: _get("ancEnabled", true)
     readonly property string ancEngine: _get("ancEngine", "demand")
     // Turn conversation awareness off when a headset disconnects or reconnects
@@ -60,7 +74,7 @@ QtObject {
     readonly property var picturesClear: _get("picturesClear", 0)
     // Devices swallowed by the black hole: address -> name (the name keeps
     // the list readable when the device is out of range)
-    readonly property var hiddenDevices: _get("hiddenDevices", ({}))
+    property var hiddenDevices: ({})
     // Look of the black hole: "blackhole" (realistic) or "tesseract"
     readonly property string holeStyle: _get("holeStyle", "blackhole")
 
@@ -68,7 +82,7 @@ QtObject {
     // of a device that has its own volume. Off: one level, as before
     readonly property bool separatePc: _get("separatePc", true)
     // This PC's level per device, address -> 0..1 (D256)
-    readonly property var pcLevels: _get("pcLevels", ({}))
+    property var pcLevels: ({})
     // The volume pop-up (D258): "replace" (in place of DMS's volume OSD),
     // "bar" (under the bar widget), "edge" (right screen edge) or "off"
     readonly property string popupMode: _get("popupMode", "replace")
@@ -148,7 +162,7 @@ QtObject {
         target: PluginService
         function onPluginDataChanged(changedId) {
             if (changedId === root.pluginId)
-                root._data = SettingsData.getPluginSettingsForPlugin(root.pluginId) || ({});
+                root._load();
         }
     }
 }
