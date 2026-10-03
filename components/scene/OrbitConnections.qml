@@ -42,7 +42,7 @@ Item {
             profileCheck.check(d, Catalog.families[Catalog.resolve(d, ({}))] || "", verdict => {
                 if (verdict === "input") {
                     // Blocked until it is dragged in again, or forgotten
-                    root._confirm = d;
+                    connections._confirm = d;
                     confirmWait.restart();
                     if (typeof ToastService !== "undefined")
                         ToastService.showWarning("Orbit: it can also send key presses, often for its buttons. Drag it in again within a minute to pair it anyway", profileCheck.guideUrl);
@@ -65,8 +65,8 @@ Item {
         id: confirmWait
         interval: 60000
         onTriggered: {
-            profileCheck.deny(root._confirm);
-            root._confirm = null;
+            profileCheck.deny(connections._confirm);
+            connections._confirm = null;
         }
     }
 
