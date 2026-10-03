@@ -23,6 +23,7 @@ const Volume = load("Volume.js", ["start", "sweep", "clamp", "step", "nudge", "v
 const Fx = load("VolumeFx.js", ["clamp01", "ripple", "band", "filament", "emission", "spawn", "step", "lifeT", "follow", "wave"]);
 const Guard = load("Guard.js", ["offerFamily", "hasInput", "refused", "validPath", "parseUuids"]);
 const Cover = load("Cover.js", ["covered"]);
+const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "arc", "end", "point", "angleOf", "valueAt", "zone", "parseFrame", "loudness", "spawn", "cavaConfig"]);
 const Route = load("Route.js", ["addressKey", "virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "loadArgs", "ownModules", "moduleIndex", "muteTarget", "ipcLevel", "transportPath", "transportVolume"]);
 
 let count = 0, failures = 0;
@@ -297,6 +298,29 @@ eq("transport of the device", Route.transportPath(tree, DEV), DEV + "/sep1/fd0")
 eq("no transport: no absolute volume", [Route.transportPath("/org/bluez\n" + DEV + "\n", DEV), Route.transportPath(tree, "/org/bluez/hci0/dev_x")], ["", ""]);
 eq("transport volume", [Route.transportVolume('{"type":"q","data":65}'), Route.transportVolume("oops"), Route.transportVolume('{"type":"q","data":300}')], [65, -1, -1]);
 eq("level notes say why", [Guide.levelNote("no-device").length > 0, Guide.levelNote("bad-level").indexOf("0 to 100") > 0], [true, true]);
+
+// Polar vectorscope (D250, D254): angles clockwise from the right, top = 270
+eq("outer arc lights from the left", [Polar.arc("outer", 0.5), Polar.arc("inner", 2)], [{ start: 180, sweep: 90 }, { start: 180, sweep: 180 }]);
+eq("split: each quarter from its bottom corner", [Polar.arc("d1", 1), Polar.arc("d2", 0.5)], [{ start: 180, sweep: 90 }, { start: 360, sweep: -45 }]);
+eq("moons", [Polar.end("outer", 0), Polar.end("outer", 1), Polar.end("d2", 1)], [180, 360, 270]);
+const pTop = Polar.point(100, 100, 50, 270);
+eq("top point", [Math.round(pTop.x), Math.round(pTop.y)], [100, 50]);
+eq("drag value", [Polar.valueAt("outer", -10, 0), Polar.valueAt("outer", 0, -10), Polar.valueAt("outer", 10, 0), Polar.valueAt("inner", 7, -7)], [0, 0.5, 1, 0.75]);
+eq("below the baseline snaps to the nearer end", [Polar.valueAt("outer", 10, 5), Polar.valueAt("outer", -10, 5)], [1, 0]);
+eq("split drag", [Polar.valueAt("d1", 0, -10), Polar.valueAt("d1", -10, -10), Polar.valueAt("d2", 10, -10), Polar.valueAt("d2", -10, -10)], [1, 0.5, 0.5, 1]);
+eq("zones", [Polar.zone(0, -100, 100, 40, 10, false), Polar.zone(0, -42, 100, 40, 10, false), Polar.zone(0, -70, 100, 40, 10, false), Polar.zone(0, 30, 100, 40, 10, false)], ["outer", "inner", "", ""]);
+eq("split zones", [Polar.zone(-60, -80, 100, 40, 10, true), Polar.zone(60, -80, 100, 40, 10, true)], ["d1", "d2"]);
+const fr = Polar.parseFrame("9;35;30;45;100;80;3;0;0;3;80;100;45;30;35;9;", 8);
+eq("cava frame: left reversed, low notes first", [fr.l, fr.r], [[0, 0.03, 0.8, 1, 0.45, 0.3, 0.35, 0.09], [0, 0.03, 0.8, 1, 0.45, 0.3, 0.35, 0.09]]);
+eq("bad frames", [Polar.parseFrame("1;2;3;", 8), Polar.parseFrame("a;b;c;d;e;f;g;h;i;j;k;l;m;n;o;p;", 8), Polar.parseFrame("", 8), Polar.parseFrame("0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;101;", 8)], [null, null, null, null]);
+eq("loudness", [Polar.loudness(fr), Polar.loudness(null)], [1, 0]);
+const mono = { l: [0.5], r: [0.5] }, hardL = { l: [0.8], r: [0] }, hardR = { l: [0], r: [0.8] };
+eq("mono sits on the vertical", Polar.spawn(mono, 0, 100, 0.5, 1, 0).deg, 270);
+eq("hard left / right go to the sides", [Polar.spawn(hardL, 0, 100, 0.5, 1, 0).deg, Polar.spawn(hardR, 0, 100, 0.5, 1, 0).deg], [183, 357]);
+eq("louder goes further", Polar.spawn({ l: [1], r: [1] }, 0, 100, 0.5, 1, 0).dist > Polar.spawn({ l: [0.2], r: [0.2] }, 0, 100, 0.5, 1, 0).dist, true);
+eq("silence spawns nothing", [Polar.spawn({ l: [0], r: [0.01] }, 0, 100, 0.5, 0.5, 0.5), Polar.spawn(mono, 4, 100, 0.5, 0.5, 0.5)], [null, null]);
+eq("cava config", Polar.cavaConfig("orbit_pc_AA.monitor", 60, 8).split("\n").filter(l => /source|bars|framerate|channels/.test(l)), ["framerate = 60", "bars = 16", "source = orbit_pc_AA.monitor", "channels = stereo"]);
+eq("cava config refuses odd names", [Polar.cavaConfig("x\nmethod = fifo", 60, 8), Polar.cavaConfig("", 60, 8)], [null, null]);
 
 print(failures ? failures + "/" + count + " failed" : count + " tests passed");
 imports.system.exit(failures ? 1 : 0);
