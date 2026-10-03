@@ -2,8 +2,8 @@ import QtQuick
 import QtQuick.Window
 import qs.Common
 import qs.Services
-import "../../components"
-import "../../components/Guide.js" as Guide
+import "../../components/scene"
+import "../../components/common/Guide.js" as Guide
 
 // Offscreen renders for the README, with mock devices and services.
 // Usage: QT_QPA_PLATFORM=offscreen qml -I imports shot.qml -- <mode> <out.png>

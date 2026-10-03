@@ -99,7 +99,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 | Drag a device inside the inner ring | Pair and connect |
 | Drag a connected device outward | Disconnect |
 | Click a device | Open its detail card |
-| Scroll over an open audio device, or drag along its ring | Volume, 5 % per notch (a soft tick plays in the device) |
+| Scroll over an open audio device, or drag a moon on its half circles | Its volume or this PC's, with smart steps; a soft tick plays in the device every 5 % ([more](docs/GUIDE.md#the-two-volumes)) |
 | Click the planet of an open audio device | Mute or unmute |
 | Right-click a device | Menu: connect, noise-control modes, hide, forget |
 | Forget a device (unpair) | Right-click → **Forget**, click again to confirm; or the 🗑 button of its detail card |

@@ -1,6 +1,6 @@
 #!/bin/sh
-# Runs the QML tests (the "new device" pop-up, the polar scope) without
-# Quickshell or a
+# Runs the QML tests (the "new device" pop-up, the polar scope, the
+# keyboard-profile question of the connection flow) without Quickshell or a
 # Bluetooth adapter: stubs/ stands in for Quickshell and the DMS services,
 # Device.qml for a BlueZ device, and NewDeviceWindow.qml replaces the real
 # layer-shell window. Needs Qt 6 (qml, qml6, qml-qt6 or PySide6).
@@ -12,14 +12,18 @@ here=$(cd "$(dirname "$0")" && pwd)
 root=$(dirname "$(dirname "$here")")
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
-cp "$root"/components/NewDeviceWatch.qml "$root"/components/Volume[A-Z]*.qml "$root"/components/Polar[A-Z]*.qml "$root"/components/ScopeFeed.qml "$root"/components/PaperColors.qml "$root"/components/NightColors.qml "$root"/components/*.js "$work"/
+# The work folder mirrors the plugin root: components/ as it is, the tests
+# beside it, and two stand-ins over the real window and D-Bus check
+cp -r "$root"/components "$work"/
+cp "$here"/ProfileCheck.qml "$here"/NewDeviceWindow.qml "$work"/components/pairing/
+cp "$here"/Device.qml "$here"/*.test.qml "$work"/
 # Quickshell's device list is a model with .values; the stub keeps a plain list
-sed -i 's/Bluetooth\.devices\.values/Bluetooth.list/g' "$work"/NewDeviceWatch.qml
-cp "$here"/Device.qml "$here"/ProfileCheck.qml "$here"/NewDeviceWindow.qml "$here"/*.test.qml "$work"/
+sed -i 's/Bluetooth\.devices\.values/Bluetooth.list/g' "$work"/components/pairing/NewDeviceWatch.qml
 export QT_QPA_PLATFORM=offscreen
 # Print to the terminal, not to journald, including print() lines
 export QT_FORCE_STDERR_LOGGING=1 QT_LOGGING_RULES='qml.debug=true;js.debug=true'
-for tool in qml6 qml-qt6 qml; do
+# Fedora keeps Qt 6's tools out of PATH
+for tool in qml6 qml-qt6 qml /usr/lib64/qt6/bin/qml; do
     if command -v "$tool" >/dev/null 2>&1; then
         for test in "$work"/*.test.qml; do
             "$tool" -I "$root/scripts/preview/imports" -I "$here/stubs" "$test"

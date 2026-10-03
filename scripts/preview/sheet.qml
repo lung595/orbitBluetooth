@@ -1,8 +1,8 @@
 import QtQuick
 import QtQuick.Window
 import qs.Common
-import "../../components"
-import "../../components/Offer.js" as Offer
+import "../../components/pairing"
+import "../../components/pairing/Offer.js" as Offer
 
 // Offscreen renders of the pairing sheet with a given DMS palette.
 // Usage: qml -I imports sheet.qml -- <palette> <phase> <out.png> [picture]
