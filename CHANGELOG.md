@@ -7,6 +7,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- **Volume keys with smart steps, in one click.** The first time Orbit's volume pop-up opens, one line offers it (*Smart volume keys? Enable*, with *Undo* after); also in **Settings → Sound** and `dms ipc call orbitBluetooth volumeKeys on | off | status`. Orbit asks DMS's own `dms keybinds` to bind the two keys, only if they still do DMS's default; they fall back to DMS's step if Orbit is off or gone, and *Undo* or uninstalling writes back DMS's exact line (niri only).
+
 - **Uninstalling leaves nothing.** DMS deletes the plugin folder but keeps its settings and widgets; Orbit now erases them itself when it finds its folder gone (settings, bar, Control Center and desktop widgets with their positions, pictures cache). It waits a few seconds and checks again, so an update that re-downloads the folder keeps everything; disabling or restarting erases nothing.
 
 ## 1.11.2 - 2026-10-03

@@ -44,9 +44,12 @@ Window {
         property bool reduceMotion: false
         property int fps: 60
         property var note: null
-        function noteAction() {}
-        function setLevel(part, level) {}
-        function toggleMute(part) {}
+        function noteAction() {
+        }
+        function setLevel(part, level) {
+        }
+        function toggleMute(part) {
+        }
     }
 
     Grid {
@@ -74,7 +77,10 @@ Window {
                     overlay: FakeOverlay {
                         style: sheet.modelData
                         // The one-time volume keys note (D265) on two sheets
-                        note: Keys.note(({ "waves": "offer", "none": "done" })[sheet.modelData] || "")
+                        note: Keys.note(({
+                                "waves": "offer",
+                                "none": "done"
+                            })[sheet.modelData] || "")
                     }
                     live: true
                 }

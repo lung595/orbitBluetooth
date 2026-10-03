@@ -135,7 +135,8 @@ def edit(path, change):
 
 
 VOLUME_KEYS = {"XF86AudioRaiseVolume": "increment", "XF86AudioLowerVolume": "decrement"}
-# DMS's step, kept at the end of Orbit's action as its fallback
+# DMS's step, kept at the end of Orbit's action as its fallback. Same
+# format as components/Keys.js (Python cannot load it): change both together.
 FALLBACK_STEP = 3
 
 

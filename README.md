@@ -142,6 +142,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | Sounds | Sounds | Off |
 | | Volume | 60 % |
 | | Volume tick (a soft tick in the device while you change its volume) | On |
+| | Volume keys: *Use smart steps* or *Give back to DMS* (niri, changed only when you click, [more](docs/GUIDE.md#volume-keys)) | DMS |
 
 ## Command line and keybindings
 
@@ -153,6 +154,8 @@ dms ipc call orbitBluetooth newDeviceDemo    # show the new-headphones pop-up wi
 dms ipc call orbitBluetooth newDeviceStatus  # is the background scan running, or why not
 dms ipc call orbitBluetooth hidden       # list hidden devices
 dms ipc call orbitBluetooth unhideAll    # bring every hidden device back
+dms ipc call orbitBluetooth volume up    # up or down, with smart steps
+dms ipc call orbitBluetooth volumeKeys on    # on, off or status: your volume keys use smart steps
 ```
 
 Bind them in your compositor, for example in niri: `Mod+N { spawn "dms" "ipc" "call" "orbitBluetooth" "ancCycle"; }`, or in Hyprland: `bind = SUPER, N, exec, dms ipc call orbitBluetooth ancCycle`.
@@ -171,6 +174,7 @@ Bind them in your compositor, for example in niri: `Mod+N { spawn "dms" "ipc" "c
 | Noise control does not appear | Headset must be paired and supported, Python 3 installed; reopen the card |
 | A device vanished | It is in the black hole: click it, or `dms ipc call orbitBluetooth unhideAll` |
 | Settings or widgets of Orbit left after removing it while DMS was not running | Install it again, then remove it from DMS while it runs: it cleans up after itself, see [Uninstalling](docs/GUIDE.md#uninstalling) |
+| Volume keys still use smart steps after removing Orbit while DMS was not running | They still work (they fall back to DMS); give them back: `dms keybinds set niri XF86AudioRaiseVolume "spawn dms ipc call audio increment 3" --allow-when-locked`, same with `XF86AudioLowerVolume` and `decrement`, see [Volume keys](docs/GUIDE.md#volume-keys) |
 | Time to full looks off | Some headsets report in 10 % steps; it improves over time |
 
 Some Sony headsets do not report charging, or drop Bluetooth while charging: this is a hardware limit.
@@ -182,6 +186,7 @@ Some Sony headsets do not report charging, or drop Bluetooth while charging: thi
 - **Noise control**: a small helper talks to your headset over a local Bluetooth socket, only while needed.
 - **New headphones pop-up**: by default Orbit only listens to searches you start yourself; nothing runs in the background. The optional **Background scan** (off by default) does a local scan of 8 s about once a minute, only while the screen is on, no Bluetooth audio is connected and the battery is above the threshold.
 - **Volume ring**: talks to the local sound server (PipeWire) only; its tick is a sound file shipped with Orbit.
+- **Volume keys**: only if you click *Enable*, Orbit asks DMS (`dms keybinds`) to bind them; *Undo* and uninstalling give them back exactly. [More](docs/GUIDE.md#volume-keys)
 - **Guide links**: the GitHub mark opens the guide in your browser only when you click it; Orbit itself makes no request.
 - **Network: only one opt-in feature, off by default.** **Real device pictures** sends only the *model name* of devices you have paired, never a stranger's device nearby, never the Bluetooth address. It contacts `commons.wikimedia.org`, then `api.sketchfab.com`, and downloads the picture from `upload.wikimedia.org` or `media.sketchfab.com`. Pictures are credited in the card, kept in `~/.cache/orbitBluetooth/pictures` (readable by you only) and erased when you turn the option off or from the settings.
 
