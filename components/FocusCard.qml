@@ -326,6 +326,7 @@ Item {
                 height: implicitHeight
                 levels: volumes
                 onUnfold: card.scene.volumeUnfolded = true
+                onStepped: (part, dir) => volumes.stepLevel(part, dir)
             }
             ScopeScreen {
                 objectName: "cardScope" // found by the offscreen previews
