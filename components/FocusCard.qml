@@ -321,7 +321,8 @@ Item {
                 objectName: "cardScope" // found by the offscreen previews
                 visible: volumes.ready && !card.picking
                 width: parent.width
-                height: Math.round(width * 0.44)
+                height: Math.round(width * 0.44) + noteRoom
+                noteBelow: true
                 overlay: volumes
                 live: volumes.live
             }

@@ -21,6 +21,10 @@ Item {
     // bottom-right): the screen's corners run parallel to them
     property var radii: [Theme.cornerRadius, Theme.cornerRadius, Theme.cornerRadius, Theme.cornerRadius]
     readonly property real margin: Theme.spacingS
+    // The note under the screen instead of over its foot (the detail card,
+    // where it would hide the arcs); the item grows by noteRoom to hold it
+    property bool noteBelow: false
+    readonly property real noteRoom: noteBelow && note && !upright ? notePill.height + Theme.spacingXS : 0
 
     // A gesture: the caller keeps itself open a while longer
     signal touched
@@ -45,6 +49,7 @@ Item {
         id: screen
         anchors.fill: parent
         anchors.margins: screenItem.margin
+        anchors.bottomMargin: screenItem.margin + screenItem.noteRoom
         topLeftRadius: screenItem._inner(screenItem.radii[0])
         topRightRadius: screenItem._inner(screenItem.radii[1])
         bottomLeftRadius: screenItem._inner(screenItem.radii[2])
@@ -108,15 +113,18 @@ Item {
     // A one-line note at the foot of the screen (the volume keys, D265; a
     // device with no level of its own, D249), with an optional word to
     // click and the guide's link. On the right, so the mute
-    // icons on the left stay reachable.
+    // icons on the left stay reachable; centered under it with noteBelow.
     readonly property var note: overlay.note || null
     Rectangle {
         id: notePill
         visible: !!screenItem.note && !screenItem.upright
-        anchors.right: screen.right
+        anchors.right: screenItem.noteBelow ? undefined : screen.right
         anchors.rightMargin: Theme.spacingM
-        anchors.bottom: screen.bottom
+        anchors.bottom: screenItem.noteBelow ? undefined : screen.bottom
         anchors.bottomMargin: Theme.spacingXS
+        anchors.top: screenItem.noteBelow ? screen.bottom : undefined
+        anchors.topMargin: Theme.spacingXS
+        anchors.horizontalCenter: screenItem.noteBelow ? screen.horizontalCenter : undefined
         height: noteRow.height + 4
         width: noteRow.width + Theme.spacingM * 2
         radius: height / 2
