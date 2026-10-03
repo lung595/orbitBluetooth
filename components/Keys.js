@@ -4,7 +4,9 @@
 // Orbit cannot catch the shell's own "dms ipc call audio increment" (its
 // IPC target and functions belong to DMS), so the click asks DMS's own
 // keybind command to point the two keys at Orbit, and "Undo" asks it to
-// reset them to the DMS default. Nothing is written by Orbit itself.
+// set them back to DMS's own action. Not `dms keybinds reset`: DMS's
+// binds.kdl is itself the default, so a reset deletes the line and leaves
+// the key doing nothing. Nothing is written by Orbit itself.
 // Pure: builds argument lists and reads `dms keybinds show niri`.
 
 var PROVIDER = "niri";
@@ -32,8 +34,14 @@ function setArgs(dir, step) {
     return ["dms", "keybinds", "set", PROVIDER, KEYS[dir], action(dir, step), "--allow-when-locked", "--json"];
 }
 
-function resetArgs(dir) {
-    return ["dms", "keybinds", "reset", PROVIDER, KEYS[dir], "--json"];
+// DMS's own action, written back the way DMS writes it
+function dmsAction(dir, step) {
+    const n = Math.max(1, Math.min(20, parseInt(step) || FALLBACK_STEP));
+    return "spawn dms ipc call audio " + DMS_VERB[dir] + " " + n;
+}
+
+function backArgs(dir, step) {
+    return ["dms", "keybinds", "set", PROVIDER, KEYS[dir], dmsAction(dir, step), "--allow-when-locked", "--json"];
 }
 
 var SHOW_ARGS = ["dms", "keybinds", "show", PROVIDER];
@@ -63,6 +71,13 @@ function isOrbit(a) {
     return typeof a === "string" && a.indexOf("ipc call orbitBluetooth volume") >= 0;
 }
 
+// The DMS step kept at the end of Orbit's action (its fallback), to give
+// the key back exactly as it was
+function _orbitStep(a) {
+    const m = typeof a === "string" ? a.match(/(?:increment|decrement)\W+(\d{1,2})\W*$/) : null;
+    return m ? parseInt(m[1]) : FALLBACK_STEP;
+}
+
 // DMS's own default: "spawn dms ipc call audio increment 3"
 function _dmsStep(a, dir) {
     const m = typeof a === "string" ? a.match(/^spawn dms ipc call audio (increment|decrement) (\d{1,2})$/) : null;
@@ -74,22 +89,26 @@ function _dmsStep(a, dir) {
 // - "orbit": both bound to Orbit
 // - "custom": the user's own shortcut on at least one: Orbit leaves them
 // - "unknown": the listing could not be read
-// with the DMS step to fall back on and the keys already bound to Orbit
+// with the DMS step to fall back on, the keys already bound to Orbit and
+// the DMS step each of them goes back to
 function classify(text) {
     const binds = _binds(text);
     if (!binds)
-        return { "state": "unknown", "step": FALLBACK_STEP, "mine": [] };
+        return { "state": "unknown", "step": FALLBACK_STEP, "mine": [], "back": {} };
     const find = k => binds.find(b => b.key === k);
     const up = find(KEYS.up), down = find(KEYS.down);
     const ua = up ? up.action : "", da = down ? down.action : "";
     // The keys bound to Orbit, to give back on "Undo" even if only one is
     const mine = ["up", "down"].filter(d => isOrbit(d === "up" ? ua : da));
+    const back = {};
+    for (const d of mine)
+        back[d] = _orbitStep(d === "up" ? ua : da);
     if (mine.length === 2)
-        return { "state": "orbit", "step": FALLBACK_STEP, "mine": mine };
+        return { "state": "orbit", "step": back.up, "mine": mine, "back": back };
     const su = _dmsStep(ua, "up"), sd = _dmsStep(da, "down");
     if (su > 0 && sd > 0)
-        return { "state": "dms", "step": su, "mine": [] };
-    return { "state": "custom", "step": FALLBACK_STEP, "mine": mine };
+        return { "state": "dms", "step": su, "mine": [], "back": {} };
+    return { "state": "custom", "step": FALLBACK_STEP, "mine": mine, "back": back };
 }
 
 // A `--json` answer of `dms keybinds set` or `reset`

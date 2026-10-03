@@ -25,7 +25,7 @@ const Guard = load("Guard.js", ["offerFamily", "hasInput", "refused", "validPath
 const Cover = load("Cover.js", ["covered"]);
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "arc", "end", "point", "angleOf", "valueAt", "zone", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "levelAt", "reach", "rayAngles", "follow", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
-const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "resetArgs", "isOrbit", "classify", "succeeded", "note"]);
+const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded", "note"]);
 const Route = load("Route.js", ["addressKey", "virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "filterArgs", "muteTarget", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "shownLevels"]);
 
 let count = 0, failures = 0;
@@ -392,9 +392,12 @@ eq("one level, this PC's (not Bluetooth, or no own volume)", [Route.shownLevels(
         { "key": "XF86AudioLowerVolume", "action": down, "source": "dms-default" },
         { "key": "Mod+T", "action": "spawn foot" }] } });
     const dmsUp = "spawn dms ipc call audio increment 3", dmsDown = "spawn dms ipc call audio decrement 3";
-    eq("DMS's default keys can be offered", Keys.classify(listing(dmsUp, dmsDown)), { state: "dms", step: 3, mine: [] });
-    eq("both keys on Orbit", Keys.classify(listing(Keys.action("up", 3), Keys.action("down", 3))), { state: "orbit", step: 3, mine: ["up", "down"] });
-    eq("one key on Orbit is custom, but still given back", Keys.classify(listing(Keys.action("up", 3), "spawn my-script")), { state: "custom", step: 3, mine: ["up"] });
+    eq("DMS's default keys can be offered", Keys.classify(listing(dmsUp, dmsDown)), { state: "dms", step: 3, mine: [], back: {} });
+    eq("DMS's default keys can be offered", Keys.classify(listing(dmsUp, dmsDown)).back, {});
+    eq("both keys on Orbit", Keys.classify(listing(Keys.action("up", 3), Keys.action("down", 3))), { state: "orbit", step: 3, mine: ["up", "down"], back: { up: 3, down: 3 } });
+    eq("one key on Orbit is custom, but still given back", Keys.classify(listing(Keys.action("up", 3), "spawn my-script")), { state: "custom", step: 3, mine: ["up"], back: { up: 3 } });
+    // How `dms keybinds show` prints Orbit's action: arguments unquoted
+    eq("the DMS step comes back from Orbit's action", Keys.classify(listing('spawn sh -c "case ... ipc call orbitBluetooth volume ... esac orbit up increment 5"', Keys.action("down", 7))).back, { up: 5, down: 7 });
     eq("the user's own shortcut is left alone", Keys.classify(listing("spawn pamixer -i 5", dmsDown)).state, "custom");
     eq("swapped DMS verbs are not DMS's default", Keys.classify(listing(dmsDown, dmsUp)).state, "custom");
     eq("a missing key is custom", Keys.classify(JSON.stringify({ "binds": {} })).state, "custom");
@@ -403,8 +406,11 @@ eq("one level, this PC's (not Bluetooth, or no own volume)", [Route.shownLevels(
     eq("the action falls back to DMS's step, data as parameters only", Keys.action("down", 3),
         'spawn "sh" "-c" "case \\"$(dms ipc call orbitBluetooth volume \\"$1\\")\\" in Target*) exec dms ipc call audio \\"$2\\" \\"$3\\";; esac" "orbit" "down" "decrement" "3"');
     eq("the fallback step stays 1..20", [Keys.action("up", 99).slice(-4), Keys.action("up", "x").slice(-3)], ['"20"', '"3"']);
-    eq("set and reset only the volume keys", [Keys.setArgs("up", 3).slice(0, 5), Keys.setArgs("up", 3).slice(-2), Keys.resetArgs("down")],
-        [["dms", "keybinds", "set", "niri", "XF86AudioRaiseVolume"], ["--allow-when-locked", "--json"], ["dms", "keybinds", "reset", "niri", "XF86AudioLowerVolume", "--json"]]);
+    eq("set only the volume keys", [Keys.setArgs("up", 3).slice(0, 5), Keys.setArgs("up", 3).slice(-2)],
+        [["dms", "keybinds", "set", "niri", "XF86AudioRaiseVolume"], ["--allow-when-locked", "--json"]]);
+    // Not `reset`: DMS's binds.kdl is the default, a reset unbinds the key
+    eq("undo writes DMS's own action back", Keys.backArgs("down", 5), ["dms", "keybinds", "set", "niri", "XF86AudioLowerVolume", "spawn dms ipc call audio decrement 5", "--allow-when-locked", "--json"]);
+    eq("DMS's action, step kept in 1..20", [Keys.dmsAction("up", 3), Keys.dmsAction("up", 0)], ["spawn dms ipc call audio increment 3", "spawn dms ipc call audio increment 3"]);
     eq("only a success answer counts", [Keys.succeeded('{"success":true}'), Keys.succeeded('{"success":false}'), Keys.succeeded(""), Keys.succeeded("null")], [true, false, false, false]);
     eq("notes", [Keys.note("offer").action, Keys.note("done").action, Keys.note("nope")], ["Enable", "Undo", null]);
 }

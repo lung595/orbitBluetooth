@@ -52,7 +52,7 @@ class Shell:
         # dms commands asked for, answered from a made-up keybind listing
         self.calls = []
         self.listing = {"binds": {"Audio": [
-            {"key": "XF86AudioRaiseVolume", "action": 'spawn "sh" "-c" "case ... dms ipc call orbitBluetooth volume ..." "orbit" "up"'},
+            {"key": "XF86AudioRaiseVolume", "action": 'spawn sh -c "case ... dms ipc call orbitBluetooth volume ... esac orbit up increment 5"'},
             {"key": "XF86AudioLowerVolume", "action": "spawn dms ipc call audio decrement 3"},
             {"key": "Mod+V", "action": "spawn dms ipc call orbitBluetooth volume up"},
         ]}}
@@ -138,8 +138,10 @@ class KeysTest(unittest.TestCase):
         self.addCleanup(s.tmp.cleanup)
         os.remove(s.manifest)
         self.assertTrue(s.run())
-        # Only the volume key still bound to Orbit, never another shortcut
-        self.assertEqual([c for c in s.calls if c[1] == "reset"], [["keybinds", "reset", "niri", "XF86AudioRaiseVolume", "--json"]])
+        # Only the volume key still bound to Orbit, never another shortcut,
+        # set back to DMS's own action with the step it had
+        self.assertEqual([c for c in s.calls if c[1] == "set"], [["keybinds", "set", "niri", "XF86AudioRaiseVolume", "spawn dms ipc call audio increment 5", "--allow-when-locked", "--json"]])
+        self.assertEqual([c for c in s.calls if c[1] == "reset"], [])
 
     def test_nothing_reset_while_installed(self):
         s = Shell()

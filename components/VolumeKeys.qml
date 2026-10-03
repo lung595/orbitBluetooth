@@ -5,7 +5,7 @@ import "Keys.js" as Keys
 
 // The volume keys and Orbit's smart steps (D265): reads what the two keys
 // do, binds them to Orbit when the user clicks "Enable" and gives them back
-// to DMS on "Undo", through DMS's own `dms keybinds` command (argument
+// to DMS's own action on "Undo", through DMS's own `dms keybinds` command (argument
 // lists only). Runs a command only when asked: nothing at rest.
 Item {
     id: root
@@ -20,6 +20,7 @@ Item {
 
     property int _step: Keys.FALLBACK_STEP
     property var _mine: []
+    property var _back: ({})
     property var _queue: []
     // Called once after the next read
     property var _then: null
@@ -45,11 +46,11 @@ Item {
         });
     }
 
-    // Gives back to DMS every key still bound to Orbit
+    // Gives back to DMS, with its own step, every key still bound to Orbit
     function disable() {
         refresh(() => {
             if (root._mine.length > 0)
-                root._run(root._mine.map(d => Keys.resetArgs(d)));
+                root._run(root._mine.map(d => Keys.backArgs(d, root._back[d])));
         });
     }
 
@@ -79,6 +80,7 @@ Item {
             root.keys = r.state;
             root._step = r.step;
             root._mine = r.mine;
+            root._back = r.back;
             const cb = root._then;
             root._then = null;
             if (cb)

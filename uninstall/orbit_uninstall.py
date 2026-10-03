@@ -15,8 +15,9 @@ memory with "python3 -c" and depends on nothing in it:
 It waits a few seconds and checks again, because an update may delete the
 folder and clone it back: nothing is erased if plugin.json came back.
 If the volume keys were bound to Orbit on the user's click (D265), they are
-given back to DMS's default with DMS's own command (`dms keybinds reset`),
-only those whose action is still Orbit's.
+set back to DMS's own action with DMS's own command (`dms keybinds set`),
+only those whose action is still Orbit's. Not `dms keybinds reset`: DMS's
+binds.kdl is itself the default, so a reset would leave the key unbound.
 The shell watches these three files and reloads them when they change, so
 editing them here is the same as a user editing them by hand. Each file is
 written atomically and only if something of Orbit's was found in it.
@@ -133,7 +134,9 @@ def edit(path, change):
     return result
 
 
-VOLUME_KEYS = ("XF86AudioRaiseVolume", "XF86AudioLowerVolume")
+VOLUME_KEYS = {"XF86AudioRaiseVolume": "increment", "XF86AudioLowerVolume": "decrement"}
+# DMS's step, kept at the end of Orbit's action as its fallback
+FALLBACK_STEP = 3
 
 
 def run_dms(args):
@@ -147,32 +150,34 @@ def run_dms(args):
 
 def orbit_keys(plugin_id, listing):
     """The volume keys whose action calls this plugin, from
-    `dms keybinds show niri`."""
+    `dms keybinds show niri`, each with the DMS step it goes back to."""
     try:
         data = json.loads(listing or "")
     except ValueError:
-        return []
+        return {}
     groups = data.get("binds") if isinstance(data, dict) else None
     if not isinstance(groups, dict):
-        return []
+        return {}
     mark = "ipc call " + plugin_id + " volume"
-    found = []
+    found = {}
     for binds in groups.values():
         for bind in binds if isinstance(binds, list) else []:
             if not isinstance(bind, dict):
                 continue
             key, action = bind.get("key"), bind.get("action")
             if key in VOLUME_KEYS and isinstance(action, str) and mark in action and key not in found:
-                found.append(key)
+                m = re.search(r"(?:increment|decrement)\W+(\d{1,2})\W*$", action)
+                found[key] = min(20, max(1, int(m.group(1)))) if m else FALLBACK_STEP
     return found
 
 
 def give_back_keys(plugin_id, run=run_dms):
-    """Resets the volume keys still bound to this plugin to DMS's default."""
+    """Sets the volume keys still bound to this plugin back to DMS's own
+    action, as DMS writes it."""
     keys = orbit_keys(plugin_id, run(["keybinds", "show", "niri"]))
-    for key in keys:
-        run(["keybinds", "reset", "niri", key, "--json"])
-    return keys
+    for key, step in keys.items():
+        run(["keybinds", "set", "niri", key, "spawn dms ipc call audio %s %d" % (VOLUME_KEYS[key], step), "--allow-when-locked", "--json"])
+    return list(keys)
 
 
 def valid(plugin_id, manifest, cache, files):
