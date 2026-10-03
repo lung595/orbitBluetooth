@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Shapes
 import qs.Common
-import qs.Widgets
 import "Polar.js" as Polar
 
 // The two volumes as a polar vectorscope (D250): the outer half circle is
@@ -192,6 +191,10 @@ Item {
     property string dragging: ""
     property real _dev: 0
     property real _pc: 0
+    // The eased levels, for the readouts (PolarReadouts) to sit where the
+    // arcs end without reaching into the easing state
+    readonly property real shownDevice: _dev
+    readonly property real shownPc: _pc
     // A function, not a binding: read inside the level's own change
     // handler, a binding would still hold the old answer
     function _settled() {
@@ -258,7 +261,7 @@ Item {
     onLiveChanged: if (!live)
         _follow()
 
-    // --- Moons, icons, numbers -----------------------------------------------------
+    // --- Moons, then the readouts (PolarReadouts) ----------------------------------
     component Moon: Rectangle {
         property real radiusAt: 0
         property real deg: 180

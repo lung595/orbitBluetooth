@@ -50,7 +50,7 @@ Item {
     }
     Readout {
         radiusAt: scope.outer
-        deg: Polar.end("outer", scope._dev)
+        deg: Polar.end("outer", scope.shownDevice)
         text: Math.round(Math.max(0, scope.deviceLevel) * 100) + "%"
         color: scope.deviceColor
         shown: scope.hasDevice && !scope.sideNumbers && (scope.numbers || scope.talking === "device" || scope.dragging === "device")
@@ -59,7 +59,7 @@ Item {
         // Inside the inner arc, so it never meets the outer moon
         radiusAt: scope.inner
         gap: -26
-        deg: Polar.end("inner", scope._pc)
+        deg: Polar.end("inner", scope.shownPc)
         text: Math.round(scope.pcLevel * 100) + "%"
         color: scope.pcColor
         shown: !scope.sideNumbers && (scope.numbers || scope.talking === "pc" || scope.dragging === "pc")
