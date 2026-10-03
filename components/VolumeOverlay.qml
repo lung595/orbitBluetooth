@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Services.Pipewire
 import qs.Common
+import qs.Services
 import "Route.js" as Route
 import "DeviceCatalog.js" as Catalog
 
@@ -86,6 +87,20 @@ Item {
                 p.show();
             }
         }
+        _quietIsland();
+    }
+
+    // A Dank Island shows the volume itself, without DMS's OSD manager.
+    // Its own controller hands the transient volume face back, in memory
+    // only (no setting written, D259, D261); an island the user opened
+    // on purpose, or showing anything else, is left alone
+    function _quietIsland() {
+        const hosts = PopoutService.dankIslandRouter?.hosts?.() ?? [];
+        for (let i = 0; i < hosts.length; i++) {
+            const c = hosts[i]?.islandController;
+            if (c && c.activeActivity === "volume" && !c.expanded)
+                c.finishTransient();
+        }
     }
 
     Connections {
@@ -108,13 +123,14 @@ Item {
     }
 
     // --- Pop-ups and their sound ----------------------------------------------------
-    // The screens DMS shows its volume OSD on (Settings → OSD), less those
-    // with a Dank Island, which shows the volume its own way
+    // The screens DMS shows its volume on (Settings → OSD), Dank Island
+    // screens included: there the island's volume face steps aside (D261)
     readonly property var screens: {
-        const list = SettingsData.getFilteredScreens("osd") || [];
-        if (!SettingsData.dankIslandEnabled)
-            return list;
-        return list.filter(s => !SettingsData.dankIslandCoversScreen(s));
+        // Read explicitly so the binding re-runs when a screen or a screen
+        // preference changes: getFilteredScreens() hides these reads
+        const all = Quickshell.screens;
+        const prefs = SettingsData.screenPreferences;
+        return SettingsData.getFilteredScreens("osd") || [];
     }
 
     Variants {
