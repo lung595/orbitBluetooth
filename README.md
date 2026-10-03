@@ -113,7 +113,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 
 ## Settings
 
-**Settings → Plugins → Orbit Bluetooth**, grouped in tabs: Orbit, Scanning, Headphones (with device pictures), Desktop, Look & sound. Options marked ⚡ use more battery.
+**Settings → Plugins → Orbit Bluetooth**, grouped in tabs: Orbit, Scanning, Headphones (with device pictures), Sound, Desktop, Look. Options marked ⚡ use more battery.
 
 | Section | Setting | Default |
 | --- | --- | --- |
@@ -131,6 +131,14 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | Headphones | Noise control | On |
 | | Turn off conversation awareness on disconnect | On |
 | | Engine: *On demand* or *Always connected* ⚡ | On demand |
+| Sound | Separate PC volume (the device's level and this PC's, [more](docs/GUIDE.md#separate-pc-volume)) | On |
+| | Steps: *Smart* or *Fixed* ([more](docs/GUIDE.md#smart-volume-steps)) / Speed-up / Step | Smart / Balanced / 5 % |
+| | Volume keys: *Use smart steps* or *Give back to DMS* (niri, changed only when you click, [more](docs/GUIDE.md#volume-keys)) | DMS |
+| | Volume pop-up: in place of DMS's OSD, under the bar widget, right screen edge or off ([more](docs/GUIDE.md#volume-pop-up)) | In place of DMS's OSD |
+| | Pop-up size: Compact, Medium or Large | Medium |
+| | Visualizer: Points, Rays, Waves or None / motion: Smooth or Light | Points / Smooth |
+| | Sounds (short cues) / their volume | Off / 60 % |
+| | Volume tick (a soft tick in the device while you change its volume) | On |
 | Desktop widget | Displays | All |
 | | Backdrop | 72 % |
 | | Ambient motion ⚡ | Off |
@@ -139,10 +147,6 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Shooting stars | On |
 | | Stars: Low, Normal or High | Normal |
 | | Custom images folder | — |
-| Sounds | Sounds | Off |
-| | Volume | 60 % |
-| | Volume tick (a soft tick in the device while you change its volume) | On |
-| | Volume keys: *Use smart steps* or *Give back to DMS* (niri, changed only when you click, [more](docs/GUIDE.md#volume-keys)) | DMS |
 
 ## Command line and keybindings
 
@@ -155,6 +159,8 @@ dms ipc call orbitBluetooth newDeviceStatus  # is the background scan running, o
 dms ipc call orbitBluetooth hidden       # list hidden devices
 dms ipc call orbitBluetooth unhideAll    # bring every hidden device back
 dms ipc call orbitBluetooth volume up    # up or down, with smart steps
+dms ipc call orbitBluetooth deviceVolume 40  # the device's own level: up, down or 0-100
+dms ipc call orbitBluetooth pcVolume -- -10  # this PC's level for it (a negative step needs --)
 dms ipc call orbitBluetooth volumeKeys on    # on, off or status: your volume keys use smart steps
 ```
 

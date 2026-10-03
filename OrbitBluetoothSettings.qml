@@ -87,7 +87,7 @@ PluginSettings {
         {
             "id": "look",
             "icon": "palette",
-            "text": "Look & sound"
+            "text": "Look"
         }
     ]
 
@@ -270,6 +270,34 @@ PluginSettings {
                 }
             ]
             defaultValue: "60"
+        }
+
+        // --- Sounds ------------------------------------------------------------------
+        Section {
+            text: "Sounds"
+        }
+
+        ToggleSetting {
+            settingKey: "sounds"
+            label: "Sounds"
+            description: "On snap, connect and disconnect"
+            defaultValue: false
+        }
+
+        ToggleSetting {
+            settingKey: "volumeTick"
+            label: "Volume tick"
+            description: "A soft tick in the device on each 5 % step made on its card, so you hear the level where it plays"
+            defaultValue: true
+        }
+
+        SliderSetting {
+            settingKey: "soundVolume"
+            label: "Volume"
+            defaultValue: 60
+            minimum: 0
+            maximum: 100
+            unit: "%"
         }
 
         SliderSetting {
@@ -679,34 +707,6 @@ PluginSettings {
             description: "PNGs named after devices replace their icons"
             placeholder: "~/Pictures/bluetooth"
             defaultValue: ""
-        }
-
-        // --- Sounds ------------------------------------------------------------------
-        Section {
-            text: "Sounds"
-        }
-
-        ToggleSetting {
-            settingKey: "sounds"
-            label: "Sounds"
-            description: "On snap, connect and disconnect"
-            defaultValue: false
-        }
-
-        ToggleSetting {
-            settingKey: "volumeTick"
-            label: "Volume tick"
-            description: "A soft tick in the device on each 5 % step made on its card, so you hear the level where it plays"
-            defaultValue: true
-        }
-
-        SliderSetting {
-            settingKey: "soundVolume"
-            label: "Volume"
-            defaultValue: 60
-            minimum: 0
-            maximum: 100
-            unit: "%"
         }
     }
 }
