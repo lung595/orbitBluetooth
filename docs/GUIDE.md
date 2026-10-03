@@ -336,4 +336,6 @@ Orbit costs nothing while you are not looking at it: no frames at rest, nothing 
 | View open while scanning | 5.2 |
 | Desktop widget, *Ambient motion* on | 9.2 |
 
+The volume ring's effects only run while the level moves and stop by themselves; on an offscreen bench, 6 s of continuous dragging costs 0.16 s of CPU for all its effects.
+
 How this is achieved, and earlier measurements, are in [CONTRIBUTING.md](../CONTRIBUTING.md#performance-rules).

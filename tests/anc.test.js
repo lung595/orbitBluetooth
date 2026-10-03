@@ -203,7 +203,8 @@ for (let i = 0; i < 12; i++) { slow = Fx.emission(30, 1 / 60, slow.carry); slowG
 eq("a slow move still emits, over a few frames", slowGrains, 4);
 let carry = 0, grains = 0;
 for (let i = 0; i < 60; i++) { const e = Fx.emission(1000, 1 / 60, carry); carry = e.carry; grains += e.count; }
-eq("a wild drag is capped at 120 grains a second", grains, 120);
+// Float carry can land one grain short over a second, so the cap is a bound, not an exact count.
+eq("a wild drag is capped at 80 grains a second", grains <= 80 && grains >= 79, true);
 const grain = Fx.spawn(100, 100, 40, 0, 1, 0.5, 0.5, 0.5, 0.5);
 eq("grain is born on the moon", [Math.round(grain.x), Math.round(grain.y)], [140, 100]);
 eq("going up throws it ahead (down on the right side) and outward", grain.vy > 0 && grain.vx > 0, true);

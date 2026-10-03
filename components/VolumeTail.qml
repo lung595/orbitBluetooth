@@ -36,7 +36,7 @@ Item {
             radius: d / 2
             // White hot at the head, the theme's color as it cools
             color: Qt.lighter(tail.night.ringAccent, f < 0.4 ? 1.9 : 1.5)
-            opacity: Math.pow(1 - f, 1.4) * Math.min(1, Math.abs(tail.span) / 12)
+            opacity: 0.75 * Math.pow(1 - f, 1.4) * Math.min(1, Math.abs(tail.span) / 12)
         }
     }
 }

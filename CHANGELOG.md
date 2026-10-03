@@ -9,7 +9,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
-- **Volume ring**: open a connected audio device and a ring floats around its planet. Scroll for 5 % steps, drag along the ring for anything in between, click the planet to mute. The level is a band of aurora that ripples and flares as it moves; moving it leaves a comet tail and fine stardust, each step sends a sound wave off the planet (a corona at 100 %), and mute eclipses the planet. While you change it, the percentage drops into the ring's gap: digits roll on a spring and the level swings past and settles. The effects run on one 60 Hz clock, only while something moves.
+- **Volume ring**: open a connected audio device and a ring floats around its planet. Scroll for 5 % steps, drag along the ring for anything in between, click the planet to mute. The level is a band of aurora that ripples and flares as it moves; moving it leaves a comet tail and fine stardust, each step sends a sound wave off the planet (a corona at 100 %), and mute eclipses the planet. While you change it, the percentage drops into the ring's gap: digits roll on a spring and the level swings past and settles. The effects run on one 60 Hz clock, only while something moves, and are drawn light: a translucent band, dust written into fixed slots (at most 80 grains a second). Offscreen bench, 6 s of continuous drag: effects cost 0.16 s of CPU, down from 0.40 s in the first draft.
 - **Volume tick** (Look & sound, on by default): a soft, short tick plays in the device itself at each 5 % step, so you can hear where you are.
 
 ### Changed

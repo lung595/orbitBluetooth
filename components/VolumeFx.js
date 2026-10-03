@@ -30,7 +30,7 @@ function band(cx, cy, radius, thickness, startDeg, sweepDeg, level, phase, amp) 
     const span = sweepDeg * clamp01(level);
     if (span < 0.5)
         return [];
-    const n = Math.max(2, Math.ceil(span / 2)); // a point every 2 degrees
+    const n = Math.max(2, Math.ceil(span / 4)); // a point every 4 degrees: plenty for long waves
     const outer = [];
     const inner = [];
     for (let i = 0; i <= n; i++) {
@@ -50,7 +50,7 @@ function filament(cx, cy, radius, startDeg, sweepDeg, level, phase, amp) {
     const span = sweepDeg * clamp01(level);
     if (span < 0.5)
         return [];
-    const n = Math.max(2, Math.ceil(span / 2));
+    const n = Math.max(2, Math.ceil(span / 4));
     const pts = [];
     for (let i = 0; i <= n; i++) {
         const deg = startDeg + span * i / n;
@@ -65,7 +65,7 @@ function filament(cx, cy, radius, startDeg, sweepDeg, level, phase, amp) {
 // moves (degrees per second), capped so a wild drag stays light. `carry`
 // keeps the fraction for the next frame, so slow moves still emit.
 function emission(speedDeg, dt, carry) {
-    const rate = Math.min(120, speedDeg * 0.8); // grains per second
+    const rate = Math.min(80, speedDeg * 0.8); // grains per second
     const total = carry + rate * dt;
     const count = Math.floor(total);
     return { count: count, carry: total - count };
@@ -86,7 +86,7 @@ function spawn(cx, cy, radius, deg, dir, r1, r2, r3, r4) {
         vy: Math.sin(heading) * speed,
         age: 0,
         life: 0.55 + r3 * 0.5, // seconds
-        size: 1.1 + r4 * 1.5, // fine dust, not confetti
+        size: 1.3 + r4 * 1.4, // fine dust, not confetti
         twinkle: r1 * 6.28
     };
 }

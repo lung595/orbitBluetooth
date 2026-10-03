@@ -62,7 +62,7 @@ Item {
             color: "transparent"
             border.width: g ? g.width : 0
             border.color: w && w.corona ? Qt.lighter(waves.night.ringAccent, 1.4) : waves.night.ringAccent
-            opacity: g ? Math.min(1, g.alpha) : 0
+            opacity: g ? 0.75 * Math.min(1, g.alpha) : 0
         }
     }
 }

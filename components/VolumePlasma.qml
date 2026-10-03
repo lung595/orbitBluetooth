@@ -53,8 +53,10 @@ Shape {
     }
     // Glow: the light the aurora throws around itself, stronger when it moves
     ShapePath {
-        strokeColor: Theme.withAlpha(plasma.night.ringAccent, plasma.muted ? 0 : 0.14 + 0.16 * plasma.energy)
-        strokeWidth: plasma.thickness + 7 + 4 * plasma.energy
+        strokeColor: Theme.withAlpha(plasma.night.ringAccent, plasma.muted ? 0 : 0.08 + 0.12 * plasma.energy)
+        // Fixed width: only its color follows the energy, so the arc is not
+        // rebuilt on every frame
+        strokeWidth: plasma.thickness + 9
         fillColor: "transparent"
         capStyle: ShapePath.RoundCap
         PathAngleArc {
@@ -75,19 +77,19 @@ Shape {
             angle: 240
             GradientStop {
                 position: 0
-                color: plasma.night.ringAccent
+                color: Theme.withAlpha(plasma.night.ringAccent, 0.85)
             }
             GradientStop {
                 position: plasma.head
-                color: Qt.lighter(plasma.night.ringAccent, 1.6)
+                color: Theme.withAlpha(Qt.lighter(plasma.night.ringAccent, 1.6), 0.85)
             }
             GradientStop {
                 position: plasma.head + (1 - plasma.head) * 0.45
-                color: plasma.night.ringAccent
+                color: Theme.withAlpha(plasma.night.ringAccent, 0.6)
             }
             GradientStop {
                 position: 1
-                color: Theme.withAlpha(plasma.night.both(Theme.tertiary), 0.45)
+                color: Theme.withAlpha(plasma.night.both(Theme.tertiary), 0.28)
             }
         }
         PathPolyline {
@@ -96,7 +98,7 @@ Shape {
     }
     // A bright filament runs through the middle, like the core of a curtain
     ShapePath {
-        strokeColor: Theme.withAlpha(plasma.night.ink(1), 0.35 + 0.4 * plasma.energy)
+        strokeColor: Theme.withAlpha(plasma.night.ink(1), 0.25 + 0.3 * plasma.energy)
         strokeWidth: 1
         fillColor: "transparent"
         capStyle: ShapePath.RoundCap
