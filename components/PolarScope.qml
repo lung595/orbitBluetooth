@@ -49,7 +49,8 @@ Item {
     readonly property real outer: Math.max(10, Math.min(width / 2 - 14, height - 34))
     // Alone (an output with no level of its own), this PC's half takes the room
     readonly property real inner: hasDevice ? outer * 0.44 : outer * 0.82
-    readonly property real stroke: Math.max(3, outer * 0.035)
+    // Thin and quiet (D263): a hairline track, a fine lit arc
+    readonly property real stroke: Math.max(1.75, outer * 0.016)
 
     // The caller may pass night colors when the scope sits on a dark screen
     property color deviceColor: Theme.primary
@@ -169,6 +170,8 @@ Item {
         color: scope.hasDevice ? scope.deviceColor : scope.pcColor
         color2: scope.pcColor
         quiet: scope.hasDevice ? scope.deviceMuted || scope.pcMuted : scope.pcMuted
+        // As loud as it is heard: the device's level times this PC's
+        gain: scope.hasDevice ? (scope.deviceMuted || scope.pcMuted ? 0 : scope._dev * scope._pc) : (scope.pcMuted ? 0 : scope._pc)
     }
 
     // A faint baseline, as on a goniometer
@@ -187,26 +190,26 @@ Item {
         // Tracks: where each level can go
         Arc {
             radius: scope.outer
-            strokeWidth: 1.5
+            strokeWidth: 1
             strokeColor: scope.hasDevice ? scope.trackColor : "transparent"
         }
         Arc {
             radius: scope.inner
-            strokeWidth: 1.5
+            strokeWidth: 1
             strokeColor: scope.trackColor
         }
         // Glow under each lit arc
         Arc {
             radius: scope.outer
             sweep: Polar.arc("outer", scope._dev).sweep
-            strokeWidth: scope.stroke * 3.2
-            strokeColor: scope.hasDevice && scope._dev > 0.001 ? Theme.withAlpha(scope.deviceMuted ? scope.mutedColor : scope.deviceColor, 0.16) : "transparent"
+            strokeWidth: scope.stroke * 4
+            strokeColor: scope.hasDevice && scope._dev > 0.001 ? Theme.withAlpha(scope.deviceMuted ? scope.mutedColor : scope.deviceColor, 0.07) : "transparent"
         }
         Arc {
             radius: scope.inner
             sweep: Polar.arc("inner", scope._pc).sweep
-            strokeWidth: scope.stroke * 3.2
-            strokeColor: scope._pc > 0.001 ? Theme.withAlpha(scope.pcMuted ? scope.mutedColor : scope.pcColor, 0.16) : "transparent"
+            strokeWidth: scope.stroke * 4
+            strokeColor: scope._pc > 0.001 ? Theme.withAlpha(scope.pcMuted ? scope.mutedColor : scope.pcColor, 0.07) : "transparent"
         }
         // The levels
         Arc {
@@ -224,22 +227,22 @@ Item {
     }
 
     // Shown levels: follow the real ones on a short ease (a Behavior, not a
-    // running animation: it lasts 180 ms per change), straight while dragging
+    // running animation: it lasts 260 ms per change), straight while dragging
     property string dragging: ""
     property real _dev: Math.max(0, deviceLevel)
     property real _pc: pcLevel
     Behavior on _dev {
         enabled: scope.motion && scope.dragging !== "device"
         NumberAnimation {
-            duration: 180
-            easing.type: Easing.OutCubic
+            duration: 260
+            easing.type: Easing.OutQuint
         }
     }
     Behavior on _pc {
         enabled: scope.motion && scope.dragging !== "pc"
         NumberAnimation {
-            duration: 180
-            easing.type: Easing.OutCubic
+            duration: 260
+            easing.type: Easing.OutQuint
         }
     }
 
@@ -298,14 +301,14 @@ Item {
         property color tint: "white"
         property bool hollow: false
         property bool big: false
-        readonly property real knob: big ? 14 : 10
+        readonly property real knob: big ? 11 : 8
         width: knob
         height: knob
         radius: knob / 2
         x: scope.cx + Math.cos(deg * Math.PI / 180) * radiusAt - knob / 2
         y: scope.cy + Math.sin(deg * Math.PI / 180) * radiusAt - knob / 2
         color: hollow ? scope.hollowColor : scope.inkColor
-        border.width: 2
+        border.width: 1.5
         border.color: tint
     }
 

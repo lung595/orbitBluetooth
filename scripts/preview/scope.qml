@@ -3,14 +3,14 @@ import QtQuick.Window
 import qs.Common
 import "../../components"
 
-// Offscreen render of the volume pop-up's vectorscope in each visualizer
+// Offscreen render of the volume vectorscope, at the Dank Island sheet size (460 x 176), in each visualizer
 // style, from a made-up stereo frame (no real sound or device involved).
 // Usage: qml -I imports scope.qml -- <out.png>
 Window {
     id: win
     readonly property string out: Qt.application.arguments[Qt.application.arguments.length - 1]
-    width: 2 * 420 + 3 * 16
-    height: 2 * 236 + 3 * 16
+    width: 2 * 460 + 3 * 16
+    height: 2 * 176 + 3 * 16
     visible: true
     color: "#2b3a24"
 
@@ -31,8 +31,8 @@ Window {
             Rectangle {
                 id: frameBox
                 required property string modelData
-                width: 420
-                height: 236
+                width: 460
+                height: 176
                 radius: Theme.cornerRadius
                 color: Theme.withAlpha(Theme.surfaceContainer, 0.92)
                 border.color: Theme.withAlpha(Theme.outline, 0.4)

@@ -8,9 +8,9 @@ import "DeviceCatalog.js" as Catalog
 
 // The volume pop-up, without opening anything (D252, D258): whenever a
 // level of the output in use changes (volume keys, `dms ipc call`, the
-// device's own buttons through AVRCP, DMS's slider, another app), a
-// VolumePopup shows the two volumes on every screen, as DMS does with its
-// OSD. Event-driven: it listens to PipeWire's change signals, nothing polls.
+// device's own buttons through AVRCP, DMS's slider, another app), the two
+// volumes show on every screen, as DMS does with its OSD: inside the Dank
+// Island where there is one (IslandFace, D263), else in a VolumePopup. Event-driven: it listens to PipeWire's change signals, nothing polls.
 // Hidden, nothing runs: the pop-ups' content is unloaded and the one sound
 // feed they share (cava) is stopped.
 Item {
@@ -77,9 +77,15 @@ Item {
         Qt.callLater(_showAll);
     }
     function _showAll() {
+        const inIsland = _showInIslands();
         const list = popups.instances;
         for (let i = 0; i < list.length; i++) {
             const p = list[i];
+            if (inIsland.indexOf(p.modelData) !== -1) {
+                if (p.shouldBeVisible)
+                    p.hide();
+                continue;
+            }
             // A level set from the pop-up itself: it stays, the clock restarts
             if (SessionData.suppressOSD) {
                 if (p.shouldBeVisible)
@@ -91,17 +97,120 @@ Item {
         _quietIsland();
     }
 
-    // A Dank Island shows the volume itself, without DMS's OSD manager.
-    // Its own controller hands the transient volume face back, in memory
-    // only (no setting written, D259, D261); an island the user opened
-    // on purpose, or showing anything else, is left alone
-    function _quietIsland() {
+    // --- Inside the Dank Island (D263) ----------------------------------------------
+    // The island has no room for plugins: Orbit finds its volume sheet (the
+    // expanded face of the "volume" activity) and adds its face to it, in
+    // memory. Where that sheet cannot be found (another DMS version), the
+    // island's own volume face is sent home and the pop-up shows instead.
+    property var _faces: []
+
+    // The screens the volume showed on inside their island
+    function _showInIslands() {
+        const done = [];
         const hosts = PopoutService.dankIslandRouter?.hosts?.() ?? [];
         for (let i = 0; i < hosts.length; i++) {
-            const c = hosts[i]?.islandController;
-            if (c && c.activeActivity === "volume" && !c.expanded)
+            const host = hosts[i];
+            const c = host?.islandController;
+            if (!c)
+                continue;
+            const face = mode === "replace" ? _faceFor(host) : null;
+            if (face) {
+                if (SessionData.suppressOSD)
+                    face.keep();
+                else
+                    face.open();
+                done.push(host.screen);
+            } else if (c.activeActivity === "volume" && !c.expanded) {
+                // In memory only (no setting written, D259, D261); an island
+                // the user opened on purpose is left alone
                 c.finishTransient();
+            }
         }
+        return done;
+    }
+
+    function _faceFor(host) {
+        const sheet = _volumeSheet(host);
+        if (!sheet)
+            return null;
+        const kept = [];
+        let face = null;
+        for (let i = 0; i < _faces.length; i++) {
+            const f = _faces[i];
+            // A screen gone takes its island, and the face in it, along
+            if (!f)
+                continue;
+            kept.push(f);
+            if (f.parent === sheet)
+                face = f;
+        }
+        if (!face) {
+            face = faceComponent.createObject(sheet, {
+                "overlay": root,
+                "controller": host.islandController
+            });
+            if (face)
+                kept.push(face);
+        }
+        _faces = kept;
+        return face;
+    }
+
+    // The island's content host, then its "volume" expanded face: a Loader
+    // holding DMS's system sheet (the compact face has a slot position)
+    function _volumeSheet(host) {
+        const content = _find(host.contentItem, o => o.systemExpandedComponent !== undefined && o.renderedActivity !== undefined, 0);
+        if (!content)
+            return null;
+        const kids = content.children;
+        for (let i = 0; i < kids.length; i++) {
+            const k = kids[i];
+            if (k.activity === "volume" && k.sourceComponent === content.systemExpandedComponent && k.alongPos === undefined)
+                return k;
+        }
+        return null;
+    }
+    function _find(item, test, depth) {
+        if (!item || depth > 8)
+            return null;
+        if (test(item))
+            return item;
+        const kids = item.children || [];
+        for (let i = 0; i < kids.length; i++) {
+            const hit = _find(kids[i], test, depth + 1);
+            if (hit)
+                return hit;
+        }
+        return null;
+    }
+
+    Component {
+        id: faceComponent
+        IslandFace {}
+    }
+
+    // How many island faces show: the sound feed runs only while one does
+    property int _islandCount: 0
+    property var _islandOpen: []
+    function islandShown(face, on) {
+        const list = _islandOpen.filter(f => f && f !== face);
+        if (on)
+            list.push(face);
+        _islandOpen = list;
+        _islandCount = list.length;
+    }
+
+    // Unloaded: the faces go, and an island left grown by Orbit shrinks back
+    // (destroying is fine here, creating is not: P130)
+    Component.onDestruction: {
+        for (let i = 0; i < _faces.length; i++) {
+            const f = _faces[i];
+            if (!f)
+                continue;
+            f.close();
+            f.destroy();
+        }
+        _faces = [];
     }
 
     Connections {
@@ -125,7 +234,8 @@ Item {
 
     // --- Pop-ups and their sound ----------------------------------------------------
     // The screens DMS shows its volume on (Settings → OSD), Dank Island
-    // screens included: there the island's volume face steps aside (D261)
+    // screens included: a pop-up there only shows if the island cannot
+    // hold Orbit's face (D261, D263)
     readonly property var screens: {
         // Read explicitly so the binding re-runs when a screen or a screen
         // preference changes: getFilteredScreens() hides these reads
@@ -144,6 +254,8 @@ Item {
     }
 
     readonly property bool anyShown: {
+        if (_islandCount > 0)
+            return true;
         const list = popups.instances;
         for (let i = 0; i < list.length; i++)
             if (list[i].shouldBeVisible)

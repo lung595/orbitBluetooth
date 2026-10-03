@@ -23,7 +23,7 @@ const Volume = load("Volume.js", ["start", "sweep", "clamp", "step", "nudge", "v
 const Fx = load("VolumeFx.js", ["clamp01", "ripple", "band", "filament", "emission", "spawn", "step", "lifeT", "follow", "wave"]);
 const Guard = load("Guard.js", ["offerFamily", "hasInput", "refused", "validPath", "parseUuids"]);
 const Cover = load("Cover.js", ["covered"]);
-const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "arc", "end", "point", "angleOf", "valueAt", "zone", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "levelAt", "reach", "rayAngles", "follow"]);
+const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "arc", "end", "point", "angleOf", "valueAt", "zone", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "levelAt", "reach", "rayAngles", "follow", "scaleFor", "ease"]);
 const Route = load("Route.js", ["addressKey", "virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "filterArgs", "muteTarget", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "shownLevels"]);
 
 let count = 0, failures = 0;
@@ -326,7 +326,11 @@ eq("no frame: no level", Polar.levelAt(null, 200), 0);
 eq("silence keeps a faint ring, full reaches the edge", [Polar.reach(0, 100), Polar.reach(1, 100)], [16, 100]);
 const ra = Polar.rayAngles(4);
 eq("rays: two per band, inside the half circle, symmetric", [ra.length, ra.every(d => d > 180 && d < 360), ra[0] + ra[1]], [8, true, 540]);
-eq("meter: up at once, down slowly", [Polar.follow(0, 1, 0.05), Polar.follow(1, 0, 0.05) > 0.6], [1, true]);
+eq("meter: up fast, down slowly", [Polar.follow(0, 1, 0.05) > 0.55, Polar.follow(1, 0, 0.05) > 0.7], [true, true]);
+eq("meter: the same glide at 30 and 60 Hz", Math.abs(Polar.follow(Polar.follow(0, 1, 1 / 60), 1, 1 / 60) - Polar.follow(0, 1, 1 / 30)) < 1e-9, true);
+eq("level curve stays inside 0..1 on a spike", [0, 0.25, 0.5, 0.75, 1].every(f => { const v = Polar.levelAt({ "l": [0, 1, 0, 1], "r": [0, 0, 0, 0] }, 270 - f * 90); return v >= 0 && v <= 1; }), true);
+eq("picture grows with the volume", [Polar.scaleFor(0), Polar.scaleFor(1), Polar.scaleFor(0.25) < Polar.scaleFor(0.5)], [0.22, 1, true]);
+eq("ease reaches its target", Math.abs(Polar.ease(0, 1, 2, 10) - 1) < 1e-6, true);
 eq("cava config", Polar.cavaConfig("orbit_pc_AA.monitor", 60, 8).split("\n").filter(l => /source|bars|framerate|channels/.test(l)), ["framerate = 60", "bars = 16", "source = orbit_pc_AA.monitor", "channels = stereo"]);
 eq("cava config refuses odd names", [Polar.cavaConfig("x\nmethod = fifo", 60, 8), Polar.cavaConfig("", 60, 8)], [null, null]);
 eq("foot icons", [Route.iconFor("headphonesPremium"), Route.iconFor("earbudsStem"), Route.iconFor("soundbar"), Route.iconFor("bluetooth")], ["headphones", "earbuds", "speaker", "speaker"]);

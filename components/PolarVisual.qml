@@ -7,7 +7,7 @@ import "Polar.js" as Polar
 //  - points: a dense cloud, each dot born from one band of the latest
 //    frame (Polar.spawn), fading as it drifts outward like phosphor;
 //  - rays:   the spectrum as a fan of rays with falling peak marks;
-//  - waves:  the spectrum as a curve, its last shapes rippling outward.
+//  - waves:  the spectrum as one live curve, nothing left behind.
 // Moved by PolarScope's clock (advance), which stops once `alive` is 0.
 Item {
     id: vis
@@ -22,6 +22,12 @@ Item {
     // Muted: the picture dims instead of vanishing, the sound still flows
     property bool quiet: false
 
+    // The volume heard (0..1): the picture is drawn that big (Polar.scaleFor),
+    // eased on the clock so a volume step makes it grow, not jump
+    property real gain: 1
+    property real _gain: gain
+    readonly property real _r: radius * Polar.scaleFor(_gain)
+
     // Something is still on screen: the clock keeps running
     property int alive: 0
 
@@ -33,16 +39,14 @@ Item {
     property real _carry: 0
     property int _band: 0
 
-    // --- Rays and waves: meter-like levels, and the wave's echoes ---------------
+    // --- Rays and waves: meter-like levels ----------------------------------------
     readonly property int raysPerSide: 16
     readonly property int waveSteps: 72
-    readonly property int echoes: 5
     property var _levels: ({ "l": [], "r": [] })
     property var _peaks: []
-    property var _echo: []
-    property real _echoClock: 0
 
     function advance(dt, frame) {
+        _gain = Polar.ease(_gain, gain, dt, 9);
         if (style === "points")
             _advanceDots(dt, frame);
         else if (style === "rays" || style === "waves")
@@ -68,7 +72,7 @@ Item {
                 // Bands in turn, so every part of the sound gets its dots
                 _band = (_band + 1) % bands;
                 _carry -= 1;
-                const p = Polar.spawn(frame, _band, radius, Math.random(), Math.random(), Math.random());
+                const p = Polar.spawn(frame, _band, _r, Math.random(), Math.random(), Math.random());
                 if (p)
                     kept.push(p);
             }
@@ -101,24 +105,6 @@ Item {
                     live++;
             }
             _peaks = peaks;
-        } else {
-            // A new echo every 70 ms; each one grows and fades
-            _echoClock += dt;
-            const echo = [];
-            for (let k = 0; k < _echo.length; k++) {
-                const e = _echo[k];
-                e.age += dt;
-                if (e.age < 0.42)
-                    echo.push(e);
-            }
-            if (_echoClock >= 0.07 && live > 0) {
-                _echoClock = 0;
-                echo.push({ "shape": _shape(next), "age": 0 });
-                while (echo.length > echoes)
-                    echo.shift();
-            }
-            _echo = echo;
-            live += echo.length;
         }
         alive = live;
     }
@@ -128,7 +114,7 @@ Item {
         const out = [];
         for (let s = 0; s <= waveSteps; s++) {
             const deg = Polar.LEFT + 2 + s * (176 / waveSteps);
-            out.push(Polar.reach(Polar.levelAt(levels, deg), radius));
+            out.push(Polar.reach(Polar.levelAt(levels, deg), _r));
         }
         return out;
     }
@@ -138,7 +124,7 @@ Item {
         _carry = 0;
         _levels = { "l": [], "r": [] };
         _peaks = [];
-        _echo = [];
+        _gain = gain;
         alive = 0;
         canvas.requestPaint();
     }
@@ -185,7 +171,7 @@ Item {
                 const p = vis._dots[i];
                 const fade = (1 - p.life) * (1 - p.life);
                 const g = Math.min(groups - 1, Math.floor(fade * groups));
-                const tone = Math.min(tones - 1, Math.floor(p.dist / Math.max(1, vis.radius) * tones));
+                const tone = Math.min(tones - 1, Math.floor(p.dist / Math.max(1, vis._r) * tones));
                 paths[tone * groups + g].push(p);
             }
             for (let tone = 0; tone < tones; tone++) {
@@ -214,12 +200,13 @@ Item {
 
         function drawRays(ctx, dim) {
             const angles = Polar.rayAngles(vis.raysPerSide);
-            const base = Polar.reach(0, vis.radius);
-            const w = Math.max(2, vis.radius * 87 / vis.raysPerSide * Math.PI / 180 * 0.3);
+            const R = vis._r;
+            const base = Polar.reach(0, R);
+            const w = Math.max(1.5, R * 87 / vis.raysPerSide * Math.PI / 180 * 0.22);
             ctx.lineCap = "round";
             for (let k = 0; k < angles.length; k++) {
                 const v = Polar.levelAt(vis._levels, angles[k]);
-                const end = Polar.reach(v, vis.radius);
+                const end = Polar.reach(v, R);
                 const from = xy(angles[k], base), to = xy(angles[k], end);
                 const grad = ctx.createLinearGradient(from[0], from[1], to[0], to[1]);
                 grad.addColorStop(0, rgba(vis.color2, 0.25 * dim));
@@ -233,52 +220,46 @@ Item {
                     ctx.stroke();
                 }
                 // The peak mark, a short tick across the ray
-                const pk = Polar.reach(vis._peaks[k] || 0, vis.radius) + w * 1.6;
+                const pk = Polar.reach(vis._peaks[k] || 0, R) + w * 1.6;
                 const at = xy(angles[k], pk);
                 ctx.beginPath();
-                ctx.arc(at[0], at[1], w * 0.55, 0, Math.PI * 2);
+                ctx.arc(at[0], at[1], w * 0.5, 0, Math.PI * 2);
                 ctx.fillStyle = rgba(vis.color, 0.9 * dim);
                 ctx.fill();
             }
         }
 
+        // Through the outline's points on curves (each corner rounded to the
+        // middle of its neighbours), so the wave has no sharp edge
         function outline(ctx, shape, grow) {
+            const pts = [];
+            for (let s = 0; s < shape.length; s++)
+                pts.push(xy(Polar.LEFT + 2 + s * (176 / (shape.length - 1)), shape[s] * grow));
             ctx.beginPath();
-            for (let s = 0; s < shape.length; s++) {
-                const deg = Polar.LEFT + 2 + s * (176 / (shape.length - 1));
-                const at = xy(deg, shape[s] * grow);
-                if (s === 0)
-                    ctx.moveTo(at[0], at[1]);
-                else
-                    ctx.lineTo(at[0], at[1]);
-            }
+            ctx.moveTo(pts[0][0], pts[0][1]);
+            for (let s = 1; s < pts.length - 1; s++)
+                ctx.quadraticCurveTo(pts[s][0], pts[s][1], (pts[s][0] + pts[s + 1][0]) / 2, (pts[s][1] + pts[s + 1][1]) / 2);
+            const last = pts[pts.length - 1];
+            ctx.lineTo(last[0], last[1]);
         }
         function drawWaves(ctx, dim) {
             ctx.lineJoin = "round";
             ctx.lineCap = "round";
-            // Echoes, oldest first: growing outward and fading
-            for (let k = 0; k < vis._echo.length; k++) {
-                const e = vis._echo[k];
-                const t = e.age / 0.42;
-                outline(ctx, e.shape, 1 + 0.22 * t);
-                ctx.lineWidth = Math.max(1, vis.radius * 0.012);
-                ctx.strokeStyle = rgba(mix(vis.color, vis.color2, t), 0.5 * (1 - t) * dim);
-                ctx.stroke();
-            }
             // The live wave: a soft fill down to the center, a glow, a line
             const shape = vis._shape(vis._levels);
             outline(ctx, shape, 1);
             ctx.lineTo(vis.centerX, vis.centerY);
             ctx.closePath();
-            const fill = ctx.createRadialGradient(vis.centerX, vis.centerY, 0, vis.centerX, vis.centerY, vis.radius);
+            const fill = ctx.createRadialGradient(vis.centerX, vis.centerY, 0, vis.centerX, vis.centerY, Math.max(1, vis._r));
             fill.addColorStop(0, rgba(vis.color2, 0.22 * dim));
             fill.addColorStop(1, rgba(vis.color, 0.04 * dim));
             ctx.fillStyle = fill;
             ctx.fill();
             for (let pass = 0; pass < 2; pass++) {
                 outline(ctx, shape, 1);
-                ctx.lineWidth = Math.max(1.5, vis.radius * (pass === 0 ? 0.05 : 0.016));
-                ctx.strokeStyle = rgba(vis.color, (pass === 0 ? 0.12 : 0.95) * dim);
+                // A thin line over a faint, wider glow
+                ctx.lineWidth = pass === 0 ? Math.max(3, vis._r * 0.035) : 1.25;
+                ctx.strokeStyle = rgba(vis.color, (pass === 0 ? 0.08 : 0.9) * dim);
                 ctx.stroke();
             }
         }

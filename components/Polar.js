@@ -152,11 +152,22 @@ function levelAt(frame, deg) {
     if (!frame || !frame.l || !frame.l.length)
         return 0;
     const side = deg < TOP ? frame.l : frame.r;
+    const n = side.length;
     const t = Math.max(0, Math.min(1, Math.abs(deg - TOP) / 90));
-    const x = t * (side.length - 1);
+    const x = t * (n - 1);
     const i = Math.floor(x);
-    const j = Math.min(side.length - 1, i + 1);
-    return clamp01(side[i] + (side[j] - side[i]) * (x - i));
+    const at = k => side[Math.max(0, Math.min(n - 1, k))];
+    // A Catmull-Rom curve through the bands, not straight segments: the
+    // outline stays round between bands instead of breaking into corners
+    const f = x - i, p0 = at(i - 1), p1 = at(i), p2 = at(i + 1), p3 = at(i + 2);
+    const v = 0.5 * (2 * p1 + (p2 - p0) * f + (2 * p0 - 5 * p1 + 4 * p2 - p3) * f * f + (3 * p1 - p0 - 3 * p2 + p3) * f * f * f);
+    return clamp01(v);
+}
+
+// How big the picture is drawn at the volume the user hears: it grows and
+// shrinks with the level, never quite vanishing (the sound still flows)
+function scaleFor(gain) {
+    return 0.22 + 0.78 * Math.sqrt(clamp01(gain));
 }
 
 // Where a ray or a wave reaches at that level: never quite at the center,
@@ -176,11 +187,16 @@ function rayAngles(count) {
     return out;
 }
 
-// Meter ballistics: a level jumps up at once and falls back slowly, as
-// on a studio meter, so the picture breathes instead of flickering
+// Meter ballistics: a level rises fast and falls back slowly, as on a
+// studio meter, both eased over a few frames so the picture glides
+// instead of jumping from one cava frame to the next
 function follow(prev, target, dt) {
     const p = clamp01(prev), t = clamp01(target);
-    if (t >= p)
-        return p + (t - p) * Math.min(1, dt * 40);
-    return p + (t - p) * Math.min(1, dt * 7);
+    const rate = t >= p ? 18 : 6;
+    return p + (t - p) * (1 - Math.exp(-dt * rate));
+}
+
+// A value eased toward another, the same at any frame rate
+function ease(prev, target, dt, rate) {
+    return prev + (target - prev) * (1 - Math.exp(-dt * rate));
 }

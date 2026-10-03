@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell.Wayland
 import qs.Common
-import qs.Widgets
 import "Route.js" as Route
 
 // The volume pop-up on one screen (D252, D258): DMS's own OSD window
@@ -47,8 +46,6 @@ DankOSD {
     WlrLayershell.margins.left: Math.max(0, Theme.snap(placeX - shadowBuffer, dpr))
     WlrLayershell.margins.top: Math.max(0, Theme.snap(placeY - shadowBuffer, dpr))
 
-    readonly property NightColors night: NightColors {}
-
     content: Item {
         anchors.fill: parent
 
@@ -58,61 +55,13 @@ DankOSD {
             onClicked: popup.hide()
         }
 
-        // The scope's own screen: dark in every theme, set inside DMS's
-        // themed frame like Orbit's sky in its pop-out
-        Rectangle {
-            id: screen
+        ScopeScreen {
             anchors.fill: parent
-            anchors.margins: Theme.spacingS
-            radius: Math.max(0, Theme.cornerRadius - Theme.spacingS)
-            gradient: Gradient {
-                GradientStop {
-                    position: 0
-                    color: Qt.tint(popup.night.sky, Theme.withAlpha(popup.night.tertiary, 0.05))
-                }
-                GradientStop {
-                    position: 1
-                    color: Qt.tint(popup.night.skyDeep, Theme.withAlpha(popup.night.primary, 0.06))
-                }
-            }
-        }
-
-        PolarScope {
-            id: scope
-            // Drawn lying flat, then turned upright on a side
-            anchors.centerIn: screen
-            width: (popup.layout.upright ? screen.height : screen.width) - Theme.spacingXS * 2
-            height: (popup.layout.upright ? screen.width : screen.height) - Theme.spacingXS * 2
-            rotation: popup.layout.rotation
-
-            style: popup.overlay.style
-            grid: true
-            deviceColor: popup.night.primary
-            pcColor: popup.night.tertiary
-            trackColor: popup.night.ink(0.14)
-            inkColor: popup.night.ink(0.92)
-            mutedColor: popup.night.ink(0.4)
-            hollowColor: popup.night.sky
-
-            deviceLevel: popup.overlay.deviceLevel
-            pcLevel: popup.overlay.pcLevel
-            deviceMuted: popup.overlay.deviceMuted
-            pcMuted: popup.overlay.pcMuted
-            deviceIcon: popup.overlay.deviceIcon
-            pcIcon: popup.overlay.pcIcon
-            feed: popup.overlay.feed
+            overlay: popup.overlay
             live: popup.shouldBeVisible
-            motion: !popup.overlay.reduceMotion
-            fps: popup.overlay.fps
-
-            onMoved: (part, level) => {
-                popup.overlay.setLevel(part, level);
-                popup.resetHideTimer();
-            }
-            onMuteClicked: part => {
-                popup.overlay.toggleMute(part);
-                popup.resetHideTimer();
-            }
+            upright: popup.layout.upright
+            turn: popup.layout.rotation
+            onTouched: popup.resetHideTimer()
             // The pointer over it keeps it open
             onHoveredChanged: popup.setChildHovered(hovered)
             Component.onCompleted: wake()
