@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell.Wayland
 import qs.Common
+import qs.Widgets
 import "Route.js" as Route
 
 // The volume pop-up on one screen (D252, D258): DMS's own OSD window
