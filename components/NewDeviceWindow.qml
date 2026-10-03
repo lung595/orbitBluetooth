@@ -116,15 +116,25 @@ PanelWindow {
         onRenamed: text => win.watch.pendingName = text
         onModeRequested: mode => win.watch.setMode(mode)
 
-        // Runs down while nobody answers; paused under the pointer
-        NumberAnimation on life {
-            running: win.watch.shown && win.watch.phase === "offer"
-            paused: running && sheet.hovered
-            from: 1
-            to: 0
-            duration: 30000
-            onFinished: if (win.watch.phase === "offer")
-                win.watch.later()
+        // Runs down over 30 s while nobody answers; paused under the
+        // pointer. A plain 30 Hz timer, not a QML animation: a running
+        // animation would redraw every shell window at the display rate.
+        readonly property bool offering: win.watch.shown && win.watch.phase === "offer"
+        onOfferingChanged: if (offering)
+            life = 1
+        Timer {
+            interval: 33
+            repeat: true
+            running: sheet.offering && !sheet.hovered
+            property double last: 0
+            onRunningChanged: last = Date.now()
+            onTriggered: {
+                const t = Date.now();
+                sheet.life = Math.max(0, sheet.life - (t - last) / 30000);
+                last = t;
+                if (sheet.life === 0)
+                    win.watch.later();
+            }
         }
     }
 
