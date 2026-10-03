@@ -1,6 +1,5 @@
 import QtQuick
 import Quickshell.Io
-import "Polar.js" as Polar
 import "Volume.js" as Volume
 
 // The two volumes of the device on the detail card (D250): TwoLevels for
@@ -16,6 +15,9 @@ TwoLevels {
     dev: route && address ? route.find(address) : null
     // The device plays through PipeWire: there is something to show
     readonly property bool ready: !!dev
+    // The card's own picture of the sound (the pop-up has its own)
+    soundNode: dev ? dev.sink : null
+    listening: live && ready
 
     // No level of its own: say why, with the guide's link (value 10)
     readonly property var note: ready && !deviceAudio ? {
@@ -45,24 +47,5 @@ TwoLevels {
     }
     Process {
         id: player
-    }
-
-    // The card's own feed (the pop-up has its own, shown elsewhere)
-    readonly property alias feed: soundFeed
-    ScopeFeed {
-        id: soundFeed
-        node: root.dev ? root.dev.sink : null
-        active: root.live && root.ready && !root.reduceMotion && root.style !== "none"
-        fps: root.fps
-    }
-
-    // The picture, computed once for every screen that shows it
-    readonly property alias picture: soundPicture
-    ScopeModel {
-        id: soundPicture
-        feed: soundFeed
-        style: Polar.styleOf(root.style)
-        fps: root.fps
-        gain: root.heardLevel
     }
 }

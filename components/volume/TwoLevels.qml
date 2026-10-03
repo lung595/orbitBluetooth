@@ -1,14 +1,16 @@
 import QtQuick
 import qs.Common
 import qs.Services
+import "Polar.js" as Polar
 import "Route.js" as Route
 import "../device/DeviceCatalog.js" as Catalog
 
-// The two volumes of one output (D249), as ScopeScreen reads them: the
-// device's own level and this PC's, with what a gesture on the scope does.
-// The base of VolumeOverlay (the output in use) and CardVolume (the device
-// on the detail card). A device with no level of its own, or an output
-// that is not Bluetooth, has this PC's level only (deviceLevel -1).
+// The two volumes of one output (D249) and the picture of its sound, as
+// ScopeScreen reads them: the device's own level and this PC's, with what
+// a gesture on the scope does. The base of VolumeOverlay (the output in
+// use) and CardVolume (the device on the detail card). A device with no
+// level of its own, or an output that is not Bluetooth, has this PC's
+// level only (deviceLevel -1).
 Item {
     id: levels
 
@@ -30,7 +32,7 @@ Item {
     readonly property string pcIcon: shown.ownIcon ? deviceIcon : "computer"
     // How loud it is heard: the device's level times this PC's (the
     // vectorscope's picture is drawn that big)
-    readonly property real heardLevel: deviceLevel >= 0 ? (deviceMuted || pcMuted ? 0 : deviceLevel * pcLevel) : (pcMuted ? 0 : pcLevel)
+    readonly property real heardLevel: Polar.heardLevel(deviceLevel, pcLevel, deviceMuted, pcMuted)
     // The device's name as the user sees it in Orbit (shown, never logged)
     readonly property string deviceName: dev ? Catalog.deviceName(dev.device) : ""
 
@@ -40,6 +42,27 @@ Item {
 
     // A gesture moved a level (CardVolume plays its tick on it)
     signal levelMoved(real before, real after)
+
+    // --- The sound's picture -----------------------------------------------------
+    // One cava and one picture for every screen that shows them, only while
+    // someone looks (`listening`, set by the caller): nothing runs at rest
+    property bool listening: false
+    // The PipeWire sink whose sound is shown
+    property var soundNode: null
+    ScopeFeed {
+        id: soundFeed
+        node: levels.soundNode
+        active: levels.listening && !levels.reduceMotion && levels.style !== "none"
+        fps: levels.fps
+    }
+    readonly property alias picture: soundPicture
+    ScopeModel {
+        id: soundPicture
+        feed: soundFeed
+        style: Polar.styleOf(levels.style)
+        fps: levels.fps
+        gain: levels.heardLevel
+    }
 
     // --- Gestures ----------------------------------------------------------------
     // DMS's own OSD would answer a level we set: keep it quiet a moment, as

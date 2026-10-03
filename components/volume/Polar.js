@@ -144,6 +144,11 @@ function styleOf(name) {
     return ["points", "rays", "waves", "none"].indexOf(name) >= 0 ? name : "points";
 }
 
+// A frame with no band: rays and waves start from it, and fall back to it
+function emptyLevels() {
+    return { "l": [], "r": [] };
+}
+
 // Rays and waves lay the spectrum over the half circle: the left channel on
 // the left quarter, the right one on the right, low notes at the top (where
 // a centered bass sits on a scope) and high notes toward each side. The
@@ -162,6 +167,15 @@ function levelAt(frame, deg) {
     const f = x - i, p0 = at(i - 1), p1 = at(i), p2 = at(i + 1), p3 = at(i + 2);
     const v = 0.5 * (2 * p1 + (p2 - p0) * f + (2 * p0 - 5 * p1 + 4 * p2 - p3) * f * f + (3 * p1 - p0 - 3 * p2 + p3) * f * f * f);
     return clamp01(v);
+}
+
+// How loud the sound is heard (0..1): the device's own level times this
+// PC's, or this PC's alone for an output with no level of its own (device
+// -1). Muted anywhere, nothing is heard.
+function heardLevel(device, pc, deviceMuted, pcMuted) {
+    if (device < 0)
+        return pcMuted ? 0 : pc;
+    return deviceMuted || pcMuted ? 0 : device * pc;
 }
 
 // How big the picture is drawn at the volume the user hears: it grows and

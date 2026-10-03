@@ -24,6 +24,7 @@ Item {
     readonly property real _r: radius * Polar.scaleFor(model.heard)
     readonly property int waveSteps: 72
 
+    // Hidden, nothing is painted; shown again, the latest picture at once
     Connections {
         target: vis.model
         function onUpdated() {
@@ -31,6 +32,8 @@ Item {
                 canvas.requestPaint();
         }
     }
+    onVisibleChanged: if (visible)
+        canvas.requestPaint()
 
     // The wave's outline: one reach per step, from left to right
     function _shape(levels) {

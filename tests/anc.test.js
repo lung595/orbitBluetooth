@@ -30,7 +30,7 @@ const Volume = load("Volume.js", ["clamp", "step", "validSink"]);
 const Guard = load("Guard.js", ["offerFamily", "hasInput", "refused", "validPath", "parseUuids"]);
 const Cover = load("Cover.js", ["covered"]);
 const Physics = load("Physics.js", ["spring", "norm", "ringSlot", "beltSlot", "beltRadius", "dragTarget", "separate", "moving"]);
-const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "arc", "end", "point", "angleOf", "valueAt", "zone", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "levelAt", "reach", "rayAngles", "follow", "scaleFor", "ease"]);
+const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "arc", "end", "point", "angleOf", "valueAt", "zone", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
 const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded", "note"]);
 const Route = load("Route.js", ["addressKey", "virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "filterArgs", "muteTarget", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "shownLevels"]);
@@ -270,6 +270,7 @@ eq("mono sits on the vertical", Polar.spawn(mono, 0, 100, 0.5, 1, 0).deg, 270);
 eq("hard left / right go to the sides", [Polar.spawn(hardL, 0, 100, 0.5, 1, 0).deg, Polar.spawn(hardR, 0, 100, 0.5, 1, 0).deg], [183, 357]);
 eq("louder goes further", Polar.spawn({ l: [1], r: [1] }, 0, 100, 0.5, 1, 0).dist > Polar.spawn({ l: [0.2], r: [0.2] }, 0, 100, 0.5, 1, 0).dist, true);
 eq("silence spawns nothing", [Polar.spawn({ l: [0], r: [0.01] }, 0, 100, 0.5, 0.5, 0.5), Polar.spawn(mono, 4, 100, 0.5, 0.5, 0.5)], [null, null]);
+eq("empty levels are a fresh frame each time", [Polar.emptyLevels(), Polar.emptyLevels() !== Polar.emptyLevels()], [{ l: [], r: [] }, true]);
 eq("visualizer style: unknown falls back to points", [Polar.styleOf("rays"), Polar.styleOf("waves"), Polar.styleOf("none"), Polar.styleOf("x")], ["rays", "waves", "none", "points"]);
 const sp = { l: [1, 0.5, 0], r: [0.2, 0.4, 0.6] };
 eq("level at the top is the left bass, at the sides the highs", [Polar.levelAt(sp, 269.999) > 0.99, Polar.levelAt(sp, 180), Polar.levelAt(sp, 360)], [true, 0, 0.6]);
@@ -281,6 +282,8 @@ eq("rays: two per band, inside the half circle, symmetric", [ra.length, ra.every
 eq("meter: up fast, down slowly", [Polar.follow(0, 1, 0.05) > 0.55, Polar.follow(1, 0, 0.05) > 0.7], [true, true]);
 eq("meter: the same glide at 30 and 60 Hz", Math.abs(Polar.follow(Polar.follow(0, 1, 1 / 60), 1, 1 / 60) - Polar.follow(0, 1, 1 / 30)) < 1e-9, true);
 eq("level curve stays inside 0..1 on a spike", [0, 0.25, 0.5, 0.75, 1].every(f => { const v = Polar.levelAt({ "l": [0, 1, 0, 1], "r": [0, 0, 0, 0] }, 270 - f * 90); return v >= 0 && v <= 1; }), true);
+eq("heard: device level times this PC's, muted anywhere is silence", [Polar.heardLevel(0.5, 0.8, false, false), Polar.heardLevel(0.5, 0.8, true, false), Polar.heardLevel(0.5, 0.8, false, true)], [0.4, 0, 0]);
+eq("heard: no level of its own, this PC's alone", [Polar.heardLevel(-1, 0.8, true, false), Polar.heardLevel(-1, 0.8, false, true)], [0.8, 0]);
 eq("picture grows with the volume", [Polar.scaleFor(0), Polar.scaleFor(1), Polar.scaleFor(0.25) < Polar.scaleFor(0.5)], [0.22, 1, true]);
 eq("ease reaches its target", Math.abs(Polar.ease(0, 1, 2, 10) - 1) < 1e-6, true);
 eq("cava config", Polar.cavaConfig("orbit_pc_AA.monitor", 60, 8).split("\n").filter(l => /source|bars|framerate|channels/.test(l)), ["framerate = 60", "bars = 16", "source = orbit_pc_AA.monitor", "channels = stereo"]);
@@ -394,18 +397,35 @@ eq("one level, this PC's (not Bluetooth, or no own volume)", [Route.shownLevels(
     eq("a free drag follows the pointer", Physics.dragTarget(g, {}, 30, 20), { x: 30, y: 20, k: 700, zeta: 0.85 });
     const magnet = Physics.dragTarget(g, { armed: true }, 145, 50);
     eq("the ring's magnet pulls a new device in", [magnet.x < 145, magnet.k, magnet.zeta], [true, 380, 0.62]);
-    const torn = Physics.dragTarget(g, { holding: true }, 140, 50);
-    eq("a connected device dragged on its ring stays on it", [r(torn.x), r(torn.y)], [140, 50]);
+    // Pulled 10 px off its ring (norm 0.625): held back by a third
+    const held = Physics.dragTarget(g, { holding: true }, 150, 50);
+    eq("a connected device resists leaving its ring", [r(held.x), r(held.y)], [146.75, 50]);
+    eq("past the tear point it follows freely", r(Physics.dragTarget(g, { holding: true }, 180, 50).x), 180);
+    eq("armed to disconnect, the ring barely holds", r(Physics.dragTarget(g, { holding: true, armed: true }, 150, 50).x), 149.2);
     const hidden = Physics.dragTarget(Object.assign({}, g, { holeX: 0, holeY: 0 }), { hideArmed: true }, 100, 100);
     eq("aimed at the black hole, it is pulled in", [r(hidden.x), r(hidden.y), hidden.k], [45, 45, 420]);
 
-    const me = { px: 100, py: 50, inSlot: false }, other = { px: 110, py: 50 };
-    const t = { x: 100, y: 50 };
+    // Off the exact center, so the core's push has a direction
+    const me = { px: 105, py: 50, inSlot: false }, other = { px: 110, py: 50 };
+    const t = { x: 105, y: 50 };
     Physics.separate(g, me, t, [me, other], false);
-    eq("neighbours push apart, the core pushes out", t.x < 100 - 10, true);
-    const t2 = { x: 100, y: 50 };
-    Physics.separate(g, me, t2, [me], true);
-    eq("with a card open, the center is allowed", t2, { x: 100, y: 50 });
+    eq("neighbours push apart, the core pushes out", [r(t.x), r(t.y)], [79, 50]);
+    const alone = { x: 105, y: 50 };
+    Physics.separate(g, me, alone, [me], false);
+    eq("too close to the core, it is put on its edge", [r(alone.x), r(alone.y)], [121, 50]);
+    const card = { x: 105, y: 50 };
+    Physics.separate(g, me, card, [me], true);
+    eq("with a card open, the center is allowed", card, { x: 105, y: 50 });
+    const slotted = { px: 105, py: 50, inSlot: true }, slot = { x: 105, y: 50 };
+    Physics.separate(g, slotted, slot, [slotted], false);
+    eq("a body in its ring slot keeps it", slot, { x: 105, y: 50 });
+    const nearHole = { x: 140, y: 50 };
+    Physics.separate(Object.assign({}, g, { holeX: 150, holeY: 50 }), { px: 0, py: 0 }, nearHole, [], false);
+    eq("nothing settles in the black hole's reach", [r(nearHole.x), r(nearHole.y)], [127, 50]);
+    const far = { px: 150, py: 50 }, dragged = { x: 150, y: 50 }, still = { x: 150, y: 50 };
+    Physics.separate(g, far, dragged, [far, { px: 170, py: 50, dragging: true }], false);
+    Physics.separate(g, far, still, [far, { px: 170, py: 50 }], false);
+    eq("a dragged body clears a wider path", [r(dragged.x), r(still.x)], [134.29, 149.43]);
 }
 
 print(failures ? failures + "/" + count + " failed" : count + " tests passed");

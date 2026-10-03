@@ -288,7 +288,7 @@ Item {
         sourceComponent: ScopeModel {
             style: Polar.styleOf(scope.style)
             fps: scope.fps
-            gain: scope.hasDevice ? (scope.deviceMuted || scope.pcMuted ? 0 : scope._dev * scope._pc) : (scope.pcMuted ? 0 : scope._pc)
+            gain: Polar.heardLevel(scope.hasDevice ? scope._dev : -1, scope._pc, scope.deviceMuted, scope.pcMuted)
         }
     }
 

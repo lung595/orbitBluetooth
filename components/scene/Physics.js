@@ -3,9 +3,9 @@
 // Motion maths of the orbit scene: where each body wants to be, and the
 // damped spring that takes it there. Pure functions of a geometry `g` (the
 // scene itself: cx, cy, rx, ry, ringCy, ringRy, innerNorm, snapNorm,
-// outerMinNorm, bodySize, coreSize, holeX, holeY, holeHorizon); the only
-// thing they change is the body handed to spring(). Tested by
-// tests/anc.test.js.
+// outerMinNorm, bodySize, coreSize, holeX, holeY, holeHorizon); they
+// change only the body handed to spring() and the target handed to
+// separate(). Tested by tests/anc.test.js.
 
 // Critically-tuned spring step: k is the stiffness, zeta the damping ratio
 // (1 = no overshoot, used with Reduce motion)

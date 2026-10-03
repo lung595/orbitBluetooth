@@ -37,7 +37,7 @@ Item {
 
     // --- Rays and waves: meter-like levels ----------------------------------------
     readonly property int raysPerSide: 16
-    property var levels: ({ "l": [], "r": [] })
+    property var levels: Polar.emptyLevels()
     property var peaks: []
 
     property double _last: 0
@@ -53,17 +53,27 @@ Item {
             fade.stop();
             model._step(model.feed.frame);
             if (model.alive > 0)
-                fade.restart();
+                silence.restart();
+            else
+                silence.stop();
         }
         function onActiveChanged() {
             if (!model.feed.active)
                 model.clear();
         }
     }
-    // No new frame for a while (paused player): the light fades out alone
+    readonly property int _period: Math.round(1000 / Math.max(10, fps))
+    // No frame for two periods (paused player): the light starts fading out
+    // alone. Waiting a single period would race cava's own clock, and a frame
+    // a little late would get a blank step before it
+    Timer {
+        id: silence
+        interval: 2 * model._period
+        onTriggered: fade.start()
+    }
     Timer {
         id: fade
-        interval: Math.round(1000 / Math.max(10, model.fps))
+        interval: model._period
         repeat: true
         onTriggered: {
             model._step(null);
@@ -72,9 +82,10 @@ Item {
         }
     }
     // Exposed for tests: nothing runs at rest
-    readonly property bool animating: fade.running
+    readonly property bool animating: silence.running || fade.running
 
     function advance(dt, frame) {
+        const was = alive;
         heard = Polar.ease(heard, gain, dt, 9);
         if (style === "points")
             _advanceDots(dt, frame);
@@ -82,7 +93,9 @@ Item {
             _advanceLevels(dt, frame);
         else
             alive = 0;
-        updated();
+        // Silence on a blank picture: nothing new to paint
+        if (was > 0 || alive > 0)
+            updated();
     }
 
     function _advanceDots(dt, frame) {
@@ -115,7 +128,7 @@ Item {
     function _advanceLevels(dt, frame) {
         const n = frame ? frame.l.length : levels.l.length;
         let live = 0;
-        const next = { "l": [], "r": [] };
+        const next = Polar.emptyLevels();
         for (let i = 0; i < n; i++) {
             next.l.push(Polar.follow(levels.l[i] || 0, frame ? frame.l[i] : 0, dt));
             next.r.push(Polar.follow(levels.r[i] || 0, frame ? frame.r[i] : 0, dt));
@@ -145,10 +158,11 @@ Item {
     }
 
     function clear() {
+        silence.stop();
         fade.stop();
         dots = [];
         _carry = 0;
-        levels = { "l": [], "r": [] };
+        levels = Polar.emptyLevels();
         peaks = [];
         heard = gain;
         _last = 0;
