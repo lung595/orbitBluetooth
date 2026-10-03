@@ -11,6 +11,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 - **Uninstalling leaves nothing.** DMS deletes the plugin folder but keeps its settings and widgets; Orbit now erases them itself when it finds its folder gone (settings, bar, Control Center and desktop widgets with their positions, pictures cache). It waits a few seconds and checks again, so an update that re-downloads the folder keeps everything; disabling or restarting erases nothing.
 
+### Fixed
+
+- **The volume ring above a device card is whole again.** In the bar pop-up and the Control Center tile, the top of the ring around the device picture was cut by the window edge; the card now keeps exactly the room the ring and its knob need.
+
 ## 1.11.2 - 2026-10-03
 
 ### Changed

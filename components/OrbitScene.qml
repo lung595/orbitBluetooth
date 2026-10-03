@@ -62,6 +62,14 @@ Item {
     readonly property real focusGlyphScale: focusGlyphSize / bodySize
     readonly property real focusGlyphLift: focusGlyphSize * 0.2      // glyph center relative to card top
     readonly property real focusOverlap: focusGlyphLift + focusGlyphSize * 0.5 + 8
+    // Room above the card for the volume ring around the glyph: its radius
+    // (glyph / 2 + 8, VolumeRing) above the glyph center, which sits 0.2
+    // glyph below the card top, plus half the grabbed moon (14 px) and a
+    // margin. Less than this and the ring's top is cut by the window.
+    function focusHeadroomFor(glyph) {
+        return glyph * 0.3 + 8 + 7 + Theme.spacingS;
+    }
+    readonly property real focusHeadroom: focusHeadroomFor(focusGlyphSize)
     // Scene height at which the open detail card fits without scrolling (0
     // when none is open): card content, glyph overlap and margins, with the
     // glyph at its width-bound size. It does not depend on the scene's own
@@ -71,7 +79,7 @@ Item {
             return 0;
         const glyph = focusCardWidth * focusGlyphRatio;
         const content = focusCard.implicitHeight - focusOverlap - Theme.spacingL;
-        return content + glyph * 0.7 + 8 + Theme.spacingL + glyph * 0.35 + Theme.spacingM;
+        return content + glyph * 0.7 + 8 + Theme.spacingL + focusHeadroomFor(glyph) + Theme.spacingM;
     }
 
     // --- State -----------------------------------------------------------------
@@ -1525,7 +1533,7 @@ Item {
             scene: orbitRoot
             z: 15000
             width: scene.focusCardWidth
-            height: Math.min(implicitHeight, scene.height - scene.focusGlyphSize * 0.35 - Theme.spacingM)
+            height: Math.min(implicitHeight, scene.height - scene.focusHeadroom - Theme.spacingM)
             x: (scene.width - width) / 2
             y: scene.focusBody ? scene.height - height - Theme.spacingM : scene.height + 20
             opacity: scene.focusBody ? 1 : 0
