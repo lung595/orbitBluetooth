@@ -1,4 +1,4 @@
-"""Vendor protocols, by family name (the names used in components/Anc.js)."""
+"""Vendor protocols, by family name (the names used in components/noise/Anc.js)."""
 
 from .apple import Apple
 from .bose import Bose

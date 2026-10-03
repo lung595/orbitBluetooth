@@ -3,8 +3,9 @@ import qs.Common
 import qs.Services
 import qs.Widgets
 import qs.Modules.Plugins
-import "components"
-import "components/DeviceCatalog.js" as Catalog
+import "components/device"
+import "components/scene"
+import "components/device/DeviceCatalog.js" as Catalog
 
 // Bar pill + bar popout + Control Center tile. The Control Center detail is a
 // fresh instance created when the tile expands and destroyed when it

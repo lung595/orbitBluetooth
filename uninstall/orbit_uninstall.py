@@ -5,7 +5,7 @@ uninstalled, so that removing the plugin leaves nothing (value 12, D259).
 DMS deletes the plugin folder but keeps everything it stored for it: the
 entry in plugin_settings.json, the widgets in every bar, the Control Center
 tile, the desktop widgets and their positions. So when Orbit is unloaded and
-its plugin.json is gone, components/UninstallSweep.qml starts this script.
+its plugin.json is gone, components/common/UninstallSweep.qml starts this script.
 The plugin folder no longer exists by then, so the script is passed from
 memory with "python3 -c" and depends on nothing in it:
 
@@ -136,7 +136,7 @@ def edit(path, change):
 
 VOLUME_KEYS = {"XF86AudioRaiseVolume": "increment", "XF86AudioLowerVolume": "decrement"}
 # DMS's step, kept at the end of Orbit's action as its fallback. Same
-# format as components/Keys.js (Python cannot load it): change both together.
+# format as components/volume/Keys.js (Python cannot load it): change both together.
 FALLBACK_STEP = 3
 
 

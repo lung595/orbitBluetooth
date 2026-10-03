@@ -1,4 +1,5 @@
 import QtQuick
+import "components/volume"
 
 // Test of PolarScope and ScopeModel: presses land on the right half
 // circle; a level step eases on a clock that stops alone; the shared

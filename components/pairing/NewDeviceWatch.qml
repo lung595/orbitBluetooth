@@ -4,11 +4,11 @@ import Quickshell.Bluetooth
 import Quickshell.Wayland
 import Quickshell.Services.UPower
 import qs.Services
-import "DeviceCatalog.js" as Catalog
+import "../device/DeviceCatalog.js" as Catalog
 import "Offer.js" as Offer
 import "Guard.js" as Guard
-import "Pictures.js" as Pictures
-import "Anc.js" as Anc
+import "../common/Pictures.js" as Pictures
+import "../noise/Anc.js" as Anc
 
 // "New device nearby" pop-up. Lives in the daemon, so it works while every
 // Orbit view is closed:

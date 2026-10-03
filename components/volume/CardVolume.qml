@@ -27,7 +27,7 @@ TwoLevels {
     }
 
     // --- The tick, played in the device on each 5 % step --------------------------
-    readonly property string tickPath: decodeURIComponent(Qt.resolvedUrl("../sounds/volume.wav").toString().replace(/^file:\/\//, ""))
+    readonly property string tickPath: decodeURIComponent(Qt.resolvedUrl("../../sounds/volume.wav").toString().replace(/^file:\/\//, ""))
     property double _lastTick: 0
     onLevelMoved: (before, after) => {
         const sink = dev ? dev.sink : null;

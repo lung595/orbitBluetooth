@@ -2,7 +2,7 @@ import QtQuick
 import qs.Common
 import qs.Services
 import qs.Widgets
-import "DeviceCatalog.js" as Catalog
+import "../device/DeviceCatalog.js" as Catalog
 
 // Offer card for a newly found, unpaired device
 Rectangle {

@@ -2,7 +2,8 @@ import QtQuick
 import qs.Common
 import qs.Services
 import qs.Widgets
-import "Guide.js" as Guide
+import "../common"
+import "../common/Guide.js" as Guide
 
 // Bluetooth off / missing adapter. Neither is a dead end (value 10): with
 // no adapter, the GitHub mark opens the guide; if "Turn on" changes nothing

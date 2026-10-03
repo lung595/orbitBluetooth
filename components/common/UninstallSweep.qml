@@ -31,7 +31,7 @@ Item {
 
     FileView {
         id: source
-        path: decodeURIComponent(Qt.resolvedUrl("../uninstall/orbit_uninstall.py").toString().replace(/^file:\/\//, ""))
+        path: decodeURIComponent(Qt.resolvedUrl("../../uninstall/orbit_uninstall.py").toString().replace(/^file:\/\//, ""))
         blockLoading: true
         printErrors: false
     }

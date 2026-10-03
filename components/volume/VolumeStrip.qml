@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Common
 import qs.Widgets
+import "../card"
 
 // The card's two volumes folded into one thin line (bar pop-out and Control
 // Center, where the full scope would make the settings scroll): each level

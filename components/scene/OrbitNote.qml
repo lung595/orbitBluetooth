@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Common
 import qs.Widgets
+import "../common"
 
 // Shown at the bottom of the sky, above the planets, when something you tried did not work: never a
 // silent refusal (value 10). One line says what happened, a second what to

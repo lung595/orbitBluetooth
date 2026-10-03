@@ -2,10 +2,12 @@ import QtQuick
 import QtQuick.Shapes
 import qs.Common
 import qs.Widgets
+import "../card"
+import "../scene"
 import "DeviceCatalog.js" as Catalog
-import "Charge.js" as Charge
-import "Pictures.js" as Pictures
-import "Endurance.js" as Endurance
+import "../card/Charge.js" as Charge
+import "../common/Pictures.js" as Pictures
+import "../card/Endurance.js" as Endurance
 
 // One orbiting device. Purely presentational + input: the owning OrbitScene
 // integrates physics for every body in a single pass per frame and writes

@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Window
 import qs.Services
-import "../../components"
+import "../../components/scene"
 
 // Records README animations frame by frame, with mock devices and services.
 // Usage: QT_QPA_PLATFORM=offscreen qml -I imports record.qml -- <scene> <outDir>

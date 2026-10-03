@@ -2,7 +2,7 @@ import QtQuick
 import Quickshell.Io
 import qs.Services
 import "Guard.js" as Guard
-import "Guide.js" as Guide
+import "../common/Guide.js" as Guide
 
 // Runs after pairing and before trust: reads the device's Bluetooth
 // profiles from BlueZ (P115). A "headset" that can also send key presses

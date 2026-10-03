@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Common
 import qs.Widgets
+import "../device"
 
 // The "Hidden" planet: a small black hole parked in a corner of the scene.
 // Devices dragged into it disappear from the orbit (they stay connected);
@@ -59,7 +60,7 @@ Item {
         readonly property real lens: hole.scene.glass ? 0 : 1
         readonly property color backdrop: "#06070b"
         // Both shaders share one uniform block: switching style is just this
-        fragmentShader: hole.scene.prefs.holeStyle === "tesseract" ? Qt.resolvedUrl("../shaders/tesseract.frag.qsb") : Qt.resolvedUrl("../shaders/gargantua.frag.qsb")
+        fragmentShader: hole.scene.prefs.holeStyle === "tesseract" ? Qt.resolvedUrl("../../shaders/tesseract.frag.qsb") : Qt.resolvedUrl("../../shaders/gargantua.frag.qsb")
 
         Behavior on horizon {
             enabled: hole.scene.motion

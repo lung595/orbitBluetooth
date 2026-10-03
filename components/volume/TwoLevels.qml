@@ -2,7 +2,7 @@ import QtQuick
 import qs.Common
 import qs.Services
 import "Route.js" as Route
-import "DeviceCatalog.js" as Catalog
+import "../device/DeviceCatalog.js" as Catalog
 
 // The two volumes of one output (D249), as ScopeScreen reads them: the
 // device's own level and this PC's, with what a gesture on the scope does.

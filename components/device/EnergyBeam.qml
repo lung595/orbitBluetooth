@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Common
+import "../scene"
 
 // A charging beam along the item's width (see shaders/beam.frag): faint
 // magnetic field lines fanning out between both ends, pulses flowing along. The wave phase
@@ -20,5 +21,5 @@ ShaderEffect {
     readonly property real lengthPx: width
     readonly property real heightPx: height
 
-    fragmentShader: Qt.resolvedUrl("../shaders/beam.frag.qsb")
+    fragmentShader: Qt.resolvedUrl("../../shaders/beam.frag.qsb")
 }

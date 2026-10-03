@@ -2,10 +2,13 @@ import QtQuick
 import qs.Common
 import qs.Services
 import qs.Widgets
-import "DeviceCatalog.js" as Catalog
-import "Glyphs.js" as Glyphs
+import "../device"
+import "../noise"
+import "../volume"
+import "../device/DeviceCatalog.js" as Catalog
+import "../device/Glyphs.js" as Glyphs
 import "Charge.js" as Charge
-import "Pictures.js" as Pictures
+import "../common/Pictures.js" as Pictures
 
 // Frosted detail card. The focused device glyph is not drawn here: the real
 // orbiting body flies onto the card's top edge and scales up, so it breaks

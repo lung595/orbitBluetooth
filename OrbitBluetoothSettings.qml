@@ -3,8 +3,9 @@ import qs.Common
 import qs.Widgets
 import qs.Modules.Plugins
 import qs.Modules.Settings.Widgets
-import "components"
-import "components/Glyphs.js" as Glyphs
+import "components/common"
+import "components/volume"
+import "components/device/Glyphs.js" as Glyphs
 
 // Plugin settings, grouped by what they change. Every option works out of
 // the box; descriptions stay one short line, and options that cost battery

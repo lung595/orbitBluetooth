@@ -3,9 +3,13 @@ import QtQuick.Shapes
 import qs.Common
 import qs.Services
 import qs.Widgets
-import "Guide.js" as Guide
-import "DeviceCatalog.js" as Catalog
-import "Anc.js" as Anc
+import "../card"
+import "../common"
+import "../device"
+import "../pairing"
+import "../common/Guide.js" as Guide
+import "../device/DeviceCatalog.js" as Catalog
+import "../noise/Anc.js" as Anc
 
 // The planetary Bluetooth scene shared by the Control Center panel, the bar
 // popout and the desktop widget.

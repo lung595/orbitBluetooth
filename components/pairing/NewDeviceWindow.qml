@@ -2,12 +2,13 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import qs.Common
-import "DeviceCatalog.js" as Catalog
+import "../common"
+import "../device/DeviceCatalog.js" as Catalog
 import "Offer.js" as Offer
-import "Pictures.js" as Pictures
-import "Anc.js" as Anc
-import "Endurance.js" as Endurance
-import "Glyphs.js" as Glyphs
+import "../common/Pictures.js" as Pictures
+import "../noise/Anc.js" as Anc
+import "../card/Endurance.js" as Endurance
+import "../device/Glyphs.js" as Glyphs
 
 // The window of the pairing sheet: a transparent overlay layer under the
 // right end of the bar, that only takes clicks on the card. NewDeviceWatch

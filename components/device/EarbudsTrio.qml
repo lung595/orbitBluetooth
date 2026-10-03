@@ -2,7 +2,8 @@ import QtQuick
 import QtQuick.Shapes
 import qs.Common
 import qs.Widgets
-import "Charge.js" as Charge
+import "../card"
+import "../card/Charge.js" as Charge
 import "Earbuds.js" as Earbuds
 
 // Earbuds with a case: the case in the middle of a small orbit, the left

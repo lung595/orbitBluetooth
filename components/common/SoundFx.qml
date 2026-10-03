@@ -33,22 +33,22 @@ Item {
 
             SoundEffect {
                 id: connectFx
-                source: Qt.resolvedUrl("../sounds/connect.wav")
+                source: Qt.resolvedUrl("../../sounds/connect.wav")
                 volume: root.volume
             }
             SoundEffect {
                 id: disconnectFx
-                source: Qt.resolvedUrl("../sounds/disconnect.wav")
+                source: Qt.resolvedUrl("../../sounds/disconnect.wav")
                 volume: root.volume
             }
             SoundEffect {
                 id: snapFx
-                source: Qt.resolvedUrl("../sounds/snap.wav")
+                source: Qt.resolvedUrl("../../sounds/snap.wav")
                 volume: root.volume * 0.8
             }
             SoundEffect {
                 id: errorFx
-                source: Qt.resolvedUrl("../sounds/error.wav")
+                source: Qt.resolvedUrl("../../sounds/error.wav")
                 volume: root.volume
             }
         }

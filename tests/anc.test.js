@@ -1,12 +1,19 @@
-// Pure-logic tests for every components/*.js module.
+// Pure-logic tests for every components/<feature>/*.js module.
 // Run from the plugin root: gjs tests/anc.test.js
 const GLib = imports.gi.GLib;
 
 const root = GLib.path_get_dirname(GLib.path_get_dirname(GLib.canonicalize_filename(imports.system.programPath ?? "tests/anc.test.js", GLib.get_current_dir())));
 
+// The modules live in feature folders: components/<feature>/<Name>.js
+const features = ["card", "common", "device", "noise", "pairing", "scene", "volume"];
+function pathOf(file) {
+    const folder = features.find(f => GLib.file_test(root + "/components/" + f + "/" + file, GLib.FileTest.EXISTS));
+    return root + "/components/" + folder + "/" + file;
+}
+
 // QML ".pragma library" files are plain JS once the pragma is removed
 function load(file, names) {
-    const [, bytes] = GLib.file_get_contents(root + "/components/" + file);
+    const [, bytes] = GLib.file_get_contents(pathOf(file));
     const src = new TextDecoder().decode(bytes).replace(".pragma library", "");
     return new Function(src + "; return { " + names.join(", ") + " };")();
 }

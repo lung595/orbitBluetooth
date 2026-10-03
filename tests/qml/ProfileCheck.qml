@@ -1,7 +1,7 @@
 import QtQuick
 import "Guard.js" as Guard
 
-// Test stand-in for components/ProfileCheck.qml: same decision (Guard.js),
+// Test stand-in for components/pairing/ProfileCheck.qml: same decision (Guard.js),
 // but reads the profiles from the fake device instead of calling busctl.
 QtObject {
     property var log: []

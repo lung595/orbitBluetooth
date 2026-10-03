@@ -3,8 +3,8 @@ import Quickshell.Wayland
 import qs.Common
 import qs.Modules.Plugins
 import qs.Services
-import "components"
-import "components/Cover.js" as Cover
+import "components/scene"
+import "components/scene/Cover.js" as Cover
 
 // Desktop surface: a frameless orbit that dissolves into the wallpaper.
 // Idle by default: the scene freezes (zero frames) until the pointer is over

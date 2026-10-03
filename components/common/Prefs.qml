@@ -1,8 +1,8 @@
 import QtQuick
 import qs.Common
 import qs.Services
-import "Polar.js" as Polar
-import "Steps.js" as Steps
+import "../volume/Polar.js" as Polar
+import "../volume/Steps.js" as Steps
 
 // Reactive view over the plugin's saved settings, shared by every surface.
 QtObject {

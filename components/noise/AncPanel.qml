@@ -1,6 +1,8 @@
 import QtQuick
 import qs.Common
 import qs.Widgets
+import "../card"
+import "../common"
 import "Anc.js" as Anc
 
 // Noise-control block of the detail card: segmented modes, a level slider

@@ -20,7 +20,7 @@ Item {
     property var _asked: ({})
     property string _current: ""
 
-    readonly property string _helper: decodeURIComponent(Qt.resolvedUrl("../pictures/orbit_pictures.py").toString().replace(/^file:\/\//, ""))
+    readonly property string _helper: decodeURIComponent(Qt.resolvedUrl("../../pictures/orbit_pictures.py").toString().replace(/^file:\/\//, ""))
 
     function request(name) {
         if (!enabled || !name || _asked[name])

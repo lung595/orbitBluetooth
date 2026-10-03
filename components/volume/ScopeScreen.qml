@@ -1,6 +1,9 @@
 import QtQuick
 import qs.Common
 import qs.Widgets
+import "../card"
+import "../common"
+import "../scene"
 
 // The vectorscope on its own screen (D262, D263), as the volume pop-up and
 // the Dank Island sheet both show it: DMS's themed frame around it is the

@@ -1,8 +1,8 @@
 import QtQuick
 import qs.Common
 import qs.Services
-import "Guide.js" as Guide
-import "DeviceCatalog.js" as Catalog
+import "../common/Guide.js" as Guide
+import "../device/DeviceCatalog.js" as Catalog
 
 // Over the focused glyph on the detail card: a click mutes (D251: with one
 // audio device connected this PC, with several that device), the wheel

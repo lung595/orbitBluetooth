@@ -3,6 +3,7 @@ import Quickshell.Bluetooth
 import Quickshell.Wayland
 import qs.Services
 import Quickshell.Services.UPower
+import "components/pairing"
 
 // Scenario test of NewDeviceWatch: devices appear, are offered, connected,
 // snoozed, ignored, held during full screen; the background scan obeys the

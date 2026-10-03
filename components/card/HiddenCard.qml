@@ -1,7 +1,8 @@
 import QtQuick
 import qs.Common
 import qs.Widgets
-import "DeviceCatalog.js" as Catalog
+import "../device"
+import "../device/DeviceCatalog.js" as Catalog
 
 // What the black hole holds: the hidden devices, each with a "Show" button
 // that spits it back into the orbit. Empty, it explains what the hole is for.

@@ -4,9 +4,12 @@ import Quickshell.Bluetooth
 import Quickshell.Io
 import Quickshell.Services.UPower
 import qs.Services
-import "components"
-import "components/Guide.js" as Guide
-import "components/Anc.js" as Anc
+import "components/common"
+import "components/noise"
+import "components/pairing"
+import "components/volume"
+import "components/common/Guide.js" as Guide
+import "components/noise/Anc.js" as Anc
 
 // Event-driven bookkeeping shared by every surface. BlueZ exposes neither a
 // connection timestamp, a charging state nor a discharge rate, so we record

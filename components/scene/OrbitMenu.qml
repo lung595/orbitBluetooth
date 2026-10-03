@@ -1,7 +1,8 @@
 import QtQuick
 import qs.Common
 import qs.Widgets
-import "Anc.js" as Anc
+import "../card"
+import "../noise/Anc.js" as Anc
 
 // Right-click menu of an orbiting device: connect/disconnect, the headset's
 // noise-control modes when it has them, "Hide" (into the black hole) and

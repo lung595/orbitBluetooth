@@ -3,6 +3,8 @@ import QtQuick.Effects
 import QtQuick.Shapes
 import qs.Common
 import qs.Widgets
+import "../common"
+import "../device"
 import "Palette.js" as Palette
 
 // The pairing sheet: a tall card that unfolds from the bar when new

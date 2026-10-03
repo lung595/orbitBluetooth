@@ -38,7 +38,7 @@ Item {
     // address -> true while a disconnect waits for conversation awareness to go off
     property var _leaving: ({})
 
-    readonly property string _helper: decodeURIComponent(Qt.resolvedUrl("../anc/orbit_anc.py").toString().replace(/^file:\/\//, ""))
+    readonly property string _helper: decodeURIComponent(Qt.resolvedUrl("../../anc/orbit_anc.py").toString().replace(/^file:\/\//, ""))
 
     function deviceFor(address) {
         const list = Bluetooth.devices.values;

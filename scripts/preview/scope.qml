@@ -1,8 +1,8 @@
 import QtQuick
 import QtQuick.Window
 import qs.Common
-import "../../components"
-import "../../components/Keys.js" as Keys
+import "../../components/volume"
+import "../../components/volume/Keys.js" as Keys
 
 // Offscreen render of the volume vectorscope in each visualizer style, at
 // the Dank Island sheet size (460 x 176, flat top corners), from a made-up
