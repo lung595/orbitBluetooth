@@ -14,6 +14,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 
+- **The two volumes never share a colour.** When the theme's two accents look alike (a generated pink and salmon, for example), this PC's level takes the opposite hue (pink and mint), in the scope and in the folded line; distinct accents stay as they are.
 - The code is split into feature folders (`components/scene`, `device`, `card`, `volume`, `pairing`, `noise`, `common`), the orbit's physics live in a pure, tested `Physics.js`, and one sound feed and picture serve every screen; see [CONTRIBUTING](CONTRIBUTING.md). Nothing changes on screen (every preview identical to 1.12.0).
 
 ## 1.12.0 - 2026-10-03

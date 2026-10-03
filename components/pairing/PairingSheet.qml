@@ -5,7 +5,7 @@ import qs.Common
 import qs.Widgets
 import "../common"
 import "../device"
-import "Palette.js" as Palette
+import "../common/Palette.js" as Palette
 
 // The pairing sheet: a tall card that unfolds from the bar when new
 // headphones are in pairing mode. NewDeviceWatch owns the state and the

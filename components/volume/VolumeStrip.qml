@@ -2,6 +2,7 @@ import QtQuick
 import qs.Common
 import qs.Widgets
 import "../card"
+import "../common/Palette.js" as Palette
 
 // The card's two volumes folded into one thin line (bar pop-out and Control
 // Center, where the full scope would make the settings scroll): each level
@@ -90,7 +91,10 @@ Rectangle {
             icon: strip.levels.pcIcon
             level: strip.levels.pcLevel
             muted: strip.levels.pcMuted
-            tint: Theme.tertiary
+            tint: {
+                const c = Palette.apart(Theme.tertiary, Theme.primary);
+                return Qt.rgba(c.r, c.g, c.b, 1);
+            }
             barWidth: row.barWidth
         }
     }

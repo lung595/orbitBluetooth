@@ -4,6 +4,7 @@ import qs.Widgets
 import "../card"
 import "../common"
 import "../scene"
+import "../common/Palette.js" as Palette
 
 // The vectorscope on its own screen (D262, D263), as the volume pop-up and
 // the Dank Island sheet both show it: DMS's themed frame around it is the
@@ -36,6 +37,12 @@ Item {
     readonly property NightColors night: NightColors {}
     readonly property PaperColors paper: PaperColors {}
     readonly property bool light: Theme.isLightMode
+    readonly property color deviceColor: light ? Theme.primary : night.primary
+    // This PC's arc never passes for the device's (Palette.apart)
+    readonly property color pcColor: {
+        const c = Palette.apart(light ? Theme.tertiary : night.tertiary, deviceColor);
+        return Qt.rgba(c.r, c.g, c.b, 1);
+    }
     function _inner(r) {
         return Math.max(0, (r || 0) - margin);
     }
@@ -76,8 +83,8 @@ Item {
         style: screenItem.overlay.style
         grid: true
         additive: !screenItem.light
-        deviceColor: screenItem.light ? Theme.primary : screenItem.night.primary
-        pcColor: screenItem.light ? Theme.tertiary : screenItem.night.tertiary
+        deviceColor: screenItem.deviceColor
+        pcColor: screenItem.pcColor
         trackColor: screenItem.light ? screenItem.paper.fg(0.16) : screenItem.night.ink(0.14)
         inkColor: screenItem.light ? screenItem.paper.ink : screenItem.night.ink(0.92)
         mutedColor: screenItem.light ? screenItem.paper.fg(0.42) : screenItem.night.ink(0.4)

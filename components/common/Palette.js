@@ -1,8 +1,8 @@
 .pragma library
 
-// Colour helpers for the pairing sheet, so it looks right with any DMS
-// palette: a theme's accent can be too pale for a light surface (pastels)
-// or too dark for a dark one (deep blues), and the sheet glows with it.
+// Colour helpers, so Orbit looks right with any DMS palette: a theme's
+// accent can be too pale for a light surface (pastels) or too dark for a
+// dark one (deep blues), and two accents can be near twins.
 // Colours are {r, g, b} in 0..1 (a QML color works as input).
 // Contrast follows WCAG 2.x relative luminance.
 
@@ -87,4 +87,16 @@ function onColor(c) {
 // A colour without hue reads as grey: its glow then borrows the accent
 function isGrey(c) {
     return toHsl(c).s < 0.12;
+}
+
+// A second accent that never passes for the first (D270): when its hue is
+// within a quarter turn of `from`'s, it takes the opposite hue and keeps
+// its own saturation and lightness, so a pink and a salmon become a pink
+// and a mint. Far enough apart, or grey on either side, it stays as it is
+function apart(c, from) {
+    const a = toHsl(c), b = toHsl(from);
+    const d = Math.abs(a.h - b.h);
+    if (isGrey(c) || isGrey(from) || Math.min(d, 1 - d) >= 0.25)
+        return { r: c.r, g: c.g, b: c.b };
+    return fromHsl((b.h + 0.5) % 1, a.s, a.l);
 }

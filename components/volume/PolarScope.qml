@@ -6,8 +6,9 @@ import "Polar.js" as Polar
 
 // The two volumes as a polar vectorscope (D250): the outer half circle is
 // the device's own level (Theme.primary), the inner one this PC's level
-// (Theme.tertiary). Each lights up from the left to its level, with a moon
-// to drag; an icon sits at the foot of each, the number only shows while
+// (Theme.tertiary, turned away when the two look alike: Palette.apart).
+// Each lights up from the left to its level, with a moon to drag; an icon
+// sits at the foot of each, the number only shows while
 // the level moves. A cloud of points shows where the sound is going: its
 // angle is left/right, its distance how loud.
 // The sound is a ScopeModel (computed once for every screen) painted by
