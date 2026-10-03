@@ -3,8 +3,6 @@ import QtQuick.Effects
 import QtQuick.Shapes
 import qs.Common
 import qs.Widgets
-import "../common"
-import "../device"
 import "../common/Palette.js" as Palette
 
 // The pairing sheet: a tall card that unfolds from the bar when new
@@ -163,7 +161,7 @@ Item {
                 }
                 ParallelAnimation {
                     NumberAnimation {
-                        target: flash
+                        target: stage.flash
                         property: "scale"
                         from: 1
                         to: 2.1
@@ -171,7 +169,7 @@ Item {
                         easing.type: Easing.OutCubic
                     }
                     NumberAnimation {
-                        target: flash
+                        target: stage.flash
                         property: "opacity"
                         from: 0.9
                         to: 0
@@ -353,54 +351,6 @@ Item {
                 total += w;
             }
             found = total > 4 ? Qt.rgba(r / total, g / total, b / total, 1) : "transparent";
-        }
-    }
-
-    // A round light, squashed vertically when flatter than wide: the
-    // gradient reaches zero exactly at the edge, so it never shows a rim
-    component Light: Shape {
-        property color tint
-        property real strength: 0.4
-        property real squash: 1
-        height: width
-        transform: Scale {
-            origin.y: 0
-            yScale: squash
-        }
-        preferredRendererType: Shape.CurveRenderer
-        ShapePath {
-            strokeWidth: 0
-            strokeColor: "transparent"
-            fillGradient: RadialGradient {
-                centerX: width / 2
-                centerY: height / 2
-                centerRadius: width / 2
-                focalX: centerX
-                focalY: centerY
-                GradientStop {
-                    position: 0
-                    color: Theme.withAlpha(tint, strength)
-                }
-                GradientStop {
-                    position: 0.3
-                    color: Theme.withAlpha(tint, strength * 0.62)
-                }
-                GradientStop {
-                    position: 0.6
-                    color: Theme.withAlpha(tint, strength * 0.22)
-                }
-                GradientStop {
-                    position: 1
-                    color: Theme.withAlpha(tint, 0)
-                }
-            }
-            PathAngleArc {
-                centerX: width / 2
-                centerY: height / 2
-                radiusX: width / 2
-                radiusY: height / 2
-                sweepAngle: 360
-            }
         }
     }
 
@@ -834,377 +784,26 @@ Item {
             }
         }
 
-        // --- Stage --------------------------------------------------------------------
-        Item {
+        // --- Stage: the device, its orbit and its effects (PairingStage.qml) -------------
+        PairingStage {
             id: stage
             y: 46
             width: card.width
             height: card.horizon - y
-            readonly property real cx: width / 2
-            readonly property real deviceY: 86
-
-            // Where the device is now: out of the bar (fall 0), in orbit (1)
-            function along(t) {
-                const u = 1 - t;
-                return Qt.point(u * u * 150 + 2 * u * t * -120, u * u * -210 + 2 * u * t * -20);
-            }
-
-            // A thin orbit around the device: back half behind it, front half over it
-            component OrbitHalf: Shape {
-                property bool front: false
-                anchors.fill: parent
-                preferredRendererType: Shape.CurveRenderer
-                rotation: -9
-                opacity: root.arrived
-                ShapePath {
-                    strokeColor: Theme.withAlpha(skin.accent, front ? (skin.light ? 0.55 : 0.7) : (skin.light ? 0.22 : 0.28))
-                    strokeWidth: front ? 1.3 : 1
-                    fillColor: "transparent"
-                    PathAngleArc {
-                        centerX: stage.cx
-                        centerY: stage.deviceY + 18
-                        radiusX: 116
-                        radiusY: 24
-                        startAngle: front ? 0 : 180
-                        sweepAngle: 180
-                    }
-                }
-            }
-            OrbitHalf {
-                z: 0
-            }
-
-            // Sonar: rings leaving the device while it waits, faster while pairing
-            Repeater {
-                model: 2
-                Rectangle {
-                    id: ring
-                    required property int index
-                    readonly property real speed: root.busy ? 0.75 : 0.38
-                    readonly property real f: (root.clock * speed + index * 0.5) % 1
-                    z: 0
-                    width: 120
-                    height: 120
-                    radius: 60
-                    x: stage.cx - 60
-                    y: stage.deviceY - 60 + root.floatY
-                    scale: 1 + f * 1.1
-                    color: "transparent"
-                    border.width: 1.2 / scale
-                    border.color: skin.accent
-                    visible: root.moving && root.phase !== "done" && root.phase !== "failed"
-                    opacity: root.arrived * (1 - f) * (skin.light ? 0.35 : 0.45)
-                }
-            }
-
-            // Comet trail: ghosts of where the device just was
-            Repeater {
-                model: 9
-                Rectangle {
-                    id: ghost
-                    required property int index
-                    readonly property point at: stage.along(Math.max(0, root.fall - (index + 1) * 0.045))
-                    z: 0
-                    width: 30 - index * 2.6
-                    height: width
-                    radius: width / 2
-                    x: stage.cx + at.x - width / 2
-                    y: stage.deviceY + at.y - height / 2
-                    color: skin.haze
-                    opacity: root.fall > 0 && root.fall < 1 ? (0.4 - index * 0.04) * Math.min(1, (1 - root.fall) * 4) : 0
-                }
-            }
-
-            // Flash when the orbit catches it
-            Rectangle {
-                id: flash
-                z: 0
-                width: 110
-                height: 110
-                radius: 55
-                x: stage.cx - 55
-                y: stage.deviceY - 55
-                color: "transparent"
-                border.width: 1.5
-                border.color: skin.accent
-                opacity: 0
-            }
-
-            Item {
-                id: hero
-                z: 1
-                width: 150
-                height: 150
-                readonly property point at: stage.along(root.fall)
-                x: stage.cx - width / 2
-                y: stage.deviceY - height / 2
-                scale: 0.45 + 0.55 * root.fall
-                opacity: Math.min(1, root.fall * 3)
-                transform: [
-                    Translate {
-                        x: hero.at.x
-                        y: hero.at.y + root.floatY
-                    },
-                    Rotation {
-                        origin.x: 75
-                        origin.y: 75
-                        axis.x: 1
-                        axis.y: 0
-                        axis.z: 0
-                        angle: root.tiltX
-                    },
-                    Rotation {
-                        origin.x: 75
-                        origin.y: 75
-                        axis.x: 0
-                        axis.y: 1
-                        axis.z: 0
-                        angle: root.tiltY
-                    },
-                    Rotation {
-                        origin.x: 75
-                        origin.y: 75
-                        angle: root.floatTurn
-                    }
-                ]
-
-                // Battery once connected: a ring around the device, filling up
-                Shape {
-                    anchors.fill: parent
-                    visible: root.phase === "done" && root.battery >= 0
-                    preferredRendererType: Shape.CurveRenderer
-                    ShapePath {
-                        strokeColor: skin.ink(0.1)
-                        strokeWidth: 4
-                        fillColor: "transparent"
-                        PathAngleArc {
-                            centerX: 75
-                            centerY: 75
-                            radiusX: 72
-                            radiusY: 72
-                            sweepAngle: 360
-                        }
-                    }
-                    ShapePath {
-                        strokeColor: skin.accent
-                        strokeWidth: 4
-                        fillColor: "transparent"
-                        capStyle: ShapePath.RoundCap
-                        PathAngleArc {
-                            centerX: 75
-                            centerY: 75
-                            radiusX: 72
-                            radiusY: 72
-                            startAngle: -90
-                            sweepAngle: 3.6 * root.shownBattery
-                        }
-                    }
-                }
-
-                // Night: the device glows. Pearl: it casts a soft shadow that
-                // stretches as it floats up.
-                DeviceGlyph {
-                    id: glyph
-                    anchors.centerIn: parent
-                    width: pictureShown ? 128 : 108
-                    height: width
-                    kind: root.kind
-                    pictureSource: root.pictureSource
-                    color: skin.light ? skin.accent : Qt.lighter(skin.accent, 1.08)
-                    stroke: skin.light ? 1.35 : 1.15
-                    layer.enabled: true
-                    layer.effect: MultiEffect {
-                        shadowEnabled: true
-                        shadowColor: skin.light ? Qt.tint(Qt.rgba(0.08, 0.08, 0.14, 1), Theme.withAlpha(skin.accent, 0.3)) : skin.glow
-                        shadowBlur: 1
-                        shadowOpacity: skin.light ? 0.3 + root.floatY * 0.012 : 0.85 - root.floatY * 0.02
-                        shadowHorizontalOffset: 0
-                        shadowVerticalOffset: skin.light ? 13 - root.floatY * 1.2 : 0
-                    }
-                }
-
-                Rectangle {
-                    visible: root.phase === "done" && root.battery >= 0
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    y: parent.height - 16
-                    height: 24
-                    width: batteryText.implicitWidth + 18
-                    radius: 12
-                    color: skin.accent
-                    StyledText {
-                        id: batteryText
-                        anchors.centerIn: parent
-                        text: Math.round(root.shownBattery) + " %"
-                        color: skin.inkOnAccent
-                        font.pixelSize: Theme.fontSizeSmall - 1
-                        font.weight: Font.DemiBold
-                    }
-                }
-            }
-
-            OrbitHalf {
-                front: true
-                z: 2
-            }
-
-            // A small moon going round: in front of the device, then behind it
-            Rectangle {
-                readonly property real a: root.clock * 0.8 + 0.6
-                readonly property real px: 116 * Math.cos(a)
-                readonly property real py: 24 * Math.sin(a)
-                readonly property real t: -9 * Math.PI / 180
-                z: Math.sin(a) > 0 ? 3 : 0.5
-                width: 7
-                height: 7
-                radius: 3.5
-                x: stage.cx + px * Math.cos(t) - py * Math.sin(t) - 3.5
-                y: stage.deviceY + 18 + px * Math.sin(t) + py * Math.cos(t) - 3.5
-                color: skin.accent
-                opacity: root.arrived * (Math.sin(a) > 0 ? 1 : 0.45)
-            }
-
-            // Connected: a burst of stars out of the device
-            Repeater {
-                model: 16
-                Rectangle {
-                    id: spark
-                    required property int index
-                    readonly property real a: index * Math.PI * 2 / 16 + (index % 2) * 0.2
-                    readonly property real d: 46 + root.burst * (60 + (index % 3) * 22)
-                    z: 3
-                    visible: root.burst > 0 && root.burst < 1
-                    width: index % 3 === 0 ? 4 : 2.6
-                    height: width
-                    radius: width / 2
-                    x: stage.cx + d * Math.cos(a) - width / 2
-                    y: stage.deviceY + d * Math.sin(a) * 0.8 - height / 2
-                    color: index % 2 ? skin.accent : skin.ink(1)
-                    opacity: 1 - root.burst
-                }
-            }
+            sheet: root
+            look: skin
         }
 
-        // --- Identity, on the planet ----------------------------------------------------
-        Column {
-            id: identity
+        // --- Identity, on the planet (PairingIdentity.qml) -------------------------------
+        PairingIdentity {
             y: card.horizon + 22
             width: card.width
-            spacing: 2
             opacity: root.stagger(3)
             transform: Translate {
                 y: (1 - root.stagger(3)) * 14
             }
-
-            Item {
-                anchors.horizontalCenter: parent.horizontalCenter
-                width: root.renaming ? card.width - 48 : nameRow.implicitWidth
-                height: nameRow.implicitHeight
-
-                Row {
-                    id: nameRow
-                    visible: !root.renaming
-                    spacing: 6
-                    StyledText {
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: root.name
-                        color: skin.ink(0.96)
-                        font.pixelSize: Theme.fontSizeLarge + 10
-                        font.weight: Font.Bold
-                        font.letterSpacing: -0.4
-                        // One line: a long name (an alias) is cut, never wrapped
-                        wrapMode: Text.NoWrap
-                        maximumLineCount: 1
-                        elide: Text.ElideRight
-                        width: Math.min(implicitWidth, card.width - 76)
-                    }
-                    DankIcon {
-                        anchors.verticalCenter: parent.verticalCenter
-                        visible: root.phase === "offer"
-                        name: "edit"
-                        size: 16
-                        color: skin.ink(0.4)
-                        MouseArea {
-                            anchors.fill: parent
-                            anchors.margins: -6
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                nameInput.text = root.name;
-                                root.renaming = true;
-                                nameInput.forceActiveFocus();
-                                nameInput.selectAll();
-                            }
-                        }
-                    }
-                }
-
-                // Rename before connecting: Enter keeps it, Escape cancels
-                Rectangle {
-                    visible: root.renaming
-                    anchors.fill: parent
-                    anchors.margins: -4
-                    radius: 12
-                    color: skin.tileFill
-                    border.width: 1
-                    border.color: skin.accent
-                    TextInput {
-                        id: nameInput
-                        anchors.fill: parent
-                        anchors.leftMargin: 12
-                        anchors.rightMargin: 12
-                        verticalAlignment: TextInput.AlignVCenter
-                        horizontalAlignment: TextInput.AlignHCenter
-                        color: skin.ink(0.96)
-                        selectionColor: Theme.withAlpha(skin.accent, 0.4)
-                        font.pixelSize: Theme.fontSizeLarge + 6
-                        font.weight: Font.Bold
-                        maximumLength: 40
-                        clip: true
-                        // Leaving the field keeps what was typed: Enter, a click
-                        // elsewhere on the sheet, or another window taking the
-                        // keyboard. Only Escape gives the old name back.
-                        property bool hadFocus: false
-                        function commit() {
-                            if (!root.renaming)
-                                return;
-                            root.renaming = false;
-                            hadFocus = false;
-                            root.renamed(text.trim());
-                            root.forceActiveFocus();
-                        }
-                        onActiveFocusChanged: {
-                            if (activeFocus)
-                                hadFocus = true;
-                            else if (hadFocus)
-                                commit();
-                        }
-                        Keys.onReturnPressed: commit()
-                        Keys.onEnterPressed: commit()
-                        Keys.onEscapePressed: {
-                            hadFocus = false;
-                            root.renaming = false;
-                            root.forceActiveFocus();
-                        }
-                    }
-                }
-            }
-            StyledText {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: root.phase === "failed" ? root.errorText : root.phase === "confirm" ? "It can also send key presses, often for its buttons. Only continue if it is yours." : root.renaming ? "Enter or click away to keep · Escape to cancel" : root.subtitle
-                color: root.phase === "failed" ? Theme.error : root.phase === "confirm" ? skin.ink(0.78) : skin.ink(0.5)
-                width: Math.min(implicitWidth, root.width - 48)
-                wrapMode: Text.WordWrap
-                horizontalAlignment: Text.AlignHCenter
-                font.pixelSize: Theme.fontSizeSmall
-                font.letterSpacing: 0.2
-            }
-            // Why it failed, explained in the guide (value 10)
-            GuideLink {
-                anchors.horizontalCenter: parent.horizontalCenter
-                visible: root.phase === "failed"
-                anchor: root.errorAnchor
-                color: skin.ink(0.5)
-                hoverColor: skin.accent
-            }
+            sheet: root
+            look: skin
         }
 
         // --- Middle: tiles, steps or quick actions (PairingMiddle.qml) ------------------
@@ -1222,173 +821,12 @@ Item {
             look: skin
         }
 
-        // --- Main button ---------------------------------------------------------------
-        // Its own light under it: a glow on the night, a tinted shadow on the pearl
-        Light {
-            visible: !root.busy
-            opacity: root.stagger(5)
-            width: card.width - 60
-            squash: 0.2
-            x: 30
-            y: mainButton.y + mainButton.height - 10
-            tint: skin.haze
-            strength: skin.light ? 0.45 : 0.32
-        }
-
-        Rectangle {
-            id: mainButton
-            x: 16
+        // --- Main button and the quiet links under it (PairingButton.qml) -------------
+        PairingButton {
             y: 422
-            opacity: root.stagger(5)
-            transform: Translate {
-                y: (1 - root.stagger(5)) * 14
-            }
-            width: card.width - 32
-            height: 46
-            // A rounded rectangle, not a pill: flat and quiet, like the cards
-            radius: 12
-            readonly property bool quiet: root.busy
-            color: quiet ? Theme.withAlpha(skin.accent, 0.14) : skin.accent
-            // A hairline of light along the top edge, the only relief it keeps
-            Rectangle {
-                visible: !mainButton.quiet
-                x: parent.radius
-                width: parent.width - 2 * parent.radius
-                height: 1
-                color: Theme.withAlpha("white", skin.light ? 0.35 : 0.22)
-            }
-
-            // Progress while pairing and connecting, with a sheen running across
-            Rectangle {
-                visible: root.busy
-                height: parent.height
-                radius: parent.radius
-                width: parent.width * (root.phase === "pairing" ? 0.38 : root.phase === "connecting" ? 0.72 : 0)
-                color: Theme.withAlpha(skin.accent, 0.35)
-                Behavior on width {
-                    NumberAnimation {
-                        duration: 600
-                        easing.type: Easing.OutCubic
-                    }
-                }
-            }
-            // A rounded sheen that stays inside the button and fades at both
-            // ends: a clip would cut it square against the rounded corners
-            Item {
-                anchors.fill: parent
-                visible: root.busy && root.moving
-                Rectangle {
-                    readonly property real t: (root.clock * 0.7) % 1
-                    width: 90
-                    height: parent.height
-                    radius: mainButton.radius
-                    x: t * (parent.width - width)
-                    opacity: Math.sin(Math.PI * t)
-                    gradient: Gradient {
-                        orientation: Gradient.Horizontal
-                        GradientStop {
-                            position: 0
-                            color: "transparent"
-                        }
-                        GradientStop {
-                            position: 0.5
-                            color: Theme.withAlpha(skin.accent, 0.35)
-                        }
-                        GradientStop {
-                            position: 1
-                            color: "transparent"
-                        }
-                    }
-                }
-            }
-
-            Row {
-                anchors.centerIn: parent
-                spacing: 8
-                DankIcon {
-                    anchors.verticalCenter: parent.verticalCenter
-                    name: ({
-                            "offer": "bluetooth",
-                            "pairing": "bluetooth_searching",
-                            "connecting": "bluetooth_searching",
-                            "done": "check",
-                            "confirm": "keyboard",
-                            "failed": "refresh"
-                        })[root.phase] || "bluetooth"
-                    size: 19
-                    color: mainButton.quiet ? skin.ink(0.92) : skin.inkOnAccent
-                }
-                StyledText {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: ({
-                            "offer": "Connect",
-                            "pairing": "Pairing",
-                            "connecting": "Connecting",
-                            "done": "Done",
-                            "confirm": "Pair anyway",
-                            "failed": "Try again"
-                        })[root.phase] || ""
-                    color: mainButton.quiet ? skin.ink(0.92) : skin.inkOnAccent
-                    font.pixelSize: Theme.fontSizeMedium
-                    font.weight: Font.Medium
-                    font.letterSpacing: 0.2
-                }
-            }
-            MouseArea {
-                anchors.fill: parent
-                enabled: !root.busy
-                cursorShape: Qt.PointingHandCursor
-                onClicked: root.phase === "failed" ? root.retry() : root.phase === "done" ? root.later() : root.phase === "confirm" ? root.confirmed() : root.accepted()
-            }
-        }
-
-        Row {
-            anchors.horizontalCenter: parent.horizontalCenter
-            y: mainButton.y + mainButton.height + 6
-            height: 28
-            spacing: 4
-            opacity: root.stagger(6)
-
-            component Quiet: StyledText {
-                id: quiet
-                signal clicked
-                height: 28
-                leftPadding: 10
-                rightPadding: 10
-                verticalAlignment: Text.AlignVCenter
-                color: skin.ink(quietArea.containsMouse ? 0.92 : 0.5)
-                font.pixelSize: Theme.fontSizeSmall
-                MouseArea {
-                    id: quietArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: quiet.clicked()
-                }
-            }
-
-            Quiet {
-                visible: root.phase === "offer" || root.phase === "failed"
-                text: "Later"
-                onClicked: root.later()
-            }
-            StyledText {
-                visible: root.phase === "offer" || root.phase === "failed"
-                text: "·"
-                height: 28
-                verticalAlignment: Text.AlignVCenter
-                color: skin.ink(0.35)
-            }
-            Quiet {
-                visible: root.phase === "offer" || root.phase === "failed"
-                text: "Don't offer again"
-                onClicked: root.ignored()
-            }
-            Quiet {
-                visible: root.busy || root.phase === "confirm"
-                text: "Cancel"
-                onClicked: root.cancelled()
-            }
+            width: card.width
+            sheet: root
+            look: skin
         }
 
         // Credit of a downloaded picture: its license asks for it
