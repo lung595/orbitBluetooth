@@ -35,6 +35,11 @@ Item {
 
     readonly property int maxSamples: 64
 
+    // Uninstalling erases what DMS keeps for the plugin (value 12, D259)
+    UninstallSweep {
+        pluginId: root.pluginId
+    }
+
     // Noise control (ANC) for headphones: address -> helper snapshot
     Prefs {
         id: prefs
@@ -59,6 +64,28 @@ Item {
     }
 
     readonly property alias pictureLookup: pictureService
+
+    // The two volumes of Bluetooth audio devices: the device's own level and
+    // this PC's level (D249, D255)
+    AudioRoute {
+        id: audioRoute
+        prefs: prefs
+        publish: map => root._publish("route", map)
+    }
+
+    readonly property alias route: audioRoute
+
+    // The pop-up that shows both levels whenever one changes (D252, D258)
+    // The volume keys and Orbit's smart steps, on the user's click (D265)
+    VolumeKeys {
+        id: keyBinder
+    }
+
+    VolumeOverlay {
+        route: audioRoute
+        prefs: prefs
+        keys: keyBinder
+    }
 
     // "New device nearby" pop-up, with its own background scan
     NewDeviceWatch {
@@ -95,6 +122,8 @@ Item {
     }
 
     // dms ipc call orbitBluetooth anc nc | ambient | off | adaptive
+    // dms ipc call orbitBluetooth deviceVolume | pcVolume up | down | +5 | -5 | 40
+    // dms ipc call orbitBluetooth volume up | down   (smart steps, D264)
     // dms ipc call orbitBluetooth hidden | unhideAll
     // dms ipc call orbitBluetooth newDeviceDemo | newDeviceStatus
     IpcHandler {
@@ -134,6 +163,41 @@ Item {
                 return "No supported headset connected · " + Guide.url("noise-control");
             ancService.cycle(address);
             return "OK";
+        }
+
+        // The level inside the Bluetooth device in use (absolute volume)
+        function deviceVolume(level: string): string {
+            const why = audioRoute.setLevel("device", level, "");
+            return why ? Guide.levelNote(why) + " · " + Guide.url("the-two-volumes") : "OK";
+        }
+
+        // What this PC sends to it (or to the current output with no device)
+        function pcVolume(level: string): string {
+            const why = audioRoute.setLevel("pc", level, "");
+            return why ? Guide.levelNote(why) + " · " + Guide.url("the-two-volumes") : "OK";
+        }
+
+        // The level heard: the device's own when it has one, else this PC's.
+        // Bound to the volume keys, a slow press is 1 %, a fast run speeds up
+        // Binds the volume keys to Orbit's smart steps ("on"), gives them
+        // back to DMS ("off"), or tells what they do now ("status")
+        function volumeKeys(arg: string): string {
+            const a = String(arg || "").trim().toLowerCase();
+            if (a === "on")
+                keyBinder.enable();
+            else if (a === "off")
+                keyBinder.disable();
+            else if (a !== "status")
+                return "Use: volumeKeys on | off | status · " + Guide.url("volume-keys");
+            return a === "status" ? keyBinder.keys : "OK";
+        }
+
+        function volume(direction: string): string {
+            const d = String(direction || "").trim().toLowerCase();
+            if (d !== "up" && d !== "down")
+                return "Use: volume up | down · " + Guide.url("smart-volume-steps");
+            const why = audioRoute.stepHeard(d === "up" ? 1 : -1);
+            return why ? Guide.levelNote(why) + " · " + Guide.url("the-two-volumes") : "OK";
         }
 
         // Names of the devices hidden in the black hole, one per line

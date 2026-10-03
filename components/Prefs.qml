@@ -1,6 +1,8 @@
 import QtQuick
 import qs.Common
 import qs.Services
+import "Polar.js" as Polar
+import "Steps.js" as Steps
 
 // Reactive view over the plugin's saved settings, shared by every surface.
 QtObject {
@@ -61,6 +63,31 @@ QtObject {
     readonly property var hiddenDevices: _get("hiddenDevices", ({}))
     // Look of the black hole: "blackhole" (realistic) or "tesseract"
     readonly property string holeStyle: _get("holeStyle", "blackhole")
+
+    // Two volumes (D249, D255): this PC's level on a virtual sink in front
+    // of a device that has its own volume. Off: one level, as before
+    readonly property bool separatePc: _get("separatePc", true)
+    // This PC's level per device, address -> 0..1 (D256)
+    readonly property var pcLevels: _get("pcLevels", ({}))
+    // The volume pop-up (D258): "replace" (in place of DMS's volume OSD),
+    // "bar" (under the bar widget), "edge" (right screen edge) or "off"
+    readonly property string popupMode: _get("popupMode", "replace")
+    // "compact", "medium" or "large"
+    readonly property string popupSize: _get("popupSize", "medium")
+    // The vectorscope's cloud: 60 frames a second ("Smooth") or 30 ("Light")
+    readonly property int scopeFps: parseInt(_get("scopeFps", "60")) === 30 ? 30 : 60
+    // How the vectorscope draws the sound: "points", "rays", "waves", "none"
+    readonly property string scopeStyle: Polar.styleOf(_get("scopeStyle", "points"))
+
+    // Volume steps for up / down (D264): "smart" (a fine step alone,
+    // growing while presses come fast) or "fixed" (volumeStep percent)
+    readonly property string volumeSteps: _get("volumeSteps", "smart") === "fixed" ? "fixed" : "smart"
+    // How fast smart steps grow: "gentle", "balanced" or "fast"
+    readonly property string volumeSpeed: Steps.speedOf(_get("volumeSpeed", "balanced"))
+    readonly property int volumeStep: Steps.fixedStep(_get("volumeStep", 5))
+
+    // The volume keys were offered once (D265): never again
+    readonly property bool keysOffered: _get("keysOffered", false)
 
     readonly property bool reduceMotion: SettingsData.reduceMotion
 

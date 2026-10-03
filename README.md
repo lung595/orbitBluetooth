@@ -22,7 +22,7 @@ Drag a device to the center to connect it, pull it away to disconnect it.
 | DankMaterialShell | 1.6.0 or newer | Everything |
 | BlueZ | Any recent version, adapter powered on | Everything |
 | UPower | Any | *Optional*: real charging states |
-| PipeWire | Any | *Optional*: volume ring of audio devices (`pw-play` for its tick) |
+| PipeWire | Any | *Optional*: the two volumes of audio devices (`pw-play` for the tick, `cava` for the picture of the sound) |
 | Python 3 | Standard library only | *Optional*: headphone noise control |
 
 ### 1. Install
@@ -65,7 +65,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 
 1. **Open the orbit** from the widget you added. Discovery starts on its own.
 2. **Drag a device into the inner ring** to pair and connect it; drag it back out to disconnect.
-3. **Click a device** for its detail card: battery, charging, noise control, and a volume ring around audio devices.
+3. **Click a device** for its detail card: battery, charging, noise control, and the two volumes of audio devices.
 4. **New headphones?** Put them in pairing mode: within a minute a pairing sheet unfolds from the bar and offers to connect them, even with Orbit closed.
 
 ## Features
@@ -80,7 +80,8 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 
 - **New headphones? Orbit notices.** Put them in pairing mode and a pairing sheet unfolds from the bar: the headset falls into orbit and floats above a planet, *Connect* pairs it on the spot, shows its battery and its noise-control modes. Deep space in a dark theme, stratosphere in a light one, with any DMS palette. Works with Orbit closed.
 - **Drag to connect** with a magnet snap, elastic tether to disconnect.
-- **Volume ring**: open a connected audio device and a ring of aurora floats around it. Scroll for 5 % steps, drag the moon along the ring, click the planet to eclipse it (mute). The percentage rolls in the ring's gap, the moon trails a comet tail and stardust, each step sends a sound wave, and a soft tick plays in the device itself.
+- **Two volumes**: open a connected audio device and its card shows the device's own level and this PC's as two half circles, with the sound itself moving inside. Drag or scroll each, click the planet to mute, and a soft tick plays in the device itself.
+- **Volume pop-up and smart steps**: whenever a volume changes, the same screen shows both levels in place of DMS's OSD (or inside Dank Island); 1 % per slow notch, faster when you scroll or press fast, and your volume keys can use it in one click.
 - **Live charging**: energy beam, time to full, charge speed, session chart.
 - **Earbuds trio**: the case and both buds in their own mini orbit, each with its battery.
 - **Noise control** for 13 headphone brands (Sony, Apple, Samsung, Bose, Huawei…).
@@ -113,7 +114,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 
 ## Settings
 
-**Settings → Plugins → Orbit Bluetooth**, grouped in tabs: Orbit, Scanning, Headphones (with device pictures), Desktop, Look & sound. Options marked ⚡ use more battery.
+**Settings → Plugins → Orbit Bluetooth**, grouped in tabs: Orbit, Scanning, Headphones (with device pictures), Sound, Desktop, Look. Options marked ⚡ use more battery.
 
 | Section | Setting | Default |
 | --- | --- | --- |
@@ -131,6 +132,14 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | Headphones | Noise control | On |
 | | Turn off conversation awareness on disconnect | On |
 | | Engine: *On demand* or *Always connected* ⚡ | On demand |
+| Sound | Separate PC volume (the device's level and this PC's, [more](docs/GUIDE.md#separate-pc-volume)) | On |
+| | Steps: *Smart* or *Fixed* ([more](docs/GUIDE.md#smart-volume-steps)) / Speed-up / Step | Smart / Balanced / 5 % |
+| | Volume keys: *Use smart steps* or *Give back to DMS* (niri, changed only when you click, [more](docs/GUIDE.md#volume-keys)) | DMS |
+| | Volume pop-up: in place of DMS's OSD, under the bar widget, right screen edge or off ([more](docs/GUIDE.md#volume-pop-up)) | In place of DMS's OSD |
+| | Pop-up size: Compact, Medium or Large | Medium |
+| | Visualizer: Points, Rays, Waves or None / motion: Smooth or Light | Points / Smooth |
+| | Sounds (short cues) / their volume | Off / 60 % |
+| | Volume tick (a soft tick in the device while you change its volume) | On |
 | Desktop widget | Displays | All |
 | | Backdrop | 72 % |
 | | Ambient motion ⚡ | Off |
@@ -139,9 +148,6 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Shooting stars | On |
 | | Stars: Low, Normal or High | Normal |
 | | Custom images folder | — |
-| Sounds | Sounds | Off |
-| | Volume | 60 % |
-| | Volume tick (a soft tick in the device while you change its volume) | On |
 
 ## Command line and keybindings
 
@@ -153,6 +159,10 @@ dms ipc call orbitBluetooth newDeviceDemo    # show the new-headphones pop-up wi
 dms ipc call orbitBluetooth newDeviceStatus  # is the background scan running, or why not
 dms ipc call orbitBluetooth hidden       # list hidden devices
 dms ipc call orbitBluetooth unhideAll    # bring every hidden device back
+dms ipc call orbitBluetooth volume up    # up or down, with smart steps
+dms ipc call orbitBluetooth deviceVolume 40  # the device's own level: up, down or 0-100
+dms ipc call orbitBluetooth pcVolume -- -10  # this PC's level for it (a negative step needs --)
+dms ipc call orbitBluetooth volumeKeys on    # on, off or status: your volume keys use smart steps
 ```
 
 Bind them in your compositor, for example in niri: `Mod+N { spawn "dms" "ipc" "call" "orbitBluetooth" "ancCycle"; }`, or in Hyprland: `bind = SUPER, N, exec, dms ipc call orbitBluetooth ancCycle`.
@@ -170,6 +180,8 @@ Bind them in your compositor, for example in niri: `Mod+N { spawn "dms" "ipc" "c
 | A device charges but shows no lightning | Wait for its first level increase: the estimate starts then |
 | Noise control does not appear | Headset must be paired and supported, Python 3 installed; reopen the card |
 | A device vanished | It is in the black hole: click it, or `dms ipc call orbitBluetooth unhideAll` |
+| Settings or widgets of Orbit left after removing it while DMS was not running | Install it again, then remove it from DMS while it runs: it cleans up after itself, see [Uninstalling](docs/GUIDE.md#uninstalling) |
+| Volume keys still use smart steps after removing Orbit while DMS was not running | They still work (they fall back to DMS); give them back: `dms keybinds set niri XF86AudioRaiseVolume "spawn dms ipc call audio increment 3" --allow-when-locked`, same with `XF86AudioLowerVolume` and `decrement`, see [Volume keys](docs/GUIDE.md#volume-keys) |
 | Time to full looks off | Some headsets report in 10 % steps; it improves over time |
 
 Some Sony headsets do not report charging, or drop Bluetooth while charging: this is a hardware limit.
@@ -180,9 +192,12 @@ Some Sony headsets do not report charging, or drop Bluetooth while charging: thi
 - **No telemetry.** Connection times and battery history stay in memory; settings, hidden and ignored devices are stored by DMS.
 - **Noise control**: a small helper talks to your headset over a local Bluetooth socket, only while needed.
 - **New headphones pop-up**: by default Orbit only listens to searches you start yourself; nothing runs in the background. The optional **Background scan** (off by default) does a local scan of 8 s about once a minute, only while the screen is on, no Bluetooth audio is connected and the battery is above the threshold.
-- **Volume ring**: talks to the local sound server (PipeWire) only; its tick is a sound file shipped with Orbit.
+- **Two volumes**: talk to the local sound server (PipeWire) only; the tick is a sound file shipped with Orbit, the picture of the sound is read locally with `cava`.
+- **Volume keys**: only if you click *Enable*, Orbit asks DMS (`dms keybinds`) to bind them; *Undo* and uninstalling give them back exactly. [More](docs/GUIDE.md#volume-keys)
 - **Guide links**: the GitHub mark opens the guide in your browser only when you click it; Orbit itself makes no request.
 - **Network: only one opt-in feature, off by default.** **Real device pictures** sends only the *model name* of devices you have paired, never a stranger's device nearby, never the Bluetooth address. It contacts `commons.wikimedia.org`, then `api.sketchfab.com`, and downloads the picture from `upload.wikimedia.org` or `media.sketchfab.com`. Pictures are credited in the card, kept in `~/.cache/orbitBluetooth/pictures` (readable by you only) and erased when you turn the option off or from the settings.
+
+- **Uninstalling leaves nothing.** When you remove Orbit from DMS, it erases what DMS keeps for it (its settings, its bar, Control Center and desktop widgets) and its pictures cache, and your sound goes back exactly as before. [More](docs/GUIDE.md#uninstalling)
 
 Details in the [user guide](docs/GUIDE.md#privacy).
 

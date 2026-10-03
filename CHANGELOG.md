@@ -5,6 +5,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## Unreleased
 
+## 1.12.0 - 2026-10-03
+
+### Added
+
+- **Two volumes, the device's and this PC's.** Many Bluetooth devices have a volume of their own; Orbit now keeps it apart from what this PC sends, remembers this PC's level per device, and draws both as two half circles, one inside the other, with the live sound inside (a polar vectorscope read by `cava`, only while it shows). *Settings → Sound → Separate PC volume* turns it off. A device without a volume of its own shows one level and says why.
+- **Volume pop-up.** When any volume changes, a small dark screen shows both levels: in place of DMS's volume OSD (default), under the bar widget, on the right screen edge, or off. On screens with Dank Island, it shows inside the island instead. Three sizes, and four ways to draw the sound: *Points*, *Rays*, *Waves* or *None*, at 60 or 30 images per second.
+- **Smart volume steps.** 1 % per slow notch, bigger steps when you scroll or press fast, and a short hold when you turn back; *Gentle*, *Balanced* or *Fast*, or a fixed step.
+- **Command line**: `dms ipc call orbitBluetooth volume up | down` (smart steps), `deviceVolume` and `pcVolume` (`up`, `down`, `0`–`100`, `+N`, `-N`).
+- **Volume keys with smart steps, in one click.** The first time Orbit's volume pop-up opens, one line offers it (*Smart volume keys? Enable*, with *Undo* after); also in **Settings → Sound** and `dms ipc call orbitBluetooth volumeKeys on | off | status`. Orbit asks DMS's own `dms keybinds` to bind the two keys, only if they still do DMS's default; they fall back to DMS's step if Orbit is off or gone, and *Undo* or uninstalling writes back DMS's exact line (niri only). They always change the output you hear: with the sound on a wired interface, a connected headset does not move.
+- **Uninstalling leaves nothing.** DMS deletes the plugin folder but keeps its settings and widgets; Orbit now erases them itself when it finds its folder gone (settings, bar, Control Center and desktop widgets with their positions, pictures cache). It waits a few seconds and checks again, so an update that re-downloads the folder keeps everything; disabling or restarting erases nothing.
+
+### Changed
+
+- **Sounds moved to the new *Sound* tab** (cues, their volume and the volume tick); *Look & sound* is now *Look*.
+- **In the bar pop-out and the Control Center, the card's volumes start folded** into one thin line, so the card fits without scrolling; the wheel over a level changes it, a click unfolds the scope.
+- **The device card shows both volumes.** Under the device name, the same dark scope as the volume pop-up: the device's half on one side, *This PC* on the other, live sound in the middle while the card is open. Drag or scroll either half; click the planet to mute, scroll on it to change the main volume. A device whose volume follows the PC shows a short note with the GitHub mark. The aurora ring around the planet and its effects are gone, and the card leaves less empty room above the planet.
+
 ## 1.11.2 - 2026-10-03
 
 ### Changed

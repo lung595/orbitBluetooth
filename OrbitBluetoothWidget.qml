@@ -60,6 +60,7 @@ PluginComponent {
                 anchors.fill: parent
                 active: true
                 cornerRadius: Theme.cornerRadius
+                foldVolume: true
                 onFocusFitHeightChanged: root.ccCardFit = focusFitHeight
                 Component.onDestruction: root.ccCardFit = 0
             }
@@ -157,6 +158,7 @@ PluginComponent {
                 OrbitScene {
                     anchors.fill: parent
                     cornerRadius: Theme.cornerRadius
+                    foldVolume: true
                     // The popout keeps its content loaded; only run while shown
                     active: pop.parentPopout ? pop.parentPopout.shouldBeVisible : true
                     onFocusFitHeightChanged: root.popCardFit = focusFitHeight

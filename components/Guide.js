@@ -29,10 +29,21 @@ function blockedNote() {
 
 // Scrolled over a connected device that has no sound output to set
 function noVolumeNote(name) {
-    return { "title": (name || "This device") + " has no volume", "hint": "It does not play sound, or its audio is not ready yet", "anchor": "volume-ring" };
+    return { "title": (name || "This device") + " has no volume", "hint": "It does not play sound, or its audio is not ready yet", "anchor": "the-two-volumes" };
 }
 
 // Pulled out of its orbit, but still connected a while later
 function stuckNote(name) {
     return { "title": (name || "This device") + " is still connected", "hint": "It may be in use: try again, or turn it off", "anchor": "if-it-does-not-disconnect" };
+}
+
+// A level that cannot be set from the keyboard, by why (AudioRoute.setLevel)
+function levelNote(why) {
+    if (why === "no-device")
+        return "No Bluetooth audio device connected";
+    if (why === "no-own-volume")
+        return "This device has no volume of its own: it follows this PC's level";
+    if (why === "no-pc-level")
+        return "Separate PC volume is off: this device has one level, use deviceVolume";
+    return "Use up, down, +5, -5 or a level from 0 to 100";
 }

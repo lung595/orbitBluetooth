@@ -27,6 +27,8 @@ Item {
     property bool covered: false             // desktop: hidden behind a window, Ambient pauses
     property bool interacting: false         // desktop: pointer is over the widget
     property bool glass: false               // desktop: frameless, fades into the wallpaper
+    property bool foldVolume: false          // menus: the card's two volumes start folded into a thin line
+    property bool volumeUnfolded: false      // ...until clicked; kept while the shell runs, never saved
     // Names of connected devices read stronger than the others; with nothing
     // connected there is no hierarchy to show, so every name is lifted
     property bool anyConnected: false
@@ -62,6 +64,13 @@ Item {
     readonly property real focusGlyphScale: focusGlyphSize / bodySize
     readonly property real focusGlyphLift: focusGlyphSize * 0.2      // glyph center relative to card top
     readonly property real focusOverlap: focusGlyphLift + focusGlyphSize * 0.5 + 8
+    // Room above the card for the glyph, which breaks out of its top edge:
+    // its center sits 0.2 glyph below the card top, so 0.3 glyph rises
+    // above it, plus a margin. Less than this and the window cuts it.
+    function focusHeadroomFor(glyph) {
+        return glyph * 0.3 + Theme.spacingS;
+    }
+    readonly property real focusHeadroom: focusHeadroomFor(focusGlyphSize)
     // Scene height at which the open detail card fits without scrolling (0
     // when none is open): card content, glyph overlap and margins, with the
     // glyph at its width-bound size. It does not depend on the scene's own
@@ -71,7 +80,7 @@ Item {
             return 0;
         const glyph = focusCardWidth * focusGlyphRatio;
         const content = focusCard.implicitHeight - focusOverlap - Theme.spacingL;
-        return content + glyph * 0.7 + 8 + Theme.spacingL + glyph * 0.35 + Theme.spacingM;
+        return content + glyph * 0.7 + 8 + Theme.spacingL + focusHeadroomFor(glyph) + Theme.spacingM;
     }
 
     // --- State -----------------------------------------------------------------
@@ -147,6 +156,10 @@ Item {
         if (query)
             _pictureService?.request(query);
     }
+
+    // --- The two volumes (the daemon's AudioRoute, D249) ----------------------
+    // Not read-only: the offscreen previews give a made-up one
+    property var audioRoute: PluginService.pluginDaemonInstances[prefs.pluginId]?.route ?? null
 
     // --- Noise control (the daemon runs the helper, see AncService) ----------
     readonly property var _ancService: PluginService.pluginDaemonInstances[prefs.pluginId]?.anc ?? null
@@ -830,8 +843,10 @@ Item {
         enabled: scene.active && (scene.menuOpen || scene.hiddenOpen || !!scene.focusBody)
         onActivated: {
             if (scene.renaming)
-                scene.renaming = false; // cancel the rename, keep the card
-            else if (scene.menuOpen)
+                scene.renaming = false;
+            else
+            // cancel the rename, keep the card
+            if (scene.menuOpen)
                 menu.close();
             else if (scene.hiddenOpen)
                 scene.closeHidden();
@@ -1513,9 +1528,8 @@ Item {
         }
 
         // Focus card (bodies are siblings, so the focused glyph can sit above it)
-        // Volume ring around the focused device, above the card
-        VolumeRing {
-        objectName: "volumeRing" // found by the offscreen previews
+        // Over the focused glyph: click to mute, wheel for the volume
+        PlanetControl {
             scene: orbitRoot
             z: 20001
         }
@@ -1525,7 +1539,7 @@ Item {
             scene: orbitRoot
             z: 15000
             width: scene.focusCardWidth
-            height: Math.min(implicitHeight, scene.height - scene.focusGlyphSize * 0.35 - Theme.spacingM)
+            height: Math.min(implicitHeight, scene.height - scene.focusHeadroom - Theme.spacingM)
             x: (scene.width - width) / 2
             y: scene.focusBody ? scene.height - height - Theme.spacingM : scene.height + 20
             opacity: scene.focusBody ? 1 : 0

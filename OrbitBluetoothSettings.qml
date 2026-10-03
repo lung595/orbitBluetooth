@@ -3,6 +3,7 @@ import qs.Common
 import qs.Widgets
 import qs.Modules.Plugins
 import qs.Modules.Settings.Widgets
+import "components"
 import "components/Glyphs.js" as Glyphs
 
 // Plugin settings, grouped by what they change. Every option works out of
@@ -74,6 +75,11 @@ PluginSettings {
             "text": "Headphones"
         },
         {
+            "id": "sound",
+            "icon": "graphic_eq",
+            "text": "Sound"
+        },
+        {
             "id": "desktop",
             "icon": "desktop_windows",
             "text": "Desktop"
@@ -81,7 +87,7 @@ PluginSettings {
         {
             "id": "look",
             "icon": "palette",
-            "text": "Look & sound"
+            "text": "Look"
         }
     ]
 
@@ -266,6 +272,34 @@ PluginSettings {
             defaultValue: "60"
         }
 
+        // --- Sounds ------------------------------------------------------------------
+        Section {
+            text: "Sounds"
+        }
+
+        ToggleSetting {
+            settingKey: "sounds"
+            label: "Sounds"
+            description: "On snap, connect and disconnect"
+            defaultValue: false
+        }
+
+        ToggleSetting {
+            settingKey: "volumeTick"
+            label: "Volume tick"
+            description: "A soft tick in the device on each 5 % step made on its card, so you hear the level where it plays"
+            defaultValue: true
+        }
+
+        SliderSetting {
+            settingKey: "soundVolume"
+            label: "Volume"
+            defaultValue: 60
+            minimum: 0
+            maximum: 100
+            unit: "%"
+        }
+
         SliderSetting {
             settingKey: "offerMinBattery"
             // Only matters once the background scan is on
@@ -301,6 +335,221 @@ PluginSettings {
                 }
             ]
             defaultValue: "45"
+        }
+    }
+
+    Column {
+        width: parent ? parent.width : 0
+        spacing: Theme.spacingM
+        visible: root.tab === "sound"
+        // --- Two volumes -------------------------------------------------------------
+
+        ToggleSetting {
+            settingKey: "separatePc"
+            label: "Separate PC volume"
+            description: "For devices with a volume of their own: the device's level and what this PC sends to it, set apart"
+            defaultValue: true
+        }
+
+        // --- Volume steps (D264) --------------------------------------------------------
+        Section {
+            text: "Volume steps"
+        }
+
+        SelectionSetting {
+            id: volumeSteps
+            settingKey: "volumeSteps"
+            label: "Steps"
+            description: "For the volume keys bound to Orbit (dms ipc call orbitBluetooth volume up or down) and the wheel over the pop-up. Smart: slow notches move by 1 % for precision, a quick run builds up speed, and turning back to look for a spot holds it a little"
+            options: [
+                {
+                    label: "Smart",
+                    value: "smart"
+                },
+                {
+                    label: "Fixed",
+                    value: "fixed"
+                }
+            ]
+            defaultValue: "smart"
+        }
+
+        SelectionSetting {
+            settingKey: "volumeSpeed"
+            visible: volumeSteps.value !== "fixed"
+            label: "Speed-up"
+            description: "How far a quick run can go per notch: Gentle up to 3 %, Balanced up to 4 %, Fast up to 6 %. Slow notches are always 1 %, and so is every step under 10 %"
+            options: [
+                {
+                    label: "Gentle",
+                    value: "gentle"
+                },
+                {
+                    label: "Balanced",
+                    value: "balanced"
+                },
+                {
+                    label: "Fast",
+                    value: "fast"
+                }
+            ]
+            defaultValue: "balanced"
+        }
+
+        SliderSetting {
+            settingKey: "volumeStep"
+            visible: volumeSteps.value === "fixed"
+            label: "Step"
+            defaultValue: 5
+            minimum: 1
+            maximum: 10
+            unit: "%"
+        }
+
+        // The volume keys (D265): bound to Orbit on the user's click only,
+        // through DMS's own keybind command; read when this page opens
+        VolumeKeys {
+            id: keyBinder
+            visible: false
+            Component.onCompleted: refresh()
+        }
+
+        Row {
+            width: parent.width
+            spacing: Theme.spacingM
+
+            StyledText {
+                width: parent.width - (keysButton.visible ? keysButton.width + parent.spacing : 0) - keysLink.width - parent.spacing
+                anchors.verticalCenter: parent.verticalCenter
+                wrapMode: Text.WordWrap
+                font.pixelSize: Theme.fontSizeSmall
+                color: keyBinder.failed ? Theme.error : Theme.surfaceVariantText
+                text: {
+                    if (keyBinder.failed)
+                        return "Could not change the volume keys. The guide shows how to bind them by hand";
+                    switch (keyBinder.keys) {
+                    case "dms":
+                        return "Volume keys: DMS's own steps. Smart steps apply to them only once they are bound to Orbit";
+                    case "orbit":
+                        return "Volume keys: Orbit's smart steps. If Orbit is turned off they fall back to DMS's steps";
+                    case "custom":
+                        return "Volume keys: a shortcut of your own, left as it is. For smart steps, bind them to dms ipc call orbitBluetooth volume up or down";
+                    case "unsupported":
+                        return "For smart steps on the volume keys, bind them to dms ipc call orbitBluetooth volume up or down (done for you on niri only)";
+                    default:
+                        return "Reading the volume keys…";
+                    }
+                }
+            }
+
+            ActionButton {
+                id: keysButton
+                anchors.verticalCenter: parent.verticalCenter
+                visible: !keyBinder.busy && (keyBinder.keys === "dms" || keyBinder.keys === "orbit")
+                text: keyBinder.keys === "orbit" ? "Give back to DMS" : "Use smart steps"
+                onClicked: keyBinder.keys === "orbit" ? keyBinder.disable() : keyBinder.enable()
+            }
+
+            GuideLink {
+                id: keysLink
+                anchors.verticalCenter: parent.verticalCenter
+                anchor: "volume-keys"
+                size: 14
+                color: Theme.surfaceVariantText
+                hoverColor: Theme.surfaceText
+            }
+        }
+
+        // --- Volume pop-up -------------------------------------------------------------
+        Section {
+            text: "Volume pop-up"
+        }
+
+        SelectionSetting {
+            settingKey: "popupMode"
+            label: "Pop-up"
+            description: "Shows both levels whenever one changes"
+            options: [
+                {
+                    label: "In place of DMS's volume OSD",
+                    value: "replace"
+                },
+                {
+                    label: "Under the bar widget",
+                    value: "bar"
+                },
+                {
+                    label: "Right screen edge",
+                    value: "edge"
+                },
+                {
+                    label: "Off (DMS's OSD)",
+                    value: "off"
+                }
+            ]
+            defaultValue: "replace"
+        }
+
+        SelectionSetting {
+            settingKey: "popupSize"
+            label: "Size"
+            options: [
+                {
+                    label: "Compact",
+                    value: "compact"
+                },
+                {
+                    label: "Medium",
+                    value: "medium"
+                },
+                {
+                    label: "Large",
+                    value: "large"
+                }
+            ]
+            defaultValue: "medium"
+        }
+
+        SelectionSetting {
+            settingKey: "scopeStyle"
+            label: "Visualizer"
+            description: "How the sound is drawn inside the half circles: a cloud of points (where it sits left or right), a fan of rays or waves (its notes, bass at the top)"
+            options: [
+                {
+                    label: "Points",
+                    value: "points"
+                },
+                {
+                    label: "Rays",
+                    value: "rays"
+                },
+                {
+                    label: "Waves",
+                    value: "waves"
+                },
+                {
+                    label: "None",
+                    value: "none"
+                }
+            ]
+            defaultValue: "points"
+        }
+
+        SelectionSetting {
+            settingKey: "scopeFps"
+            label: "Visualizer motion"
+            description: "While the pop-up or a card shows, nothing otherwise. \"Light\" draws half as often"
+            options: [
+                {
+                    label: "Smooth",
+                    value: "60"
+                },
+                {
+                    label: "Light",
+                    value: "30"
+                }
+            ]
+            defaultValue: "60"
         }
     }
 
@@ -458,34 +707,6 @@ PluginSettings {
             description: "PNGs named after devices replace their icons"
             placeholder: "~/Pictures/bluetooth"
             defaultValue: ""
-        }
-
-        // --- Sounds ------------------------------------------------------------------
-        Section {
-            text: "Sounds"
-        }
-
-        ToggleSetting {
-            settingKey: "sounds"
-            label: "Sounds"
-            description: "On snap, connect and disconnect"
-            defaultValue: false
-        }
-
-        ToggleSetting {
-            settingKey: "volumeTick"
-            label: "Volume tick"
-            description: "A soft tick in the device on each 5 % step of its volume ring, so you hear the level where it plays"
-            defaultValue: true
-        }
-
-        SliderSetting {
-            settingKey: "soundVolume"
-            label: "Volume"
-            defaultValue: 60
-            minimum: 0
-            maximum: 100
-            unit: "%"
         }
     }
 }

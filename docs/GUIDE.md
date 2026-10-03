@@ -7,7 +7,7 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 - [Widgets](#widgets)
 - [The orbit](#the-orbit) · [If it does not connect](#if-it-does-not-connect) · [If it does not disconnect](#if-it-does-not-disconnect) · [Bluetooth is off](#bluetooth-is-off)
 - [The detail card](#the-detail-card)
-- [Volume ring](#volume-ring)
+- [The two volumes](#the-two-volumes) · [Separate PC volume](#separate-pc-volume) · [Volume pop-up](#volume-pop-up) · [Smart volume steps](#smart-volume-steps) · [Volume keys](#volume-keys)
 - [Earbuds: the trio](#earbuds-the-trio)
 - [Hiding devices: the black hole](#hiding-devices-the-black-hole)
 - [Noise control](#noise-control)
@@ -90,29 +90,84 @@ Click any device to open it: its glyph flies onto the card.
 - **Name, type and state** (connected, paired, available).
 - **Rename**: click the name of a paired device. <kbd>Enter</kbd> saves, <kbd>Esc</kbd> cancels, an empty name restores the device's own name. The new name is the Bluetooth alias, so every app shows it; icon, noise control and battery estimates still follow the device's own name.
 - **Connection time and battery level.**
-- **Volume** of connected audio devices: a ring floats around the device, see [Volume ring](#volume-ring).
+- **Volume** of connected audio devices: the device's own level and this PC's, see [The two volumes](#the-two-volumes).
 - **Actions**: on the left, back and change icon (the card); on the right, connect or disconnect, hide, forget (asks twice) (the device).
 - **Forget** unpairs the device (BlueZ removes it) and clears what Orbit kept about it: its icon choice and a *Don't offer again* mark, so it can be offered as new next time. Also in the right-click menu: **Forget**, then click again to confirm.
 - **Battery gauge, session chart and stats** (see [Charging and battery](#charging-and-battery)).
 - The **earbuds trio** and **noise control** when the device supports them.
 
-## Volume ring
+## The two volumes
 
-Open a **connected** audio device (headphones, speaker, earbuds, TV…) and a ring of aurora settles around its planet, with a small moon at the current level. Devices that are not connected, or have no sound output, get no ring: scrolling over a connected keyboard or mouse says **…has no volume** instead of doing nothing. Right after a headset connects, its audio can take a second to appear; scroll again once the ring is there.
+Open a **connected** audio device (headphones, speaker, earbuds, TV…) and its card shows **two volumes** on a small dark screen, the same one as Orbit's volume pop-up:
 
-![The volume ring around an open headset](../screenshots/volume.png)
+![The two volumes on an open headset's card](../screenshots/volume.png)
 
-- **Scroll** over the planet or the ring: 5 % per notch.
-- **Drag along the ring** for any level in between. The gap at the bottom is the stop between 0 % and 100 %: dragging into it holds the nearest end.
-- **Click the planet** to mute or unmute: a shadow slides over the planet like an **eclipse**, leaving a corona of light around its rim, the aurora dims and the gap reads *Muted*. Changing the volume unmutes and the shadow slides away.
-- The level is a band of **aurora**: cooler where it starts, glowing toward the moon, with a bright filament through its middle. Its edges ripple gently; move the volume fast and the aurora flares.
-- **Moving it** leaves a **comet tail** behind the moon, which shrinks back into it when you stop, and sheds fine **stardust**: the faster you go, the more grains, thrown ahead and outward, then bent back by the planet's pull.
-- Each 5 % step sends a **sound wave** off the planet, wider and brighter the louder it gets. Reaching **100 %** sends a corona instead, a stronger flare.
-- While you change it, the **percentage** drops into the gap at the bottom of the ring. Its digits roll like an odometer on a spring and the level swings a little past and settles. A second after you stop, the percentage floats back up and fades.
-- With *Reduce motion*, everything changes at once: no ripple, tail, stardust or waves, and the eclipse is instant.
-- **Volume tick**: a soft, short tick plays **in the device itself** at each 5 % step, so you hear the level where it matters. Turn it off in **Look & sound → Volume tick**. It needs `pw-play` (part of PipeWire).
+- **In the bar pop-out and the Control Center**, the two volumes start **folded into one thin line** (each level as a slim bar with its percentage), so the card fits without scrolling. The wheel over a level changes it (the device's on the left, this PC's on the right), with the same smart steps as the keys. Click it to unfold the screen; the ⌃ in its corner folds it back. Orbit remembers your choice until the shell restarts. Folded, the sound is not read at all. The desktop widget always shows the screen.
+- **The outer half circle is the device's own level** (`primary` color), the one its buttons change. **The inner one is this PC's**: what the PC sends to it (`tertiary` color). The icon at the foot of each says which is which, and the percentages stay next to them.
+- **Inside, the sound itself**: where it goes, left or right, and how loud. Pick the style in the settings (*Points*, *Rays*, *Waves* or *None*). It only moves while the card is on screen and sound is playing.
+- **Drag a moon** along its half circle for any level; **scroll** over it for Orbit's smart steps (1 % per slow notch, bigger when you scroll fast).
+- **Click an icon** to mute that level. **Click the planet** to mute too: with one audio device connected it mutes this PC, with several it mutes that device only.
+- **Scroll over the planet** to change the level you hear move first (the device's own when it has one).
+- **A device with no level of its own** (no *absolute volume* over Bluetooth): its volume is this PC's, so the screen shows this PC's half circle alone and says *Its volume follows this PC*.
+- **Volume tick**: a soft, short tick plays **in the device itself** at each 5 % step you make on the card, so you hear the level where it matters. Turn it off in **Sound → Volume tick**. It needs `pw-play` (part of PipeWire).
+- Devices that are not connected, or have no sound output, show no screen: scrolling over a connected keyboard or mouse says **…has no volume** instead of doing nothing. Right after a headset connects, its audio can take a second to appear.
 
-The ring talks to the local sound server (PipeWire) only. The effects move on one clock that runs only while something moves and stops by itself a moment after you let go: nothing runs while the ring is idle.
+Everything talks to the local sound server (PipeWire) only. The picture of the sound is read with `cava` from the device's output, only while the card is open; with *Reduce motion* it does not run and the levels change at once.
+
+### Separate PC volume
+
+Many Bluetooth devices have a volume of their own (*absolute volume*): the level their buttons change. Then there are two levels on the way to your ears, and Orbit keeps them apart:
+
+- **The device's level** is the one the device shows and remembers.
+- **This PC's level** is what the PC sends to it. Orbit remembers it **per device**, so your speaker can sit at 100 % from the PC while your headset stays at 40 %.
+- To carry this PC's level, Orbit adds a small sound filter in front of the device. It belongs to the shell and disappears with it; nothing in your sound setup is changed.
+- Turn it off in **Sound → Separate PC volume**: no filter, and every device shows one level, as before.
+
+Devices that follow this PC's level have one level only, whatever this setting says.
+
+## Volume pop-up
+
+When a volume changes, from a key, the command line or anywhere else, Orbit can show **both levels at once** in a small pop-up: the same dark screen as the card, with the device's half circle, this PC's, and the sound inside.
+
+- **Where** (**Sound → Pop-up**): *In place of DMS's volume OSD* (the default: DMS's own OSD stays hidden on that screen), *Under the bar widget*, *Right screen edge*, or *Off* to keep DMS's OSD.
+- **Dank Island**: on screens where the island shows the volume, Orbit's screen appears **inside the island**, which grows to fit, instead of a second pop-up.
+- **Size** (**Sound → Size**): *Compact*, *Medium* (default) or *Large*.
+- **Scroll over it** to keep changing the level with [smart steps](#smart-volume-steps); drag a moon or click an icon, as on the card. It closes by itself a moment after the last change.
+- With no Bluetooth audio device, it shows this PC's level alone.
+
+The sound inside is drawn only while the pop-up or a card shows:
+
+- **Visualizer** (**Sound → Visualizer**): *Points* (a cloud: where the sound sits, left or right), *Rays* or *Waves* (its notes, bass at the top), or *None*.
+- **Visualizer motion**: *Smooth* (60 images per second) or *Light* (30, half the work).
+- It needs `cava`; without it, PipeWire's own peak meter draws one band per side. With *Reduce motion*, nothing moves.
+
+## Smart volume steps
+
+Orbit's own way of stepping the volume, for the wheel over the pop-up and the card and for the [volume keys](#volume-keys) once bound to Orbit:
+
+- **Slow notches move by 1 %**, so you can land exactly where you want.
+- **A quick run builds up speed**, up to a ceiling you choose in **Sound → Speed-up**: *Gentle* (3 %), *Balanced* (4 %, default) or *Fast* (6 %).
+- **Turning back** to look for a spot holds the step small for a moment.
+- Under 10 %, every step is 1 %.
+- **The keys change the output you hear**, Bluetooth or not: with the sound on a wired interface and a headset connected, the interface moves and the headset stays where it is.
+- **Sound → Steps → Fixed** gives the same step every time instead (**Step**, 5 % by default).
+- From the command line: `dms ipc call orbitBluetooth volume up` or `down` (smart steps on the device you hear), `deviceVolume` and `pcVolume` for one level: `up` or `down` (5 %), `N` for a level from 0 to 100, `+N` or `-N` for a step (a negative one needs `--`: `pcVolume -- -10`).
+
+## Volume keys
+
+Your keyboard's volume keys can use Orbit's **smart steps**: 1 % per press when you tap, bigger steps when you hold or press fast, the same as scrolling in Orbit's volume pop-up.
+
+- **The first time** Orbit's volume pop-up opens, one line under the scope offers it: **Smart volume keys? Enable**. Click **Enable** and the line reads **Smart volume keys on · Undo**. It shows only once; nothing changes unless you click.
+- **In the settings**, **Sound** tab, under the volume steps: **Use smart steps** binds them, **Give back to DMS** undoes it. The line next to it says what the keys do now.
+- **From the command line**: `dms ipc call orbitBluetooth volumeKeys on`, `off` or `status`.
+
+How it works:
+
+- Orbit asks DMS's own command, `dms keybinds`, to point the two keys (`XF86AudioRaiseVolume` and `XF86AudioLowerVolume`) at Orbit. Orbit writes nothing itself; this is the one DMS setting it changes, and only when you click.
+- It binds them only if they still do **DMS's default** (`dms ipc call audio increment` and `decrement`). If you bound them to something of your own, Orbit leaves them alone.
+- **The keys never stop working.** If Orbit is off, removed, or too old for this command, the keys fall back to DMS's own step (the one they had, 3 % by default).
+- **Undo**, **Give back to DMS** and **uninstalling Orbit** write back the exact line DMS had, only on keys still bound to Orbit.
+- **niri only**: elsewhere the line reads *Bind your keys to Orbit*. Bind them yourself, for example in Hyprland: `binde = , XF86AudioRaiseVolume, exec, dms ipc call orbitBluetooth volume up`.
 
 ## Earbuds: the trio
 
@@ -295,7 +350,7 @@ Orbit keeps its night sky in every theme. With a light DMS theme, devices turn i
 | ![White devices on the night sky](../screenshots/light.png) | ![Soft off-white detail card](../screenshots/light-detail.png) |
 
 ## Settings
-Grouped in tabs: **Orbit** (with Reset), **Scanning**, **Headphones** (with device pictures), **Desktop**, **Look & sound** (with sounds).
+Grouped in tabs: **Orbit** (with Reset), **Scanning**, **Headphones** (with device pictures), **Sound**, **Desktop**, **Look**.
 
 | Section | Setting | Default | Description |
 | --- | --- | --- | --- |
@@ -314,6 +369,18 @@ Grouped in tabs: **Orbit** (with Reset), **Scanning**, **Headphones** (with devi
 | Headphones | Noise control | On | Supported headphones (needs Python 3) |
 | | Turn off conversation awareness on disconnect | On | Turns *Conversation* off before Orbit disconnects a headset, and after it reconnects |
 | | Engine | On demand | *Always connected* ⚡ shows headset button presses live |
+| Sound | Separate PC volume | On | The device's level and this PC's, set apart, see [Separate PC volume](#separate-pc-volume) |
+| | Steps | Smart | Smart or Fixed, see [Smart volume steps](#smart-volume-steps) |
+| | Speed-up | Balanced | Gentle, Balanced or Fast: how far a quick run can go per notch |
+| | Step | 5 % | The step with *Fixed* steps |
+| | Volume keys | DMS | *Use smart steps* or *Give back to DMS*, see [Volume keys](#volume-keys) (niri) |
+| | Pop-up | In place of DMS's volume OSD | Under the bar widget, right screen edge or off, see [Volume pop-up](#volume-pop-up) |
+| | Size | Medium | Compact, Medium or Large |
+| | Visualizer | Points | Points, Rays, Waves or None |
+| | Visualizer motion | Smooth | Smooth (60 images/s) or Light (30) |
+| | Sounds | Off | Short cues on snap, connect and disconnect |
+| | Volume tick | On | A soft tick in the device at each 5 % step made on its [card](#the-two-volumes) |
+| | Volume | 60 % | Of the short cues |
 | Desktop widget | Displays | All | Which displays show the desktop widget |
 | | Backdrop | 72 % | Depth of the veil behind the orbit |
 | | Ambient motion | Off | Keep orbits moving when the pointer is away ⚡ (paused while windows hide the desktop) |
@@ -322,9 +389,6 @@ Grouped in tabs: **Orbit** (with Reset), **Scanning**, **Headphones** (with devi
 | | Shooting stars | On | A rare meteor (every 12–32 s), bent or swallowed by the black hole |
 | | Stars | Normal | Low, Normal or High |
 | | Custom images folder | — | PNG files that replace built-in icons |
-| Sounds | Sounds | Off | Short cues on snap, connect and disconnect |
-| | Volume | 60 % | |
-| | Volume tick | On | A soft tick in the device at each 5 % step of its [volume ring](#volume-ring) |
 
 Three buttons at the end reset custom device icons, bring back every hidden device and offer ignored devices again. DMS's *Reduce motion* is respected.
 
@@ -332,12 +396,25 @@ Three buttons at the end reset custom device icons, bring back every hidden devi
 
 - **No telemetry. No network access, except one opt-in feature, off by default**: [Real device pictures](#real-device-pictures), which sends only the model name of paired devices to `commons.wikimedia.org` and `api.sketchfab.com`.
 - **Background scan** (the new headphones pop-up, on by default): Bluetooth discovery for 8 s about once a minute, local only, under the conditions in [New headphones pop-up](#new-headphones-pop-up). Devices you *Ignore* are stored with the plugin settings.
-- **The volume ring** talks to the local sound server (PipeWire) only; its tick is a sound file shipped with Orbit, played with `pw-play`.
+- **The two volumes** talk to the local sound server (PipeWire) only; the tick is a sound file shipped with Orbit, played with `pw-play`, and the picture of the sound is read locally with `cava`.
 - **One helper process**: the noise-control helper opens a local Bluetooth socket to your headset and nothing else, only while needed. `ORBIT_ANC_DEBUG=1` prints its raw packets on stderr; nothing is logged to a file.
 - **Nothing written to disk by Orbit**, except the pictures cache of that opt-in feature (`~/.cache/orbitBluetooth/pictures`): connection times and battery history live in memory for the session.
 - **Files read**: only the sysfs `uevent` of kernel batteries, once each.
 - **Settings** (choices, custom icons, hidden devices) are stored by DMS with your other plugin settings.
 - **Device names** you set are stored by BlueZ, like any Bluetooth alias.
+
+### Uninstalling
+
+Removing Orbit leaves your machine exactly as it was before:
+
+- Orbit changes nothing in your sound setup: no default output, no setting of PipeWire or WirePlumber. What it creates for the sound (the filter that carries this PC's level) belongs to the shell and disappears with it, even after a crash.
+- DMS deletes the plugin folder but keeps what it stored for the plugin. So when Orbit is unloaded and finds its folder gone, it erases its settings, its widgets (bars, Control Center, desktop and their positions) and its pictures cache.
+- It waits a few seconds first and checks again: an update that re-downloads the folder keeps everything.
+- Disabling Orbit, reloading or restarting the shell erase nothing.
+
+- If you gave your [volume keys](#volume-keys) to Orbit, they go back to DMS's default.
+
+If you deleted the folder while DMS was not running, Orbit could not clean up: install it again, then remove it from DMS while it runs. Your volume keys keep working meanwhile (they fall back to DMS); to give them back by hand: `dms keybinds set niri XF86AudioRaiseVolume "spawn dms ipc call audio increment 3" --allow-when-locked`, and the same with `XF86AudioLowerVolume` and `decrement`.
 
 ## Performance
 
@@ -356,6 +433,6 @@ Since 1.11.2, *Ambient motion* pauses on a screen whose desktop is hidden by win
 
 The pairing sheet cost 67 % of a core before 1.11.0: two long QML animations made every shell window repaint at 240 Hz. They now run on timers, and only the sheet repaints.
 
-The volume ring's effects only run while the level moves and stop by themselves; on an offscreen bench, 6 s of continuous dragging costs 0.16 s of CPU for all its effects.
+The card's picture of the sound runs only while the card is on screen; closed, `cava` is stopped and nothing redraws.
 
 How this is achieved, and earlier measurements, are in [CONTRIBUTING.md](../CONTRIBUTING.md#performance-rules).

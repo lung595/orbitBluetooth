@@ -46,7 +46,9 @@ Logic that can be tested lives in **pure `.js` files** with no QML: `Charge.js` 
 
 **New headphones pop-up**: `components/NewDeviceWatch.qml` (in the daemon) runs the short background scan, picks what to offer (`Offer.js`, pure) and drives pairing; `NewDeviceWindow.qml` is its layer-shell window and `PairingSheet.qml` the sheet itself (two skins, colours from `Palette.js`), which `scripts/preview/sheet.qml` renders offscreen with six test palettes, or records frame by frame. Before a new device is trusted, `ProfileCheck.qml` reads its Bluetooth profiles with `busctl` and `Guard.js` (pure, tested) decides: a non-input device that can also send key presses stays blocked until the user confirms. Never trust a device from its name alone.
 
-**Guided, never blocked**: `components/Guide.js` (pure, tested) builds the guide links and the short notes (`connectNote`); `OrbitNote.qml` shows them at the bottom of the sky and `GuideLink.qml` is the GitHub mark that opens a guide section on click. A new refusal gets a note and an anchor that exists in `docs/GUIDE.md` (the tests check it). Every new Quickshell import or service used by a component needs its mock in `scripts/preview/imports/`, or the previews break.
+**Guided, never blocked**: `components/Guide.js` (pure, tested) builds the guide links and the short notes (`connectNote`); `OrbitNote.qml` shows them at the bottom of the sky and `GuideLink.qml` is the GitHub mark (drawn by `GitHubMark.qml`) that opens a guide section on click. A new refusal gets a note and an anchor that exists in `docs/GUIDE.md` (the tests check it). Every new Quickshell import or service used by a component needs its mock in `scripts/preview/imports/`, or the previews break.
+
+**Uninstalling leaves nothing** (value 12): `components/UninstallSweep.qml` (in the daemon) reads `uninstall/orbit_uninstall.py` when Orbit loads; when Orbit is unloaded and its `plugin.json` is gone, it starts that script detached, from memory (`python3 -c`), since the folder no longer exists. The script waits 4 s, checks again (an update may re-clone the folder) and only then edits the shell's JSON files, which DMS watches. Never create QML objects in `Component.onDestruction`: it crashed the shell.
 
 **Real device pictures** (opt-in) is the only network use: `components/PictureService.qml` runs `pictures/orbit_pictures.py` (Wikimedia Commons, then Sketchfab; standard library only), and `components/Pictures.js` decides which names may be sent. Keep the list of hosts in sync between the helper header, the settings description, the README and the GUIDE.
 
@@ -67,15 +69,18 @@ orbitBluetooth/
 │   ├── OfferCard.qml, ScanChip.qml, AdapterNotice.qml  # the scene's chrome: pairing offer, scan chip, Bluetooth off
 │   ├── DeviceBody.qml           # one orbiting device, charging beam
 │   ├── FocusCard.qml            # detail card
-│   ├── VolumeRing.qml           # volume ring around the focused device (PipeWire)
-│   ├── Volume.js                # its pure logic (tested)
-│   ├── VolumeReadout.qml        # the percentage rolling in the ring's gap
-│   ├── VolumeFx.js              # pure geometry and physics of its effects (tested)
-│   ├── VolumePlasma.qml         # the level as a band of aurora
-│   ├── VolumeTail.qml           # comet tail behind the moon
-│   ├── VolumeDust.qml           # stardust shed by the moon while it moves
-│   ├── VolumeWaves.qml          # sound waves off the planet at each step
-│   ├── VolumeEclipse.qml        # mute as an eclipse of the planet
+│   ├── TwoLevels.qml            # an output's two volumes (base of CardVolume, VolumeOverlay)
+│   ├── CardVolume.qml           # the detail card's two volumes, tick and sound feed
+│   ├── VolumeStrip.qml          # menus: the two volumes folded into a thin line, unfolds on click
+│   ├── PlanetControl.qml        # focused glyph: click to mute, wheel for the volume
+│   ├── Volume.js                # the tick's pure logic (tested)
+│   ├── AudioRoute.qml, RouteDevice.qml, Route.js    # the two levels of each output: PC filter, absolute volume, IPC (Route.js pure, tested)
+│   ├── Steps.js                 # smart volume steps (pure, tested)
+│   ├── VolumeKeys.qml, Keys.js  # volume keys bound through `dms keybinds` (Keys.js pure, tested)
+│   ├── VolumePopup.qml, VolumeOverlay.qml, IslandFace.qml  # volume pop-up per screen, its two levels, its face inside Dank Island
+│   ├── ScopeScreen.qml          # the dark scope screen shared by card, pop-up and island
+│   ├── PolarScope.qml, PolarVisual.qml, Polar.js    # half circles, moons and the sound picture (Polar.js pure, tested)
+│   ├── ScopeFeed.qml            # live stereo bands from cava, only while shown
 │   ├── BatteryCard.qml          # gauge, chart and stat tiles
 │   ├── StatTiles.qml            # READY AT / SPEED / HEALTH tiles
 │   ├── EarbudsTrio.qml, EarbudArt.qml, Earbuds.js   # case + buds mini orbit
@@ -99,8 +104,11 @@ orbitBluetooth/
 ├── pictures/
 │   ├── orbit_pictures.py        # picture lookup (Wikimedia Commons, Sketchfab)
 │   └── tests/                   # unittest, no network
+├── uninstall/
+│   ├── orbit_uninstall.py       # erases what DMS keeps once Orbit is removed
+│   └── tests/                   # unittest, on fake shell files
 ├── tests/qml/                   # pop-up scenario test, stubs for Quickshell/DMS
-├── tests/anc.test.js            # gjs: brand detection, modes, time left
+├── tests/anc.test.js            # gjs: every pure .js module (noise control, battery, volumes, notes…)
 ├── shaders/                     # .frag sources, compiled .qsb, build.sh
 ├── scripts/
 │   ├── gen_sounds.py            # synthesizes sounds/*.wav
@@ -115,7 +123,8 @@ orbitBluetooth/
 ```sh
 (cd anc && python3 -m unittest discover -s tests -t .)   # noise-control protocols
 (cd pictures && python3 -m unittest discover -s tests -t .)   # picture lookup, without network
-sh tests/qml/run.sh                                       # new-device pop-up scenario and volume ring (Qt 6)
+(cd uninstall && python3 -m unittest discover -s tests -t .)  # uninstall sweep, on fake shell files
+sh tests/qml/run.sh                                       # new-device pop-up scenario and polar scope (Qt 6)
 gjs tests/anc.test.js                                     # brand detection, modes, pairing guard
 ```
 

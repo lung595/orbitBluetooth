@@ -4,6 +4,7 @@ QtObject {
     property bool isLightMode: false
     property color primary: "#C5E66A"
     property color primaryText: "#1B2600"
+    property color secondary: "#BFCBAD"
     property color tertiary: "#9FD3C7"
     property color error: "#FFB4AB"
     property color errorText: "#690005"
