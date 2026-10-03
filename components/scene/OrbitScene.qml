@@ -1,14 +1,8 @@
 import QtQuick
-import QtQuick.Shapes
 import qs.Common
 import qs.Services
-import qs.Widgets
-import "../card"
 import "../common"
-import "../device"
 import "../pairing"
-import "../common/Guide.js" as Guide
-import "../device/DeviceCatalog.js" as Catalog
 import "../noise/Anc.js" as Anc
 import "Physics.js" as Physics
 
@@ -21,6 +15,11 @@ import "Physics.js" as Physics
 //  - bodies are plain items whose px/py are written in a single JS pass;
 //  - static art (stars, nebulae, orbit rings) is painted once;
 //  - discovery only runs while the scene is open and stops on its own.
+//
+// This file holds the state every part shares and wires the parts, each in
+// its own file: the device list (OrbitDevices), discovery, the new-device
+// offer, the connection flow, the physics, the sky (OrbitBackdrop) and the
+// orbit with its bodies and cards (OrbitWorld).
 Item {
     id: scene
     readonly property NightColors night: NightColors {}
@@ -34,9 +33,6 @@ Item {
     property bool glass: false               // desktop: frameless, fades into the wallpaper
     property bool foldVolume: false          // menus: the card's two volumes start folded into a thin line
     property bool volumeUnfolded: false      // ...until clicked; kept while the shell runs, never saved
-    // Names of connected devices read stronger than the others; with nothing
-    // connected there is no hierarchy to show, so every name is lifted
-    property bool anyConnected: false
     property real cornerRadius: 0            // rounded hosts (Control Center, popout)
     property var previewDevices: []          // fake device objects, for previews and tests
     readonly property alias prefs: prefsObj
@@ -84,12 +80,15 @@ Item {
         if (!focusBody)
             return 0;
         const glyph = focusCardWidth * focusGlyphRatio;
-        const content = focusCard.implicitHeight - focusOverlap - Theme.spacingL;
+        const content = worldItem.focusCard.implicitHeight - focusOverlap - Theme.spacingL;
         return content + glyph * 0.7 + 8 + Theme.spacingL + focusHeadroomFor(glyph) + Theme.spacingM;
     }
 
     // --- State -----------------------------------------------------------------
-    property var deviceMap: ({})
+    readonly property alias deviceMap: devices.deviceMap
+    // Names of connected devices read stronger than the others; with nothing
+    // connected there is no hierarchy to show, so every name is lifted
+    readonly property alias anyConnected: devices.anyConnected
     property var focusBody: null
     property var dragBody: null
     property real dragX: 0
@@ -102,7 +101,7 @@ Item {
     property bool settled: false
     property double now: Date.now()
     readonly property alias world: worldItem
-    readonly property alias tetherLayer: tetherLayerItem
+    readonly property alias tetherLayer: worldItem.tetherLayer
 
     // --- Black hole ("Hidden") -----------------------------------------------
     // It drifts in the outer belt like a device nobody paired: it takes a
@@ -117,7 +116,7 @@ Item {
             "spawned": false,
             "homeHash": 0.62
         })
-    readonly property real holeHorizon: blackHole.horizon
+    readonly property real holeHorizon: backdrop.holeHorizon
     property bool hiddenOpen: false
     property real holeFeed: 0      // 0..1, how close the dragged device is
     property real holeSpin: 0      // tesseract phase (0 = the classic cube-in-cube), advanced by step()
@@ -192,8 +191,8 @@ Item {
     function ancSyncViews() {
         const want = [];
         if (active) {
-            for (let i = 0; i < bodies.count; i++) {
-                const b = bodies.itemAt(i);
+            for (let i = 0; i < worldItem.bodies.count; i++) {
+                const b = worldItem.bodies.itemAt(i);
                 if (b && b.ancCapable)
                     want.push(b.address);
             }
@@ -234,190 +233,41 @@ Item {
     onActiveChanged: {
         wake();
         refresh();
-        updateScan();
+        discovery.update();
         ancSyncViews();
         if (!active)
             dismiss();
     }
 
-    // --- Offer to connect a new device ---------------------------------------
-    // A named, unpaired device that shows up while scanning is offered right
-    // in the view (a small card with Connect), like a nearby-device prompt.
-    // Devices already around when the view opens are not news: they are
-    // marked as seen after a short settling delay. Nothing leaves the
-    // machine and nothing is remembered between sessions.
-    property string offerAddress: ""
-    property var _seen: ({})
-    property bool _primed: false
-
-    function updateOffer(list) {
-        // The pop-up under the bar offers it instead (it sees the same discovery)
-        if (!_primed || !prefs.offerNew || prefs.offerPopup)
-            return;
-        for (const d of list) {
-            if (_seen[d.address])
-                continue;
-            _seen[d.address] = true;
-            if (discovering && !d.connected && !(d.paired || d.bonded) && !Catalog.isUnnamed(d)) {
-                offerAddress = d.address;
-                offerTimer.restart();
-            }
-        }
-    }
-    function dismissOffer() {
-        offerAddress = "";
-        offerTimer.stop();
-    }
-    function acceptOffer() {
-        const address = offerAddress;
-        dismissOffer();
-        for (let i = 0; i < bodies.count; i++) {
-            const b = bodies.itemAt(i);
-            if (b && b.address === address) {
-                startConnect(b);
-                return;
-            }
-        }
-    }
-    Timer {
-        id: primeTimer
-        interval: 3000
-        running: scene.active
-        onTriggered: {
-            for (const a in scene.deviceMap)
-                scene._seen[a] = true;
-            scene._primed = true;
-        }
-    }
-    Timer {
-        id: offerTimer
-        interval: 12000
-        onTriggered: scene.offerAddress = ""
-    }
-
     // --- Device list -----------------------------------------------------------
-    ListModel {
-        id: bodyModel
+    OrbitDevices {
+        id: devices
+        scene: orbitRoot
+        onListed: list => offer.update(list)
     }
-
     function refresh() {
-        const a = adapter;
-        const all = (a && a.devices ? a.devices.values : []).concat(previewDevices);
-        const map = {};
-        let list = [];
-        for (let i = 0; i < all.length; i++) {
-            const d = all[i];
-            if (!d || d.blocked || prefs.isHidden(d.address))
-                continue;
-            if (!prefs.showUnnamed && Catalog.isUnnamed(d) && !d.connected)
-                continue;
-            // Quickshell does not expose RSSI (signalStrength is undefined), so
-            // anything BlueZ lists while discovering is treated as in range.
-            if (!(d.connected || d.paired || d.bonded || d.signalStrength === undefined || d.signalStrength > 0))
-                continue;
-            list.push(d);
-        }
-        list.sort((x, y) => {
-            if (x.connected !== y.connected)
-                return x.connected ? -1 : 1;
-            const px = x.paired || x.bonded, py = y.paired || y.bonded;
-            if (px !== py)
-                return px ? -1 : 1;
-            const nx = Catalog.isUnnamed(x), ny = Catalog.isUnnamed(y);
-            if (nx !== ny)
-                return nx ? 1 : -1;
-            return (y.signalStrength || 0) - (x.signalStrength || 0);
-        });
-        const room = Math.max(0, prefs.maxDevices - list.filter(c => c.connected).length);
-        let kept = 0;
-        list = list.filter(d => d.connected || kept++ < room);
-        for (const d of list)
-            map[d.address] = d;
-        anyConnected = btOn && list.some(d => d.connected);
-        if (!btOn) {
-            for (const k in map)
-                delete map[k];
-        }
-
-        // Diff into the model so existing bodies keep their physics state
-        for (let i = bodyModel.count - 1; i >= 0; i--) {
-            const addr = bodyModel.get(i).address;
-            if (!map[addr] && !bodyModel.get(i).leaving)
-                bodyModel.setProperty(i, "leaving", true);
-            else if (map[addr] && bodyModel.get(i).leaving)
-                bodyModel.setProperty(i, "leaving", false);
-        }
-        for (const addr in map) {
-            let found = false;
-            for (let i = 0; i < bodyModel.count; i++) {
-                if (bodyModel.get(i).address === addr) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found)
-                bodyModel.append({
-                    "address": addr,
-                    "leaving": false
-                });
-        }
-        // Keep leaving devices resolvable while they fade out
-        for (let i = 0; i < bodyModel.count; i++) {
-            const addr = bodyModel.get(i).address;
-            if (!map[addr] && deviceMap[addr])
-                map[addr] = deviceMap[addr];
-        }
-        deviceMap = map;
-        updateOffer(list);
-        wake();
+        devices.refresh();
     }
-
     function finalizeRemoval(address) {
-        for (let i = 0; i < bodyModel.count; i++) {
-            const e = bodyModel.get(i);
-            if (e.address === address && e.leaving) {
-                if (focusBody && focusBody.address === address)
-                    clearFocus();
-                bodyModel.remove(i);
-                return;
-            }
-        }
-    }
-
-    Connections {
-        target: scene.adapter?.devices ?? null
-        function onValuesChanged() {
-            scene.refresh();
-            Qt.callLater(scene.ancSyncViews);
-        }
-    }
-    Connections {
-        target: scene.prefs
-        function onShowUnnamedChanged() {
-            scene.refresh();
-        }
-        function onMaxDevicesChanged() {
-            scene.refresh();
-        }
-        function onHiddenDevicesChanged() {
-            scene.refresh();
-        }
+        devices.finalizeRemoval(address);
     }
     onBtOnChanged: {
         refresh();
-        updateScan();
+        discovery.update();
     }
 
-    // Membership/RSSI changes are not all signalled by the model; a slow poll
-    // while someone is looking (or discovery runs) catches the stragglers.
-    Timer {
-        interval: 1500
-        repeat: true
-        running: scene.active && scene.btOn && (scene.awake || scene.discovering)
-        onTriggered: {
-            scene.refresh();
-            scene.ancSyncViews();
-        }
+    // --- Offer to connect a new device ---------------------------------------
+    OrbitOffer {
+        id: offer
+        scene: orbitRoot
+        bodies: worldItem.bodies
+    }
+    readonly property alias offerAddress: offer.address
+    function acceptOffer() {
+        offer.accept();
+    }
+    function dismissOffer() {
+        offer.dismiss();
     }
 
     // Connection timers tick once per second, only while the scene is awake:
@@ -435,7 +285,7 @@ Item {
 
     Component.onCompleted: {
         refresh();
-        updateScan();
+        discovery.update();
         Qt.callLater(ancSyncViews);   // bodies exist once the model is filled
     }
     Component.onDestruction: {
@@ -444,229 +294,49 @@ Item {
     }
 
     // --- Discovery -------------------------------------------------------------
-    property bool _ownsDiscovery: false
-    // The daemon's background scan for the pop-up must not end a view's scan
-    readonly property var _newDevices: PluginService.pluginDaemonInstances[prefs.pluginId]?.newDevices ?? null
-    property bool _holdingScan: false
-    function _holdScan(on) {
-        if (_holdingScan === on)
-            return;
-        _holdingScan = on;
-        _newDevices?.holdScan(on);
+    OrbitDiscovery {
+        id: discovery
+        scene: orbitRoot
     }
-
+    // The center and the Scan chip start and stop it by hand
     function startScan() {
-        if (!adapter || !btOn)
-            return;
-        // Already running for the pop-up's background scan: take it over
-        if (!adapter.discovering || _newDevices?._owns)
-            _ownsDiscovery = true;
-        if (!adapter.discovering)
-            adapter.discovering = true;
-        _holdScan(true);
-        if (prefs.scanSeconds > 0)
-            scanStopTimer.restart();
+        discovery.start();
     }
-
     function stopScan() {
-        scanStopTimer.stop();
-        if (adapter && _ownsDiscovery && adapter.discovering)
-            adapter.discovering = false;
-        _ownsDiscovery = false;
-        _holdScan(false);
+        discovery.stop();
     }
 
-    // With the autoScan preference off, only the center or the Scan chip start
-    // discovery; a manual scan is still stopped when the view closes.
-    function updateScan() {
-        if (active && btOn && autoScan && prefs.autoScan)
-            startScan();
-        else if (!active || !btOn || !autoScan)
-            stopScan();
-    }
-
-    onAutoScanChanged: updateScan()
+    onAutoScanChanged: discovery.update()
     readonly property bool _autoScanPref: prefs.autoScan
-    on_AutoScanPrefChanged: updateScan()
-
-    Timer {
-        id: scanStopTimer
-        interval: Math.max(5, scene.prefs.scanSeconds) * 1000
-        onTriggered: scene.stopScan()
-    }
+    on_AutoScanPrefChanged: discovery.update()
 
     // --- Connection flow -------------------------------------------------------
-    function startConnect(b) {
-        if (!b || !b.device || b.connected || b.phase === "connecting")
-            return;
-        const d = b.device;
-        b.phase = "connecting";
-        pendingTimer.restart();
-        wake();
-        if (d.paired || d.bonded) {
-            // Second drag of a headset that can also type: the user confirms
-            if (d === _confirm) {
-                confirmWait.stop();
-                _confirm = null;
-                profileCheck.allow(d);
-            }
-            BluetoothService.connectDeviceWithTrust(d);
-            return;
-        }
-        BluetoothService.pairDevice(d, res => {
-            // The user may have pulled it back out while pairing was in flight
-            if (b.phase !== "connecting")
-                return;
-            if (res && res.error) {
-                failConnect(b, "pair");
-                return;
-            }
-            // Trust only after checking it cannot also type (P115)
-            profileCheck.check(d, Catalog.families[Catalog.resolve(d, ({}))] || "", verdict => {
-                if (verdict === "input") {
-                    // Blocked until it is dragged in again, or forgotten
-                    root._confirm = d;
-                    confirmWait.restart();
-                    if (typeof ToastService !== "undefined")
-                        ToastService.showWarning("Orbit: it can also send key presses, often for its buttons. Drag it in again within a minute to pair it anyway", profileCheck.guideUrl);
-                    failConnect(b);
-                    return;
-                }
-                if (verdict !== "ok") {
-                    failConnect(b, "check");
-                    return;
-                }
-                if (b.phase === "connecting" && !d.connected)
-                    BluetoothService.connectDeviceWithTrust(d);
-            });
-        });
+    OrbitConnections {
+        id: connections
+        scene: orbitRoot
+        bodies: worldItem.bodies
     }
-
-    // A "headset" with a keyboard profile, waiting for a second drag (P115)
-    property var _confirm: null
-    Timer {
-        id: confirmWait
-        interval: 60000
-        onTriggered: {
-            profileCheck.deny(root._confirm);
-            root._confirm = null;
-        }
+    // Entry points for the bodies, the cards and the menu
+    function startConnect(b) {
+        connections.startConnect(b);
+    }
+    function cancelConnect(b) {
+        connections.cancelConnect(b);
+    }
+    function startDisconnect(b) {
+        connections.startDisconnect(b);
+    }
+    function forget(b) {
+        connections.forget(b);
+    }
+    function onBodyConnectionChanged(b, isConnected) {
+        connections.onBodyConnectionChanged(b, isConnected);
     }
 
     // What did not work, said under the core (OrbitNote), null when nothing
     property var note: null
     function explain(info) {
         note = info;
-    }
-
-    // why: "pair", "check" or "connect" (Guide.connectNote); omitted when
-    // something else already said why (the keyboard-profile toast)
-    function failConnect(b, why) {
-        if (!b || b.phase !== "connecting")
-            return;
-        if (why)
-            explain(Guide.connectNote(why, b.device ? Catalog.deviceName(b.device) : ""));
-        b.phase = "idle";
-        b.shake();
-        sounds.play("error");
-        wake();
-    }
-
-    // Abort an in-flight pairing/connection (device pulled back out of the belt)
-    function cancelConnect(b) {
-        if (!b || b.phase !== "connecting")
-            return;
-        const d = b.device;
-        b.phase = "idle";
-        b.cancelledAt = Date.now();
-        if (d) {
-            if (d.pairing)
-                d.cancelPair();
-            d.disconnect();
-        }
-        b.release();
-        emitWave(false);
-        sounds.play("disconnect");
-        wake();
-    }
-
-    function startDisconnect(b) {
-        if (!b || !b.device || !b.connected)
-            return;
-        b.phase = "disconnecting";
-        disconnectWatch.body = b;
-        disconnectWatch.restart();
-        if (_ancService && ancCapable(b))
-            _ancService.disconnectDevice(b.address);
-        else
-            b.device.disconnect();
-        wake();
-    }
-
-    // A disconnect that never lands (device busy, BlueZ refusing) would leave
-    // the planet out of its slot while still connected: after 8 s it comes
-    // back and says so. One shot per pull, nothing runs otherwise.
-    Timer {
-        id: disconnectWatch
-        property var body: null
-        interval: 8000
-        onTriggered: {
-            const b = body;
-            body = null;
-            if (!b || b.phase !== "disconnecting" || !b.connected)
-                return;
-            b.phase = "idle";
-            b.shake();
-            sounds.play("error");
-            scene.explain(Guide.stuckNote(b.device ? Catalog.deviceName(b.device) : ""));
-            scene.wake();
-        }
-    }
-
-    // Unpairs the device, and drops what Orbit kept about it (its icon
-    // choice, the "Don't offer again" mark), so it comes back as new
-    function forget(b) {
-        if (!b || !b.device)
-            return;
-        clearFocus();
-        prefs.setGlyphOverride(b.address, "auto");
-        if (prefs.ignoredDevices[b.address] !== undefined)
-            prefs.setIgnored(b.address, "", false);
-        b.device.forget();
-    }
-
-    // Any connection edge, including ones made elsewhere (auto-reconnect)
-    function onBodyConnectionChanged(b, isConnected) {
-        // BlueZ can still land a connection right after a cancel: undo it quietly
-        if (isConnected && Date.now() - b.cancelledAt < 6000) {
-            b.device.disconnect();
-            return;
-        }
-        if (isConnected) {
-            b.phase = "idle";
-            b.celebrate();
-            corePulseAnim.restart();
-            emitWave(true);
-            sounds.play("connect");
-        } else {
-            b.phase = "idle";
-            b.release();
-            emitWave(false);
-            sounds.play("disconnect");
-        }
-        wake();
-    }
-
-    Timer {
-        id: pendingTimer
-        interval: 25000
-        onTriggered: {
-            for (let i = 0; i < bodies.count; i++) {
-                const b = bodies.itemAt(i);
-                if (b && b.phase === "connecting" && !b.connected)
-                    scene.failConnect(b, b.device && (b.device.paired || b.device.bonded) ? "connect" : "pair");
-            }
-        }
     }
 
     // --- Drag ------------------------------------------------------------------
@@ -798,8 +468,8 @@ Item {
     // A device drawn under this scene point, if any (devices passing behind
     // the core still get their clicks)
     function bodyAt(x, y) {
-        for (let i = 0; i < bodies.count; i++) {
-            const b = bodies.itemAt(i);
+        for (let i = 0; i < worldItem.bodies.count; i++) {
+            const b = worldItem.bodies.itemAt(i);
             if (b && !b.leaving && Math.hypot(x - b.px, y - b.py) < b.diameter * b.baseScale / 2)
                 return b;
         }
@@ -862,420 +532,39 @@ Item {
 
     // --- Waves -----------------------------------------------------------------
     function emitWave(outward) {
-        const w = waveA.busy ? waveB : waveA;
-        w.fire(outward);
+        worldItem.emitWave(outward);
     }
 
     // --- Physics ---------------------------------------------------------------
     OrbitPhysics {
         id: physics
         scene: orbitRoot
-        repeater: bodies
-        card: focusCard
+        repeater: worldItem.bodies
+        card: worldItem.focusCard
     }
     onDragBodyChanged: physics.kick()
     onFocusBodyChanged: physics.kick()
 
     // --- Background --------------------------------------------------------------
-    // Desktop glass: a theme-tinted smoky veil that dissolves into the wallpaper
-    Vignette {
-        visible: scene.glass
-        color: Qt.tint(scene.night.skyDeep, Theme.withAlpha(scene.night.primary, 0.07))
-        strength: scene.prefs.desktopBackdrop
-    }
-
-    Starfield {
-        id: stars
-        x: -12 + (scene.dragBody ? -(scene.dragX - scene.cx) * 0.025 : 0)
-        y: -12 + (scene.dragBody ? -(scene.dragY - scene.cy) * 0.025 : 0)
-        width: scene.width + 24
-        height: scene.height + 24
-        clock: scene.clock
-        animate: scene.motion && scene.active
-        shootingStars: scene.prefs.shootingStars && scene.awake
-        density: scene.prefs.starDensity
-        vignette: scene.glass
-        radius: scene.cornerRadius
-        inset: 12
-        // The black hole, in the starfield's coordinates, for passing stars
-        holeX: scene.holeX - x
-        holeY: scene.holeY - y
-        holeR: blackHole.visible ? scene.holeHorizon : 0
-        onSwallowed: scene.holeFlashAt = scene.fxTime
-        Behavior on x {
-            NumberAnimation {
-                duration: 500
-                easing.type: Easing.OutCubic
-            }
-        }
-        Behavior on y {
-            NumberAnimation {
-                duration: 500
-                easing.type: Easing.OutCubic
-            }
-        }
-    }
-
-    BlackHole {
-        id: blackHole
+    OrbitBackdrop {
+        id: backdrop
+        anchors.fill: parent
         scene: orbitRoot
-        sky: stars
-        x: scene.holeX - width / 2
-        y: scene.holeY - height / 2
-        count: scene.hiddenCount
-        feed: scene.holeFeed
-        spin: scene.holeSpin
-        // Brief brightening of the ring after swallowing a shooting star
-        flash: Math.max(0, 1 - (scene.fxTime - scene.holeFlashAt) / 0.6) * 0.8
-        visible: scene.btOn && scene.width > 0
-        onClicked: scene.hiddenOpen ? scene.closeHidden() : scene.openHidden()
-        Behavior on feed {
-            NumberAnimation {
-                duration: 200
-            }
-        }
-    }
-
-    // Dims the backdrop in focus mode (elliptical on glass: no hard edge)
-    Item {
-        anchors.fill: parent
-        opacity: scene.focusBody || scene.hiddenOpen ? 1 : 0
-        visible: opacity > 0.01
-        Behavior on opacity {
-            NumberAnimation {
-                duration: 400
-            }
-        }
-        Rectangle {
-            anchors.fill: parent
-            visible: !scene.glass
-            radius: scene.cornerRadius
-            color: "black"
-            opacity: 0.4
-        }
-        Vignette {
-            visible: scene.glass
-            color: "black"
-            strength: 0.6
-        }
-    }
-
-    // Click on empty space leaves focus mode
-    MouseArea {
-        anchors.fill: parent
-        enabled: !!scene.focusBody || scene.hiddenOpen
-        onClicked: {
-            scene.clearFocus();
-            scene.closeHidden();
-        }
     }
 
     // --- World -------------------------------------------------------------------
-    Item {
+    OrbitWorld {
         id: worldItem
         anchors.fill: parent
-
-        readonly property real dim: scene.focusBody || scene.hiddenOpen ? 0.12 : 1
-
-        // Outer field: dotted orbit
-        Repeater {
-            model: 64
-            Rectangle {
-                readonly property real a: index / 64 * Math.PI * 2
-                readonly property real r: (1 + scene.outerMinNorm) / 2
-                x: scene.cx + Math.cos(a) * scene.rx * r - 0.75
-                y: scene.cy + Math.sin(a) * scene.ry * r - 0.75
-                width: 1.5
-                height: 1.5
-                radius: 0.75
-                color: "white"
-                opacity: 0.2 * worldItem.dim * (scene.btOn ? 1 : 0.3)
-                visible: scene.width > 0
-            }
-        }
-
-        // Connected orbit ring
-        Shape {
-            id: innerRing
-            anchors.fill: parent
-            preferredRendererType: Shape.CurveRenderer
-            opacity: worldItem.dim * (scene.btOn ? 1 : 0.3)
-
-            readonly property bool guiding: !!scene.dragBody && !scene.dragBody.holding
-            readonly property bool armedIn: guiding && scene.dragBody.armed
-
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: 400
-                }
-            }
-
-            ShapePath {
-                strokeColor: innerRing.armedIn ? Theme.withAlpha(scene.night.primary, 0.85) : innerRing.guiding ? Theme.withAlpha(scene.night.primary, 0.45) : scene.night.ink(0.1)
-                strokeWidth: innerRing.armedIn ? 1.8 : 1
-                fillColor: innerRing.armedIn ? Theme.withAlpha(scene.night.primary, 0.05) : "transparent"
-                PathAngleArc {
-                    centerX: scene.cx
-                    centerY: scene.ringCy
-                    radiusX: scene.rx * scene.innerNorm
-                    radiusY: scene.ringRy
-                    startAngle: 0
-                    sweepAngle: 360
-                }
-            }
-        }
-
-        // Radar ping while discovering
-        Rectangle {
-            id: ping
-            x: scene.cx - width / 2
-            y: scene.cy - height / 2
-            width: scene.coreSize
-            height: width
-            radius: width / 2
-            color: "transparent"
-            border.width: 1
-            border.color: scene.night.primary
-            visible: scene.discovering && scene.active && scene.motion
-            // One ring every 2.6 s from the effects clock: grows (OutCubic)
-            // while it fades (OutQuad)
-            readonly property real t: (scene.fxTime % 2.6) / 2.6
-            scale: 1 + 2.2 * (1 - Math.pow(1 - t, 3))
-            opacity: 0.35 * (1 - t) * (1 - t)
-        }
-
-        // Connection waves (elliptical, follow the orbit's perspective)
-        RingWave {
-            id: waveA
-            scene: orbitRoot
-        }
-        RingWave {
-            id: waveB
-            scene: orbitRoot
-        }
-
-        Item {
-            id: tetherLayerItem
-            anchors.fill: parent
-        }
-
-        // Host core
-        Item {
-            id: core
-            x: scene.cx - width / 2
-            y: scene.cy - height / 2
-            width: scene.coreSize
-            height: width
-            z: 50
-            opacity: scene.focusBody || scene.hiddenOpen ? 0.15 : scene.btOn ? 1 : 0.45
-            scale: (scene.motion ? 1 + 0.018 * Math.sin(scene.clock * 1.3) : 1) * corePulse.value
-
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: 400
-                }
-            }
-
-            QtObject {
-                id: corePulse
-                property real value: 1
-            }
-
-            SequentialAnimation {
-                id: corePulseAnim
-                NumberAnimation {
-                    target: corePulse
-                    property: "value"
-                    to: 1.08
-                    duration: 140
-                    easing.type: Easing.OutQuad
-                }
-                NumberAnimation {
-                    target: corePulse
-                    property: "value"
-                    to: 1
-                    duration: 520
-                    easing.type: Easing.OutBack
-                    easing.overshoot: 2
-                }
-            }
-
-            Rectangle {
-                anchors.centerIn: parent
-                width: parent.width * 1.9
-                height: width
-                radius: width / 2
-                color: Theme.withAlpha(scene.night.primary, scene.btOn ? 0.05 : 0.0)
-            }
-            Rectangle {
-                anchors.centerIn: parent
-                width: parent.width * 1.4
-                height: width
-                radius: width / 2
-                color: Theme.withAlpha(scene.night.primary, scene.btOn ? 0.08 : 0.02)
-            }
-            Rectangle {
-                anchors.fill: parent
-                radius: width / 2
-                gradient: Gradient {
-                    GradientStop {
-                        position: 0
-                        color: scene.night.whiteBodies ? Qt.tint("#FFFFFF", Theme.withAlpha(Theme.primary, 0.08)) : Qt.tint("#1a1c22", Theme.withAlpha(scene.night.primary, 0.22))
-                    }
-                    GradientStop {
-                        position: 1
-                        color: scene.night.whiteBodies ? Qt.tint("#E6ECF2", Theme.withAlpha(Theme.primary, 0.16)) : Qt.tint("#0b0c10", Theme.withAlpha(scene.night.primary, 0.1))
-                    }
-                }
-                border.width: 1
-                border.color: Theme.withAlpha(scene.night.primary, scene.btOn ? 0.4 : 0.12)
-            }
-            DeviceGlyph {
-                anchors.centerIn: parent
-                width: parent.width * 0.5
-                height: width
-                kind: scene.prefs.hostGlyph !== "auto" ? scene.prefs.hostGlyph : (BatteryService.batteryAvailable ? "laptop" : "desktop")
-                color: scene.btOn ? (scene.night.whiteBodies ? scene.night.bodyInk : Qt.lighter(scene.night.primary, 1.2)) : (scene.night.whiteBodies ? scene.night.bodyMuted : scene.night.ink(0.4))
-                stroke: 1.4
-            }
-
-            // Only the inner 70% starts a scan, and never over a device
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                enabled: scene.btOn && !scene.focusBody
-                onPressed: mouse => {
-                    const inner = Math.hypot(mouse.x - width / 2, mouse.y - height / 2) < width * 0.35;
-                    const p = mapToItem(scene, mouse.x, mouse.y);
-                    mouse.accepted = inner && !scene.bodyAt(p.x, p.y);
-                }
-                onClicked: {
-                    scene.startScan();
-                    scene.emitWave(true);
-                }
-            }
-        }
-
-        LabelGlow {
-            x: hostName.x + hostName.width / 2 - width / 2
-            y: hostName.y + hostName.height / 2 - height / 2
-            z: 49
-            spanX: hostName.width + 26
-            spanY: hostName.height + 12
-            color: scene.night.primary
-            strength: 0.16
-            opacity: hostName.opacity
-            visible: hostName.text !== ""
-        }
-
-        StyledText {
-            id: hostName
-            anchors.horizontalCenter: core.horizontalCenter
-            y: core.y + core.height + 4
-            z: 50
-            text: UserInfoService.hostname || ""
-            color: scene.night.ink(0.72)
-            font.pixelSize: Math.max(9, Math.round(scene.coreSize * 0.14))
-            font.letterSpacing: 0.6
-            opacity: scene.focusBody ? 0 : 1
-        }
-
-        Repeater {
-            id: bodies
-            model: bodyModel
-            delegate: DeviceBody {
-                scene: orbitRoot
-            }
-        }
-
-        // Black hole contents, slides up like the focus card
-        HiddenCard {
-            scene: orbitRoot
-            z: 15000
-            width: scene.focusCardWidth
-            height: Math.min(implicitHeight, scene.height - Theme.spacingM * 2)
-            x: (scene.width - width) / 2
-            y: scene.hiddenOpen ? scene.height - height - Theme.spacingM : scene.height + 20
-            opacity: scene.hiddenOpen ? 1 : 0
-            visible: opacity > 0.01
-
-            Behavior on y {
-                NumberAnimation {
-                    duration: 420
-                    easing.type: Easing.OutCubic
-                }
-            }
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: 260
-                }
-            }
-        }
-
-        // Focus card (bodies are siblings, so the focused glyph can sit above it)
-        // Over the focused glyph: click to mute, wheel for the volume
-        PlanetControl {
-            scene: orbitRoot
-            z: 20001
-        }
-
-        FocusCard {
-            id: focusCard
-            scene: orbitRoot
-            z: 15000
-            width: scene.focusCardWidth
-            height: Math.min(implicitHeight, scene.height - scene.focusHeadroom - Theme.spacingM)
-            x: (scene.width - width) / 2
-            y: scene.focusBody ? scene.height - height - Theme.spacingM : scene.height + 20
-            opacity: scene.focusBody ? 1 : 0
-            visible: opacity > 0.01
-
-            Behavior on y {
-                NumberAnimation {
-                    duration: 480
-                    easing.type: Easing.OutCubic
-                }
-            }
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: 300
-                }
-            }
-        }
+        scene: orbitRoot
+        model: devices.model
     }
 
     // --- Chrome --------------------------------------------------------------------
     // Contextual hint
-    StyledText {
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: scene.glass ? Math.round(scene.height * 0.1) : Theme.spacingS
-        opacity: scene.focusBody || scene.hiddenOpen ? 0 : text ? 0.6 : 0
-        color: "white"
-        font.pixelSize: Theme.fontSizeSmall - 1
-        font.letterSpacing: 0.4
-        text: {
-            const b = scene.dragBody;
-            if (b && b.hideArmed)
-                return "Release to hide";
-            if (b) {
-                if (b.phase === "connecting")
-                    return b.armed ? "Release to cancel" : "Pull away to cancel";
-                if (b.connected)
-                    return b.armed ? "Release to disconnect" : "Pull away to disconnect";
-                return b.armed ? "Release to connect" : "Bring it closer to connect";
-            }
-            if (!scene.btOn)
-                return "";
-            if (bodyModel.count === 0)
-                return scene.discovering ? "Looking for devices..." : "Tap the center to scan";
-            return "";
-        }
-        Behavior on opacity {
-            NumberAnimation {
-                duration: 200
-            }
-        }
+    OrbitHint {
+        scene: orbitRoot
+        bodyCount: devices.model.count
     }
 
     // Offer card for a newly found, unpaired device
@@ -1304,9 +593,5 @@ Item {
         id: menu
         scene: orbitRoot
         z: 30000
-    }
-
-    ProfileCheck {
-        id: profileCheck
     }
 }

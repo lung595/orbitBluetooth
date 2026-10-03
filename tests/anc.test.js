@@ -29,6 +29,7 @@ const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNo
 const Volume = load("Volume.js", ["clamp", "step", "validSink"]);
 const Guard = load("Guard.js", ["offerFamily", "hasInput", "refused", "validPath", "parseUuids"]);
 const Cover = load("Cover.js", ["covered"]);
+const Orbit = load("Orbit.js", ["pick", "plan"]);
 const Physics = load("Physics.js", ["spring", "norm", "ringSlot", "beltSlot", "beltRadius", "dragTarget", "separate", "moving"]);
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "arc", "end", "point", "angleOf", "valueAt", "zone", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
@@ -395,6 +396,40 @@ eq("one level, this PC's (not Bluetooth, or no own volume)", [Route.shownLevels(
     eq("DMS's action, step kept in 1..20", [Keys.dmsAction("up", 3), Keys.dmsAction("up", 0)], ["spawn dms ipc call audio increment 3", "spawn dms ipc call audio increment 3"]);
     eq("only a success answer counts", [Keys.succeeded('{"success":true}'), Keys.succeeded('{"success":false}'), Keys.succeeded(""), Keys.succeeded("null")], [true, false, false, false]);
     eq("notes", [Keys.note("offer").action, Keys.note("done").action, Keys.note("nope")], ["Enable", "Undo", null]);
+}
+
+// Which devices get a planet, from made-up devices (no RSSI, as Quickshell)
+{
+    const dev = (address, name, more) => Object.assign({ address: address, name: name }, more);
+    const unnamed = d => !d.name;
+    const opts = (more) => Object.assign({ isHidden: a => a === "hid", isUnnamed: unnamed, showUnnamed: false, maxDevices: 2 }, more);
+    const addresses = list => list.map(d => d.address);
+    const all = [
+        dev("far", "Speaker", { signalStrength: 20 }),
+        dev("near", "Mouse", { signalStrength: 80 }),
+        dev("anon", ""),
+        dev("pair", "Keyboard", { paired: true }),
+        dev("bond", "Pad", { bonded: true }),
+        dev("on", "Headset", { connected: true, paired: true }),
+        dev("hid", "Hidden", { connected: true }),
+        dev("block", "Blocked", { blocked: true }),
+        dev("gone", "Gone", { signalStrength: 0 }),
+        null
+    ];
+    eq("connected first, then paired, up to maxDevices in all", addresses(Orbit.pick(all, opts())), ["on", "pair"]);
+    eq("named before unnamed, then the strongest signal", addresses(Orbit.pick(all, opts({ maxDevices: 9, showUnnamed: true }))), ["on", "pair", "bond", "near", "far", "anon"]);
+    eq("unnamed devices stay out unless asked", Orbit.pick(all, opts({ maxDevices: 9 })).some(d => d.address === "anon"), false);
+    eq("an unnamed connected device always shows", addresses(Orbit.pick([dev("x", "", { connected: true })], opts())), ["x"]);
+    eq("connected devices never count against the cap", addresses(Orbit.pick(all, opts({ maxDevices: 0 }))), ["on"]);
+
+    const a = { address: "a" }, b = { address: "b" }, c = { address: "c" };
+    const entries = [{ address: "a", leaving: false }, { address: "b", leaving: false }, { address: "c", leaving: true }];
+    const step = Orbit.plan(entries, { a: a, c: c, d: { address: "d" } }, { a: a, b: b, c: c });
+    eq("a device that went away starts leaving, one back stops", step.marks, [[1, true], [2, false]]);
+    eq("a new device gets a body", step.added, ["d"]);
+    eq("a leaving device stays resolvable", Object.keys(step.devices), ["a", "c", "d", "b"]);
+    eq("nothing changes, nothing to do", Orbit.plan([{ address: "a", leaving: false }], { a: a }, { a: a }), { marks: [], added: [], devices: { a: a } });
+    eq("an unknown leaving entry is not resolved", Object.keys(Orbit.plan([{ address: "z", leaving: true }], {}, {}).devices), []);
 }
 
 // Orbit physics: a 200x100 scene, ring at 0.5, black hole far away
