@@ -1,4 +1,4 @@
-// Pure-logic tests for components/Anc.js, Charge.js and Endurance.js.
+// Pure-logic tests for every components/*.js module.
 // Run from the plugin root: gjs tests/anc.test.js
 const GLib = imports.gi.GLib;
 

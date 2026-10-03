@@ -59,7 +59,12 @@ Item {
     readonly property real iconSize: Math.max(14, Math.round(outer * 0.12))
     readonly property real cx: width / 2
     readonly property real cy: height - iconSize - 10
-    readonly property real outer: Math.max(10, Math.min(width / 2 - 14, height - 34))
+    // When the percentages show, the half circles give up to a quarter of
+    // their size if that leaves room for them on both sides (the detail
+    // card); otherwise they keep their size and the numbers sit by the moons
+    readonly property real _fit: Math.min(width / 2 - 14, height - 34)
+    readonly property real _besideNumbers: width / 2 - 76
+    readonly property real outer: Math.max(10, numbers && _besideNumbers >= _fit * 0.75 ? Math.min(_fit, _besideNumbers) : _fit)
     // Alone (an output with no level of its own), this PC's half takes the room
     readonly property real inner: hasDevice ? outer * 0.44 : outer * 0.82
     // Thin and quiet (D263): a hairline track, a fine lit arc
@@ -422,7 +427,9 @@ Item {
                 text: parent.parent.muted ? "Muted" : Math.round(parent.parent.level * 100)
                 font.pixelSize: parent.parent.muted ? parent.parent.size * 0.6 : parent.parent.size
                 font.weight: Font.DemiBold
-                font.features: { "tnum": 1 }
+                font.features: {
+                    "tnum": 1
+                }
                 color: parent.parent.muted ? scope.mutedColor : parent.parent.tint
                 anchors.baseline: unit.baseline
             }
