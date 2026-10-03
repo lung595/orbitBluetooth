@@ -149,6 +149,7 @@ Orbit's own way of stepping the volume, for the wheel over the pop-up and the ca
 - **A quick run builds up speed**, up to a ceiling you choose in **Sound → Speed-up**: *Gentle* (3 %), *Balanced* (4 %, default) or *Fast* (6 %).
 - **Turning back** to look for a spot holds the step small for a moment.
 - Under 10 %, every step is 1 %.
+- **The keys change the output you hear**, Bluetooth or not: with the sound on a wired interface and a headset connected, the interface moves and the headset stays where it is.
 - **Sound → Steps → Fixed** gives the same step every time instead (**Step**, 5 % by default).
 - From the command line: `dms ipc call orbitBluetooth volume up` or `down` (smart steps on the device you hear), `deviceVolume` and `pcVolume` for one level: `up` or `down` (5 %), `N` for a level from 0 to 100, `+N` or `-N` for a step (a negative one needs `--`: `pcVolume -- -10`).
 
