@@ -5,6 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## Unreleased
 
+### Fixed
+
+- **Changing the volume no longer costs the whole shell.** The levels eased with QML animations, which made every shell window (bars, wallpaper) redraw at the screen's rate while the pop-up showed; they now ease on the scope's own 60 Hz clock, and the sound picture is computed once for every screen, each screen only painting it. Measured while stepping the volume three times a second, sound playing, Dank Island on two screens: the shell used **92 %** of one core with 1.12.0, **≈ 21 %** now; DMS alone, same test, uses ≈ 10 %. The rest is the live sound picture itself, drawn 60 times a second while the pop-up shows (*Light*, 30 images per second, or *None* in *Settings → Sound* make it cheaper); at rest nothing runs, as before.
+- Saving a level or hiding a device no longer wakes every view that reads a list setting.
+- Moving the sound to another output while the scope showed could leave it on the one-band fallback until the next restart.
+
 ## 1.12.0 - 2026-10-03
 
 ### Added
