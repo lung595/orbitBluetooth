@@ -19,6 +19,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ### Changed
 
 - **Sounds moved to the new *Sound* tab** (cues, their volume and the volume tick); *Look & sound* is now *Look*.
+- **In the bar pop-out and the Control Center, the card's volumes start folded** into one thin line, so the card fits without scrolling; a click unfolds the scope.
 - **The device card shows both volumes.** Under the device name, the same dark scope as the volume pop-up: the device's half on one side, *This PC* on the other, live sound in the middle while the card is open. Drag or scroll either half; click the planet to mute, scroll on it to change the main volume. A device whose volume follows the PC shows a short note with the GitHub mark. The aurora ring around the planet and its effects are gone, and the card leaves less empty room above the planet.
 
 ## 1.11.2 - 2026-10-03
