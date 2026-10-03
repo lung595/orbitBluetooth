@@ -24,7 +24,7 @@ const Fx = load("VolumeFx.js", ["clamp01", "ripple", "band", "filament", "emissi
 const Guard = load("Guard.js", ["offerFamily", "hasInput", "refused", "validPath", "parseUuids"]);
 const Cover = load("Cover.js", ["covered"]);
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "arc", "end", "point", "angleOf", "valueAt", "zone", "parseFrame", "loudness", "spawn", "cavaConfig"]);
-const Route = load("Route.js", ["addressKey", "virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "filterArgs", "muteTarget", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize"]);
+const Route = load("Route.js", ["addressKey", "virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "filterArgs", "muteTarget", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "shownLevels"]);
 
 let count = 0, failures = 0;
 function eq(what, got, expected) {
@@ -322,6 +322,15 @@ eq("cava config", Polar.cavaConfig("orbit_pc_AA.monitor", 60, 8).split("\n").fil
 eq("cava config refuses odd names", [Polar.cavaConfig("x\nmethod = fifo", 60, 8), Polar.cavaConfig("", 60, 8)], [null, null]);
 eq("foot icons", [Route.iconFor("headphonesPremium"), Route.iconFor("earbudsStem"), Route.iconFor("soundbar"), Route.iconFor("bluetooth")], ["headphones", "earbuds", "speaker", "speaker"]);
 eq("pop-up sizes, medium by default", [Route.popupSize("compact"), Route.popupSize("x"), Route.popupSize("large").h], [{ w: 280, h: 150 }, { w: 360, h: 200 }, 260]);
+
+// The volume pop-up (D258): where it stands, which levels it shows
+eq("pop-up lies flat in place of DMS's OSD", Route.popupLayout("replace", false, false, "medium"), { w: 360, h: 200, upright: false, rotation: 0 });
+eq("upright on the right edge, flat side against it", Route.popupLayout("edge", false, false, "large"), { w: 260, h: 480, upright: true, rotation: -90 });
+eq("follows DMS's OSD on a side", [Route.popupLayout("replace", true, true, "compact").rotation, Route.popupLayout("replace", true, false, "x").rotation, Route.popupLayout("bar", true, true, "x").upright], [90, -90, false]);
+const nd = { n: "dev" }, np = { n: "pc" };
+eq("two levels", Route.shownLevels(nd, np), { device: nd, pc: np, ownIcon: false });
+eq("one level, the device's own", Route.shownLevels(nd, null), { device: null, pc: nd, ownIcon: true });
+eq("one level, this PC's (not Bluetooth, or no own volume)", [Route.shownLevels(null, np), Route.shownLevels(null, null)], [{ device: null, pc: np, ownIcon: false }, { device: null, pc: null, ownIcon: false }]);
 
 print(failures ? failures + "/" + count + " failed" : count + " tests passed");
 imports.system.exit(failures ? 1 : 0);

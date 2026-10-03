@@ -74,6 +74,11 @@ PluginSettings {
             "text": "Headphones"
         },
         {
+            "id": "sound",
+            "icon": "graphic_eq",
+            "text": "Sound"
+        },
+        {
             "id": "desktop",
             "icon": "desktop_windows",
             "text": "Desktop"
@@ -301,6 +306,87 @@ PluginSettings {
                 }
             ]
             defaultValue: "45"
+        }
+    }
+
+    Column {
+        width: parent ? parent.width : 0
+        spacing: Theme.spacingM
+        visible: root.tab === "sound"
+        // --- Two volumes -------------------------------------------------------------
+
+        ToggleSetting {
+            settingKey: "separatePc"
+            label: "Separate PC volume"
+            description: "For devices with a volume of their own: the device's level and what this PC sends to it, set apart"
+            defaultValue: true
+        }
+
+        // --- Volume pop-up -------------------------------------------------------------
+        Section {
+            text: "Volume pop-up"
+        }
+
+        SelectionSetting {
+            settingKey: "popupMode"
+            label: "Pop-up"
+            description: "Shows both levels whenever one changes"
+            options: [
+                {
+                    label: "In place of DMS's volume OSD",
+                    value: "replace"
+                },
+                {
+                    label: "Under the bar widget",
+                    value: "bar"
+                },
+                {
+                    label: "Right screen edge",
+                    value: "edge"
+                },
+                {
+                    label: "Off (DMS's OSD)",
+                    value: "off"
+                }
+            ]
+            defaultValue: "replace"
+        }
+
+        SelectionSetting {
+            settingKey: "popupSize"
+            label: "Size"
+            options: [
+                {
+                    label: "Compact",
+                    value: "compact"
+                },
+                {
+                    label: "Medium",
+                    value: "medium"
+                },
+                {
+                    label: "Large",
+                    value: "large"
+                }
+            ]
+            defaultValue: "medium"
+        }
+
+        SelectionSetting {
+            settingKey: "scopeFps"
+            label: "Sound cloud"
+            description: "Where the sound goes, while the pop-up or a card shows. \"Light\" draws half as often"
+            options: [
+                {
+                    label: "Smooth",
+                    value: "60"
+                },
+                {
+                    label: "Light",
+                    value: "30"
+                }
+            ]
+            defaultValue: "60"
         }
     }
 

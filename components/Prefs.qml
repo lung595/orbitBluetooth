@@ -67,6 +67,13 @@ QtObject {
     readonly property bool separatePc: _get("separatePc", true)
     // This PC's level per device, address -> 0..1 (D256)
     readonly property var pcLevels: _get("pcLevels", ({}))
+    // The volume pop-up (D258): "replace" (in place of DMS's volume OSD),
+    // "bar" (under the bar widget), "edge" (right screen edge) or "off"
+    readonly property string popupMode: _get("popupMode", "replace")
+    // "compact", "medium" or "large"
+    readonly property string popupSize: _get("popupSize", "medium")
+    // The vectorscope's cloud: 60 frames a second ("Smooth") or 30 ("Light")
+    readonly property int scopeFps: parseInt(_get("scopeFps", "60")) === 30 ? 30 : 60
 
     readonly property bool reduceMotion: SettingsData.reduceMotion
 

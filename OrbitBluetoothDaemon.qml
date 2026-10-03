@@ -75,6 +75,12 @@ Item {
 
     readonly property alias route: audioRoute
 
+    // The pop-up that shows both levels whenever one changes (D252, D258)
+    VolumeOverlay {
+        route: audioRoute
+        prefs: prefs
+    }
+
     // "New device nearby" pop-up, with its own background scan
     NewDeviceWatch {
         id: newDeviceWatch

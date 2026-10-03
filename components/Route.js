@@ -8,8 +8,8 @@
 // - this PC's level, what the PC sends to it. PipeWire cannot hold a
 //   software level of its own on that sink (it resets it to 100 % whenever
 //   the device's level moves), so this PC's level lives on a small virtual
-//   sink placed in front of the device: "orbit_pc_<address>", made by
-//   PipeWire's module-remap-sink inside the sound server (no process).
+//   sink placed in front of the device: "orbit_pc_<address>", a WirePlumber
+//   smart filter run by one pw-loopback that dies with the shell (D259).
 
 var PREFIX = "orbit_pc_";
 
@@ -180,4 +180,27 @@ function popupSize(size) {
     if (size === "large")
         return { "w": 480, "h": 260 };
     return { "w": 360, "h": 200 };
+}
+
+// How the pop-up sits (D258): "replace" takes the place of DMS's volume OSD
+// (DMS's own position; upright when DMS shows its OSDs on a side), "bar"
+// unfolds under Orbit's bar widget, "edge" stands on the right screen edge.
+// Upright, the half circles turn a quarter: their flat side against the
+// screen edge, so they open toward the screen.
+function popupLayout(mode, osdOnSide, osdOnLeft, size) {
+    const s = popupSize(size);
+    const upright = mode === "edge" || (mode === "replace" && !!osdOnSide);
+    const rotation = upright ? (mode === "replace" && osdOnLeft ? 90 : -90) : 0;
+    return upright ? { "w": s.h, "h": s.w, "upright": true, "rotation": rotation } : { "w": s.w, "h": s.h, "upright": false, "rotation": 0 };
+}
+
+// Which levels the pop-up shows, from the nodes AudioRoute gives
+// (deviceNode, pcNode). Both: two half circles. Only one level (a device
+// with no level of its own, "Separate PC volume" off, or an output that is
+// not Bluetooth): that one alone, as the "pc" half. "ownIcon" tells the
+// lone half is the device's own level, so its foot shows the device.
+function shownLevels(deviceNode, pcNode) {
+    if (deviceNode && pcNode)
+        return { "device": deviceNode, "pc": pcNode, "ownIcon": false };
+    return { "device": null, "pc": pcNode || deviceNode || null, "ownIcon": !pcNode && !!deviceNode };
 }
