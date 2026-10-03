@@ -5,7 +5,7 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 ## Contents
 
 - [Widgets](#widgets)
-- [The orbit](#the-orbit) · [If it does not connect](#if-it-does-not-connect)
+- [The orbit](#the-orbit) · [If it does not connect](#if-it-does-not-connect) · [If it does not disconnect](#if-it-does-not-disconnect) · [Bluetooth is off](#bluetooth-is-off)
 - [The detail card](#the-detail-card)
 - [Volume ring](#volume-ring)
 - [Earbuds: the trio](#earbuds-the-trio)
@@ -68,6 +68,19 @@ When a device you dragged in does not connect, it springs back out and a short n
 
 The note goes away by itself after a few seconds, or stays while the pointer is on it. From the command line, `dms ipc call orbitBluetooth …` replies that something cannot be done with the same link.
 
+### If it does not disconnect
+
+When you pull a device out and it is **still connected** 8 seconds later, it springs back to its place on the inner ring and the note says **…is still connected**. The device or BlueZ refused: it may be busy (a call, a file transfer). Try again, or turn the device off. Nothing is retried on its own.
+
+### Bluetooth is off
+
+When Bluetooth is off, the orbit is empty and the center says **Bluetooth is off**, with a **Turn on** button.
+
+![Bluetooth is off, with the note shown when Turn on had no effect](../screenshots/bluetooth-off.png)
+
+- If **Turn on** changes nothing within 3 seconds, a note says **Bluetooth stayed off**: something blocks it. Turn off airplane mode, check a Bluetooth switch or key on the laptop, or run `rfkill list` in a terminal: a *Soft blocked: yes* line is lifted with `rfkill unblock bluetooth`; *Hard blocked: yes* is the switch.
+- **No Bluetooth adapter** means the computer has none the system can use: no Bluetooth chip, a USB dongle unplugged, or the `bluetooth` service stopped (`systemctl status bluetooth`). Orbit needs BlueZ and an adapter; see *Requirements* in the README.
+
 ## The detail card
 
 Click any device to open it: its glyph flies onto the card.
@@ -85,7 +98,7 @@ Click any device to open it: its glyph flies onto the card.
 
 ## Volume ring
 
-Open a **connected** audio device (headphones, speaker, earbuds, TV…) and a ring of aurora settles around its planet, with a small moon at the current level. Devices that are not connected, or have no sound output, get no ring.
+Open a **connected** audio device (headphones, speaker, earbuds, TV…) and a ring of aurora settles around its planet, with a small moon at the current level. Devices that are not connected, or have no sound output, get no ring: scrolling over a connected keyboard or mouse says **…has no volume** instead of doing nothing. Right after a headset connects, its audio can take a second to appear; scroll again once the ring is there.
 
 ![The volume ring around an open headset](../screenshots/volume.png)
 

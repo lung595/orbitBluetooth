@@ -22,3 +22,4 @@ run buds earbuds.png
 run budsdock earbuds-dock.png
 run orbit-light light.png
 run orbitfocus-light light-detail.png
+run btblocked bluetooth-off.png

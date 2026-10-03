@@ -20,3 +20,19 @@ function connectNote(why, name) {
         return { "title": who + " did not connect", "hint": "Is it on, and close by?", "anchor": "if-it-does-not-connect" };
     return { "title": "Could not pair " + (name || "this device"), "hint": "Put it in pairing mode, then drag it in again", "anchor": "if-it-does-not-connect" };
 }
+
+// "Turn on" was pressed but Bluetooth stayed off: something blocks it
+// (airplane mode, a hardware switch, rfkill)
+function blockedNote() {
+    return { "title": "Bluetooth stayed off", "hint": "Airplane mode or a switch may block it", "anchor": "bluetooth-is-off" };
+}
+
+// Scrolled over a connected device that has no sound output to set
+function noVolumeNote(name) {
+    return { "title": (name || "This device") + " has no volume", "hint": "It does not play sound, or its audio is not ready yet", "anchor": "volume-ring" };
+}
+
+// Pulled out of its orbit, but still connected a while later
+function stuckNote(name) {
+    return { "title": (name || "This device") + " is still connected", "hint": "It may be in use: try again, or turn it off", "anchor": "if-it-does-not-disconnect" };
+}

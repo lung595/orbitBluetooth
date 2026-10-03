@@ -575,11 +575,33 @@ Item {
         if (!b || !b.device || !b.connected)
             return;
         b.phase = "disconnecting";
+        disconnectWatch.body = b;
+        disconnectWatch.restart();
         if (_ancService && ancCapable(b))
             _ancService.disconnectDevice(b.address);
         else
             b.device.disconnect();
         wake();
+    }
+
+    // A disconnect that never lands (device busy, BlueZ refusing) would leave
+    // the planet out of its slot while still connected: after 8 s it comes
+    // back and says so. One shot per pull, nothing runs otherwise.
+    Timer {
+        id: disconnectWatch
+        property var body: null
+        interval: 8000
+        onTriggered: {
+            const b = body;
+            body = null;
+            if (!b || b.phase !== "disconnecting" || !b.connected)
+                return;
+            b.phase = "idle";
+            b.shake();
+            sounds.play("error");
+            scene.explain(Guide.stuckNote(b.device ? Catalog.deviceName(b.device) : ""));
+            scene.wake();
+        }
     }
 
     // Unpairs the device, and drops what Orbit kept about it (its icon

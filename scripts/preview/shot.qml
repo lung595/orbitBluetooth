@@ -3,11 +3,13 @@ import QtQuick.Window
 import qs.Common
 import qs.Services
 import "../../components"
+import "../../components/Guide.js" as Guide
 
 // Offscreen renders for the README, with mock devices and services.
 // Usage: QT_QPA_PLATFORM=offscreen qml -I imports shot.qml -- <mode> <out.png>
 // Modes: orbit, zoom, orbitfocus, volumefocus (a volume step, mid-puff), desktop, desktopfocus, ancfocus,
-//        buds, budsdock, hole, holetess, hiddencard, hiddenempty, connecting, menu, feed
+//        buds, budsdock, hole, holetess, hiddencard, hiddenempty, connecting, menu, feed,
+//        btblocked (Turn on did nothing: note), noadapter
 Window {
     id: win
     readonly property var args: Qt.application.arguments
@@ -61,6 +63,10 @@ Window {
                 "desktopBackdrop": bright ? 50 : 72
             });
         BluetoothService.discovering = mode === "orbit";
+        // btblocked: "Turn on" pressed, nothing changed (note shown);
+        // noadapter: no adapter at all
+        BluetoothService.available = mode !== "noadapter";
+        BluetoothService.enabled = mode !== "btblocked" && mode !== "noadapter";
         PluginService.globalVars = {
             "orbitBluetooth": {
                 "since": { "02:00:00:00:10:06": t - 42 * m, "98:7A:14:22:C1:0E": t - 95 * m },
@@ -161,6 +167,8 @@ Window {
                 if (b) scene.focusOn(b);
             } else if (win.mode === "hiddencard" || win.mode === "hiddenempty") {
                 scene.openHidden();
+            } else if (win.mode === "btblocked") {
+                scene.explain(Guide.blockedNote());
             } else if (win.mode === "connecting") {
                 const b = find("6C:4A:85:9E:03:21");
                 if (b) b.phase = "connecting";
@@ -174,7 +182,7 @@ Window {
                     scene.updateDrag(Qt.point(scene.holeX + 26, scene.holeY - 22));
                 }
             }
-            grabTimer.interval = win.mode.startsWith("buds") ? 2600 : win.mode === "volumefocus" ? 1760 : win.mode.endsWith("focus") || win.mode.startsWith("hidden") ? 1800 : win.mode === "connecting" ? 700 : win.mode === "feed" || win.mode === "menu" ? 900 : 50;
+            grabTimer.interval = win.mode.startsWith("buds") ? 2600 : win.mode === "volumefocus" ? 1760 : win.mode.endsWith("focus") || win.mode.startsWith("hidden") ? 1800 : win.mode === "connecting" ? 700 : win.mode === "feed" || win.mode === "menu" || win.mode === "btblocked" ? 900 : 50;
             grabTimer.start();
         }
     }

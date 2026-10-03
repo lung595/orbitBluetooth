@@ -18,7 +18,7 @@ const Palette = load("Palette.js", ["contrast", "ensureContrast", "onColor", "li
 const Offer = load("Offer.js", ["scanBlocker", "isCandidate", "offerable", "headline", "features", "errorText"]);
 const Pictures = load("Pictures.js", ["queryFor", "creditText"]);
 const Catalog = load("DeviceCatalog.js", ["deviceName", "modelName", "resolve"]);
-const Guide = load("Guide.js", ["url", "connectNote"]);
+const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNote", "stuckNote"]);
 const Volume = load("Volume.js", ["start", "sweep", "clamp", "step", "nudge", "valueAt", "zone", "findSink", "validSink"]);
 const Fx = load("VolumeFx.js", ["clamp01", "ripple", "band", "filament", "emission", "spawn", "step", "lifeT", "follow", "wave"]);
 const Guard = load("Guard.js", ["offerFamily", "hasInput", "refused", "validPath", "parseUuids"]);
@@ -157,7 +157,13 @@ const anchors = guide.split("\n").filter(l => /^#{2,3} /.test(l)).map(l => l.rep
     eq("note " + why + " has a title and a hint", !!(n.title && n.hint), true);
     eq("note " + why + " links to a real section", anchors.indexOf(n.anchor) >= 0, true);
 });
-["noise-control", "pairing-safety", "if-it-does-not-connect", "new-headphones-pop-up"].forEach(a => eq("guide has #" + a, anchors.indexOf(a) >= 0, true));
+[Guide.blockedNote(), Guide.noVolumeNote("K380"), Guide.stuckNote("Momentum 4")].forEach(n => {
+    eq("note \"" + n.title + "\" has a hint", !!n.hint, true);
+    eq("note \"" + n.title + "\" links to a real section", anchors.indexOf(n.anchor) >= 0, true);
+});
+eq("a nameless device has no volume", Guide.noVolumeNote("").title, "This device has no volume");
+eq("a nameless device stuck", Guide.stuckNote("").title, "This device is still connected");
+["noise-control", "pairing-safety", "if-it-does-not-connect", "if-it-does-not-disconnect", "bluetooth-is-off", "volume-ring", "new-headphones-pop-up"].forEach(a => eq("guide has #" + a, anchors.indexOf(a) >= 0, true));
 eq("guide url", Guide.url("noise-control"), "https://github.com/lung595/orbitBluetooth/blob/main/docs/GUIDE.md#noise-control");
 eq("a nameless device", Guide.connectNote("pair", "").title, "Could not pair this device");
 

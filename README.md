@@ -165,6 +165,7 @@ Bind them in your compositor, for example in niri: `Mod+N { spawn "dms" "ipc" "c
 | Earbuds disconnect after a few seconds | Accept the pairing code dialog once |
 | No pop-up for new headphones | It appears when any tool searches for devices (Orbit's **Scan**, your system settings); turn on **Background scan** to have Orbit search by itself; the pop-up waits for full-screen windows |
 | Something did not work | A short note says why, and the GitHub mark next to it opens the matching section of the guide |
+| Bluetooth is off and **Turn on** does nothing | Airplane mode or a hardware switch blocks it: `rfkill unblock bluetooth`, see [Bluetooth is off](docs/GUIDE.md#bluetooth-is-off) |
 | No devices appear while scanning | Put the device in pairing mode; turn on **Show unnamed devices** |
 | A device charges but shows no lightning | Wait for its first level increase: the estimate starts then |
 | Noise control does not appear | Headset must be paired and supported, Python 3 installed; reopen the card |

@@ -5,6 +5,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## Unreleased
 
+## 1.11.1 - 2026-10-03
+
+### Added
+
+- Four more short notes, each with the GitHub mark that opens the matching guide section, so Orbit never fails in silence:
+  - **Turn on** had no effect (Bluetooth is still off 3 s later): "Bluetooth stayed off — Airplane mode or a switch may block it".
+  - **No adapter**: the "No Bluetooth adapter" line now carries the GitHub mark.
+  - Scrolling on a connected device that has no volume: "<name> has no volume — It does not play sound, or its audio is not ready yet".
+  - **Disconnect** that does nothing within 8 s: the planet shakes and "<name> is still connected — It may be in use: try again, or turn it off".
+- Guide: new sections *If it does not disconnect* and *Bluetooth is off* (rfkill, airplane mode, the Bluetooth service).
+
+### Fixed
+
+- A planet whose disconnection never happened stayed stuck in the "disconnecting" state until Orbit restarted; it now returns to normal after 8 s.
+
 ## 1.11.0 - 2026-10-03
 
 ### Added

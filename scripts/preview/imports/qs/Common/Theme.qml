@@ -22,6 +22,7 @@ QtObject {
     property real spacingS: 8
     property real spacingM: 12
     property real spacingL: 16
+    property real spacingXL: 24
     property real cornerRadius: 12
     function withAlpha(c, a) { return Qt.rgba(c.r, c.g, c.b, a); }
 }

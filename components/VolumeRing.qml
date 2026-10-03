@@ -6,6 +6,8 @@ import qs.Common
 import qs.Widgets
 import "Volume.js" as Volume
 import "VolumeFx.js" as Fx
+import "Guide.js" as Guide
+import "DeviceCatalog.js" as Catalog
 
 // Volume of the focused audio device, drawn as a ring floating around its
 // glyph (like a planet's ring). Wheel = 5 % steps, drag along the ring =
@@ -44,8 +46,12 @@ Item {
     readonly property real cx: width / 2
     readonly property real cy: height / 2
 
+    // Connected, landed on the card, but no sink to drive (keyboard, mouse,
+    // audio not up yet): no ring, but a scroll says why instead of nothing
+    readonly property bool soundless: !ready && !!body && body.connected && body.focusScale > scene.focusGlyphScale * 0.92
+
     // Fades in once the glyph has landed on the card, out at once on leave
-    visible: opacity > 0.01
+    visible: opacity > 0.01 || soundless
     opacity: ready && body && body.focusScale > scene.focusGlyphScale * 0.92 ? 1 : 0
     Behavior on opacity {
         enabled: ring.scene.motion
@@ -278,6 +284,15 @@ Item {
                 return;
             acc -= steps * 120;
             ring.set(Volume.nudge(ring.volume, steps));
+        }
+    }
+
+    WheelHandler {
+        enabled: ring.soundless
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+        onWheel: {
+            if (!ring.scene.note || ring.scene.note.anchor !== "volume-ring")
+                ring.scene.explain(Guide.noVolumeNote(ring.body.device ? Catalog.deviceName(ring.body.device) : ""));
         }
     }
 
