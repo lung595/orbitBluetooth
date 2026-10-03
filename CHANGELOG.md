@@ -5,6 +5,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## Unreleased
 
+## 1.11.2 - 2026-10-03
+
+### Changed
+
+- **Ambient motion pauses behind windows.** When windows fill the screen (fullscreen, maximized, or several side by side), the desktop orbit freezes as if Ambient were off: nobody can see it drift. It wakes as soon as the desktop shows again (workspace change, window closed, overview). niri only; on other compositors Ambient keeps running.
+- Ambient's slow drift with nobody around runs at 20 Hz instead of 30 Hz.
+
+### Performance
+
+- Desktop widget with *Ambient motion* on, two screens covered by windows: **3.33 % → 1.43 %** of one core for the whole shell, against 1.38 % with Orbit disabled (counter-tested: back on 1.11.1, 3.33 %; again on 1.11.2, 1.58 %).
+
 ## 1.11.1 - 2026-10-03
 
 ### Added

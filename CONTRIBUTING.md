@@ -63,6 +63,7 @@ orbitBluetooth/
 ├── OrbitBluetoothSettings.qml   # settings page
 ├── components/
 │   ├── OrbitScene.qml           # the scene: physics, drag, focus
+│   ├── Cover.js                 # is the desktop hidden behind windows? (pure, tested)
 │   ├── OfferCard.qml, ScanChip.qml, AdapterNotice.qml  # the scene's chrome: pairing offer, scan chip, Bluetooth off
 │   ├── DeviceBody.qml           # one orbiting device, charging beam
 │   ├── FocusCard.qml            # detail card
@@ -139,6 +140,7 @@ Orbit must cost nothing while nobody looks at it. Keep these rules when changing
 - **Never loop a QML animation** (`NumberAnimation` with `loops`, `Animator`, a running `FrameAnimation`). In Qt, any running animation makes *every* shell window (bars, wallpaper) redraw at the display rate. Use a plain `Timer` (30 Hz, 60 Hz while a comet turns or a card is open) and compute effects from one effects clock.
 - **Display-synced frames only for gestures**, and only until the motion has calmed down.
 - **Paint backgrounds once** (stars, nebulae, veil); effects only move fixed geometry.
+- **Hidden means frozen**: the desktop orbit is asleep while windows fill its screen, even with *Ambient motion* on (`Cover.js`, pure, tested, reads niri's layout from DMS's `NiriService`).
 - **Run nothing while hidden**: discovery, polling and the noise-control helper only run while a view is open (the one exception is the new-device pop-up's 8 s background scan, with its battery and audio rules); everything pauses while the session is locked or the monitors are off.
 - **Load on demand**: the multimedia backend only when sounds are enabled.
 - **Honor DMS Reduce motion.**

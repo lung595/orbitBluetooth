@@ -17,4 +17,5 @@ Ideas, not promises, and no dates. Anything that would need the network or send 
 
 ## Known limits
 
+- *Ambient motion* only pauses when windows fill the whole screen: a single floating or narrow window placed over the widget does not pause it, because niri does not tell where tiled windows sit on screen. On compositors other than niri it never pauses.
 - Some Sony headsets do not report charging, or drop Bluetooth while charging; this is a hardware limit.

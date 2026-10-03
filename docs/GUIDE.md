@@ -27,7 +27,7 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 
 **Bar.** Left click opens the orbit in a popout, right click turns Bluetooth on or off. Connected devices appear as tiny glyphs in the pill.
 
-**Desktop.** A frameless orbit (default 440 × 380): a smoky veil tinted with your theme accent fades into the wallpaper. It stays frozen until the pointer is over it, and the detail card closes by itself when the pointer leaves.
+**Desktop.** A frameless orbit (default 440 × 380): a smoky veil tinted with your theme accent fades into the wallpaper. It stays frozen until the pointer is over it, and the detail card closes by itself when the pointer leaves. With *Ambient motion* on, the orbit keeps drifting, except behind windows: when they fill the screen (fullscreen, maximized or side by side), it freezes and costs nothing until the desktop shows again (niri).
 
 | Desktop widget | Desktop widget, detail card |
 | --- | --- |
@@ -316,7 +316,7 @@ Grouped in tabs: **Orbit** (with Reset), **Scanning**, **Headphones** (with devi
 | | Engine | On demand | *Always connected* ⚡ shows headset button presses live |
 | Desktop widget | Displays | All | Which displays show the desktop widget |
 | | Backdrop | 72 % | Depth of the veil behind the orbit |
-| | Ambient motion | Off | Keep orbits moving when the pointer is away ⚡ |
+| | Ambient motion | Off | Keep orbits moving when the pointer is away ⚡ (paused while windows hide the desktop) |
 | Device pictures | Real device pictures (uses the internet) | Off | Photo of the model instead of an icon, see [Real device pictures](#real-device-pictures) |
 | Look | Black hole | Black hole | Realistic, or the tesseract |
 | | Shooting stars | On | A rare meteor (every 12–32 s), bent or swallowed by the black hole |
@@ -351,6 +351,8 @@ Orbit costs nothing while you are not looking at it: no frames at rest, nothing 
 | View open while scanning | 5.2 | 2–3 |
 | Pairing sheet shown | – | 5.8 |
 | Desktop widget, *Ambient motion* on | 9.2 | 11.0 |
+
+Since 1.11.2, *Ambient motion* pauses on a screen whose desktop is hidden by windows. Measured on two screens, both covered: 1.43 % with Orbit against 1.38 % without (1.11.1: 3.33 %). On a screen where the orbit is visible, its drift runs at 20 Hz and costs about one point.
 
 The pairing sheet cost 67 % of a core before 1.11.0: two long QML animations made every shell window repaint at 240 Hz. They now run on timers, and only the sheet repaints.
 
