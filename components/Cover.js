@@ -1,41 +1,55 @@
 .pragma library
 
-// Is the desktop of one screen hidden behind a window? Ambient motion keeps
-// the desktop orbit drifting while nobody hovers it; behind a fullscreen or
-// maximized window that drift is never seen, so it pauses there (P123).
+// Is the desktop of one screen hidden behind windows? Ambient motion keeps
+// the desktop orbit drifting while nobody hovers it; behind windows that
+// drift is never seen, so it pauses there (P123).
 // Reads niri's state as DMS's NiriService keeps it (event-driven, no polling).
+//
+// niri gives the size of each tile and its column, not where it sits on
+// screen. But niri scrolls the view as little as possible to keep the
+// focused column in view, so columns that add up to the screen's width
+// leave no empty space: the desktop only shows through the gaps.
 
-// A tile this close to the screen size leaves only the gaps visible.
+// Tiles this close to the screen size leave only the gaps visible.
 // Height is looser: the bar's exclusive zone takes part of it.
-var minWidth = 0.97;
+var minWidth = 0.9;
 var minHeight = 0.9;
 
-// workspaces: { id: { output, is_active, active_window_id } }
-// windows: [{ id, is_floating, layout: { tile_size: [w, h] } }]
+// workspaces: { id: { id, output, is_active } }
+// windows: [{ workspace_id, is_floating, layout: { tile_size: [w, h], pos_in_scrolling_layout: [column, row] } }]
 // output: the screen's name (e.g. "DP-2"); width, height: its logical size.
 function covered(workspaces, windows, output, width, height, inOverview) {
     // The overview shows the desktop behind the zoomed-out workspaces
     if (inOverview || !output || !(width > 0) || !(height > 0))
         return false;
-    let activeId = null;
+    let active = null;
     for (const id in workspaces || {}) {
         const ws = workspaces[id];
         if (ws && ws.output === output && ws.is_active) {
-            activeId = ws.active_window_id;
+            active = ws.id !== undefined ? ws.id : Number(id);
             break;
         }
     }
-    if (activeId === null || activeId === undefined)
+    if (active === null)
         return false;
-    // niri keeps the active column in view, so the active window is the one
-    // in front; a floating window can be moved and is never trusted to cover.
+
+    // Width and stacked height of each column of the active workspace.
+    // Floating windows can be anywhere, so they never count.
+    const columns = {};
     for (const w of windows || []) {
-        if (!w || w.id !== activeId)
+        const l = w && w.layout;
+        const size = l && l.tile_size;
+        const pos = l && l.pos_in_scrolling_layout;
+        if (!w || w.workspace_id !== active || w.is_floating || !size || !pos)
             continue;
-        const size = w.layout && w.layout.tile_size;
-        if (w.is_floating || !size || size.length < 2)
-            return false;
-        return size[0] >= width * minWidth && size[1] >= height * minHeight;
+        const c = columns[pos[0]] || (columns[pos[0]] = { w: 0, h: 0 });
+        c.w = Math.max(c.w, size[0]);
+        c.h += size[1];
     }
-    return false;
+    // Only columns as tall as the screen hide the desktop behind them
+    let filled = 0;
+    for (const k in columns)
+        if (columns[k].h >= height * minHeight)
+            filled += columns[k].w;
+    return filled >= width * minWidth;
 }

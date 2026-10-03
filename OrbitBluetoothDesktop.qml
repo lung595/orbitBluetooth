@@ -25,8 +25,9 @@ DesktopPluginComponent {
     property bool lingering: false
     // Set by DMS's desktop wrapper: the screen this copy of the widget is on
     property var screen: null
-    // Behind a fullscreen or maximized window nobody sees the drift, so
-    // Ambient motion pauses there (niri only; elsewhere it never pauses).
+    // Behind windows that fill the screen (fullscreen, maximized or side by
+    // side) nobody sees the drift, so Ambient motion pauses there and the
+    // scene draws nothing (niri only; elsewhere it never pauses).
     readonly property bool covered: CompositorService.isNiri && !!screen
         && Cover.covered(NiriService.workspaces, NiriService.windows, screen.name, screen.width, screen.height, NiriService.inOverview)
 
