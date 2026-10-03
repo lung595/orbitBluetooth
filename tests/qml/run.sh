@@ -1,6 +1,6 @@
 #!/bin/sh
-# Runs the QML tests (the "new device" pop-up, the polar scope) without
-# Quickshell or a
+# Runs the QML tests (the "new device" pop-up, the polar scope, the
+# keyboard-profile question of the connection flow) without Quickshell or a
 # Bluetooth adapter: stubs/ stands in for Quickshell and the DMS services,
 # Device.qml for a BlueZ device, and NewDeviceWindow.qml replaces the real
 # layer-shell window. Needs Qt 6 (qml, qml6, qml-qt6 or PySide6).

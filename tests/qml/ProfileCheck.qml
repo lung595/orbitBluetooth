@@ -4,6 +4,7 @@ import "Guard.js" as Guard
 // Test stand-in for components/pairing/ProfileCheck.qml: same decision (Guard.js),
 // but reads the profiles from the fake device instead of calling busctl.
 QtObject {
+    readonly property string guideUrl: "pairing-safety"
     property var log: []
     function check(device, family, done) {
         log = log.concat([device.name]);
