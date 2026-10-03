@@ -210,6 +210,7 @@ The device falls out of the bar along a comet trail, is caught by an orbit with 
 - **Don't offer again** never offers that device again. **Offer ignored devices again** (end of the settings) clears the list.
 - **Several devices at once**: the next one peeks behind the sheet with a "+1", and comes forward when you are done with the first.
 - The keyboard is only taken once you click the sheet, so it never steals keys from the window you use.
+- If an Orbit view is open when the sheet arrives, it closes behind it, so the sheet never sits on top of the panel.
 
 **Two looks, any palette**: with a dark DMS theme the sheet is deep space (blue-black sky, glowing planet and device); with a light theme it is the stratosphere (pearly sky, porcelain planet, the device casting a real shadow). The DMS colours enter through the accent only, which each look brightens or deepens until it reads well, so pastel, neon or grey palettes all work.
 
@@ -327,14 +328,18 @@ Three buttons at the end reset custom device icons, bring back every hidden devi
 
 ## Performance
 
-Orbit costs nothing while you are not looking at it: no frames at rest, nothing running while views are closed (except the pop-up's short background scan, which you can turn off), everything paused while the session is locked. CPU of the whole shell (% of one core, 240 Hz screen, DMS alone: 0.7 %):
+Orbit costs nothing while you are not looking at it: no frames at rest, nothing running while views are closed (except the pop-up's short background scan, which you can turn off), everything paused while the session is locked. CPU of the whole shell (% of one core, 240 Hz screen; the first row is the baseline of each run):
 
-| State | 1.4.1 |
-| --- | --- |
-| Idle (bar icon, view closed) | 0.5 |
-| View open, left alone | 3.8 |
-| View open while scanning | 5.2 |
-| Desktop widget, *Ambient motion* on | 9.2 |
+| State | 1.4.1 | 1.11.0 |
+| --- | --- | --- |
+| DMS alone (Orbit disabled) | 0.7 | 1.1 |
+| Idle (bar icon, view closed) | 0.5 | 0.6 |
+| View open, left alone | 3.8 | 4.5 |
+| View open while scanning | 5.2 | 2–3 |
+| Pairing sheet shown | – | 5.8 |
+| Desktop widget, *Ambient motion* on | 9.2 | 11.0 |
+
+The pairing sheet cost 67 % of a core before 1.11.0: two long QML animations made every shell window repaint at 240 Hz. They now run on timers, and only the sheet repaints.
 
 The volume ring's effects only run while the level moves and stop by themselves; on an offscreen bench, 6 s of continuous dragging costs 0.16 s of CPU for all its effects.
 

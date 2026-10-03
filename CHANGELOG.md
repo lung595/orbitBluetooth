@@ -15,10 +15,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ### Changed
 
 - Detail card buttons are balanced: back and change icon on the left, connect, hide and forget on the right.
+- When the pairing sheet appears, the Orbit popout closes behind it instead of staying under the sheet.
+- The sheet's *Connect* button is flatter and calmer: a solid accent rectangle with softly rounded corners, a hairline of light on top and a medium-weight label; the sheen and the progress bar are unchanged.
 
 ### Removed
 
 - The volume slider of the detail card, replaced by the ring.
+
+### Fixed
+
+- The pairing sheet no longer redraws the whole shell while it is shown. Its scene clock and its 30 s countdown were long QML animations, which make every shell window (bars, wallpaper, both screens) repaint at the screen rate; they now run on timers (60 Hz while something moves, 30 Hz for the countdown), so only the sheet repaints. Measured with the demo sheet on screen: 67.1 % of a core down to 5.8 %, and 6 busy render threads down to 1.
 
 ## 1.10.4 - 2026-10-02
 
