@@ -69,6 +69,14 @@ Item {
     }
 
     readonly property alias newDevices: newDeviceWatch
+    // The bar popout closes when the sheet comes up (OrbitBluetoothWidget):
+    // a sheet stacked over the open orbit looks cluttered
+    Connections {
+        target: newDeviceWatch
+        function onShownChanged() {
+            root._publish("sheetShown", newDeviceWatch.shown);
+        }
+    }
 
     // Pairing prompts. DMS only shows its pairing dialog from the native
     // Bluetooth panel, which Orbit replaces: without this, a headset asking

@@ -84,14 +84,20 @@ Item {
     property bool asleep: false
     readonly property bool moving: shown && !reduceMotion && !asleep
     // Seconds since the sheet appeared: drives every loop (float, moon,
-    // twinkle, sonar, shooting star) from one animation
+    // twinkle, sonar, shooting star). A plain 60 Hz timer, not a looping
+    // QML animation: a running animation makes every shell window (bars,
+    // wallpaper, both screens) redraw at the display rate, a timer only
+    // repaints this sheet (measured: 75 % of a core -> see CHANGELOG).
     property real clock: 0
-    NumberAnimation on clock {
+    Timer {
+        id: clockTimer
+        interval: 16
+        repeat: true
         running: root.moving
-        from: 0
-        to: 3600
-        duration: 3600000
-        loops: Animation.Infinite
+        property double start: 0
+        onRunningChanged: if (running)
+            start = Date.now() - root.clock * 1000
+        onTriggered: root.clock = (Date.now() - start) / 1000
     }
     // 0 -> 1: the card unfolds (springy on the way in, quick on the way out)
     property real reveal: shown ? 1 : 0
@@ -215,8 +221,12 @@ Item {
         arrived = 0;
         enter.restart();
     }
-    onShownChanged: if (shown)
-        start()
+    onShownChanged: if (shown) {
+        // The loops start over with each new sheet
+        clock = 0;
+        clockTimer.start = Date.now();
+        start();
+    }
     Component.onCompleted: if (shown)
         start()
     onPhaseChanged: {
@@ -1226,28 +1236,24 @@ Item {
         Rectangle {
             id: mainButton
             x: 16
-            y: 420
+            y: 422
             opacity: root.stagger(5)
             transform: Translate {
                 y: (1 - root.stagger(5)) * 14
             }
             width: card.width - 32
-            height: 50
-            radius: 25
+            height: 46
+            // A rounded rectangle, not a pill: flat and quiet, like the cards
+            radius: 12
             readonly property bool quiet: root.busy
             color: quiet ? Theme.withAlpha(skin.accent, 0.14) : skin.accent
-            gradient: quiet ? null : shine
-            Gradient {
-                id: shine
-                orientation: Gradient.Horizontal
-                GradientStop {
-                    position: 0
-                    color: skin.accent
-                }
-                GradientStop {
-                    position: 1
-                    color: Qt.tint(skin.accent, Theme.withAlpha(skin.accent2, 0.4))
-                }
+            // A hairline of light along the top edge, the only relief it keeps
+            Rectangle {
+                visible: !mainButton.quiet
+                x: parent.radius
+                width: parent.width - 2 * parent.radius
+                height: 1
+                color: Theme.withAlpha("white", skin.light ? 0.35 : 0.22)
             }
 
             // Progress while pairing and connecting, with a sheen running across
@@ -1273,7 +1279,7 @@ Item {
                     readonly property real t: (root.clock * 0.7) % 1
                     width: 90
                     height: parent.height
-                    radius: height / 2
+                    radius: mainButton.radius
                     x: t * (parent.width - width)
                     opacity: Math.sin(Math.PI * t)
                     gradient: Gradient {
@@ -1321,8 +1327,9 @@ Item {
                             "failed": "Try again"
                         })[root.phase] || ""
                     color: mainButton.quiet ? skin.ink(0.92) : skin.inkOnAccent
-                    font.pixelSize: Theme.fontSizeMedium + 1
-                    font.weight: Font.DemiBold
+                    font.pixelSize: Theme.fontSizeMedium
+                    font.weight: Font.Medium
+                    font.letterSpacing: 0.2
                 }
             }
             MouseArea {

@@ -131,6 +131,11 @@ PluginComponent {
 
     pillRightClickAction: () => BluetoothService.toggleBluetooth()
 
+    // The pairing sheet (daemon) takes over: close the orbit behind it
+    readonly property bool sheetShown: !!(PluginService.globalVars[pluginId] || {}).sheetShown
+    onSheetShownChanged: if (sheetShown)
+        closePopout()
+
     popoutWidth: 520
     // Grows while a detail card is open, like the Control Center tile
     property real popCardFit: 0
