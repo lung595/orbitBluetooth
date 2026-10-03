@@ -22,12 +22,13 @@ var DMS_VERB = {
 var FALLBACK_STEP = 3;
 
 // The bound action. If Orbit is not loaded (plugin turned off, folder
-// removed), "dms ipc" answers "Target not found." and the key falls back to
-// DMS's own step, so the keys never stop working. Data reaches the shell
+// removed), "dms ipc" answers "Target not found."; an Orbit too old for
+// this command, "Function not found."; no shell, nothing. Each time the key
+// falls back to DMS's own step, so the keys never stop working. Data reaches the shell
 // only as positional parameters.
 function action(dir, step) {
     const n = Math.max(1, Math.min(20, parseInt(step) || FALLBACK_STEP));
-    return 'spawn "sh" "-c" "case \\"$(dms ipc call orbitBluetooth volume \\"$1\\")\\" in Target*) exec dms ipc call audio \\"$2\\" \\"$3\\";; esac" "orbit" "' + dir + '" "' + DMS_VERB[dir] + '" "' + n + '"';
+    return 'spawn "sh" "-c" "case \\"$(dms ipc call orbitBluetooth volume \\"$1\\")\\" in \\"\\"|Target*|Function*) exec dms ipc call audio \\"$2\\" \\"$3\\";; esac" "orbit" "' + dir + '" "' + DMS_VERB[dir] + '" "' + n + '"';
 }
 
 function setArgs(dir, step) {

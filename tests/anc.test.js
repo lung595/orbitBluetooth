@@ -404,7 +404,7 @@ eq("one level, this PC's (not Bluetooth, or no own volume)", [Route.shownLevels(
     eq("DMS's own step is kept for the fallback", Keys.classify(listing("spawn dms ipc call audio increment 5", "spawn dms ipc call audio decrement 5")).step, 5);
     eq("an unreadable listing is unknown", [Keys.classify("").state, Keys.classify("oops").state, Keys.classify("null").state, Keys.classify('{"binds":null}').state], ["unknown", "unknown", "unknown", "unknown"]);
     eq("the action falls back to DMS's step, data as parameters only", Keys.action("down", 3),
-        'spawn "sh" "-c" "case \\"$(dms ipc call orbitBluetooth volume \\"$1\\")\\" in Target*) exec dms ipc call audio \\"$2\\" \\"$3\\";; esac" "orbit" "down" "decrement" "3"');
+        'spawn "sh" "-c" "case \\"$(dms ipc call orbitBluetooth volume \\"$1\\")\\" in \\"\\"|Target*|Function*) exec dms ipc call audio \\"$2\\" \\"$3\\";; esac" "orbit" "down" "decrement" "3"');
     eq("the fallback step stays 1..20", [Keys.action("up", 99).slice(-4), Keys.action("up", "x").slice(-3)], ['"20"', '"3"']);
     eq("set only the volume keys", [Keys.setArgs("up", 3).slice(0, 5), Keys.setArgs("up", 3).slice(-2)],
         [["dms", "keybinds", "set", "niri", "XF86AudioRaiseVolume"], ["--allow-when-locked", "--json"]]);
