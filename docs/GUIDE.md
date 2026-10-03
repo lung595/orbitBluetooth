@@ -128,8 +128,6 @@ Devices that follow this PC's level have one level only, whatever this setting s
 
 When a volume changes, from a key, the command line or anywhere else, Orbit can show **both levels at once** in a small pop-up: the same dark screen as the card, with the device's half circle, this PC's, and the sound inside.
 
-![The volume pop-up in its four styles: Points, Rays, Waves and None, with the volume keys note](../screenshots/popup.png)
-
 - **Where** (**Sound → Pop-up**): *In place of DMS's volume OSD* (the default: DMS's own OSD stays hidden on that screen), *Under the bar widget*, *Right screen edge*, or *Off* to keep DMS's OSD.
 - **Dank Island**: on screens where the island shows the volume, Orbit's screen appears **inside the island**, which grows to fit, instead of a second pop-up.
 - **Size** (**Sound → Size**): *Compact*, *Medium* (default) or *Large*.
