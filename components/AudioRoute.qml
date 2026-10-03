@@ -160,6 +160,18 @@ Item {
         node.audio.volume = Steps.apply(now, dir, stepFor(dir, now));
     }
 
+    // The volume keys (`dms ipc call orbitBluetooth volume up|down`): the
+    // output you hear, Bluetooth or not. Never another device: with the
+    // sound on a wired output, a connected headset must not move (P136)
+    function stepHeard(dir) {
+        const dev = current;
+        const node = deviceNode(dev) || pcNode(dev);
+        if (!node || !node.audio)
+            return "no-pc-level";
+        stepNode(node, dir);
+        return "";
+    }
+
     // Clicking the planet (D251): one audio device mutes this PC, several
     // mute that device
     function toggleMute(address) {

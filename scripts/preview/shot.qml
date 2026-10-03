@@ -18,7 +18,9 @@ Window {
     // hardest case for label contrast), "-none" disconnects every device,
     // "-fit" sizes the window like the bar popout (grows to the open card),
     // "-cc" like the Control Center tile (same, from a smaller minimum),
-    // "-follow" gives the headset no level of its own (no absolute volume)
+    // "-follow" gives the headset no level of its own (no absolute volume),
+    // "-fold" starts the card's volumes folded, as in the menus, and
+    // "-unfold" shows them unfolded there
     readonly property string rawMode: args[args.length - 2]
     readonly property var flags: rawMode.split("-")
     readonly property bool bright: flags.indexOf("bright") > 0
@@ -27,6 +29,8 @@ Window {
     readonly property bool cc: flags.indexOf("cc") > 0
     readonly property bool fit: flags.indexOf("fit") > 0 || cc
     readonly property bool follow: flags.indexOf("follow") > 0
+    readonly property bool fold: flags.indexOf("fold") > 0 || unfold
+    readonly property bool unfold: flags.indexOf("unfold") > 0
     readonly property string mode: flags[0]
     readonly property string out: args[args.length - 1]
     readonly property bool glass: mode.startsWith("desktop")
@@ -310,6 +314,8 @@ Window {
             autoScan: false
             previewDevices: win.devices
             audioRoute: fakeRoute
+            foldVolume: win.fold
+            volumeUnfolded: win.unfold
             cornerRadius: win.glass ? 0 : 16
         }
     }

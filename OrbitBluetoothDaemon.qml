@@ -168,13 +168,13 @@ Item {
         // The level inside the Bluetooth device in use (absolute volume)
         function deviceVolume(level: string): string {
             const why = audioRoute.setLevel("device", level, "");
-            return why ? Guide.levelNote(why) + " · " + Guide.url("two-volumes") : "OK";
+            return why ? Guide.levelNote(why) + " · " + Guide.url("the-two-volumes") : "OK";
         }
 
         // What this PC sends to it (or to the current output with no device)
         function pcVolume(level: string): string {
             const why = audioRoute.setLevel("pc", level, "");
-            return why ? Guide.levelNote(why) + " · " + Guide.url("two-volumes") : "OK";
+            return why ? Guide.levelNote(why) + " · " + Guide.url("the-two-volumes") : "OK";
         }
 
         // The level heard: the device's own when it has one, else this PC's.
@@ -196,8 +196,8 @@ Item {
             const d = String(direction || "").trim().toLowerCase();
             if (d !== "up" && d !== "down")
                 return "Use: volume up | down · " + Guide.url("smart-volume-steps");
-            const why = audioRoute.setLevel(audioRoute.mainPart(""), d, "");
-            return why ? Guide.levelNote(why) + " · " + Guide.url("two-volumes") : "OK";
+            const why = audioRoute.stepHeard(d === "up" ? 1 : -1);
+            return why ? Guide.levelNote(why) + " · " + Guide.url("the-two-volumes") : "OK";
         }
 
         // Names of the devices hidden in the black hole, one per line

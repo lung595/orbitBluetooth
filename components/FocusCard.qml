@@ -101,8 +101,11 @@ Item {
         route: card.scene.audioRoute
         prefs: card.scene.prefs
         address: card.body && card.body.connected ? card.body.address : ""
-        live: card.visible && card.scene.awake && !card.picking
+        live: card.visible && card.scene.awake && !card.picking && !card.volumeFolded
     }
+    // In the menus the volumes start as a thin line, so the card fits
+    // without scrolling; a click unfolds the scope
+    readonly property bool volumeFolded: card.scene.foldVolume && !card.scene.volumeUnfolded
 
     // Swallow clicks so they don't reach the scene's "click outside" handler
     MouseArea {
@@ -317,14 +320,46 @@ Item {
             }
 
             // The two volumes (D250), on the same screen as the pop-up's
+            VolumeStrip {
+                visible: volumes.ready && !card.picking && card.volumeFolded
+                width: parent.width
+                height: implicitHeight
+                levels: volumes
+                onUnfold: card.scene.volumeUnfolded = true
+            }
             ScopeScreen {
                 objectName: "cardScope" // found by the offscreen previews
-                visible: volumes.ready && !card.picking
+                visible: volumes.ready && !card.picking && !card.volumeFolded
                 width: parent.width
                 height: Math.round(width * 0.44) + noteRoom
                 noteBelow: true
                 overlay: volumes
                 live: volumes.live
+
+                // Fold it back into the thin line (menus only)
+                Rectangle {
+                    visible: card.scene.foldVolume
+                    anchors.top: parent.top
+                    anchors.right: parent.right
+                    anchors.margins: parent.margin + Theme.spacingXS
+                    width: 24
+                    height: 24
+                    radius: 12
+                    color: foldArea.containsMouse ? (parent.light ? parent.paper.fg(0.1) : parent.night.ink(0.12)) : "transparent"
+                    DankIcon {
+                        anchors.centerIn: parent
+                        name: "expand_less"
+                        size: 18
+                        color: parent.parent.light ? parent.parent.paper.fg(foldArea.containsMouse ? 0.9 : 0.5) : parent.parent.night.ink(foldArea.containsMouse ? 0.95 : 0.5)
+                    }
+                    MouseArea {
+                        id: foldArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: card.scene.volumeUnfolded = false
+                    }
+                }
             }
 
             Item {

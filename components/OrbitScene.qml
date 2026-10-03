@@ -27,6 +27,8 @@ Item {
     property bool covered: false             // desktop: hidden behind a window, Ambient pauses
     property bool interacting: false         // desktop: pointer is over the widget
     property bool glass: false               // desktop: frameless, fades into the wallpaper
+    property bool foldVolume: false          // menus: the card's two volumes start folded into a thin line
+    property bool volumeUnfolded: false      // ...until clicked; kept while the shell runs, never saved
     // Names of connected devices read stronger than the others; with nothing
     // connected there is no hierarchy to show, so every name is lifted
     property bool anyConnected: false
@@ -842,8 +844,9 @@ Item {
         onActivated: {
             if (scene.renaming)
                 scene.renaming = false;
-                // cancel the rename, keep the card
-            else if (scene.menuOpen)
+            else
+            // cancel the rename, keep the card
+            if (scene.menuOpen)
                 menu.close();
             else if (scene.hiddenOpen)
                 scene.closeHidden();
