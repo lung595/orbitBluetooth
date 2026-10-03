@@ -20,7 +20,21 @@ Item {
     // the sheet)
     readonly property bool mine: controller.activeActivity === "volume"
     readonly property bool shown: mine && controller.expanded && visible
-    visible: mine
+    // What the sheet holds, volume or brightness. It keeps its value while
+    // the island moves on to something else, because the sheet then fades
+    // out for a few frames: switching to DMS's slider then would flash it
+    // (P133).
+    property string _sheetOf: mine ? "volume" : ""
+    Connections {
+        target: face.controller
+        function onActiveActivityChanged() {
+            const a = face.controller.activeActivity;
+            if (a === "volume" || a === "brightness")
+                face._sheetOf = a;
+        }
+    }
+    readonly property bool ours: _sheetOf === "volume"
+    visible: ours
 
     // --- Open and close ----------------------------------------------------------
     // The island grows into its volume sheet, unless the user has opened
@@ -68,7 +82,7 @@ Item {
     function _hideNative() {
         const native = parent ? parent.item : null;
         if (native)
-            native.visible = Qt.binding(() => !face.mine);
+            native.visible = Qt.binding(() => !face.ours);
     }
     Connections {
         target: face.parent

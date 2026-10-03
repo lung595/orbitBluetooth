@@ -24,7 +24,7 @@ const Fx = load("VolumeFx.js", ["clamp01", "ripple", "band", "filament", "emissi
 const Guard = load("Guard.js", ["offerFamily", "hasInput", "refused", "validPath", "parseUuids"]);
 const Cover = load("Cover.js", ["covered"]);
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "arc", "end", "point", "angleOf", "valueAt", "zone", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "levelAt", "reach", "rayAngles", "follow", "scaleFor", "ease"]);
-const Steps = load("Steps.js", ["SPEEDS", "WINDOW_MS", "speedOf", "next", "apply", "fixedStep"]);
+const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
 const Route = load("Route.js", ["addressKey", "virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "filterArgs", "muteTarget", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "shownLevels"]);
 
 let count = 0, failures = 0;
@@ -342,22 +342,31 @@ eq("pop-up lies flat in place of DMS's OSD", Route.popupLayout("replace", false,
 eq("upright on the right edge, flat side against it", Route.popupLayout("edge", false, false, "large"), { w: 300, h: 540, upright: true, rotation: -90 });
 // Smart volume steps (D264)
 {
-    const one = Steps.next(null, 1000, 1, "balanced", 0.5);
-    eq("a press on its own is a fine step", one.step, 1);
-    let st = null, steps = [];
-    for (let k = 0; k < 20; k++) {
-        const r = Steps.next(st, 1000 + k * 40, 1, "balanced", 0.5);
-        st = r.state;
-        steps.push(r.step);
-    }
-    eq("a held key speeds up, never past the ceiling", [steps[0], steps[4] > steps[0], Math.max(...steps)], [1, true, 8]);
-    eq("steps only grow while held", steps.every((v, k) => k === 0 || v >= steps[k - 1]), true);
-    eq("a pause starts over", Steps.next(st, 1000 + 19 * 40 + 600, 1, "balanced", 0.5).step, 1);
-    eq("turning back starts over", Steps.next(st, 1000 + 19 * 40 + 40, -1, "balanced", 0.5).step, 1);
-    eq("quiet levels stay fine", Steps.next(st, 1000 + 19 * 40 + 40, 1, "balanced", 0.05).step, 1);
-    eq("going down into the quiet part slows", Steps.next({ "last": 0, "dir": -1, "streak": 12 }, 40, -1, "balanced", 0.12).step, 1);
-    eq("fast starts coarser and goes further", [Steps.next(null, 0, 1, "fast", 0.5).step, Steps.next({ "last": 0, "dir": 1, "streak": 40 }, 40, 1, "fast", 0.5).step], [2, 12]);
-    eq("an unknown speed is balanced", Steps.speedOf("warp"), "balanced");
+    const press = (gap, n, speed, level) => {
+        let st = null, r = null;
+        for (let k = 0; k < n; k++) {
+            r = Steps.next(st, 1000 + k * gap, 1, speed || "balanced", level === undefined ? 0.5 : level);
+            st = r.state;
+        }
+        return r.step;
+    };
+    eq("a press on its own is 1 %", Steps.next(null, 1000, 1, "balanced", 0.5).step, 1);
+    eq("slow presses stay at 1 %", press(600, 6), 1);
+    eq("a held key reaches the ceiling", press(40, 12), 6);
+    eq("the slower, the finer, down to 1 %", [press(60, 8), press(150, 8), press(300, 8), press(450, 8)].every((v, k, a) => k === 0 || v <= a[k - 1]) && press(450, 8) === 1, true);
+    eq("the curve has no jump: every step between 1 and the ceiling", [...new Set([50, 90, 130, 170, 210, 250, 290, 330, 370, 410, 450].map(g => Steps.stepAt(g, "balanced")))].sort((a, b) => a - b), [1, 2, 3, 4, 5, 6]);
+    eq("one late press does not drop to 1 at once", (() => {
+        let st = null;
+        for (let k = 0; k < 10; k++)
+            st = Steps.next(st, k * 50, 1, "balanced", 0.5).state;
+        return Steps.next(st, 9 * 50 + 200, 1, "balanced", 0.5).step > 1;
+    })(), true);
+    eq("turning back starts over", Steps.next({ "last": 0, "dir": 1, "gap": 40 }, 40, -1, "balanced", 0.5).step, 1);
+    eq("a long pause starts over", Steps.next({ "last": 0, "dir": 1, "gap": 40 }, 2000, 1, "balanced", 0.5).step, 1);
+    eq("quiet levels stay fine", press(40, 12, "balanced", 0.05), 1);
+    eq("going down into the quiet part slows", Steps.next({ "last": 0, "dir": -1, "gap": 40 }, 40, -1, "balanced", 0.12).step, 1);
+    eq("fast goes further, gentle less", [press(40, 12, "fast"), press(40, 12, "gentle")], [10, 4]);
+eq("an unknown speed is balanced", Steps.speedOf("warp"), "balanced");
     eq("apply lands on whole percents, inside 0..1", [Steps.apply(0.394, 1, 1), Steps.apply(0.99, 1, 8), Steps.apply(0.02, -1, 5)], [0.4, 1, 0]);
     eq("fixed step is 1..10", [Steps.fixedStep("3"), Steps.fixedStep("99"), Steps.fixedStep("x")], [3, 10, 5]);
 }
