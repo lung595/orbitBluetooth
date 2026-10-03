@@ -3,7 +3,7 @@
 // Motion maths of the orbit scene: where each body wants to be, and the
 // damped spring that takes it there. Pure functions of a geometry `g` (the
 // scene itself: cx, cy, rx, ry, ringCy, ringRy, innerNorm, snapNorm,
-// outerMinNorm, bodySize, coreSize, holeX, holeY, holeHorizon); they
+// detachNorm, outerMinNorm, bodySize, coreSize, holeX, holeY, holeHorizon); they
 // change only the body handed to spring() and the target handed to
 // separate(). Tested by tests/anc.test.js.
 
@@ -83,6 +83,21 @@ function dragTarget(g, b, x, y) {
         t.zeta = 0.7;
     }
     return t;
+}
+
+// What dropping a body held at (x, y) would do. Over the black hole it
+// wins over connecting or disconnecting (hide); otherwise a connected body
+// (holding) arms past the tear point and a free one inside the magnet.
+// feed (0..1) is how much the hole glows as the body nears it.
+function dragArm(g, holding, x, y) {
+    const hd = Math.hypot(x - g.holeX, y - g.holeY);
+    const hide = hd < Math.max(g.holeHorizon * 2.4, g.bodySize * 0.75);
+    const n = norm(g, x, y);
+    return {
+        "hide": hide,
+        "armed": hide ? false : holding ? n > g.detachNorm : n < g.snapNorm,
+        "feed": Math.max(0, Math.min(1, 1 - (hd - g.bodySize * 0.6) / (g.bodySize * 1.6)))
+    };
 }
 
 // Pushes target t away from the other bodies (harder from the dragged one),

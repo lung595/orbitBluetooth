@@ -29,8 +29,8 @@ const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNo
 const Volume = load("Volume.js", ["clamp", "step", "validSink"]);
 const Guard = load("Guard.js", ["offerFamily", "hasInput", "refused", "validPath", "parseUuids"]);
 const Cover = load("Cover.js", ["covered"]);
-const Orbit = load("Orbit.js", ["pick", "plan"]);
-const Physics = load("Physics.js", ["spring", "norm", "ringSlot", "beltSlot", "beltRadius", "dragTarget", "separate", "moving"]);
+const Orbit = load("Orbit.js", ["pick", "plan", "changes"]);
+const Physics = load("Physics.js", ["spring", "norm", "ringSlot", "beltSlot", "beltRadius", "dragTarget", "dragArm", "separate", "moving"]);
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "arc", "end", "point", "angleOf", "valueAt", "zone", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
 const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded", "note"]);
@@ -430,11 +430,13 @@ eq("one level, this PC's (not Bluetooth, or no own volume)", [Route.shownLevels(
     eq("a leaving device stays resolvable", Object.keys(step.devices), ["a", "c", "d", "b"]);
     eq("nothing changes, nothing to do", Orbit.plan([{ address: "a", leaving: false }], { a: a }, { a: a }), { marks: [], added: [], devices: { a: a } });
     eq("an unknown leaving entry is not resolved", Object.keys(Orbit.plan([{ address: "z", leaving: true }], {}, {}).devices), []);
+    eq("changes: what to start and stop, in order", Orbit.changes(["a", "b", "c"], ["d", "c", "a", "e"]), { added: ["d", "e"], removed: ["b"] });
+    eq("changes: same set in another order, nothing", Orbit.changes(["a", "b"], ["b", "a"]), { added: [], removed: [] });
 }
 
 // Orbit physics: a 200x100 scene, ring at 0.5, black hole far away
 {
-    const g = { cx: 100, cy: 50, rx: 80, ry: 40, ringCy: 50, ringRy: 20, innerNorm: 0.5, snapNorm: 0.7, outerMinNorm: 0.8,
+    const g = { cx: 100, cy: 50, rx: 80, ry: 40, ringCy: 50, ringRy: 20, innerNorm: 0.5, snapNorm: 0.7, detachNorm: 0.8, outerMinNorm: 0.8,
         bodySize: 20, coreSize: 20, holeX: 1000, holeY: 1000, holeHorizon: 5 };
     const r = v => Math.round(v * 100) / 100;
     eq("norm: center 0, belt edge 1", [Physics.norm(g, 100, 50), Physics.norm(g, 180, 50), Physics.norm(g, 100, 90)], [0, 1, 1]);
@@ -490,6 +492,13 @@ eq("one level, this PC's (not Bluetooth, or no own volume)", [Route.shownLevels(
     Physics.separate(g, far, dragged, [far, { px: 170, py: 50, dragging: true }], false);
     Physics.separate(g, far, still, [far, { px: 170, py: 50 }], false);
     eq("a dragged body clears a wider path", [r(dragged.x), r(still.x)], [134.29, 149.43]);
+    eq("drag: a free body arms inside the magnet", [Physics.dragArm(g, false, 150, 50).armed, Physics.dragArm(g, false, 160, 50).armed], [true, false]);
+    eq("drag: a connected body arms past the tear point", [Physics.dragArm(g, true, 160, 50).armed, Physics.dragArm(g, true, 170, 50).armed], [false, true]);
+    eq("drag: far from the hole, no hide and no glow", Physics.dragArm(g, false, 150, 50), { hide: false, armed: true, feed: 0 });
+    const hole = Object.assign({}, g, { holeX: 150, holeY: 50 });
+    eq("drag: over the hole it hides, never connects", Physics.dragArm(hole, true, 160, 50), { hide: true, armed: false, feed: 1 });
+    eq("drag: the glow fades with distance", r(Physics.dragArm(hole, false, 150, 90).feed), 0.13);
+    eq("drag: the hide reach is at least 3/4 of a body", [Physics.dragArm(hole, false, 164, 50).hide, Physics.dragArm(hole, false, 166, 50).hide], [true, false]);
 }
 
 print(failures ? failures + "/" + count + " failed" : count + " tests passed");

@@ -4,6 +4,7 @@ import qs.Services
 import "../common"
 import "../pairing"
 import "../noise/Anc.js" as Anc
+import "Orbit.js" as Orbit
 import "Physics.js" as Physics
 
 // The planetary Bluetooth scene shared by the Control Center panel, the bar
@@ -197,17 +198,11 @@ Item {
                     want.push(b.address);
             }
         }
-        const had = _ancViewing;
-        if (want.length === had.length && want.every(a => had.indexOf(a) >= 0))
+        const c = Orbit.changes(_ancViewing, want);
+        if (!c.added.length && !c.removed.length)
             return;
-        want.forEach(a => {
-            if (had.indexOf(a) < 0)
-                ancWatch(a, true);
-        });
-        had.forEach(a => {
-            if (want.indexOf(a) < 0)
-                ancWatch(a, false);
-        });
+        c.added.forEach(a => ancWatch(a, true));
+        c.removed.forEach(a => ancWatch(a, false));
         _ancViewing = want;
     }
 
@@ -340,10 +335,6 @@ Item {
     }
 
     // --- Drag ------------------------------------------------------------------
-    function norm(x, y) {
-        return Physics.norm(scene, x, y);
-    }
-
     function beginDrag(b, p) {
         dragBody = b;
         b.dragging = true;
@@ -359,14 +350,12 @@ Item {
         const b = dragBody;
         if (!b)
             return;
-        const n = norm(p.x, p.y);
         const wasArmed = b.armed;
-        // Over the black hole: it wins over connecting or disconnecting
-        const hd = Math.hypot(p.x - holeX, p.y - holeY);
         const wasHide = b.hideArmed;
-        b.hideArmed = hd < Math.max(holeHorizon * 2.4, bodySize * 0.75);
-        holeFeed = Math.max(0, Math.min(1, 1 - (hd - bodySize * 0.6) / (bodySize * 1.6)));
-        b.armed = b.hideArmed ? false : b.holding ? n > detachNorm : n < snapNorm;
+        const arm = Physics.dragArm(scene, b.holding, p.x, p.y);
+        b.hideArmed = arm.hide;
+        holeFeed = arm.feed;
+        b.armed = arm.armed;
         if ((b.armed && !wasArmed && !b.holding) || (b.hideArmed && !wasHide)) {
             b.pop();
             sounds.play("snap");
