@@ -37,9 +37,6 @@ Item {
         return Math.max(0, (r || 0) - margin);
     }
 
-    function wake() {
-        scope.wake();
-    }
     // Fills the picture from a made-up frame (previews)
     function simulate(frame, seconds) {
         scope.simulate(frame, seconds);
@@ -89,7 +86,7 @@ Item {
         pcMuted: screenItem.overlay.pcMuted
         deviceIcon: screenItem.overlay.deviceIcon
         pcIcon: screenItem.overlay.pcIcon
-        feed: screenItem.overlay.feed
+        picture: screenItem.overlay.picture || null
         live: screenItem.live
         motion: !screenItem.overlay.reduceMotion
         fps: screenItem.overlay.fps
@@ -171,7 +168,4 @@ Item {
             }
         }
     }
-
-    onLiveChanged: if (live)
-        scope.wake()
 }

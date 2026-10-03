@@ -10,11 +10,10 @@ import "Polar.js" as Polar
 // to drag; an icon sits at the foot of each, the number only shows while
 // the level moves. A cloud of points shows where the sound is going: its
 // angle is left/right, its distance how loud.
-// The sound is drawn by PolarVisual in the chosen style (points, rays,
-// waves or none), over an optional Ozone-like grid. It moves on one Timer
-// (60 Hz, or 30 with "Light"), only while `live` and sound is playing or
-// light is still fading; it stops by itself. A QML animation would redraw
-// the whole shell (rule 23). Reduce motion: no picture, levels jump.
+// The sound is a ScopeModel (computed once for every screen) painted by
+// PolarVisual, over an optional Ozone-like grid. The levels ease on one
+// Timer that runs only while they move: a QML animation would redraw the
+// whole shell (rule 23). Reduce motion: no picture, levels jump.
 Item {
     id: scope
 
@@ -181,7 +180,8 @@ Item {
     PolarVisual {
         id: cloud
         anchors.fill: parent
-        style: Polar.styleOf(scope.style)
+        visible: !!scope._picture && scope.live && scope.motion && scope._picture.style !== "none"
+        model: scope._picture
         centerX: scope.cx
         centerY: scope.cy
         radius: scope.outer - scope.stroke
@@ -189,8 +189,6 @@ Item {
         color2: scope.pcColor
         quiet: scope.hasDevice ? scope.deviceMuted || scope.pcMuted : scope.pcMuted
         additive: scope.additive
-        // As loud as it is heard: the device's level times this PC's
-        gain: scope.hasDevice ? (scope.deviceMuted || scope.pcMuted ? 0 : scope._dev * scope._pc) : (scope.pcMuted ? 0 : scope._pc)
     }
 
     // A faint baseline, as on a goniometer
@@ -250,43 +248,53 @@ Item {
     // animation would redraw the whole shell at the screen's rate on every
     // volume step (rule 23)
     property string dragging: ""
-    property real _dev: Math.max(0, deviceLevel)
-    property real _pc: pcLevel
-    readonly property bool _settled: Math.abs(_dev - Math.max(0, deviceLevel)) < 0.002 && Math.abs(_pc - pcLevel) < 0.002
+    property real _dev: 0
+    property real _pc: 0
+    // A function, not a binding: read inside the level's own change
+    // handler, a binding would still hold the old answer
+    function _settled() {
+        return Math.abs(_dev - Math.max(0, deviceLevel)) < 0.002 && Math.abs(_pc - pcLevel) < 0.002;
+    }
+    function _snap() {
+        clock.stop();
+        _dev = Math.max(0, deviceLevel);
+        _pc = pcLevel;
+    }
     function _follow() {
-        if (!motion || !live || dragging !== "") {
-            _dev = Math.max(0, deviceLevel);
-            _pc = pcLevel;
-            return;
-        }
-        if (!clock.running) {
+        if (!_ready || !motion || !live || dragging !== "")
+            _snap();
+        else if (!_settled() && !clock.running) {
             _last = Date.now();
             clock.start();
         }
+    }
+    // The first levels are shown as they are, nothing eases in
+    property bool _ready: false
+    Component.onCompleted: {
+        _ready = true;
+        _snap();
     }
     onDeviceLevelChanged: _follow()
     onPcLevelChanged: _follow()
     onDraggingChanged: _follow()
 
-    // The sound to show: a ScopeFeed owned by the caller, which turns it on
-    // only while the scope is shown (one feed for every screen's pop-up)
-    property var feed: null
-    Connections {
-        target: scope.feed
-        function onArrived() {
-            scope.wake();
+    // The sound to show: a ScopeModel shared by every screen (the caller's),
+    // or the scope's own one, fed by hand (previews, tests)
+    property var picture: null
+    readonly property var _picture: picture || ownPicture.item
+    Loader {
+        id: ownPicture
+        active: !scope.picture
+        sourceComponent: ScopeModel {
+            style: Polar.styleOf(scope.style)
+            fps: scope.fps
+            gain: scope.hasDevice ? (scope.deviceMuted || scope.pcMuted ? 0 : scope._dev * scope._pc) : (scope.pcMuted ? 0 : scope._pc)
         }
     }
 
-    // Exposed for tests: the clock must stop alone
-    readonly property bool animating: clock.running
+    // Exposed for tests: the clocks must stop alone
+    readonly property bool animating: clock.running || (!!_picture && _picture.animating)
     property double _last: 0
-    function wake() {
-        if (clock.running || !live || !motion || cloud.style === "none")
-            return;
-        _last = Date.now();
-        clock.start();
-    }
     Timer {
         id: clock
         interval: Math.round(1000 / Math.max(10, scope.fps))
@@ -295,29 +303,18 @@ Item {
             const now = Date.now();
             const dt = Math.max(0.001, Math.min(0.1, (now - scope._last) / 1000));
             scope._last = now;
-            // A frame older than a few of cava's is silence (paused player)
-            const fresh = scope.feed && scope.feed.frame && now - scope.feed.stamp < 250 ? scope.feed.frame : null;
-            scope._dev = scope._settled ? Math.max(0, scope.deviceLevel) : Polar.ease(scope._dev, Math.max(0, scope.deviceLevel), dt, 16);
-            scope._pc = scope._settled ? scope.pcLevel : Polar.ease(scope._pc, scope.pcLevel, dt, 16);
-            if (cloud.style !== "none")
-                cloud.advance(dt, fresh);
-            if (!fresh && cloud.alive === 0 && scope._settled)
-                clock.stop();
+            scope._dev = Polar.ease(scope._dev, Math.max(0, scope.deviceLevel), dt, 16);
+            scope._pc = Polar.ease(scope._pc, scope.pcLevel, dt, 16);
+            if (scope._settled())
+                scope._snap();
         }
     }
-    // Fills the cloud from a made-up frame, for previews and tests
+    // Fills the picture from a made-up frame, for previews and tests
     function simulate(frame, seconds) {
-        for (let t = 0; t < seconds; t += 1 / fps)
-            cloud.advance(1 / fps, frame);
+        _picture.simulate(frame, seconds);
     }
-    onLiveChanged: if (!live) {
-        clock.stop();
-        cloud.clear();
-    }
-    onMotionChanged: if (!motion) {
-        clock.stop();
-        cloud.clear();
-    }
+    onLiveChanged: if (!live)
+        _follow()
 
     // --- Moons, icons, numbers -----------------------------------------------------
     component Moon: Rectangle {

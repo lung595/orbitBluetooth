@@ -1,18 +1,15 @@
 import QtQuick
 import "Polar.js" as Polar
 
-// What the vectorscope shows of the sound, in one of three styles
-// (Settings → Sound → Visualizer), drawn on a single Canvas with additive
-// light, so dense places glow brighter, like iZotope Ozone's imager:
-//  - points: a dense cloud, each dot born from one band of the latest
-//    frame (Polar.spawn), fading as it drifts outward like phosphor;
-//  - rays:   the spectrum as a fan of rays with falling peak marks;
-//  - waves:  the spectrum as one live curve, nothing left behind.
-// Moved by PolarScope's clock (advance), which stops once `alive` is 0.
+// One screen's painting of a ScopeModel (the sound as points, rays or
+// waves), on a single Canvas with additive light, so dense places glow
+// brighter, like iZotope Ozone's imager. It computes nothing: the model is
+// shared by every screen, this only paints it at its own size, when the
+// model has something new.
 Item {
     id: vis
 
-    property string style: "points"
+    required property var model
     property real centerX: 0
     property real centerY: 0
     property real radius: 0
@@ -24,91 +21,15 @@ Item {
     // Additive light (dark screen), or plain paint (light screen)
     property bool additive: true
 
-    // The volume heard (0..1): the picture is drawn that big (Polar.scaleFor),
-    // eased on the clock so a volume step makes it grow, not jump
-    property real gain: 1
-    property real _gain: gain
-    readonly property real _r: radius * Polar.scaleFor(_gain)
-
-    // Something is still on screen: the clock keeps running
-    property int alive: 0
-
-    // --- Points ---------------------------------------------------------------
-    readonly property int pool: 720
-    readonly property real lifetime: 0.6 // seconds
-    readonly property real rate: 1900 // dots per second at full loudness
-    property var _dots: []
-    property real _carry: 0
-    property int _band: 0
-
-    // --- Rays and waves: meter-like levels ----------------------------------------
-    readonly property int raysPerSide: 16
+    readonly property real _r: radius * Polar.scaleFor(model.heard)
     readonly property int waveSteps: 72
-    property var _levels: ({ "l": [], "r": [] })
-    property var _peaks: []
 
-    function advance(dt, frame) {
-        _gain = Polar.ease(_gain, gain, dt, 9);
-        if (style === "points")
-            _advanceDots(dt, frame);
-        else if (style === "rays" || style === "waves")
-            _advanceLevels(dt, frame);
-        else
-            alive = 0;
-        canvas.requestPaint();
-    }
-
-    function _advanceDots(dt, frame) {
-        const kept = [];
-        for (let i = 0; i < _dots.length; i++) {
-            const p = _dots[i];
-            p.life += dt / lifetime;
-            if (p.life < 1)
-                kept.push(p);
+    Connections {
+        target: vis.model
+        function onUpdated() {
+            if (vis.visible)
+                canvas.requestPaint();
         }
-        if (frame) {
-            _carry += rate * dt * (0.2 + 0.8 * Polar.loudness(frame));
-            const bands = frame.l.length;
-            // A silent band spawns nothing: a bounded number of tries
-            for (let tries = 0; _carry >= 1 && kept.length < pool && tries < pool; tries++) {
-                // Bands in turn, so every part of the sound gets its dots
-                _band = (_band + 1) % bands;
-                _carry -= 1;
-                const p = Polar.spawn(frame, _band, _r, Math.random(), Math.random(), Math.random());
-                if (p)
-                    kept.push(p);
-            }
-            _carry = Math.min(_carry, 8);
-        }
-        _dots = kept;
-        alive = kept.length;
-    }
-
-    function _advanceLevels(dt, frame) {
-        const n = frame ? frame.l.length : _levels.l.length;
-        let live = 0;
-        const next = { "l": [], "r": [] };
-        for (let i = 0; i < n; i++) {
-            next.l.push(Polar.follow(_levels.l[i] || 0, frame ? frame.l[i] : 0, dt));
-            next.r.push(Polar.follow(_levels.r[i] || 0, frame ? frame.r[i] : 0, dt));
-            if (next.l[i] > 0.004 || next.r[i] > 0.004)
-                live++;
-        }
-        _levels = next;
-        if (style === "rays") {
-            // Peak marks hold, then fall slower than the rays
-            const angles = Polar.rayAngles(raysPerSide);
-            const peaks = [];
-            for (let k = 0; k < angles.length; k++) {
-                const v = Polar.levelAt(next, angles[k]);
-                const old = (_peaks[k] || 0) - dt * 0.45;
-                peaks.push(Math.max(v, old, 0));
-                if (peaks[k] > 0.004)
-                    live++;
-            }
-            _peaks = peaks;
-        }
-        alive = live;
     }
 
     // The wave's outline: one reach per step, from left to right
@@ -120,17 +41,6 @@ Item {
         }
         return out;
     }
-
-    function clear() {
-        _dots = [];
-        _carry = 0;
-        _levels = { "l": [], "r": [] };
-        _peaks = [];
-        _gain = gain;
-        alive = 0;
-        canvas.requestPaint();
-    }
-    onStyleChanged: clear()
 
     Canvas {
         id: canvas
@@ -151,15 +61,15 @@ Item {
         onPaint: {
             const ctx = getContext("2d");
             ctx.reset();
-            if (vis.alive === 0 || vis.radius <= 0)
+            if (vis.model.alive === 0 || vis.radius <= 0)
                 return;
             ctx.globalCompositeOperation = vis.additive ? "lighter" : "source-over";
             const dim = vis.quiet ? 0.32 : 1;
-            if (vis.style === "points")
+            if (vis.model.style === "points")
                 drawDots(ctx, dim);
-            else if (vis.style === "rays")
+            else if (vis.model.style === "rays")
                 drawRays(ctx, dim);
-            else if (vis.style === "waves")
+            else if (vis.model.style === "waves")
                 drawWaves(ctx, dim);
         }
 
@@ -169,11 +79,11 @@ Item {
             const paths = [];
             for (let g = 0; g < groups * tones; g++)
                 paths.push([]);
-            for (let i = 0; i < vis._dots.length; i++) {
-                const p = vis._dots[i];
+            for (let i = 0; i < vis.model.dots.length; i++) {
+                const p = vis.model.dots[i];
                 const fade = (1 - p.life) * (1 - p.life);
                 const g = Math.min(groups - 1, Math.floor(fade * groups));
-                const tone = Math.min(tones - 1, Math.floor(p.dist / Math.max(1, vis._r) * tones));
+                const tone = Math.min(tones - 1, Math.floor(p.dist / Math.max(0.001, vis.model.radiusFor(1)) * tones));
                 paths[tone * groups + g].push(p);
             }
             for (let tone = 0; tone < tones; tone++) {
@@ -188,7 +98,7 @@ Item {
                         ctx.beginPath();
                         for (let i = 0; i < list.length; i++) {
                             const p = list[i];
-                            const at = xy(p.deg, p.dist * (1 + 0.14 * p.life));
+                            const at = xy(p.deg, p.dist * vis.radius * (1 + 0.14 * p.life));
                             const r = pass === 0 ? p.size * 1.9 : p.size * 0.62;
                             ctx.moveTo(at[0] + r, at[1]);
                             ctx.arc(at[0], at[1], r, 0, Math.PI * 2);
@@ -201,13 +111,13 @@ Item {
         }
 
         function drawRays(ctx, dim) {
-            const angles = Polar.rayAngles(vis.raysPerSide);
+            const angles = Polar.rayAngles(vis.model.raysPerSide);
             const R = vis._r;
             const base = Polar.reach(0, R);
-            const w = Math.max(1.5, R * 87 / vis.raysPerSide * Math.PI / 180 * 0.22);
+            const w = Math.max(1.5, R * 87 / vis.model.raysPerSide * Math.PI / 180 * 0.22);
             ctx.lineCap = "round";
             for (let k = 0; k < angles.length; k++) {
-                const v = Polar.levelAt(vis._levels, angles[k]);
+                const v = Polar.levelAt(vis.model.levels, angles[k]);
                 const end = Polar.reach(v, R);
                 const from = xy(angles[k], base), to = xy(angles[k], end);
                 const grad = ctx.createLinearGradient(from[0], from[1], to[0], to[1]);
@@ -222,7 +132,7 @@ Item {
                     ctx.stroke();
                 }
                 // The peak mark, a short tick across the ray
-                const pk = Polar.reach(vis._peaks[k] || 0, R) + w * 1.6;
+                const pk = Polar.reach(vis.model.peaks[k] || 0, R) + w * 1.6;
                 const at = xy(angles[k], pk);
                 ctx.beginPath();
                 ctx.arc(at[0], at[1], w * 0.5, 0, Math.PI * 2);
@@ -248,7 +158,7 @@ Item {
             ctx.lineJoin = "round";
             ctx.lineCap = "round";
             // The live wave: a soft fill down to the center, a glow, a line
-            const shape = vis._shape(vis._levels);
+            const shape = vis._shape(vis.model.levels);
             outline(ctx, shape, 1);
             ctx.lineTo(vis.centerX, vis.centerY);
             ctx.closePath();

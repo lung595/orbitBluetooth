@@ -65,7 +65,6 @@ DankOSD {
             onTouched: popup.resetHideTimer()
             // The pointer over it keeps it open
             onHoveredChanged: popup.setChildHovered(hovered)
-            Component.onCompleted: wake()
         }
     }
 }

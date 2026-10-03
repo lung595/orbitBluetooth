@@ -28,6 +28,9 @@ Item {
     readonly property bool pcMuted: pcAudio ? pcAudio.muted : false
     readonly property string deviceIcon: dev ? Route.iconFor(Catalog.resolve(dev.device, prefs ? prefs.glyphOverrides : ({}))) : "speaker"
     readonly property string pcIcon: shown.ownIcon ? deviceIcon : "computer"
+    // How loud it is heard: the device's level times this PC's (the
+    // vectorscope's picture is drawn that big)
+    readonly property real heardLevel: deviceLevel >= 0 ? (deviceMuted || pcMuted ? 0 : deviceLevel * pcLevel) : (pcMuted ? 0 : pcLevel)
     // The device's name as the user sees it in Orbit (shown, never logged)
     readonly property string deviceName: dev ? Catalog.deviceName(dev.device) : ""
 

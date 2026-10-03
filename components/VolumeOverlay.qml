@@ -4,6 +4,7 @@ import Quickshell.Services.Pipewire
 import qs.Common
 import qs.Services
 import "Keys.js" as Keys
+import "Polar.js" as Polar
 
 // The volume pop-up, without opening anything (D252, D258): whenever a
 // level of the output in use changes (volume keys, `dms ipc call`, the
@@ -280,5 +281,15 @@ TwoLevels {
         node: root.dev ? root.dev.sink : Pipewire.defaultAudioSink
         active: root.anyShown && !root.reduceMotion && root.style !== "none"
         fps: root.fps
+    }
+
+    // The picture, computed once for every screen that shows it
+    readonly property alias picture: soundPicture
+    ScopeModel {
+        id: soundPicture
+        feed: soundFeed
+        style: Polar.styleOf(root.style)
+        fps: root.fps
+        gain: root.heardLevel
     }
 }

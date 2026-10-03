@@ -40,7 +40,7 @@ Window {
         property bool pcMuted: false
         property string deviceIcon: "speaker"
         property string pcIcon: "computer"
-        property var feed: null
+        property var picture: null
         property bool reduceMotion: false
         property int fps: 60
         property var note: null

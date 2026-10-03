@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell.Io
+import "Polar.js" as Polar
 import "Volume.js" as Volume
 
 // The two volumes of the device on the detail card (D250): TwoLevels for
@@ -53,5 +54,15 @@ TwoLevels {
         node: root.dev ? root.dev.sink : null
         active: root.live && root.ready && !root.reduceMotion && root.style !== "none"
         fps: root.fps
+    }
+
+    // The picture, computed once for every screen that shows it
+    readonly property alias picture: soundPicture
+    ScopeModel {
+        id: soundPicture
+        feed: soundFeed
+        style: Polar.styleOf(root.style)
+        fps: root.fps
+        gain: root.heardLevel
     }
 }
