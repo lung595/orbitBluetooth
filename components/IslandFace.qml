@@ -89,6 +89,9 @@ Item {
         anchors.fill: parent
         overlay: face.overlay
         live: face.shown
+        // The island sheet's own corners (flat against the screen edge)
+        readonly property var sheet: face.controller.expandedTargetFor("volume")
+        radii: [sheet.topLeftRadius, sheet.topRightRadius, sheet.bottomLeftRadius, sheet.bottomRightRadius]
         onTouched: face.keep()
     }
 }

@@ -3,6 +3,7 @@ import QtQml
 import Quickshell.Bluetooth
 import Quickshell.Services.Pipewire
 import "Route.js" as Route
+import "Steps.js" as Steps
 
 // The two volumes of a Bluetooth audio device (D249): the device's own
 // level, and this PC's level, what the PC sends to it. One RouteDevice per
@@ -117,18 +118,46 @@ Item {
     }
 
     // Sets a level from `dms ipc call orbitBluetooth deviceVolume|pcVolume`;
-    // returns "" or why it could not
+    // returns "" or why it could not. "up" / "down" take a smart step
     function setLevel(which, arg, address) {
         const dev = find(address || "");
         const node = which === "device" ? deviceNode(dev) : pcNode(dev);
         if (!node || !node.audio)
             return which === "device" ? (dev ? "no-own-volume" : "no-device") : "no-pc-level";
+        const a = String(arg === undefined || arg === null ? "" : arg).trim().toLowerCase();
+        if (a === "up" || a === "down") {
+            stepNode(node, a === "up" ? 1 : -1);
+            return "";
+        }
         const level = Route.ipcLevel(arg, node.audio.volume);
         if (level < 0)
             return "bad-level";
         node.audio.muted = false;
         node.audio.volume = level;
         return "";
+    }
+
+    // The level the user hears move first: the device's own when it has
+    // one, else this PC's (`dms ipc call orbitBluetooth volume up|down`)
+    function mainPart(address) {
+        return deviceNode(find(address || "")) ? "device" : "pc";
+    }
+
+    // --- Smart steps (D264) ---------------------------------------------------------
+    // One state for every caller (keys, wheel): a fast run of presses is one
+    // run, wherever it comes from
+    property var _stepState: null
+    function stepFor(dir, level) {
+        if (!prefs || prefs.volumeSteps === "fixed")
+            return prefs ? prefs.volumeStep : 5;
+        const r = Steps.next(_stepState, Date.now(), dir, prefs.volumeSpeed, level);
+        _stepState = r.state;
+        return r.step;
+    }
+    function stepNode(node, dir) {
+        const now = node.audio.volume;
+        node.audio.muted = false;
+        node.audio.volume = Steps.apply(now, dir, stepFor(dir, now));
     }
 
     // Clicking the planet (D251): one audio device mutes this PC, several

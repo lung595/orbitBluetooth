@@ -34,11 +34,24 @@ Item {
     property string style: "points"
     // The scope's own screen behind it: guide rings and L / R lines
     property bool grid: false
+    // Light added on a dark screen; plain paint on a light one
+    property bool additive: true
 
     // A level was dragged or scrolled: "device" or "pc", 0..1
     signal moved(string part, real level)
     // Its icon was clicked: "device" or "pc"
     signal muteClicked(string part)
+    // With smartWheel, a wheel notch asks the caller for a step instead
+    // (the caller's smart steps, D264): +1 up, -1 down
+    property bool smartWheel: false
+    signal stepped(string part, int dir)
+    // The percentages always show (D264): beside the half circles when
+    // there is room, else next to the moons
+    property bool numbers: false
+    property string deviceLabel: "Device"
+    property string pcLabel: "This PC"
+    readonly property real sideRoom: width / 2 - outer - 12
+    readonly property bool sideNumbers: numbers && sideRoom >= 64
     readonly property bool hovered: pointer.containsMouse || dragging !== ""
 
     readonly property bool hasDevice: deviceLevel >= 0
@@ -170,6 +183,7 @@ Item {
         color: scope.hasDevice ? scope.deviceColor : scope.pcColor
         color2: scope.pcColor
         quiet: scope.hasDevice ? scope.deviceMuted || scope.pcMuted : scope.pcMuted
+        additive: scope.additive
         // As loud as it is heard: the device's level times this PC's
         gain: scope.hasDevice ? (scope.deviceMuted || scope.pcMuted ? 0 : scope._dev * scope._pc) : (scope.pcMuted ? 0 : scope._pc)
     }
@@ -375,18 +389,78 @@ Item {
     Readout {
         radiusAt: scope.outer
         deg: Polar.end("outer", scope._dev)
-        text: Math.round(Math.max(0, scope.deviceLevel) * 100)
+        text: Math.round(Math.max(0, scope.deviceLevel) * 100) + "%"
         color: scope.deviceColor
-        shown: scope.hasDevice && (scope.talking === "device" || scope.dragging === "device")
+        shown: scope.hasDevice && !scope.sideNumbers && (scope.numbers || scope.talking === "device" || scope.dragging === "device")
     }
     Readout {
         // Inside the inner arc, so it never meets the outer moon
         radiusAt: scope.inner
         gap: -26
         deg: Polar.end("inner", scope._pc)
-        text: Math.round(scope.pcLevel * 100)
+        text: Math.round(scope.pcLevel * 100) + "%"
         color: scope.pcColor
-        shown: scope.talking === "pc" || scope.dragging === "pc"
+        shown: !scope.sideNumbers && (scope.numbers || scope.talking === "pc" || scope.dragging === "pc")
+    }
+
+    // Beside the half circles: the device's level on the left, where its
+    // arc starts, this PC's on the right
+    component SideNumber: Column {
+        property real level: 0
+        property bool muted: false
+        property color tint: "white"
+        property string label: ""
+        property bool lit: false
+        readonly property real size: Math.max(18, Math.min(30, scope.outer * 0.22))
+        y: scope.cy - scope.outer * 0.62 - height / 2
+        width: scope.sideRoom
+        spacing: 1
+        rotation: -scope.rotation
+        Row {
+            anchors.horizontalCenter: parent.horizontalCenter
+            StyledText {
+                text: parent.parent.muted ? "Muted" : Math.round(parent.parent.level * 100)
+                font.pixelSize: parent.parent.muted ? parent.parent.size * 0.6 : parent.parent.size
+                font.weight: Font.DemiBold
+                font.features: { "tnum": 1 }
+                color: parent.parent.muted ? scope.mutedColor : parent.parent.tint
+                anchors.baseline: unit.baseline
+            }
+            StyledText {
+                id: unit
+                visible: !parent.parent.muted
+                text: "%"
+                font.pixelSize: parent.parent.size * 0.5
+                font.weight: Font.Medium
+                color: Theme.withAlpha(parent.parent.tint, 0.7)
+            }
+        }
+        StyledText {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: parent.label
+            font.pixelSize: Math.max(10, Math.round(parent.size * 0.4))
+            color: parent.lit ? parent.tint : scope.mutedColor
+            width: Math.min(implicitWidth, scope.sideRoom)
+            elide: Text.ElideRight
+        }
+    }
+    SideNumber {
+        visible: scope.sideNumbers && scope.hasDevice
+        x: 6
+        level: Math.max(0, scope.deviceLevel)
+        muted: scope.deviceMuted
+        tint: scope.deviceColor
+        label: scope.deviceLabel
+        lit: scope.talking === "device" || scope.dragging === "device"
+    }
+    SideNumber {
+        visible: scope.sideNumbers
+        x: scope.width - width - 6
+        level: scope.pcLevel
+        muted: scope.pcMuted
+        tint: scope.pcColor
+        label: scope.pcLabel
+        lit: scope.talking === "pc" || scope.dragging === "pc"
     }
 
     // --- Gestures -------------------------------------------------------------------
@@ -449,8 +523,13 @@ Item {
             if (steps === 0)
                 return;
             acc -= steps * 120;
-            const now = part === "device" ? scope.deviceLevel : scope.pcLevel;
             scope.talk(part);
+            if (scope.smartWheel) {
+                for (let k = 0; k < Math.abs(steps); k++)
+                    scope.stepped(part, steps > 0 ? 1 : -1);
+                return;
+            }
+            const now = part === "device" ? scope.deviceLevel : scope.pcLevel;
             scope.moved(part, Polar.clamp01(Math.round(now * 20 + steps) / 20));
         }
     }

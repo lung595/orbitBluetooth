@@ -2,6 +2,7 @@ import QtQuick
 import qs.Common
 import qs.Services
 import "Polar.js" as Polar
+import "Steps.js" as Steps
 
 // Reactive view over the plugin's saved settings, shared by every surface.
 QtObject {
@@ -77,6 +78,13 @@ QtObject {
     readonly property int scopeFps: parseInt(_get("scopeFps", "60")) === 30 ? 30 : 60
     // How the vectorscope draws the sound: "points", "rays", "waves", "none"
     readonly property string scopeStyle: Polar.styleOf(_get("scopeStyle", "points"))
+
+    // Volume steps for up / down (D264): "smart" (a fine step alone,
+    // growing while presses come fast) or "fixed" (volumeStep percent)
+    readonly property string volumeSteps: _get("volumeSteps", "smart") === "fixed" ? "fixed" : "smart"
+    // How fast smart steps grow: "gentle", "balanced" or "fast"
+    readonly property string volumeSpeed: Steps.speedOf(_get("volumeSpeed", "balanced"))
+    readonly property int volumeStep: Steps.fixedStep(_get("volumeStep", 5))
 
     readonly property bool reduceMotion: SettingsData.reduceMotion
 

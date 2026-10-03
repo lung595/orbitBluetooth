@@ -24,6 +24,7 @@ const Fx = load("VolumeFx.js", ["clamp01", "ripple", "band", "filament", "emissi
 const Guard = load("Guard.js", ["offerFamily", "hasInput", "refused", "validPath", "parseUuids"]);
 const Cover = load("Cover.js", ["covered"]);
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "arc", "end", "point", "angleOf", "valueAt", "zone", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "levelAt", "reach", "rayAngles", "follow", "scaleFor", "ease"]);
+const Steps = load("Steps.js", ["SPEEDS", "WINDOW_MS", "speedOf", "next", "apply", "fixedStep"]);
 const Route = load("Route.js", ["addressKey", "virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "filterArgs", "muteTarget", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "shownLevels"]);
 
 let count = 0, failures = 0;
@@ -339,6 +340,27 @@ eq("pop-up sizes, medium by default", [Route.popupSize("compact"), Route.popupSi
 // The volume pop-up (D258): where it stands, which levels it shows
 eq("pop-up lies flat in place of DMS's OSD", Route.popupLayout("replace", false, false, "medium"), { w: 420, h: 236, upright: false, rotation: 0 });
 eq("upright on the right edge, flat side against it", Route.popupLayout("edge", false, false, "large"), { w: 300, h: 540, upright: true, rotation: -90 });
+// Smart volume steps (D264)
+{
+    const one = Steps.next(null, 1000, 1, "balanced", 0.5);
+    eq("a press on its own is a fine step", one.step, 1);
+    let st = null, steps = [];
+    for (let k = 0; k < 20; k++) {
+        const r = Steps.next(st, 1000 + k * 40, 1, "balanced", 0.5);
+        st = r.state;
+        steps.push(r.step);
+    }
+    eq("a held key speeds up, never past the ceiling", [steps[0], steps[4] > steps[0], Math.max(...steps)], [1, true, 8]);
+    eq("steps only grow while held", steps.every((v, k) => k === 0 || v >= steps[k - 1]), true);
+    eq("a pause starts over", Steps.next(st, 1000 + 19 * 40 + 600, 1, "balanced", 0.5).step, 1);
+    eq("turning back starts over", Steps.next(st, 1000 + 19 * 40 + 40, -1, "balanced", 0.5).step, 1);
+    eq("quiet levels stay fine", Steps.next(st, 1000 + 19 * 40 + 40, 1, "balanced", 0.05).step, 1);
+    eq("going down into the quiet part slows", Steps.next({ "last": 0, "dir": -1, "streak": 12 }, 40, -1, "balanced", 0.12).step, 1);
+    eq("fast starts coarser and goes further", [Steps.next(null, 0, 1, "fast", 0.5).step, Steps.next({ "last": 0, "dir": 1, "streak": 40 }, 40, 1, "fast", 0.5).step], [2, 12]);
+    eq("an unknown speed is balanced", Steps.speedOf("warp"), "balanced");
+    eq("apply lands on whole percents, inside 0..1", [Steps.apply(0.394, 1, 1), Steps.apply(0.99, 1, 8), Steps.apply(0.02, -1, 5)], [0.4, 1, 0]);
+    eq("fixed step is 1..10", [Steps.fixedStep("3"), Steps.fixedStep("99"), Steps.fixedStep("x")], [3, 10, 5]);
+}
 eq("follows DMS's OSD on a side", [Route.popupLayout("replace", true, true, "compact").rotation, Route.popupLayout("replace", true, false, "x").rotation, Route.popupLayout("bar", true, true, "x").upright], [90, -90, false]);
 const nd = { n: "dev" }, np = { n: "pc" };
 eq("two levels", Route.shownLevels(nd, np), { device: nd, pc: np, ownIcon: false });

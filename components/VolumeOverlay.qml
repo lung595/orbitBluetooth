@@ -39,6 +39,8 @@ Item {
     readonly property bool pcMuted: pcAudio ? pcAudio.muted : false
     readonly property string deviceIcon: dev ? Route.iconFor(Catalog.resolve(dev.device, prefs.glyphOverrides)) : "speaker"
     readonly property string pcIcon: shown.ownIcon ? deviceIcon : "computer"
+    // The device's name as the user sees it in Orbit (shown, never logged)
+    readonly property string deviceName: dev ? Catalog.deviceName(dev.device) : ""
 
     // --- Gestures from a pop-up -------------------------------------------------
     // DMS's own OSD would answer a level we set: keep it quiet a moment, as
@@ -53,6 +55,14 @@ Item {
         SessionData.suppressOSDTemporarily();
         node.audio.muted = false;
         node.audio.volume = Math.max(0, Math.min(1, level));
+    }
+    // One wheel notch over the scope: a smart step, as the keys
+    function stepLevel(part, dir) {
+        const node = _node(part);
+        if (!node || !node.audio)
+            return;
+        SessionData.suppressOSDTemporarily();
+        route.stepNode(node, dir);
     }
     function toggleMute(part) {
         const node = _node(part);

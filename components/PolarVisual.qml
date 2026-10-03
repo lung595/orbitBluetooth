@@ -21,6 +21,8 @@ Item {
     property color color2: "white"
     // Muted: the picture dims instead of vanishing, the sound still flows
     property bool quiet: false
+    // Additive light (dark screen), or plain paint (light screen)
+    property bool additive: true
 
     // The volume heard (0..1): the picture is drawn that big (Polar.scaleFor),
     // eased on the clock so a volume step makes it grow, not jump
@@ -151,7 +153,7 @@ Item {
             ctx.reset();
             if (vis.alive === 0 || vis.radius <= 0)
                 return;
-            ctx.globalCompositeOperation = "lighter";
+            ctx.globalCompositeOperation = vis.additive ? "lighter" : "source-over";
             const dim = vis.quiet ? 0.32 : 1;
             if (vis.style === "points")
                 drawDots(ctx, dim);

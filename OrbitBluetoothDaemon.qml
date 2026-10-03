@@ -117,6 +117,7 @@ Item {
 
     // dms ipc call orbitBluetooth anc nc | ambient | off | adaptive
     // dms ipc call orbitBluetooth deviceVolume | pcVolume up | down | +5 | -5 | 40
+    // dms ipc call orbitBluetooth volume up | down   (smart steps, D264)
     // dms ipc call orbitBluetooth hidden | unhideAll
     // dms ipc call orbitBluetooth newDeviceDemo | newDeviceStatus
     IpcHandler {
@@ -167,6 +168,16 @@ Item {
         // What this PC sends to it (or to the current output with no device)
         function pcVolume(level: string): string {
             const why = audioRoute.setLevel("pc", level, "");
+            return why ? Guide.levelNote(why) + " · " + Guide.url("two-volumes") : "OK";
+        }
+
+        // The level heard: the device's own when it has one, else this PC's.
+        // Bound to the volume keys, a slow press is 1 %, a fast run speeds up
+        function volume(direction: string): string {
+            const d = String(direction || "").trim().toLowerCase();
+            if (d !== "up" && d !== "down")
+                return "Use: volume up | down · " + Guide.url("smart-volume-steps");
+            const why = audioRoute.setLevel(audioRoute.mainPart(""), d, "");
             return why ? Guide.levelNote(why) + " · " + Guide.url("two-volumes") : "OK";
         }
 

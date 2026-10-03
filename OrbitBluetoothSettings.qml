@@ -322,6 +322,61 @@ PluginSettings {
             defaultValue: true
         }
 
+        // --- Volume steps (D264) --------------------------------------------------------
+        Section {
+            text: "Volume steps"
+        }
+
+        SelectionSetting {
+            id: volumeSteps
+            settingKey: "volumeSteps"
+            label: "Steps"
+            description: "For the volume keys bound to Orbit (dms ipc call orbitBluetooth volume up or down) and the wheel over the pop-up. Smart: one press alone is 1 % for precision, quick presses or a held key speed up"
+            options: [
+                {
+                    label: "Smart",
+                    value: "smart"
+                },
+                {
+                    label: "Fixed",
+                    value: "fixed"
+                }
+            ]
+            defaultValue: "smart"
+        }
+
+        SelectionSetting {
+            settingKey: "volumeSpeed"
+            visible: volumeSteps.value !== "fixed"
+            label: "Speed-up"
+            description: "How fast quick presses grow the step: Gentle up to 4 %, Balanced up to 8 %, Fast from 2 % up to 12 %. Under 10 % the steps always stay fine"
+            options: [
+                {
+                    label: "Gentle",
+                    value: "gentle"
+                },
+                {
+                    label: "Balanced",
+                    value: "balanced"
+                },
+                {
+                    label: "Fast",
+                    value: "fast"
+                }
+            ]
+            defaultValue: "balanced"
+        }
+
+        SliderSetting {
+            settingKey: "volumeStep"
+            visible: volumeSteps.value === "fixed"
+            label: "Step"
+            defaultValue: 5
+            minimum: 1
+            maximum: 10
+            unit: "%"
+        }
+
         // --- Volume pop-up -------------------------------------------------------------
         Section {
             text: "Volume pop-up"
