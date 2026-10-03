@@ -42,9 +42,16 @@ Item {
         return out;
     }
 
+    // Only the half disc the sound can reach, its halos included: every
+    // frame clears, paints and uploads this rectangle, not the whole scope
+    readonly property real _reach: Math.ceil(radius * 1.15 + 12)
+
     Canvas {
         id: canvas
-        anchors.fill: parent
+        x: Math.floor(vis.centerX - vis._reach)
+        y: Math.floor(vis.centerY - vis._reach)
+        width: 2 * vis._reach + 1
+        height: vis._reach + 13
         renderStrategy: Canvas.Cooperative
 
         function rgba(c, a) {
@@ -63,6 +70,8 @@ Item {
             ctx.reset();
             if (vis.model.alive === 0 || vis.radius <= 0)
                 return;
+            // Drawn in the scope's coordinates
+            ctx.translate(-x, -y);
             ctx.globalCompositeOperation = vis.additive ? "lighter" : "source-over";
             const dim = vis.quiet ? 0.32 : 1;
             if (vis.model.style === "points")
