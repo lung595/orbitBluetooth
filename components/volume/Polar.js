@@ -5,32 +5,77 @@
 // QtQuick.Shapes' PathAngleArc counts them (y points down): left is 180,
 // the top is 270, right is 360.
 //
-// The outer half circle is the device's own level, the inner one this PC's
-// (D250). Each lights up from the left to its level. Listening together
-// (D254) splits the outer half at the top: the first device lights its
-// left quarter, the second its right quarter, each from its bottom corner.
+// The inner half circle is this PC's level (D250). The outer one is the
+// device's own, one arc. Listening together (D254, D277) the outer half is
+// cut into one arc per output (2 to 4, in the order they joined, left to
+// right), each lit from the end farthest from the top so that it grows
+// toward the top. A part is named "pc", "device" (the one outer arc) or
+// "m0".."m3" (the arcs of the outputs listening together).
 
 var LEFT = 180;
 var TOP = 270;
 var RIGHT = 360;
+// The most outputs that can listen together, and the space left between two
+// neighbouring arcs of the outer half (in degrees, half on each side)
+var MAX_MEMBERS = 4;
+var GAP = 4;
 
 function clamp01(v) {
     return Math.max(0, Math.min(1, Number(v) || 0));
 }
 
-// Where an arc starts and how far it goes: "outer", "inner", "d1", "d2"
-function arc(part, level) {
+// --- The arcs of the outer half circle ------------------------------------------
+
+// `count` equal arcs of the half circle (1: the device's own, 2..4: the
+// outputs listening together), each trimmed by half the gap where it meets
+// a neighbour. `reverse` tells where it lights from: the right end when the
+// arc lies right of the top, the left end otherwise, so every arc grows
+// toward the top; the middle one of an odd count, which has no side, lights
+// from the left, like the single arc.
+function slices(count) {
+    const n = Math.max(1, Math.min(MAX_MEMBERS, count | 0));
+    const width = 180 / n;
+    const out = [];
+    for (let i = 0; i < n; i++) {
+        const from = LEFT + i * width, to = from + width;
+        out.push({
+            "start": from + (i > 0 ? GAP / 2 : 0),
+            "end": to - (i < n - 1 ? GAP / 2 : 0),
+            "reverse": (from + to) / 2 > TOP + 1e-9
+        });
+    }
+    return out;
+}
+
+// Which of the `count` arcs an angle belongs to (gaps and ends included)
+function sliceAt(deg, count) {
+    const n = Math.max(1, Math.min(MAX_MEMBERS, count | 0));
+    return Math.max(0, Math.min(n - 1, Math.floor((deg - LEFT) / (180 / n))));
+}
+
+// The part an arc is called: "device" for the one outer arc, else "m<i>"
+function partOf(index, count) {
+    return count >= 2 ? "m" + index : "device";
+}
+
+// The arc a part is (0 for "device"), or -1 for "pc" and anything else
+function indexOf(part) {
+    if (part === "device")
+        return 0;
+    const m = /^m([0-3])$/.exec(String(part));
+    return m ? Number(m[1]) : -1;
+}
+
+// Where an arc starts and how far it goes at a level (0..1)
+function arc(slice, level) {
+    const span = slice.end - slice.start;
     const v = clamp01(level);
-    if (part === "d1")
-        return { "start": LEFT, "sweep": 90 * v };
-    if (part === "d2")
-        return { "start": RIGHT, "sweep": -90 * v };
-    return { "start": LEFT, "sweep": 180 * v };
+    return slice.reverse ? { "start": slice.end, "sweep": -span * v } : { "start": slice.start, "sweep": span * v };
 }
 
 // The moon at the lit end of an arc
-function end(part, level) {
-    const a = arc(part, level);
+function end(slice, level) {
+    const a = arc(slice, level);
     return a.start + a.sweep;
 }
 
@@ -51,39 +96,64 @@ function angleOf(dx, dy) {
 }
 
 // The level under the pointer, for a drag along an arc
-function valueAt(part, dx, dy) {
+function valueAt(slice, dx, dy) {
     const deg = angleOf(dx, dy);
-    if (part === "d1")
-        return clamp01((deg - LEFT) / 90);
-    if (part === "d2")
-        return clamp01((RIGHT - deg) / 90);
-    return clamp01((deg - LEFT) / 180);
+    return clamp01((slice.reverse ? slice.end - deg : deg - slice.start) / (slice.end - slice.start));
 }
 
-// Which arc the pointer is on: "outer" (or "d1"/"d2" when split), "inner",
+// Which arc the pointer is on, as a part: "pc" (the inner half), the part of
+// an outer arc (`count` of them, 0 when the output has no level of its own),
 // or "". `grip` is how far from the line a press still counts.
-function zone(dx, dy, outer, inner, grip, split) {
+function zone(dx, dy, outer, inner, grip, count) {
     if (dy > grip)
         return "";
     const d = Math.sqrt(dx * dx + dy * dy);
-    if (Math.abs(d - outer) <= grip)
-        return split ? (dx < 0 ? "d1" : "d2") : "outer";
-    if (Math.abs(d - inner) <= grip)
-        return "inner";
-    return "";
+    if (count > 0 && Math.abs(d - outer) <= grip)
+        return partOf(sliceAt(angleOf(dx, dy), count), count);
+    return Math.abs(d - inner) <= grip ? "pc" : "";
 }
 
-// The level a wheel notch belongs to, "device" or "pc", from the pointer's
-// place relative to the center (D275). Every spot answers, none is dead:
-// beside the half circles, where the percentages sit, the left one is the
-// device's and the right one this PC's; anywhere else the nearer arc wins,
-// so an arc, the icon at its foot and the gap beside it all pick one side.
-function wheelPart(dx, dy, outer, inner, sideNumbers, hasDevice) {
-    if (!hasDevice)
+// The level a wheel notch belongs to, from the pointer's place relative to
+// the center (D275). Every spot answers, none is dead: beside the half
+// circles, where the percentages sit, the left one is the first output's and
+// the right one the second's (this PC's with a single output); anywhere else
+// the nearer arc wins, so an arc, the icon at its foot and the gap beside it
+// all pick one side. `count` outer arcs: 0 for an output with no level of its
+// own (always this PC's).
+function wheelPart(dx, dy, outer, inner, sideNumbers, count) {
+    if (count < 1)
         return "pc";
     if (sideNumbers && Math.abs(dx) > outer)
-        return dx < 0 ? "device" : "pc";
-    return Math.sqrt(dx * dx + dy * dy) >= (outer + inner) / 2 ? "device" : "pc";
+        return dx < 0 ? partOf(0, count) : count >= 2 ? partOf(1, count) : "pc";
+    if (Math.sqrt(dx * dx + dy * dy) < (outer + inner) / 2)
+        return "pc";
+    return partOf(sliceAt(angleOf(dx, dy), count), count);
+}
+
+// Where the icon of arc `index` (of `count`) is centred: at the foot of the
+// half circle for the first and the last arc (they start at the ends), else
+// inside the arc, by the end it lights from, clear of the line so a press on
+// the icon is never taken for a drag. `size` is the icon's.
+function iconSpot(index, count, cx, cy, outer, size) {
+    const foot = cy + 6 + size / 2;
+    if (index === 0)
+        return { "x": cx - outer, "y": foot };
+    if (index >= count - 1)
+        return { "x": cx + outer, "y": foot };
+    const s = slices(count)[index];
+    return point(cx, cy, outer - size * 1.6, s.reverse ? s.end : s.start);
+}
+
+// Where the name and level of an arc are written when there are more than
+// two: out from the middle of the arc, leaning away from the centre on its
+// own side (`align`: the text ends there on the left, starts there on the
+// right, is centred at the top), whatever the levels: labels never meet.
+function legendSpot(index, count, cx, cy, outer, gap) {
+    const all = slices(count); // a delegate may still ask for an arc just gone
+    const s = all[Math.max(0, Math.min(index | 0, all.length - 1))];
+    const mid = (s.start + s.end) / 2;
+    const p = point(cx, cy, outer + gap, mid);
+    return { "x": p.x, "y": p.y, "align": Math.abs(mid - TOP) < 1 ? "center" : mid < TOP ? "right" : "left" };
 }
 
 // One line of cava's raw ascii output ("9;35;...;9;"), `bars` values per

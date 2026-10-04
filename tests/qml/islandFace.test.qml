@@ -58,6 +58,7 @@ Item {
         property bool pcMuted: false
         property string deviceIcon: "speaker"
         property string pcIcon: "computer"
+        property var members: []
         property var picture: null
         property bool reduceMotion: false
         property int fps: 60

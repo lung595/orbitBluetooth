@@ -2,16 +2,22 @@ import QtQuick
 import qs.Common
 import qs.Services
 import "Audiophile.js" as Audiophile
+import "Members.js" as Members
 import "Polar.js" as Polar
 import "Route.js" as Route
 import "../device/DeviceCatalog.js" as Catalog
 
-// The two volumes of one output (D249) and the picture of its sound, as
+// The volumes of one output (D249) and the picture of its sound, as
 // ScopeScreen reads them: the device's own level and this PC's, with what
 // a gesture on the scope does. The base of VolumeOverlay (the output in
 // use) and CardVolume (the device on the detail card). A device with no
 // level of its own, or an output that is not Bluetooth, has this PC's
 // level only (deviceLevel -1).
+// Listening together (D254, D277): when `dev` is one of the outputs sharing
+// the sound, `members` lists them all, in the order they joined (two to
+// four), each with its own level, and this PC's level is the shared one the
+// copies are taken from (`split`). A part is named "device" (the device's
+// own), "m0" to "m3" (a member, as in `members`) or "pc".
 Item {
     id: levels
 
@@ -22,18 +28,54 @@ Item {
     property var dev: null
 
     readonly property var shown: route ? Route.shownLevels(route.deviceNode(dev), route.pcNode(dev)) : ({})
-    readonly property var deviceAudio: shown.device && shown.device.audio ? shown.device.audio : null
-    readonly property var pcAudio: shown.pc && shown.pc.audio ? shown.pc.audio : null
+    readonly property var together: route ? route.together : null
+    // The outputs sharing the sound when `dev` is one of them, else none
+    readonly property var memberAddresses: {
+        const list = together ? together.members : [];
+        return dev && list.length >= 2 && list.indexOf(dev.address) >= 0 ? list : [];
+    }
+    readonly property bool split: memberAddresses.length >= 2
+    // The nodes holding each level (a member's: see _node)
+    readonly property var _deviceNode: split ? null : shown.device || null
+    readonly property var _pcNode: split ? together.sharedNode : shown.pc || null
+    readonly property var _memberNodes: memberAddresses.map(a => together.memberNode(a))
+    function _audioOf(node) {
+        return node && node.audio ? node.audio : null;
+    }
+    readonly property var deviceAudio: _audioOf(_deviceNode)
+    readonly property var pcAudio: _audioOf(_pcNode)
+    // Every audio whose level or mute a gesture or a key can move, for the
+    // caller to watch
+    readonly property var audios: [deviceAudio, pcAudio].concat(_memberNodes.map(_audioOf)).filter(a => !!a)
 
+    function _iconOf(d) {
+        return d ? Route.iconFor(Catalog.resolve(d.device, prefs ? prefs.glyphOverrides : ({}))) : "speaker";
+    }
+    // The outputs listening together, left to right ([] when there are fewer
+    // than two): { part, address, level, muted, icon, label }
+    readonly property var members: memberAddresses.map((a, i) => {
+        const audio = _audioOf(_memberNodes[i]);
+        const d = route.known(a);
+        return {
+            "part": Polar.partOf(i, memberAddresses.length),
+            "address": a,
+            "level": audio ? Math.min(1, audio.volume) : 0,
+            "muted": audio ? audio.muted : false,
+            "icon": _iconOf(d),
+            "label": d ? Catalog.deviceName(d.device) : ""
+        };
+    })
+
+    // The device's own level (-1: it has none, or the outputs are shared)
     readonly property real deviceLevel: deviceAudio ? Math.min(1, deviceAudio.volume) : -1
     readonly property real pcLevel: pcAudio ? Math.min(1, pcAudio.volume) : 0
     readonly property bool deviceMuted: deviceAudio ? deviceAudio.muted : false
     readonly property bool pcMuted: pcAudio ? pcAudio.muted : false
-    readonly property string deviceIcon: dev ? Route.iconFor(Catalog.resolve(dev.device, prefs ? prefs.glyphOverrides : ({}))) : "speaker"
-    readonly property string pcIcon: shown.ownIcon ? deviceIcon : "computer"
+    readonly property string deviceIcon: _iconOf(dev)
+    readonly property string pcIcon: shown.ownIcon && !split ? deviceIcon : "computer"
     // How loud it is heard: the device's level times this PC's (the
-    // vectorscope's picture is drawn that big)
-    readonly property real heardLevel: Polar.heardLevel(deviceLevel, pcLevel, deviceMuted, pcMuted)
+    // vectorscope's picture is drawn that big); the loudest member's when split
+    readonly property real heardLevel: split ? Members.heardOf(members, pcLevel, pcMuted) : Polar.heardLevel(deviceLevel, pcLevel, deviceMuted, pcMuted)
     // The device's name as the user sees it in Orbit (shown, never logged)
     readonly property string deviceName: dev ? Catalog.deviceName(dev.device) : ""
 
@@ -97,10 +139,17 @@ Item {
     }
 
     // --- Gestures ----------------------------------------------------------------
+    // The node of a part. Writing goes through the route, so a level of the
+    // shared PC half reaches every member's copy (AudioRoute.levelNodes).
     // DMS's own OSD would answer a level we set: keep it quiet a moment, as
     // DMS's slider does
     function _node(part) {
-        return part === "device" ? shown.device : shown.pc;
+        if (part === "pc")
+            return _pcNode;
+        if (part === "device")
+            return _deviceNode;
+        const i = Polar.indexOf(part);
+        return i >= 0 && i < _memberNodes.length ? _memberNodes[i] : null;
     }
     function setLevel(part, level) {
         const node = _node(part);
@@ -108,8 +157,7 @@ Item {
             return;
         const before = node.audio.volume;
         SessionData.suppressOSDTemporarily();
-        node.audio.muted = false;
-        node.audio.volume = Math.max(0, Math.min(1, level));
+        route.writeLevel(node, Math.max(0, Math.min(1, level)));
         levelMoved(before, node.audio.volume);
     }
     // One wheel notch over the scope: a smart step, as the keys
@@ -127,6 +175,6 @@ Item {
         if (!node || !node.audio)
             return;
         SessionData.suppressOSDTemporarily();
-        node.audio.muted = !node.audio.muted;
+        route.writeMuted(node, !node.audio.muted);
     }
 }

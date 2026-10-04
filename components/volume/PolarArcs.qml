@@ -3,18 +3,17 @@ import QtQuick.Shapes
 import qs.Common
 import "Polar.js" as Polar
 
-// The half circles of the scope (PolarScope): a hairline track for each
-// level, a faint glow under the lit part, then the lit arc itself. One
-// Shape with the curve renderer; it only redraws when a level or a color
-// changes
-Shape {
+// The half circles of the scope (PolarScope): for each level a hairline
+// track, a faint glow under the lit part, then the lit arc itself. One Shape
+// per arc, with the curve renderer: it only redraws when its own level or
+// color changes, and an arc that is not there (fewer outputs) is not made
+Item {
     id: arcs
 
     // The scope (PolarScope.qml): its geometry, colors and eased levels
     required property var scope
 
     anchors.fill: parent
-    preferredRendererType: Shape.CurveRenderer
 
     component Arc: ShapePath {
         id: arcPath
@@ -35,41 +34,60 @@ Shape {
         }
     }
 
-    // Tracks: where each level can go
-    Arc {
-        radius: arcs.scope.outer
-        strokeWidth: 1
-        strokeColor: arcs.scope.hasDevice ? arcs.scope.trackColor : "transparent"
+    // One half circle, or one arc of the outer one: its track (where the
+    // level can go), the glow, and the line lit up to its level from the end
+    // `slice` (Polar.slices) says
+    component Half: Shape {
+        id: half
+        property real radius: 0
+        property var slice: arcs.scope.innerSlice
+        property real level: 0
+        property bool muted: false
+        property color tint: "white"
+        anchors.fill: parent
+        preferredRendererType: Shape.CurveRenderer
+        readonly property var _lit: Polar.arc(slice, level)
+        readonly property var _whole: Polar.arc(slice, 1)
+        readonly property bool _on: level > 0.001
+
+        Arc {
+            radius: half.radius
+            start: half._whole.start
+            sweep: half._whole.sweep
+            strokeWidth: 1
+            strokeColor: arcs.scope.trackColor
+        }
+        Arc {
+            radius: half.radius
+            start: half._lit.start
+            sweep: half._lit.sweep
+            strokeWidth: arcs.scope.stroke * 4
+            strokeColor: !half._on ? "transparent" : Theme.withAlpha(half.muted ? arcs.scope.mutedColor : half.tint, 0.07)
+        }
+        Arc {
+            radius: half.radius
+            start: half._lit.start
+            sweep: half._lit.sweep
+            strokeWidth: arcs.scope.stroke
+            strokeColor: !half._on ? "transparent" : half.muted ? Theme.withAlpha(arcs.scope.mutedColor, 0.6) : half.tint
+        }
     }
-    Arc {
+
+    Repeater {
+        model: arcs.scope.outputs.length
+        Half {
+            required property int index
+            radius: arcs.scope.outer
+            slice: arcs.scope.sliceOf(index)
+            level: arcs.scope.shownAt(index)
+            muted: arcs.scope.output(index).muted
+            tint: arcs.scope.output(index).color
+        }
+    }
+    Half {
         radius: arcs.scope.inner
-        strokeWidth: 1
-        strokeColor: arcs.scope.trackColor
-    }
-    // Glow under each lit arc
-    Arc {
-        radius: arcs.scope.outer
-        sweep: Polar.arc("outer", arcs.scope.shownDevice).sweep
-        strokeWidth: arcs.scope.stroke * 4
-        strokeColor: arcs.scope.hasDevice && arcs.scope.shownDevice > 0.001 ? Theme.withAlpha(arcs.scope.deviceMuted ? arcs.scope.mutedColor : arcs.scope.deviceColor, 0.07) : "transparent"
-    }
-    Arc {
-        radius: arcs.scope.inner
-        sweep: Polar.arc("inner", arcs.scope.shownPc).sweep
-        strokeWidth: arcs.scope.stroke * 4
-        strokeColor: arcs.scope.shownPc > 0.001 ? Theme.withAlpha(arcs.scope.pcMuted ? arcs.scope.mutedColor : arcs.scope.pcColor, 0.07) : "transparent"
-    }
-    // The levels
-    Arc {
-        radius: arcs.scope.outer
-        sweep: Polar.arc("outer", arcs.scope.shownDevice).sweep
-        strokeWidth: arcs.scope.stroke
-        strokeColor: arcs.scope.hasDevice && arcs.scope.shownDevice > 0.001 ? (arcs.scope.deviceMuted ? Theme.withAlpha(arcs.scope.mutedColor, 0.6) : arcs.scope.deviceColor) : "transparent"
-    }
-    Arc {
-        radius: arcs.scope.inner
-        sweep: Polar.arc("inner", arcs.scope.shownPc).sweep
-        strokeWidth: arcs.scope.stroke
-        strokeColor: arcs.scope.shownPc > 0.001 ? (arcs.scope.pcMuted ? Theme.withAlpha(arcs.scope.mutedColor, 0.6) : arcs.scope.pcColor) : "transparent"
+        level: arcs.scope.shownPc
+        muted: arcs.scope.pcMuted
+        tint: arcs.scope.pcColor
     }
 }

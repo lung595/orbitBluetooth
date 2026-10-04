@@ -1,6 +1,7 @@
 import Quickshell
 import Quickshell.Io
 import "Guide.js" as Guide
+import "../together/Together.js" as Together
 import "../noise/Anc.js" as Anc
 
 // The `dms ipc call orbitBluetooth ...` commands, for keyboard shortcuts.
@@ -12,6 +13,8 @@ import "../noise/Anc.js" as Anc
 //   deviceVolume | pcVolume up | down | +5 | -5 | 40
 //   volume up | down   (smart steps, D264)   volumeKeys on | off | status
 //   hidden | unhideAll      newDeviceDemo | newDeviceStatus
+//   together <addresses, 2 to 4> | togetherAdd <address> | togetherRemove <address>
+//   separate | togetherStatus | togetherDelay <address> <ms>
 Scope {
     id: ipc
 
@@ -20,6 +23,15 @@ Scope {
     required property var keys
     required property var newDevices
     required property var prefs
+
+    // What a refusal says: the note, then the guide section that explains it
+    function _say(note) {
+        return note.title + ": " + note.hint + " · " + Guide.url(note.anchor);
+    }
+    // "OK", or the note of a refusal ({ why, address }) of the session
+    function _answer(session, refusal) {
+        return refusal ? _say(Guide.togetherNote(refusal.why, session.nameOf(refusal.address))) : "OK";
+    }
 
     IpcHandler {
         target: "orbitBluetooth"
@@ -105,6 +117,49 @@ Scope {
         // Brings every hidden device back into the orbit
         function unhideAll(): string {
             ipc.prefs.set("hiddenDevices", ({}));
+            return "OK";
+        }
+
+        // Plays the same sound on 2 to 4 connected Bluetooth outputs (Listen
+        // together). One argument: the addresses, separated by commas or spaces
+        function together(members: string): string {
+            const session = ipc.route.together;
+            return ipc._answer(session, session.start(Together.parseList(members)));
+        }
+
+        // Adds one connected output to the session
+        function togetherAdd(address: string): string {
+            const session = ipc.route.together;
+            return ipc._answer(session, session.add([address]));
+        }
+
+        // Takes one output out of the session; it ends if fewer than two remain
+        function togetherRemove(address: string): string {
+            const session = ipc.route.together;
+            return ipc._answer(session, session.remove(address));
+        }
+
+        // Ends Listen together; every output goes back to itself
+        function separate(): string {
+            return ipc.route.together.end("ended", "") ? "OK" : ipc._say(Guide.togetherNote("none", ""));
+        }
+
+        // Who listens together now, as JSON
+        function togetherStatus(): string {
+            return Together.status(ipc.route.together.active ? ipc.route.together : null);
+        }
+
+        // Delays what one member plays by 0..500 ms for this session only
+        // (nothing is saved); the output the sound is taken from never waits
+        function togetherDelay(address: string, ms: string): string {
+            const session = ipc.route.together;
+            if (!session.active)
+                return ipc._say(Guide.togetherNote("no-session", ""));
+            if (!session.isMember(Together.address(address)))
+                return ipc._say(Guide.togetherNote("not-member", session.nameOf(Together.address(address))));
+            if (!/^[0-9]{1,3}$/.test(String(ms || "").trim()) || parseInt(ms, 10) > Together.MAX_DELAY_MS)
+                return "Use: togetherDelay <address> 0..500 (milliseconds) · " + Guide.url("listen-together");
+            session.setDelay(address, parseInt(ms, 10));
             return "OK";
         }
 

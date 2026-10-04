@@ -17,6 +17,9 @@ trap 'rm -rf "$work"' EXIT
 cp -r "$root"/components "$work"/
 cp "$here"/ProfileCheck.qml "$here"/NewDeviceWindow.qml "$work"/components/pairing/
 cp "$here"/Device.qml "$here"/*.test.qml "$work"/
+# The preview's made-up route (and overlay) stand in for the daemon's
+mkdir "$work"/mock
+cp "$root"/scripts/preview/mock/*.qml "$work"/mock/
 # Quickshell's device list is a model with .values; the stub keeps a plain list
 sed -i 's/Bluetooth\.devices\.values/Bluetooth.list/g' "$work"/components/pairing/*.qml
 export QT_QPA_PLATFORM=offscreen

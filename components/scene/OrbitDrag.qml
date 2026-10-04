@@ -3,9 +3,11 @@ import "Physics.js" as Physics
 
 // The drag gestures of the scene: a body is picked up, armed when it enters
 // the magnet's reach (or the black hole's), and what it was armed for
-// happens when it is let go (connect, disconnect, cancel or hide). The
-// state (dragBody, dragX, dragY, holeFeed) stays on the scene, where the
-// bodies and the world read it.
+// happens when it is let go (connect, disconnect, cancel or hide). A
+// connected audio device let go over another one listens together with it
+// (togetherDrop, OrbitTogether). The state (dragBody, dragX, dragY,
+// holeFeed, togetherDrop) stays on the scene, where the bodies and the
+// world read it.
 Item {
     id: drag
     required property var scene
@@ -35,7 +37,29 @@ Item {
             b.pop();
             scene.sounds.play("snap");
         }
+        _overDevice(b, p);
         scene.wake();
+    }
+
+    // The connected device under the pointer, while neither the black hole
+    // nor the tear point has the drop
+    function _overDevice(b, p) {
+        let target = null;
+        if (b.connected && !b.armed && !b.hideArmed) {
+            const bodies = scene.world.bodies;
+            const all = [];
+            for (let i = 0; i < bodies.count; i++)
+                all.push(bodies.itemAt(i));
+            const o = Physics.dropOnto(b, all, p.x, p.y);
+            target = scene.togetherRelevant(b, o) ? o : null;
+        }
+        if (target === scene.togetherDrop)
+            return;
+        scene.togetherDrop = target;
+        if (target && scene.togetherReady(b, target)) {
+            target.pop();
+            scene.sounds.play("snap");
+        }
     }
 
     function end() {
@@ -45,7 +69,11 @@ Item {
             return;
         b.dragging = false;
         scene.holeFeed = 0;
-        if (b.hideArmed) {
+        const mate = scene.togetherDrop;
+        scene.togetherDrop = null;
+        if (mate && !b.hideArmed) {
+            scene.dropTogether(b, mate);
+        } else if (b.hideArmed) {
             b.hideArmed = false;
             scene.hideBody(b);
         } else if (b.armed) {

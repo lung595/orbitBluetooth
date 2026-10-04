@@ -100,6 +100,25 @@ function dragArm(g, holding, x, y) {
     };
 }
 
+// The connected body under a dragged connected one, when the pointer at
+// (x, y) is over its disc: what dropping would listen together with (D254).
+// null for anything else.
+function dropOnto(b, all, x, y) {
+    if (!b.connected)
+        return null;
+    let best = null, bestD = Infinity;
+    for (const o of all) {
+        if (o === b || o.leaving || !o.connected)
+            continue;
+        const d = Math.hypot(x - o.px, y - o.py);
+        if (d < o.diameter * o.baseScale / 2 && d < bestD) {
+            best = o;
+            bestD = d;
+        }
+    }
+    return best;
+}
+
 // Pushes target t away from the other bodies (harder from the dragged one),
 // out of the host core (unless the body rides the ring, which passes behind
 // it) and out of the black hole, which only takes what is dropped in.

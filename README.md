@@ -82,6 +82,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 - **Drag to connect** with a magnet snap, elastic tether to disconnect.
 - **Two volumes**: open a connected audio device and its card shows the device's own level and this PC's as two half circles, with the sound itself moving inside. Drag or scroll each, click the planet to mute, and a soft tick plays in the device itself.
 - **Volume pop-up and smart steps**: whenever a volume changes, the same screen shows both levels inside Dank Island (or in place of DMS's OSD, which is switched off); 1 % per slow notch, faster when you scroll or press fast, and your volume keys can use it in one click.
+- **Listen together**: drag one connected audio device onto another and both play the same sound; drag a third (up to four) onto any of them. The volumes' half circle splits into one arc per output. It comes apart by itself when one disconnects, and ends with the shell.
 - **What really plays**: a short line under the device name and in the pop-up, for example *Bluetooth · LDAC · 96 kHz · 24 bit*, and a button that unfolds the rest: channels, profile, the codec's bit rate, latency and the audio quantum, each only when it can be honestly read.
 - **Live charging**: energy beam, time to full, charge speed, session chart.
 - **Earbuds trio**: the case and both buds in their own mini orbit, each with its battery.
@@ -102,7 +103,8 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 | Click a device | Open its detail card |
 | Scroll over a half circle, its icon or its percentage, or drag a moon | That level: the device's or this PC's, with smart steps; a soft tick plays in the device every 5 % ([more](docs/GUIDE.md#the-two-volumes)) |
 | Click the planet of an open audio device | Mute or unmute |
-| Right-click a device | Menu: connect, noise-control modes, hide, forget |
+| Drag a connected audio device onto another (or onto any device already in the group) | Listen together: the same sound on both, up to 4 outputs ([more](docs/GUIDE.md#listen-together)) |
+| Right-click a device | Menu: connect, noise-control modes, leave or stop listening together, hide, forget |
 | Forget a device (unpair) | Right-click → **Forget**, click again to confirm; or the 🗑 button of its detail card |
 | Drag a device into the black hole | Hide it (it stays connected) |
 | Click the black hole | List hidden devices, **Show** brings one back |
@@ -166,6 +168,12 @@ dms ipc call orbitBluetooth volume up    # up or down, with smart steps
 dms ipc call orbitBluetooth deviceVolume 40  # the device's own level: up, down or 0-100
 dms ipc call orbitBluetooth pcVolume -- -10  # this PC's level for it (a negative step needs --)
 dms ipc call orbitBluetooth volumeKeys on    # on, off or status: your volume keys use smart steps
+dms ipc call orbitBluetooth together "AA:BB:CC:DD:EE:01 AA:BB:CC:DD:EE:02"  # listen together: 2 to 4 addresses, one quoted argument
+dms ipc call orbitBluetooth togetherAdd AA:BB:CC:DD:EE:03     # add one more output to the group
+dms ipc call orbitBluetooth togetherRemove AA:BB:CC:DD:EE:03  # take one out (the group ends below two)
+dms ipc call orbitBluetooth togetherDelay AA:BB:CC:DD:EE:02 120  # hold one output back, 0 to 500 ms, this session only
+dms ipc call orbitBluetooth togetherStatus   # who listens together (JSON)
+dms ipc call orbitBluetooth separate         # end listening together
 ```
 
 Bind them in your compositor, for example in niri: `Mod+N { spawn "dms" "ipc" "call" "orbitBluetooth" "ancCycle"; }`, or in Hyprland: `bind = SUPER, N, exec, dms ipc call orbitBluetooth ancCycle`.
@@ -186,6 +194,8 @@ Bind them in your compositor, for example in niri: `Mod+N { spawn "dms" "ipc" "c
 | Settings or widgets of Orbit left after removing it while DMS was not running | Install it again, then remove it from DMS while it runs: it cleans up after itself, see [Uninstalling](docs/GUIDE.md#uninstalling) |
 | Volume keys still use smart steps after removing Orbit while DMS was not running | They still work (they fall back to DMS); give them back: `dms keybinds set niri XF86AudioRaiseVolume "spawn dms ipc call audio increment 3" --allow-when-locked`, same with `XF86AudioLowerVolume` and `decrement`, see [Volume keys](docs/GUIDE.md#volume-keys) |
 | DMS's volume OSD stays off after removing Orbit | DMS saved its settings while Orbit held that switch off: turn **Volume** back on in DMS's *Settings → On-screen Displays*, see [DMS's own volume OSD](docs/GUIDE.md#dmss-own-volume-osd) |
+| Listen together refuses a device | A short note says why (not connected, no sound output yet, on a call profile, four already) and the GitHub mark opens [Listen together](docs/GUIDE.md#listen-together) |
+| The outputs of Listen together are not in sync | Hold the early one back with `togetherDelay`, see [Limits](docs/GUIDE.md#limits) |
 | Time to full looks off | Some headsets report in 10 % steps; it improves over time |
 
 Some Sony headsets do not report charging, or drop Bluetooth while charging: this is a hardware limit.
@@ -197,6 +207,7 @@ Some Sony headsets do not report charging, or drop Bluetooth while charging: thi
 - **Noise control**: a small helper talks to your headset over a local Bluetooth socket, only while needed.
 - **New headphones pop-up**: by default Orbit only listens to searches you start yourself; nothing runs in the background. The optional **Background scan** (off by default) does a local scan of 8 s about once a minute, only while the screen is on, no Bluetooth audio is connected and the battery is above the threshold.
 - **Two volumes**: talk to the local sound server (PipeWire) only; the tick is a sound file shipped with Orbit, the picture of the sound is read locally with `cava`.
+- **Listen together**: one small local sound process per output beyond the first, only while a group listens; it talks to PipeWire only, saves nothing, logs nothing, and ends with the shell. [More](docs/GUIDE.md#listen-together)
 - **Audio details**: read from PipeWire (`pactl list sinks`) while the card or the pop-up shows, only if a fact is chosen; kept in memory, dropped when it closes. Latency and bit rate also read the graph once with `pw-dump`, and the quantum once with `pw-top` (about 2 s), only while the details are unfolded (or the fact is on the line). Orbit never writes to PipeWire or to the headset.
 - **DMS's volume OSD**: while Orbit's pop-up is on, Orbit holds DMS's *Volume* switch off, in memory only, and lets go of it around each of DMS's own saves, so nothing of it reaches DMS's files. [More](docs/GUIDE.md#dmss-own-volume-osd)
 - **Volume keys**: only if you click *Enable*, Orbit asks DMS (`dms keybinds`) to bind them; *Undo* and uninstalling give them back exactly. [More](docs/GUIDE.md#volume-keys)

@@ -1,21 +1,27 @@
 import QtQuick
 import qs.Common
+import "Members.js" as Members
 import "Polar.js" as Polar
 
-// The two volumes as a polar vectorscope (D250): the outer half circle is
-// the device's own level (Theme.primary), the inner one this PC's level
+// The volumes as a polar vectorscope (D250): the outer half circle is the
+// device's own level (Theme.primary), the inner one this PC's level
 // (Theme.tertiary, turned away when the two look alike: Palette.apart).
 // Each lights up from the left to its level, with a moon to drag; an icon
-// sits at the foot of each, the number only shows while
-// the level moves. A cloud of points shows where the sound is going: its
-// angle is left/right, its distance how loud.
+// sits at the foot of each, the number only shows while the level moves. A
+// cloud of points shows where the sound is going: its angle is left/right,
+// its distance how loud.
+// Listening together (D254, D277, `members`): the outer half is cut into one
+// arc per output, two to four, in the order they joined, left to right. Each
+// is lit from the end farthest from the top and grows toward it, in its own
+// color; this PC's inner half stays one, shared. The cloud follows: each
+// arc's sector of it in that output's color, as big as that output is heard.
 // The sound is a ScopeModel (computed once for every screen) painted by
 // PolarVisual, over an optional Ozone-like grid (PolarGrid); the icons and
 // numbers are PolarReadouts; the arcs are PolarArcs, the moons PolarMoons and
 // the gestures PolarGestures. This file keeps the geometry, eases the
-// levels and holds the picture. The levels ease on one
-// Timer that runs only while they move: a QML animation would redraw the
-// whole shell (rule 23). Reduce motion: no picture, levels jump.
+// levels and holds the picture. The levels ease on one Timer that runs only
+// while they move: a QML animation would redraw the whole shell (rule 23).
+// Reduce motion: no picture, levels jump.
 Item {
     id: scope
 
@@ -24,6 +30,12 @@ Item {
     property real pcLevel: 0
     property bool deviceMuted: false
     property bool pcMuted: false
+    // The outputs sharing the sound, two to four, in the order they joined
+    // (each { level, muted, icon, label }, the level 0..1) with the color of
+    // each: the device's fields above are then not shown
+    property var members: []
+    property var memberColors: []
+    readonly property bool split: members.length >= 2
     property string deviceIcon: "headphones"
     property string pcIcon: "computer"
     // On screen and wanted to move (the caller knows: popup shown, card open)
@@ -38,9 +50,10 @@ Item {
     // Light added on a dark screen; plain paint on a light one
     property bool additive: true
 
-    // A level was dragged or scrolled: "device" or "pc", 0..1
+    // A level was dragged or scrolled: "device" (the device's own), "m0" to
+    // "m3" (an output listening together) or "pc", 0..1
     signal moved(string part, real level)
-    // Its icon was clicked: "device" or "pc"
+    // Its icon was clicked: a part, as above
     signal muteClicked(string part)
     // With smartWheel, a wheel notch asks the caller for a step instead
     // (the caller's smart steps, D264): +1 up, -1 down
@@ -52,10 +65,54 @@ Item {
     property string deviceLabel: "Device"
     property string pcLabel: "This PC"
     readonly property real sideRoom: width / 2 - outer - 12
-    readonly property bool sideNumbers: numbers && sideRoom >= 64
+    // Beside the half circles there is room for two numbers, no more: with
+    // three or four outputs they stay by their moons
+    readonly property bool sideNumbers: numbers && sideRoom >= 64 && members.length <= 2
     readonly property bool hovered: pointer.containsMouse || dragging !== ""
 
-    readonly property bool hasDevice: deviceLevel >= 0
+    // The arcs of the outer half, left to right: one per output listening
+    // together, else the device's own, else none. Delegates count them
+    // (outputs.length) and read their own by index (output(i)), which
+    // answers for an index that is just gone
+    readonly property var outputs: split ? members.slice(0, Polar.MAX_MEMBERS).map((m, i) => ({
+                "part": Polar.partOf(i, Math.min(members.length, Polar.MAX_MEMBERS)),
+                "level": m.level,
+                "muted": m.muted,
+                "icon": m.icon,
+                "label": m.label,
+                "color": memberColors[i] || deviceColor
+            })) : deviceLevel >= 0 ? [
+        {
+            "part": "device",
+            "level": deviceLevel,
+            "muted": deviceMuted,
+            "icon": deviceIcon,
+            "label": deviceLabel,
+            "color": deviceColor
+        }
+    ] : []
+    readonly property var slices: Polar.slices(Math.max(1, outputs.length))
+    // This PC's half circle is always whole
+    readonly property var innerSlice: Polar.slices(1)[0]
+    readonly property var _none: ({
+            "part": "",
+            "level": 0,
+            "muted": false,
+            "icon": "speaker",
+            "label": "",
+            "color": deviceColor
+        })
+    function output(i) {
+        return outputs[i] || _none;
+    }
+    function sliceOf(i) {
+        return slices[Math.min(i, slices.length - 1)];
+    }
+    // The level a part has now (not the eased one), for the wheel's steps
+    function levelOf(part) {
+        return part === "pc" ? pcLevel : output(Polar.indexOf(part)).level;
+    }
+    readonly property bool hasDevice: outputs.length > 0
     // Geometry: the center sits on the bottom edge, above the icons
     readonly property real iconSize: Math.max(14, Math.round(outer * 0.12))
     readonly property real cx: width / 2
@@ -63,7 +120,10 @@ Item {
     // When the percentages show, the half circles give up to a quarter of
     // their size if that leaves room for them on both sides (the detail
     // card); otherwise they keep their size and the numbers sit by the moons
-    readonly property real _fit: Math.min(width / 2 - 14, height - 34)
+    // With more than two outputs the legend (PolarLegend) needs a line above the
+    // top of the arcs, for the one that sits there
+    readonly property real _legendRoom: outputs.length > 2 ? 16 : 0
+    readonly property real _fit: Math.min(width / 2 - 14, height - 34 - _legendRoom)
     readonly property real _besideNumbers: width / 2 - 76
     readonly property real outer: Math.max(10, numbers && _besideNumbers >= _fit * 0.75 ? Math.min(_fit, _besideNumbers) : _fit)
     // Alone (an output with no level of its own), this PC's half takes the room
@@ -106,9 +166,8 @@ Item {
         centerX: scope.cx
         centerY: scope.cy
         radius: scope.outer - scope.stroke
-        color: scope.hasDevice ? scope.deviceColor : scope.pcColor
+        sectors: scope._sectors
         color2: scope.pcColor
-        quiet: scope.hasDevice ? scope.deviceMuted || scope.pcMuted : scope.pcMuted
         additive: scope.additive
     }
 
@@ -130,24 +189,30 @@ Item {
     // animation would redraw the whole shell at the screen's rate on every
     // volume step (rule 23)
     property string dragging: ""
-    property real _dev: 0
+    property var _shown: []
     property real _pc: 0
     // The eased levels, for the readouts (PolarReadouts) to sit where the
     // arcs end without reaching into the easing state
-    readonly property real shownDevice: _dev
     readonly property real shownPc: _pc
+    function shownAt(i) {
+        return i < _shown.length ? _shown[i] : 0;
+    }
+    function _targets() {
+        return outputs.map(o => o.level);
+    }
     // A function, not a binding: read inside the level's own change
     // handler, a binding would still hold the old answer
     function _settled() {
-        return Math.abs(_dev - Math.max(0, deviceLevel)) < 0.002 && Math.abs(_pc - pcLevel) < 0.002;
+        return Members.settled(_shown, _targets(), 0.002) && Math.abs(_pc - pcLevel) < 0.002;
     }
     function _snap() {
         clock.stop();
-        _dev = Math.max(0, deviceLevel);
+        _shown = _targets();
         _pc = pcLevel;
     }
     function _follow() {
-        if (!_ready || !motion || !live || dragging !== "")
+        // An output joined or left: the arcs are not the same, nothing glides
+        if (!_ready || !motion || !live || dragging !== "" || _shown.length !== outputs.length)
             _snap();
         else if (!_settled() && !clock.running) {
             _last = Date.now();
@@ -160,9 +225,14 @@ Item {
         _ready = true;
         _snap();
     }
-    onDeviceLevelChanged: _follow()
+    onOutputsChanged: _follow()
     onPcLevelChanged: _follow()
     onDraggingChanged: _follow()
+
+    // The cloud's sectors, one per arc: the color, how big next to the
+    // loudest, whether it is muted (Members.sectors)
+    readonly property var _heard: outputs.map((o, i) => Polar.heardLevel(shownAt(i), _pc, o.muted, pcMuted))
+    readonly property var _sectors: Members.sectors(outputs, _heard, pcColor, pcMuted)
 
     // The sound to show: a ScopeModel shared by every screen (the caller's),
     // or the scope's own one, fed by hand (previews, tests)
@@ -174,7 +244,7 @@ Item {
         sourceComponent: ScopeModel {
             style: Polar.styleOf(scope.style)
             fps: scope.fps
-            gain: Polar.heardLevel(scope.hasDevice ? scope._dev : -1, scope._pc, scope.deviceMuted, scope.pcMuted)
+            gain: scope._heard.length ? Math.max(...scope._heard) : Polar.heardLevel(-1, scope._pc, false, scope.pcMuted)
         }
     }
 
@@ -189,7 +259,7 @@ Item {
             const now = Date.now();
             const dt = Math.max(0.001, Math.min(0.1, (now - scope._last) / 1000));
             scope._last = now;
-            scope._dev = Polar.ease(scope._dev, Math.max(0, scope.deviceLevel), dt, 16);
+            scope._shown = Members.easeAll(scope._shown, scope._targets(), dt, 16);
             scope._pc = Polar.ease(scope._pc, scope.pcLevel, dt, 16);
             if (scope._settled())
                 scope._snap();
