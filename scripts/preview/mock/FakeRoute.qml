@@ -119,6 +119,14 @@ QtObject {
             fake.sharing = next.length < 2 ? [] : next;
             return null;
         }
+        // As the real session: starts with the two, or adds the one not in yet
+        function join(a, b) {
+            const r = dropCheck(a, b);
+            if (r)
+                return r;
+            fake.sharing = fake.sharing.length ? fake.sharing.concat(isMember(a) ? [b] : [a]) : [a, b];
+            return null;
+        }
         function dropCheck(a, b) {
             return fake.known(a) ? null : {
                 "why": "not-connected",

@@ -18,6 +18,7 @@ Item {
     readonly property alias bodies: bodyRepeater
     readonly property alias focusCard: focusCardItem
     readonly property alias tetherLayer: tetherLayerItem
+    readonly property alias invitation: inviteLoader
 
     readonly property real dim: world.scene.focusBody || world.scene.hiddenOpen ? 0.12 : 1
     readonly property var centre: world.scene.centre
@@ -31,6 +32,17 @@ Item {
 
     function pulseCore() {
         core.pulse();
+    }
+
+    // Every device body, as a plain array
+    function bodyList() {
+        const all = [];
+        for (let i = 0; i < bodyRepeater.count; i++) {
+            const b = bodyRepeater.itemAt(i);
+            if (b)
+                all.push(b);
+        }
+        return all;
     }
 
     // A device drawn under this scene point, if any (devices passing behind
@@ -155,6 +167,19 @@ Item {
         opacity: world.dim
         sourceComponent: CentreLabel {
             centre: world.centre
+        }
+    }
+
+    // The invitation to listen together, only while a device that could is carried
+    Loader {
+        id: inviteLoader
+        readonly property var targets: world.scene.together.candidates(world.scene.dragBody)
+        anchors.fill: parent
+        z: 9000
+        active: targets.length > 0
+        sourceComponent: OrbitInvite {
+            scene: world.scene
+            targets: inviteLoader.targets
         }
     }
 

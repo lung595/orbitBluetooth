@@ -38,6 +38,13 @@ Item {
         return relevant(b, o) && !_note(b, o);
     }
 
+    // The bodies the carried device could join right now (where the scene
+    // shows the invitation); none for a device that is not connected, as
+    // dropping it would only say to connect it first
+    function candidates(b) {
+        return b ? scene.world.bodyList().filter(o => o !== b && !o.leaving && ready(b, o)) : [];
+    }
+
     // The drop: starts a session or adds a device to it, or says why not
     function drop(b, o) {
         const n = _note(b, o);

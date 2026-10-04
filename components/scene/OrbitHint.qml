@@ -27,6 +27,8 @@ StyledText {
                 return b.armed ? "Release to cancel" : "Pull away to cancel";
             if (b.connected) {
                 const what = hint.scene.together.isMember(b.address) ? "leave the group" : "disconnect";
+                if (!b.armed && hint.scene.together.candidates(b).length)
+                    return "Drop it on another device to listen together, or pull away to " + what;
                 return (b.armed ? "Release to " : "Pull away to ") + what;
             }
             return b.armed ? "Release to connect" : "Bring it closer to connect";
