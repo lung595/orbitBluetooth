@@ -72,8 +72,7 @@ Scope {
             const known = address ? ipc.ancService.snapshots[address] : null;
             if (!known || !known.features || !known.features.chatEnds)
                 return "No headset has said how long a conversation lasts (open its card once) · " + url;
-            ipc.ancService.send(address, "chatEnds", index);
-            return "OK";
+            return ipc.ancService.send(address, "chatEnds", index) ? "OK" : "The headset is not reachable right now · " + url;
         }
 
         // What pause-on-removal sees: the headset's state, and how many
