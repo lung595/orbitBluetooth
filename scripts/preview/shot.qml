@@ -29,7 +29,8 @@ Window {
     // "-reduce" turns Reduce motion on, "-glass" shows any shot as the desktop
     // widget (the veil over a wallpaper), "-bench" takes no picture: once the
     // scene has settled it counts the frames drawn over 6 s and quits
-    // (see depth-bench.sh),
+    // (see depth-bench.sh), "-feed" carries a device to the black hole in the
+    // "together" shots (the hole is lit up while the sky is out of focus),
     // "-sun90" puts the host's system at that angle of its path in the "together"
     // shots (90 near and in front, 270 far and behind, 0 right, 180 left),
     // "-follow" gives the headset no level of its own (no absolute volume),
@@ -46,6 +47,7 @@ Window {
     readonly property bool silent: parts.indexOf("silent") > 0
     readonly property bool reduce: parts.indexOf("reduce") > 0
     readonly property bool bench: parts.indexOf("bench") > 0
+    readonly property bool feed: parts.indexOf("feed") > 0
     readonly property var sunAngle: parts.find(p => /^sun\d+$/.test(p))
     // Speakers that listen together with the headset in the "together" shots
     readonly property int outputs: mode.startsWith("together") && mode !== "togetherback" ? Number(mode.slice(8)) - 1 : mode === "togetherback" ? 2 : 0
@@ -148,6 +150,8 @@ Window {
                 scene.focusOn(b);
         } else if (mode === "togetherback") {
             scene.centre.recall();
+        } else if (mode.startsWith("together") && feed) {
+            carryToHole();
         } else if (mode.startsWith("together") && sunAngle) {
             scene.centre.sunPhase = Number(sunAngle.slice(3)) * Math.PI / 180;
         } else if (mode === "hiddencard" || mode === "hiddenempty") {
@@ -163,11 +167,16 @@ Window {
             if (b)
                 scene.openMenu(b, Qt.point(b.px + 14, b.py + 6));
         } else if (mode === "feed") {
-            const b = bodyOf("D4:1A:88:10:5B:77");
-            if (b) {
-                scene.beginDrag(b, Qt.point(b.px, b.py));
-                scene.updateDrag(Qt.point(scene.holeX + 26, scene.holeY - 22));
-            }
+            carryToHole();
+        }
+    }
+
+    // A device is carried to the black hole, which lights up for it
+    function carryToHole() {
+        const b = bodyOf("D4:1A:88:10:5B:77");
+        if (b) {
+            scene.beginDrag(b, Qt.point(b.px, b.py));
+            scene.updateDrag(Qt.point(scene.holeX + 26, scene.holeY - 22));
         }
     }
 
