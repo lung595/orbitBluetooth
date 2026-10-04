@@ -141,7 +141,8 @@ When a volume changes, from a key, the command line or anywhere else, Orbit can 
 So that only one volume pop-up shows, Orbit switches DMS's own volume OSD off while its pop-up is on (any choice but *Off*). That also stops DMS's Dank Island from opening its own volume face before Orbit's.
 
 - It is done **in memory**: Orbit holds DMS's *Volume* switch (*Settings → On-screen Displays*) off, and DMS's own value comes back when Orbit stops, when the plugin is turned off, or when you choose *Off*. Orbit writes nothing of DMS's.
-- **The one exception**: DMS saves all of its settings together whenever one changes (a theme, a bar...). If that happens while Orbit runs, the file takes the *Volume* switch as off. After removing Orbit, DMS's volume OSD then stays off: turn **Volume** back on in DMS's *Settings → On-screen Displays*.
+- **DMS's saves are guarded.** DMS saves all of its settings together whenever one changes (a theme, a bar...) and once when it starts. Orbit lets go of the switch for a quarter of a second around each save, so the file keeps your own *Volume* value and removing Orbit leaves nothing behind. In that quarter of a second DMS's OSD could show if you press a volume key.
+- **If DMS changes how it saves** (an update that renames the flag Orbit watches), Orbit cannot see the saves any more and the file may take the switch as off. Then turn **Volume** back on in DMS's *Settings → On-screen Displays*, and please open an issue.
 - The microphone, brightness and other OSDs are not touched.
 
 The sound inside is drawn only while the pop-up or a card shows:

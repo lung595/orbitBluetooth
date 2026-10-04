@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## Unreleased
 
+### Changed
+
+- **One volume pop-up, and it is Orbit's.** While the pop-up is on (any choice but *Off*), DMS's own volume OSD, and the volume face its Dank Island opens by itself, are switched off: nothing shows before or under Orbit's pop-up any more. The switch is held in memory only and given back when Orbit stops, when the plugin is turned off or when the pop-up is *Off*. DMS saves all of its settings together, so Orbit lets go of the switch for a quarter of a second around each of DMS's own saves: DMS's file keeps your own *Volume* value, and removing Orbit leaves nothing behind. In *Settings → Sound → Pop-up* the first choice is now called *In the Dank Island* (still the default; a screen without an island gets the pop-up where DMS's OSD would show).
+
 ## 1.13.0 - 2026-10-04
 
 ### Added
@@ -18,7 +22,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ### Changed
 
 - **Lighter volume keys on a Dank Island.** While Orbit's face is up, the island follows the keys at once (no spring, no cross-fade) and DMS's full-screen click-away layer is hidden; both are given back when the keys stop. The visualizer's `cava` only starts 700 ms after the last key, so a burst of steps does not pay its start-up cost. All in memory: no setting of DMS is written.
-- **One volume pop-up, and it is Orbit's.** While the pop-up is on (any choice but *Off*), DMS's own volume OSD, and the volume face its Dank Island opens by itself, are switched off: nothing shows before or under Orbit's pop-up any more. The switch is forced in memory and given back when Orbit stops or the pop-up is *Off*. One exception to Orbit's rule of writing nothing in DMS: DMS saves all of its settings together, so a change you make in DMS while Orbit runs can save the *Volume* switch as off; turn it back on in DMS's *Settings → On-screen Displays*. In *Settings → Sound → Pop-up* the first choice is now called *In the Dank Island* (still the default; a screen without an island gets the pop-up where DMS's OSD would show).
 - *Visualizer motion* now defaults to *Light* (30 images per second); *Smooth* (60) stays one click away in *Settings → Sound*.
 - **Each rule lives in one place.** A Bluetooth address and the BlueZ path built from it are checked by one pure, tested `common/Address.js` (the volume code, the keyboard-profile check and the battery bookkeeping each had their own copy), and the four copies of "plugin file → path" are DMS's own `Paths.strip`. The BlueZ adapter number is now capped at three digits everywhere, as it already was for the keyboard-profile check.
 - **The pairing sheet is five readable parts instead of one 845-line file.** `PairingSheet.qml` keeps the card, its keys and its settings; the colours of the two skins (`PairingSkin`, `PictureColor`), the clock and entrance (`PairingMotion`), the scene (`PairingSky`, `PairingPlanet`) and the status strip (`PairingHeader`) each have their own file. Renders are identical.

@@ -142,7 +142,7 @@ Column {
         wrapMode: Text.WordWrap
         font.pixelSize: Theme.fontSizeSmall
         color: Theme.surfaceVariantText
-        text: "DMS's volume OSD is switched off in memory while a pop-up is on; Orbit writes nothing, and it comes back when Orbit stops or the pop-up is Off. One exception: DMS saves all of its settings together, so a change you make in DMS meanwhile can keep that switch off after Orbit is removed. Turn Volume back on in DMS's Settings, On-screen Displays"
+        text: "DMS's volume OSD is switched off in memory while a pop-up is on; Orbit writes nothing of DMS's, and it comes back when Orbit stops or the pop-up is Off"
     }
 
     SelectionSetting {
