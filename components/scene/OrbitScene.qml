@@ -312,6 +312,12 @@ Item {
     function isTogether(address) {
         return together.isMember(address);
     }
+    function togetherCount() {
+        return together.count();
+    }
+    function leaveTogether(b) {
+        together.leave(b.address);
+    }
     function stopTogether() {
         together.stop();
     }
