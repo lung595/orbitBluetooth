@@ -29,7 +29,8 @@ Rectangle {
     z: 20000
     width: row.implicitWidth + 24
     height: row.implicitHeight + 14
-    radius: height / 2
+    // A rounded rectangle, not a pill: two lines of text read as a card
+    radius: 12
     color: scene.night.smoke(0.96)
     border.width: 1
     border.color: scene.night.ink(0.12)

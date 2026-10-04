@@ -36,6 +36,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 
+- The short notes under the center (why something did not work, two outputs on one radio) are a rounded rectangle instead of a pill: two lines of text read better as a card.
 - With *Reduce motion* the group is put in place at once: nothing orbits, nothing pulses and the scene's loop never starts. While the session is locked, the screen is off or windows cover the widget, nothing runs either (no trip, no beams, no question to PipeWire about sound).
 - The wheel code is shared: `NotchWheel` serves the card's planet, the volume strip, the center's ring and the devices of the group.
 - Internal: the Sony framing moved to `anc/protocols/sony_frame.py`; the extras (wearing, conversation length) live in `sony_extras.py`; the pause logic is `components/wear/` (`Wear.js` pure and tested, `WearPause.qml`, `WearHeadset.qml`, `HeadsetStreams.qml`).
