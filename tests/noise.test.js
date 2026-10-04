@@ -3,7 +3,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const Anc = load("Anc.js", ["family", "nextMode", "ordered"]);
+const Anc = load("Anc.js", ["family", "nextMode", "ordered", "chatEndsIndex", "CHAT_ENDS"]);
 
 // Brand detection by Bluetooth name
 const names = {
@@ -24,6 +24,11 @@ const names = {
 };
 for (const n in names)
     eq("family(" + JSON.stringify(n) + ")", Anc.family(n), names[n]);
+
+// How long a conversation lasts: the names map to the headset's values 0..3
+eq("chatEnds names", Anc.CHAT_ENDS, ["short", "standard", "long", "never"]);
+eq("chatEndsIndex", ["short", " Long ", "NEVER", "standard"].map(Anc.chatEndsIndex), [0, 2, 3, 1]);
+eq("chatEndsIndex: not a name", ["", "2", "forever", null, undefined].map(Anc.chatEndsIndex), [-1, -1, -1, -1, -1]);
 
 // Mode order and cycling (right-click menu, IPC ancCycle)
 eq("ordered", Anc.ordered(["off", "ambient", "nc"]), ["nc", "ambient", "off"]);
