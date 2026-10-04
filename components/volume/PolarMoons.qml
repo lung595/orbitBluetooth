@@ -3,7 +3,7 @@ import "Polar.js" as Polar
 
 // The two moons of the scope (PolarScope): the knobs at the end of each
 // lit arc, to drag. A muted level shows a hollow moon in the muted ink; the
-// one under the pointer or being dragged grows a little
+// one under the pointer, being dragged or just scrolled grows a little
 Item {
     id: moons
 
@@ -36,13 +36,13 @@ Item {
         deg: Polar.end("outer", moons.scope.shownDevice)
         tint: moons.scope.deviceMuted ? moons.scope.mutedColor : moons.scope.deviceColor
         hollow: moons.scope.deviceMuted
-        big: moons.scope.dragging === "device" || moons.scope.pointer.hover === "device"
+        big: moons.scope.talking === "device" || moons.scope.dragging === "device" || moons.scope.pointer.hover === "device"
     }
     Moon {
         radiusAt: moons.scope.inner
         deg: Polar.end("inner", moons.scope.shownPc)
         tint: moons.scope.pcMuted ? moons.scope.mutedColor : moons.scope.pcColor
         hollow: moons.scope.pcMuted
-        big: moons.scope.dragging === "pc" || moons.scope.pointer.hover === "pc"
+        big: moons.scope.talking === "pc" || moons.scope.dragging === "pc" || moons.scope.pointer.hover === "pc"
     }
 }

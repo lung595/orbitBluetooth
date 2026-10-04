@@ -2,7 +2,7 @@ import QtQuick
 import "components/volume"
 
 // Test of PolarScope and ScopeModel: presses land on the right half
-// circle; a level step eases on a clock that stops alone; the shared
+// circle, and a wheel notch on an icon scrolls its own level; a level step eases on a clock that stops alone; the shared
 // picture moves on its feed's frames and its fade stops by itself, for
 // every style (nothing runs at rest, value 6); a feed turned off clears it;
 // a late frame is not taken for silence, and silence paints nothing.
@@ -31,12 +31,33 @@ Item {
     function at(r) {
         return Qt.point(scope.cx, scope.cy - r);
     }
+    // The last level a wheel notch asked for, and how many were asked
+    property var lastMove: null
+    property int moves: 0
+    Connections {
+        target: scope
+        function onMoved(part, level) {
+            h.lastMove = [part, level];
+            h.moves++;
+        }
+    }
+    // One wheel notch at the foot of a half circle (where its icon sits)
+    function notchAtFoot(radius) {
+        const p = scope.pointer;
+        p.turn(p.wheelPartAt(Qt.point(scope.cx - radius, scope.cy + 14)), 120);
+    }
 
     Component.onCompleted: {
         check("top of the outer half is the device", scope.pointer.partAt(at(scope.outer)), "device");
         check("top of the inner half is this PC", scope.pointer.partAt(at(scope.inner)), "pc");
         check("between them: nothing", scope.pointer.partAt(at((scope.outer + scope.inner) / 2)), "");
         check("the top is half way", scope.pointer.valueAt("pc", at(scope.inner)), 0.5);
+        check("a notch on the outer arc's icon scrolls the device", (notchAtFoot(scope.outer), h.lastMove), ["device", 0.65]);
+        check("a notch on this PC's icon scrolls this PC", (notchAtFoot(scope.inner), h.lastMove), ["pc", 0.45]);
+        h.moves = 0;
+        scope.pointer.turn("device", 60);
+        scope.pointer.turn("pc", 60);
+        check("half notches on two levels do not add up", h.moves, 0);
         check("at rest the clock is stopped", scope.animating, false);
 
         // A level step (once every item is ready) eases on the scope's

@@ -61,11 +61,23 @@ MouseArea {
     }
     onCanceled: scope.dragging = ""
 
-    // Scroll over an arc: 5 % steps, or the caller's own steps (smartWheel)
+    // The level a wheel notch at m changes: the side under the pointer
+    // (an arc, its icon or its number), never a dead spot
+    function wheelPartAt(m) {
+        return Polar.wheelPart(m.x - scope.cx, m.y - scope.cy, scope.outer, scope.inner, scope.sideNumbers, scope.hasDevice);
+    }
+
+    // Scroll: 5 % steps, or the caller's own steps (smartWheel). A notch
+    // left over from the other level does not count toward this one
     property real acc: 0
-    onWheel: w => {
-        const part = hover || (scope.hasDevice ? "device" : "pc");
-        acc += w.angleDelta.y;
+    property string turning: ""
+    onWheel: w => turn(wheelPartAt(w), w.angleDelta.y)
+    function turn(part, delta) {
+        if (part !== turning) {
+            turning = part;
+            acc = 0;
+        }
+        acc += delta;
         const steps = Math.trunc(acc / 120);
         if (steps === 0)
             return;
