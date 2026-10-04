@@ -28,7 +28,8 @@ eq("group: at the centre, then stepped back to the same spot", [C.groupAt(g, 0),
 eq("host at the back is about 40 % of its size", C.hostAt(g, 1).scale, 0.4);
 
 const s = C.sizes(g);
-eq("sizes: the source is bigger than the host, a copy smaller than a ring planet", [s.source > g.coreSize, s.copy < g.bodySize, s.copy >= 12], [true, true, true]);
+eq("sizes: the source is exactly as big as the host's core, a copy smaller than a ring planet", [s.source, s.copy < g.bodySize, s.copy >= 12], [g.coreSize, true, true]);
+eq("sizes: the source follows the core on any scene", [C.sizes(small).source, C.sizes({ cx: 0, cy: 0, rx: 400, ry: 250, coreSize: 90, bodySize: 60 }).source], [small.coreSize, 90]);
 eq("sizes: the volume ring is outside the source, the orbit outside the ring", [s.ring > s.source / 2, s.radius - s.copy / 2 - s.ring >= 12], [true, true]);
 const t = C.sizes(small);
 eq("sizes: on a small scene the copies shrink and the orbit still fits", [t.copy < s.copy, t.copy >= 12, t.radius <= small.rx * 0.9], [true, true, true]);
@@ -47,6 +48,7 @@ const gap = (a, b) => near(((turn(b) - turn(a)) + 4 * Math.PI) % (2 * Math.PI));
 eq("orbit: three copies are equidistant (a third of a turn apart)", [gap(0, 1), gap(1, 2), gap(2, 0)], Array(3).fill(near(2 * Math.PI / 3)));
 eq("orbit: four copies are a quarter of a turn apart", near(C.copySlot(R, centre, 1, 4, 0).x - centre.x), near(0));
 eq("orbit: the near side has a positive depth, the far side a negative one", [C.copySlot(R, centre, 0, 4, Math.PI / 2).depth, C.copySlot(R, centre, 0, 4, -Math.PI / 2).depth], [1, -1]);
+eq("orbit: a turn takes 25 s (the user-facing pace, written out so a change is deliberate)", C.PERIOD, 25);
 eq("orbit: one turn takes 25 s and comes back to the start", [near(C.phaseAt(C.PERIOD) - C.phaseAt(0)), near(C.phaseAt(C.PERIOD / 4) - C.phaseAt(0))], [near(2 * Math.PI), near(Math.PI / 2)]);
 eq("orbit: with the clock stopped the angles stay put", [C.copySlot(R, centre, 1, 3, C.phaseAt(5)), C.copySlot(R, centre, 1, 3, C.phaseAt(5))].every((p, _, a) => JSON.stringify(p) === JSON.stringify(a[0])), true);
 const back = C.groupAt(g, 1);

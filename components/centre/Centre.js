@@ -45,11 +45,12 @@ function backSpot(g) {
 }
 
 // Sizes in px: the source planet, the volume ring around it, a copy, and the
-// distance from the source to a copy. The ring sits just outside what the
-// source already wears (battery arc, noise-control halo) and the copies orbit
+// distance from the source to a copy. The source is as big as the host's core
+// (the same planet, now at the centre); the ring sits just outside what it
+// already wears (battery arc, noise-control halo) and the copies orbit
 // outside the ring; on a small scene the copies shrink so the orbit still fits.
 function sizes(g) {
-    const source = Math.round(g.coreSize * 1.2);
+    const source = g.coreSize;
     const ring = source / 2 + Math.max(16, source * 0.2);
     const gap = ring - source / 2 + 12;
     const room = g.rx * 0.9;
