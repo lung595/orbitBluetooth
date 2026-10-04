@@ -14,7 +14,8 @@ import "mock/State.js" as State
 // (the counter-proof), and the parts unload when the group ends (value 6).
 // The solar system rides that loop: the sun rests with Reduce motion and turns
 // with motion, the group stays in the middle and the devices outside it live
-// around the sun and the source is as big as the core.
+// around the sun, the source is as big as the core, and a new source grows
+// into its role without a pop (F2).
 // The scene runs on its real timers, so each step waits a moment. Run with
 // tests/qml/run.sh.
 Item {
@@ -66,6 +67,27 @@ Item {
             "n": n,
             "mean": n ? sum / n : 0
         };
+    }
+    // The discs of the old and the new source across a swap, one sample per 16 ms
+    property var oldSource: []
+    property var newSource: []
+    function sampled(values) {
+        const jumps = values.slice(1).map((v, i) => v - values[i]);
+        return {
+            "total": values[values.length - 1] - values[0],
+            "up": jumps.every(j => j >= -1e-9),
+            "down": jumps.every(j => j <= 1e-9),
+            "biggest": Math.max(...jumps.map(Math.abs))
+        };
+    }
+    Timer {
+        id: sampler
+        interval: 16
+        repeat: true
+        onTriggered: {
+            h.oldSource.push(scene.centre.bodyOf(h.headset).baseScale);
+            h.newSource.push(scene.centre.bodyOf(h.two).baseScale);
+        }
     }
 
     // Each step runs, then waits `then` ms before the next
@@ -170,6 +192,29 @@ Item {
             "then": 300,
             "run": () => {
                 check("unlocked: it runs again", [scene.settled, scene.orbitTime > h.seen], [false, true]);
+            }
+        },
+        {
+            // Another member becomes the source: the discs grow and shrink to their roles.
+            // Sampled while they are on their way (under the 0.8 s voyage): once there,
+            // a copy's size follows the orbit's depth again, up and down
+            "then": 400,
+            "run": () => {
+                h.oldSource = [scene.centre.bodyOf(h.headset).baseScale];
+                h.newSource = [scene.centre.bodyOf(h.two).baseScale];
+                sampler.start();
+                route.sharing = [h.two, h.headset];
+            }
+        },
+        {
+            "then": 0,
+            "run": () => {
+                sampler.stop();
+                check("a new source: the old one is now the second", [scene.centre.source, scene.centre.bodyOf(h.headset).role, scene.centre.bodyOf(h.two).role], [h.two, "copy", "source"]);
+                const shrunk = h.sampled(h.oldSource), grown = h.sampled(h.newSource);
+                check("the old source only shrinks across the swap", [shrunk.total < -0.1, shrunk.down], [true, true]);
+                check("the new source only grows across the swap", [grown.total > 0.1, grown.up], [true, true]);
+                check("and neither pops: no step is a big share of the change", [shrunk.biggest < -shrunk.total / 4, grown.biggest < grown.total / 4], [true, true]);
             }
         },
         {

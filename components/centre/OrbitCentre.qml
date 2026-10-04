@@ -141,9 +141,10 @@ Item {
             return null;
         const sz = sizes, c = group;
         const snap = !scene.motion;
+        const grow = goal => snap ? goal : Centre.grow(b.roleDiameter, goal, sz.source * c.scale, dt, Centre.VOYAGE);
         if (b.role === "source") {
             b.depth = 1;
-            b.roleDiameter = sz.source * c.scale;
+            b.roleDiameter = grow(sz.source * c.scale);
             return {
                 "x": c.x,
                 "y": c.y,
@@ -154,7 +155,7 @@ Item {
         }
         const slot = Centre.copySlot(sz.radius, c, copies.indexOf(b.address), copies.length, Centre.phaseAt(scene.orbitTime));
         b.depth = slot.depth;
-        b.roleDiameter = sz.copy * c.scale * Centre.depthSize(slot.depth);
+        b.roleDiameter = grow(sz.copy * c.scale * Centre.depthSize(slot.depth));
         return {
             "x": slot.x,
             "y": slot.y,
@@ -179,7 +180,7 @@ Item {
         const secs = scene.motion ? Centre.VOYAGE : Centre.FADE;
         const awake = scene.awake;
         grouping = awake ? Centre.approach(grouping, _goalGrouping, dt, secs) : _goalGrouping;
-        stage = awake ? Centre.approach(stage, _goalStage, dt, Centre.RECALL) : _goalStage;
+        stage = awake ? Centre.approach(stage, _goalStage, dt, scene.motion ? Centre.RECALL : Centre.FADE) : _goalStage;
         if (driven && grouped) {
             _sunSpeed = Centre.approach(_sunSpeed, scene.dragBody ? 0 : 1, dt, Sun.STOP);
             sunPhase = Sun.advance(sunPhase, dt, Centre.ease(_sunSpeed));

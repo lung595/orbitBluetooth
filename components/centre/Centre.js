@@ -37,6 +37,16 @@ function approach(value, target, dt, seconds) {
     return value < target ? Math.min(target, value + step) : Math.max(target, value - step);
 }
 
+// A size in px that follows its goal at the pace of the voyage: `ref` is the
+// biggest size it can take (the step is a share of it, so a big change takes
+// as long as `seconds` and a small one less). Not set yet (0): at the goal at
+// once, so a planet that joins grows from its ring size, not from nothing.
+function grow(value, goal, ref, dt, seconds) {
+    if (value <= 0)
+        return goal;
+    return ref * approach(value / ref, goal / ref, dt, seconds);
+}
+
 // Where the group steps back to when the host is recalled: up on the left,
 // behind the rings
 function backSpot(g) {

@@ -4,7 +4,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const C = load("Centre.js", ["PERIOD", "MAX_SHIFT", "GROUP_SIZE", "TILT", "clamp01", "lerp", "ease", "approach", "backSpot", "sizes", "labelOffset", "groupAt", "away", "phaseAt", "copySlot", "depthSize", "parallax", "copiesOf", "roleOf", "label", "pulse"]);
+const C = load("Centre.js", ["PERIOD", "MAX_SHIFT", "GROUP_SIZE", "TILT", "clamp01", "lerp", "ease", "approach", "grow", "backSpot", "sizes", "labelOffset", "groupAt", "away", "phaseAt", "copySlot", "depthSize", "parallax", "copiesOf", "roleOf", "label", "pulse"]);
 const V = load("MasterVolume.js");
 
 const near = (v, d) => Math.round(v * 1000) / 1000;
@@ -20,6 +20,12 @@ eq("ease: stays in 0..1", [C.ease(-3), C.ease(7)], [0, 1]);
 eq("approach: a step of dt over the duration, never past the target", [near(C.approach(0, 1, 0.2, 0.8)), C.approach(0.9, 1, 0.2, 0.8), C.approach(1, 0, 0.4, 0.8)], [0.25, 1, 0.5]);
 eq("approach: a zero duration lands at once", C.approach(0, 1, 0.03, 0), 1);
 // A size in px follows its goal at the pace of the voyage (a new source does not pop)
+const walk = (from, goal, ref, steps) => { const path = [from]; for (let i = 0; i < steps; i++) path.push(C.grow(path[i], goal, ref, 0.1, 0.8)); return path; };
+eq("grow: a big change takes the whole voyage, a step at a time", walk(65, 32, 65, 8).map(near), [65, 56.875, 48.75, 40.625, 32.5, 32, 32, 32, 32].map(near));
+eq("grow: it never goes past the goal, up or down", [walk(65, 32, 65, 12), walk(32, 65, 65, 12)].map(path => path.every(v => v >= 32 && v <= 65)), [true, true]);
+eq("grow: one way only, no pop and no wobble on the way", [walk(65, 32, 65, 12), walk(32, 65, 65, 12)].map(path => path.every((v, i) => i === 0 || (path[0] > path[path.length - 1] ? v <= path[i - 1] : v >= path[i - 1]))), [true, true]);
+eq("grow: a goal that is already there stays", C.grow(32, 32, 65, 0.03, 0.8), 32);
+eq("grow: a planet that has no size yet appears at its goal", C.grow(0, 32, 65, 0.03, 0.8), 32);
 eq("away: the host is at the back once the group has the centre", [C.away(0, 0), C.away(1, 0), C.away(1, 1), C.away(0.5, 0)], [0, 1, 0, 0.5]);
 
 // --- where things sit -----------------------------------------------------------
