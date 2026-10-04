@@ -9,6 +9,11 @@ import "Polar.js" as Polar
 // sits at the foot of each, the number only shows while
 // the level moves. A cloud of points shows where the sound is going: its
 // angle is left/right, its distance how loud.
+// Listening together (D254, `split`): the outer half is cut at the top into
+// two quarters, one per output, each lit from its bottom corner toward the
+// top (the first at the left, the second at the right); this PC's inner half
+// stays one, shared. The clouds follow: left half in the first one's color,
+// right half in the second's.
 // The sound is a ScopeModel (computed once for every screen) painted by
 // PolarVisual, over an optional Ozone-like grid (PolarGrid); the icons and
 // numbers are PolarReadouts; the arcs are PolarArcs, the moons PolarMoons and
@@ -24,6 +29,12 @@ Item {
     property real pcLevel: 0
     property bool deviceMuted: false
     property bool pcMuted: false
+    // Two outputs share the sound: the second one's own level (the device's
+    // fields are then the first one's)
+    property bool split: false
+    property real secondLevel: 0
+    property bool secondMuted: false
+    property string secondIcon: "speaker"
     property string deviceIcon: "headphones"
     property string pcIcon: "computer"
     // On screen and wanted to move (the caller knows: popup shown, card open)
@@ -38,9 +49,9 @@ Item {
     // Light added on a dark screen; plain paint on a light one
     property bool additive: true
 
-    // A level was dragged or scrolled: "device" or "pc", 0..1
+    // A level was dragged or scrolled: "device", "second" or "pc", 0..1
     signal moved(string part, real level)
-    // Its icon was clicked: "device" or "pc"
+    // Its icon was clicked: "device", "second" or "pc"
     signal muteClicked(string part)
     // With smartWheel, a wheel notch asks the caller for a step instead
     // (the caller's smart steps, D264): +1 up, -1 down
@@ -50,12 +61,13 @@ Item {
     // there is room, else next to the moons
     property bool numbers: false
     property string deviceLabel: "Device"
+    property string secondLabel: "Device"
     property string pcLabel: "This PC"
     readonly property real sideRoom: width / 2 - outer - 12
     readonly property bool sideNumbers: numbers && sideRoom >= 64
     readonly property bool hovered: pointer.containsMouse || dragging !== ""
 
-    readonly property bool hasDevice: deviceLevel >= 0
+    readonly property bool hasDevice: split || deviceLevel >= 0
     // Geometry: the center sits on the bottom edge, above the icons
     readonly property real iconSize: Math.max(14, Math.round(outer * 0.12))
     readonly property real cx: width / 2
@@ -73,6 +85,7 @@ Item {
 
     // The caller may pass night colors when the scope sits on a dark screen
     property color deviceColor: Theme.primary
+    property color secondColor: Theme.secondary
     property color pcColor: Theme.tertiary
     property color trackColor: Theme.withAlpha(Theme.outline, 0.22)
     property color inkColor: Theme.surfaceText
@@ -108,7 +121,8 @@ Item {
         radius: scope.outer - scope.stroke
         color: scope.hasDevice ? scope.deviceColor : scope.pcColor
         color2: scope.pcColor
-        quiet: scope.hasDevice ? scope.deviceMuted || scope.pcMuted : scope.pcMuted
+        colorRight: scope.split ? scope.secondColor : color
+        quiet: scope.split ? scope.pcMuted || (scope.deviceMuted && scope.secondMuted) : scope.hasDevice ? scope.deviceMuted || scope.pcMuted : scope.pcMuted
         additive: scope.additive
     }
 
@@ -132,19 +146,22 @@ Item {
     property string dragging: ""
     property real _dev: 0
     property real _pc: 0
+    property real _second: 0
     // The eased levels, for the readouts (PolarReadouts) to sit where the
     // arcs end without reaching into the easing state
     readonly property real shownDevice: _dev
     readonly property real shownPc: _pc
+    readonly property real shownSecond: _second
     // A function, not a binding: read inside the level's own change
     // handler, a binding would still hold the old answer
     function _settled() {
-        return Math.abs(_dev - Math.max(0, deviceLevel)) < 0.002 && Math.abs(_pc - pcLevel) < 0.002;
+        return Math.abs(_dev - Math.max(0, deviceLevel)) < 0.002 && Math.abs(_pc - pcLevel) < 0.002 && Math.abs(_second - secondLevel) < 0.002;
     }
     function _snap() {
         clock.stop();
         _dev = Math.max(0, deviceLevel);
         _pc = pcLevel;
+        _second = secondLevel;
     }
     function _follow() {
         if (!_ready || !motion || !live || dragging !== "")
@@ -162,6 +179,7 @@ Item {
     }
     onDeviceLevelChanged: _follow()
     onPcLevelChanged: _follow()
+    onSecondLevelChanged: _follow()
     onDraggingChanged: _follow()
 
     // The sound to show: a ScopeModel shared by every screen (the caller's),
@@ -174,7 +192,7 @@ Item {
         sourceComponent: ScopeModel {
             style: Polar.styleOf(scope.style)
             fps: scope.fps
-            gain: Polar.heardLevel(scope.hasDevice ? scope._dev : -1, scope._pc, scope.deviceMuted, scope.pcMuted)
+            gain: scope.split ? Math.max(Polar.heardLevel(scope._dev, scope._pc, scope.deviceMuted, scope.pcMuted), Polar.heardLevel(scope._second, scope._pc, scope.secondMuted, scope.pcMuted)) : Polar.heardLevel(scope.hasDevice ? scope._dev : -1, scope._pc, scope.deviceMuted, scope.pcMuted)
         }
     }
 
@@ -191,6 +209,7 @@ Item {
             scope._last = now;
             scope._dev = Polar.ease(scope._dev, Math.max(0, scope.deviceLevel), dt, 16);
             scope._pc = Polar.ease(scope._pc, scope.pcLevel, dt, 16);
+            scope._second = Polar.ease(scope._second, scope.secondLevel, dt, 16);
             if (scope._settled())
                 scope._snap();
         }

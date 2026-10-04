@@ -25,6 +25,7 @@ QtObject {
     }
 
     readonly property color primary: night(Theme.primary)
+    readonly property color secondary: night(Theme.secondary)
     readonly property color tertiary: night(Theme.tertiary)
     readonly property color error: night(Theme.error)
     readonly property color primaryText: onAccent(Theme.primary, Theme.primaryText)

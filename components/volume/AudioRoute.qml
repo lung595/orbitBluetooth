@@ -4,6 +4,7 @@ import Quickshell.Bluetooth
 import Quickshell.Services.Pipewire
 import "Route.js" as Route
 import "Steps.js" as Steps
+import "../together"
 
 // The two volumes of a Bluetooth audio device (D249): the device's own
 // level, and this PC's level, what the PC sends to it. One RouteDevice per
@@ -22,6 +23,13 @@ Item {
     // The default output, to set this PC's level without a Bluetooth device
     PwObjectTracker {
         objects: Pipewire.defaultAudioSink ? [Pipewire.defaultAudioSink] : []
+    }
+
+    // Listen together: two outputs, the same sound (D254)
+    readonly property alias together: session
+    TogetherSession {
+        id: session
+        route: root
     }
 
     Instantiator {
@@ -93,6 +101,11 @@ Item {
                 return d;
         }
         return null;
+    }
+
+    // A Bluetooth device Orbit sees, with or without a sound output
+    function known(address) {
+        return _devices[address] || null;
     }
 
     function find(address) {

@@ -75,15 +75,29 @@ Rectangle {
         anchors.leftMargin: Theme.spacingM
         spacing: Theme.spacingM
         // Room for the bars once icons, numbers, gaps and the chevron are set
-        readonly property real barWidth: Math.max(24, (strip.width - Theme.spacingM * 3 - 24 - (strip.levels.deviceLevel >= 0 ? 2 : 1) * (16 + 34 + Theme.spacingXS * 2) - (strip.levels.deviceLevel >= 0 ? Theme.spacingM : 0)) / (strip.levels.deviceLevel >= 0 ? 2 : 1))
+        // Two outputs listening together (split) have a bar each, plus this PC's
+        readonly property int count: (strip.levels.deviceLevel >= 0 || strip.levels.split ? 1 : 0) + (strip.levels.split ? 1 : 0) + 1
+        readonly property real barWidth: Math.max(24, (strip.width - Theme.spacingM * 3 - 24 - count * (16 + 34 + Theme.spacingXS * 2) - (count - 1) * Theme.spacingM) / count)
 
         Level {
             id: deviceRow
-            visible: strip.levels.deviceLevel >= 0
+            visible: strip.levels.deviceLevel >= 0 || strip.levels.split
             icon: strip.levels.deviceIcon
             level: Math.max(0, strip.levels.deviceLevel)
             muted: strip.levels.deviceMuted
             tint: Theme.primary
+            barWidth: row.barWidth
+        }
+        Level {
+            id: secondRow
+            visible: strip.levels.split
+            icon: strip.levels.secondIcon
+            level: strip.levels.secondLevel
+            muted: strip.levels.secondMuted
+            tint: {
+                const c = Palette.apart(Theme.secondary, Theme.primary);
+                return Qt.rgba(c.r, c.g, c.b, 1);
+            }
             barWidth: row.barWidth
         }
         Level {
@@ -92,7 +106,8 @@ Rectangle {
             level: strip.levels.pcLevel
             muted: strip.levels.pcMuted
             tint: {
-                const c = Palette.apart(Theme.tertiary, Theme.primary);
+                const own = Palette.apart(Theme.tertiary, Theme.primary);
+                const c = strip.levels.split ? Palette.apart(own, secondRow.tint) : own;
                 return Qt.rgba(c.r, c.g, c.b, 1);
             }
             barWidth: row.barWidth
@@ -120,9 +135,10 @@ Rectangle {
         acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
         property real acc: 0
         onWheel: e => {
-            // The level under the pointer: the device's on the left half
-            // of the line when it has one, this PC's everywhere else
-            const part = deviceRow.visible && e.x < row.x + pcRow.x - row.spacing / 2 ? "device" : "pc";
+            // The level under the pointer, left to right: the device's when
+            // it has one, the second output's when split, this PC's last
+            const x = e.x - row.x;
+            const part = x >= pcRow.x - row.spacing / 2 ? "pc" : secondRow.visible && x >= secondRow.x - row.spacing / 2 ? "second" : deviceRow.visible ? "device" : "pc";
             // Touchpads send small deltas: add them up to whole notches
             acc += e.angleDelta.y;
             const notches = Math.trunc(acc / 120);

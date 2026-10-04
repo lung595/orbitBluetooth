@@ -8,6 +8,7 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 - [The orbit](#the-orbit) · [If it does not connect](#if-it-does-not-connect) · [If it does not disconnect](#if-it-does-not-disconnect) · [Bluetooth is off](#bluetooth-is-off)
 - [The detail card](#the-detail-card)
 - [The two volumes](#the-two-volumes) · [Separate PC volume](#separate-pc-volume) · [Volume pop-up](#volume-pop-up) · [Smart volume steps](#smart-volume-steps) · [Volume keys](#volume-keys) · [What really plays](#what-really-plays)
+- [Listen together](#listen-together) · [What it costs](#what-it-costs) · [Limits](#limits) · [Works with multipoint headsets](#works-with-multipoint-headsets)
 - [Earbuds: the trio](#earbuds-the-trio)
 - [Hiding devices: the black hole](#hiding-devices-the-black-hole)
 - [Noise control](#noise-control)
@@ -193,6 +194,38 @@ Under the device's name on its card, and at the foot of the volume pop-up (cente
 - **Choose what shows**: **Settings → Sound → Audio details** has two switches per fact, *on the line* and *more info*. Turn every one off and Orbit reads nothing.
 
 It is read from PipeWire (`pactl list sinks`) once when the card or pop-up appears, and again when you click the info button; nothing runs while they are closed, and nothing is sent anywhere. If the line is missing, the output is not known to PipeWire yet (a headset takes a second to appear after it connects) or `pactl` is not installed (it comes with `pipewire-pulse`).
+
+## Listen together
+
+Two Bluetooth outputs, the same sound, at once: the headset **and** the receiver, two speakers, two pairs of headphones for one film.
+
+- **Start**: in the orbit, **drag one connected audio device onto another**. While it is over the other one, the hint under the orbit reads *Release to listen together*; let go and both play the same sound. The dragged device springs back to its place, so you can see nothing moved.
+- **Stop**: right-click either device and choose **Stop together**; or turn one of the two off or disconnect it, and the session ends with it; or `dms ipc call orbitBluetooth separate`. Closing the shell ends it too.
+- **On the command line**: `dms ipc call orbitBluetooth together AA:BB:CC:DD:EE:01 AA:BB:CC:DD:EE:02`, `togetherStatus` (who listens together, as JSON), `separate`, and `togetherDelay <ms>`, see below.
+- **What you see**: while a session runs, the [two volumes](#the-two-volumes) of the card and of the pop-up change shape. The outer half circle is **cut at the top**: the left quarter is the first device's own level, the right quarter the second one's, each lit from its bottom corner toward the top. The inner half circle stays below, shared: **this PC's level**, what the PC sends to both. Each quarter has its own moon, icon and percentage; one cloud of points (or rays, or waves) lives in each half, so the sound's left and right show on the device that plays it. Without a session, the screen looks as before.
+- **Which sound is copied**: the one you hear. If one of the two is your current output, its sound is copied to the other; otherwise the first one you dragged. Orbit never changes your default output. If you later make the other device your output, the copy follows it a moment after.
+- **Each level is its own**: the headset's volume and the receiver's volume stay separate, and this PC's level reaches both. If the second device has its own [separate PC volume](#separate-pc-volume), its PC level applies to the copy too.
+
+### What it costs
+
+Nothing while no session runs. During one, Orbit runs a single small sound process that copies the audio; it is **passive**, so with no sound playing it holds nothing open and both outputs can fall asleep as before. It belongs to the shell: it disappears when the shell ends, even after a crash, and nothing is written to disk or to your sound setup.
+
+### Limits
+
+- **Two outputs, not more**, and both must be **connected Bluetooth audio devices** with a sound output. Orbit tells you why when one cannot take part (not connected, no sound output yet, a headset on its call profile, the same device twice) and links here.
+- **The two may not be in sync.** Bluetooth codecs have different delays (a headset on AAC against a receiver on SBC), and Orbit cannot measure them. If you hear an echo, the copied device is the one that is early: `dms ipc call orbitBluetooth togetherDelay 120` (0 to 500 ms) makes the copy wait, and you try a value until it sounds as one. Only the copy can wait: if the copied device is already the late one, there is nothing to do but pick the other as the sound you hear. The change restarts the copy for a moment, and lasts for this session only (Orbit saves nothing).
+- **A video's picture is not delayed** either: with a large delay, lips drift from the sound.
+- **Call profile**: a headset whose microphone is in use drops to a narrow call mode; Orbit refuses it until it is back on its music profile.
+- **If one output goes away** (a headset handed over to your phone, an output that fell asleep), it stays a member and picks the sound up again when it returns. The session only ends on a real Bluetooth disconnection, or if you end it.
+
+### Works with multipoint headsets
+
+A headset connected to this PC **and** to your phone gives the sound to whichever device plays, by itself: that is the headset's own behaviour, and Listen together does not change it.
+
+- Orbit opens **no sound stream, no silence and no keep-alive** on any output, so a headset that has been handed to your phone is not held by the PC.
+- The copy is passive: when nothing plays on the PC, it holds nothing, and the outputs go to sleep exactly as before.
+- Orbit never disconnects or reconnects a device to repair a session. A member that moved to your phone stays a member, and plays the PC's sound again as soon as the PC plays.
+- Rely on your headset's own switching to move between the PC and the phone; Listen together does not interfere.
 
 ## Earbuds: the trio
 

@@ -12,6 +12,9 @@ import "../device/DeviceCatalog.js" as Catalog
 // use) and CardVolume (the device on the detail card). A device with no
 // level of its own, or an output that is not Bluetooth, has this PC's
 // level only (deviceLevel -1).
+// Listening together (D254): when `dev` is one of the two outputs sharing the
+// sound, the device is the first member, `second` the other, and this PC's
+// level is the one the copy is taken from (`split`).
 Item {
     id: levels
 
@@ -22,20 +25,43 @@ Item {
     property var dev: null
 
     readonly property var shown: route ? Route.shownLevels(route.deviceNode(dev), route.pcNode(dev)) : ({})
-    readonly property var deviceAudio: shown.device && shown.device.audio ? shown.device.audio : null
-    readonly property var pcAudio: shown.pc && shown.pc.audio ? shown.pc.audio : null
+    readonly property var together: route ? route.together : null
+    readonly property bool split: !!together && !!dev && together.isMember(dev.address)
+    // The nodes holding each level: "device", "second" (split only) and "pc"
+    readonly property var nodes: split ? ({
+            "device": together.memberNode(together.first),
+            "second": together.memberNode(together.second),
+            "pc": together.sharedNode
+        }) : ({
+            "device": shown.device || null,
+            "second": null,
+            "pc": shown.pc || null
+        })
+    readonly property var deviceAudio: nodes.device && nodes.device.audio ? nodes.device.audio : null
+    readonly property var secondAudio: nodes.second && nodes.second.audio ? nodes.second.audio : null
+    readonly property var pcAudio: nodes.pc && nodes.pc.audio ? nodes.pc.audio : null
 
     readonly property real deviceLevel: deviceAudio ? Math.min(1, deviceAudio.volume) : -1
+    readonly property real secondLevel: secondAudio ? Math.min(1, secondAudio.volume) : 0
     readonly property real pcLevel: pcAudio ? Math.min(1, pcAudio.volume) : 0
     readonly property bool deviceMuted: deviceAudio ? deviceAudio.muted : false
+    readonly property bool secondMuted: secondAudio ? secondAudio.muted : false
     readonly property bool pcMuted: pcAudio ? pcAudio.muted : false
-    readonly property string deviceIcon: dev ? Route.iconFor(Catalog.resolve(dev.device, prefs ? prefs.glyphOverrides : ({}))) : "speaker"
-    readonly property string pcIcon: shown.ownIcon ? deviceIcon : "computer"
+    // The device shown first: the first member when split, else `dev`
+    readonly property var firstDev: split ? together.known(together.first) : dev
+    readonly property var secondDev: split ? together.known(together.second) : null
+    function _iconOf(d) {
+        return d ? Route.iconFor(Catalog.resolve(d.device, prefs ? prefs.glyphOverrides : ({}))) : "speaker";
+    }
+    readonly property string deviceIcon: _iconOf(firstDev)
+    readonly property string secondIcon: _iconOf(secondDev)
+    readonly property string pcIcon: shown.ownIcon && !split ? deviceIcon : "computer"
     // How loud it is heard: the device's level times this PC's (the
-    // vectorscope's picture is drawn that big)
-    readonly property real heardLevel: Polar.heardLevel(deviceLevel, pcLevel, deviceMuted, pcMuted)
-    // The device's name as the user sees it in Orbit (shown, never logged)
-    readonly property string deviceName: dev ? Catalog.deviceName(dev.device) : ""
+    // vectorscope's picture is drawn that big); the louder output when split
+    readonly property real heardLevel: split ? Math.max(Polar.heardLevel(deviceLevel, pcLevel, deviceMuted, pcMuted), Polar.heardLevel(secondLevel, pcLevel, secondMuted, pcMuted)) : Polar.heardLevel(deviceLevel, pcLevel, deviceMuted, pcMuted)
+    // The devices' names as the user sees them in Orbit (shown, never logged)
+    readonly property string deviceName: firstDev ? Catalog.deviceName(firstDev.device) : ""
+    readonly property string secondName: secondDev ? Catalog.deviceName(secondDev.device) : ""
 
     readonly property string style: prefs ? prefs.scopeStyle : "points"
     readonly property int fps: prefs ? prefs.scopeFps : 30
@@ -88,7 +114,7 @@ Item {
     // DMS's own OSD would answer a level we set: keep it quiet a moment, as
     // DMS's slider does
     function _node(part) {
-        return part === "device" ? shown.device : shown.pc;
+        return nodes[part] || null;
     }
     function setLevel(part, level) {
         const node = _node(part);

@@ -76,25 +76,36 @@ function description(deviceName) {
     return (clean || "Bluetooth") + " (Orbit)";
 }
 
-// The command that puts this PC's level in front of the device (D259): a
-// WirePlumber smart filter, a virtual sink that WirePlumber itself slips
-// between every app and the device. The default output stays the device,
-// so nothing in WirePlumber's saved state changes, and the filter lives
-// exactly as long as this process: bash watches its standard input (a pipe
-// from the shell) and stops pw-loopback the moment the shell goes away, even
-// after a crash (value 12). Data only as "$1" and "$2" (value 11).
-// Returns an argv list, or null if anything does not check out.
-const FILTER_SCRIPT = '{ cat >/dev/null; kill "$$" 2>/dev/null; } <&0 & exec pw-loopback --capture-props="$1" --playback-props="$2" </dev/null';
+// The one way Orbit runs a pw-loopback (the PC-level filter below, Listen
+// together): bash watches its standard input (a pipe from the shell) and
+// stops pw-loopback the moment the shell goes away, even after a crash, so
+// nothing outlives the shell (value 12). Data only as "$1", "$2" and "$3"
+// (value 11): the capture and playback properties, and an optional delay in
+// seconds.
+const LOOPBACK_SCRIPT = '{ cat >/dev/null; kill "$$" 2>/dev/null; } <&0 & exec pw-loopback ${3:+-d "$3"} --capture-props="$1" --playback-props="$2" </dev/null';
 
+// Nothing is remembered by WirePlumber for the two ends Orbit creates
+const FORGET = " state.restore-props=false state.restore-target=false";
+
+function loopbackArgs(capture, playback, delaySeconds) {
+    const args = ["bash", "-c", LOOPBACK_SCRIPT, "orbit", capture + FORGET, playback + FORGET];
+    if (delaySeconds)
+        args.push(String(delaySeconds));
+    return args;
+}
+
+// The PC-level filter: a WirePlumber smart filter, a virtual sink that
+// WirePlumber itself slips between every app and the device. The default
+// output stays the device, so nothing in WirePlumber's saved state changes,
+// and the filter lives exactly as long as the process (above).
+// Returns an argv list, or null if anything does not check out.
 function filterArgs(address, master, deviceName) {
     const name = virtualName(address);
     if (!name || !isDeviceSink(master))
         return null;
-    // Nothing remembered by WirePlumber for these two nodes
-    const keep = " state.restore-props=false state.restore-target=false";
-    const capture = "media.class=Audio/Sink node.name=" + name + " node.description=\"" + description(deviceName) + "\"" + " filter.smart=true filter.smart.name=" + name + " filter.smart.target={ node.name = \"" + master + "\" }" + keep;
-    const playback = "node.name=" + name + ".out node.passive=true" + keep;
-    return ["bash", "-c", FILTER_SCRIPT, "orbit", capture, playback];
+    const capture = "media.class=Audio/Sink node.name=" + name + " node.description=\"" + description(deviceName) + "\"" + " filter.smart=true filter.smart.name=" + name + " filter.smart.target={ node.name = \"" + master + "\" }";
+    const playback = "node.name=" + name + ".out node.passive=true";
+    return loopbackArgs(capture, playback);
 }
 
 // Clicking the planet: with one Bluetooth audio device connected, this PC

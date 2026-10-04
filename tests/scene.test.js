@@ -5,7 +5,7 @@ const { load, eq, done } = imports.lib;
 
 const Cover = load("Cover.js", ["covered"]);
 const Orbit = load("Orbit.js", ["pick", "plan", "changes"]);
-const Physics = load("Physics.js", ["spring", "norm", "ringSlot", "beltSlot", "beltRadius", "dragTarget", "dragArm", "separate", "moving"]);
+const Physics = load("Physics.js", ["spring", "norm", "ringSlot", "beltSlot", "beltRadius", "dragTarget", "dragArm", "dropOnto", "separate", "moving"]);
 
 // Ambient motion pauses on a screen hidden behind windows (P123).
 // Made-up layout: three screens, sizes in logical pixels.
@@ -132,6 +132,15 @@ eq("a window without layout yet does not count", Cover.covered(spaces, [{ worksp
     eq("drag: over the hole it hides, never connects", Physics.dragArm(hole, true, 160, 50), { hide: true, armed: false, feed: 1 });
     eq("drag: the glow fades with distance", r(Physics.dragArm(hole, false, 150, 90).feed), 0.13);
     eq("drag: the hide reach is at least 3/4 of a body", [Physics.dragArm(hole, false, 164, 50).hide, Physics.dragArm(hole, false, 166, 50).hide], [true, false]);
+    // Listen together: a connected body dropped on another connected one
+    const mate = { px: 100, py: 50, diameter: 40, baseScale: 1, connected: true };
+    const mate2 = { px: 110, py: 50, diameter: 40, baseScale: 1, connected: true };
+    const mover = { px: 0, py: 0, connected: true };
+    eq("drop: the pointer inside a connected body's disc", [Physics.dropOnto(mover, [mover, mate], 115, 50) === mate, Physics.dropOnto(mover, [mover, mate], 125, 50)], [true, null]);
+    eq("drop: the nearest centre wins", Physics.dropOnto(mover, [mate, mate2], 108, 50) === mate2, true);
+    eq("drop: never on itself, a leaving or an unconnected body", [Physics.dropOnto(mate, [mate], 100, 50), Physics.dropOnto(mover, [Object.assign({}, mate, { leaving: true })], 100, 50), Physics.dropOnto(mover, [Object.assign({}, mate, { connected: false })], 100, 50)], [null, null, null]);
+    eq("drop: an unconnected dragged body listens to nobody", Physics.dropOnto({ connected: false }, [mate], 100, 50), null);
+    eq("drop: a smaller body (far in the ring) has a smaller disc", Physics.dropOnto(mover, [Object.assign({}, mate, { baseScale: 0.5 })], 115, 50), null);
 }
 
 done();

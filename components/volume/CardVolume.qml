@@ -24,7 +24,7 @@ TwoLevels {
     looking: seen && ready
 
     // No level of its own: say why, with the guide's link (value 10)
-    readonly property var note: ready && !deviceAudio ? {
+    readonly property var note: ready && !split && !deviceAudio ? {
         "text": "Its volume follows this PC",
         "action": "",
         "anchor": "the-two-volumes"

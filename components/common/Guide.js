@@ -47,3 +47,21 @@ function levelNote(why) {
         return "Separate PC volume is off: this device has one level, use deviceVolume";
     return "Use up, down, +5, -5 or a level from 0 to 100";
 }
+
+// Listen together could not start, or ended, by why (Together.refusal and
+// the session): never a silent refusal (value 10)
+function togetherNote(why, name) {
+    var who = name || "This device";
+    var notes = {
+        "same": { "title": "Pick two different devices", "hint": "Drag one device onto another" },
+        "bad-address": { "title": "Not a device address", "hint": "Use two addresses like AA:BB:CC:DD:EE:FF" },
+        "not-connected": { "title": who + " is not connected", "hint": "Connect it first, then drag it onto the other one" },
+        "no-audio": { "title": who + " has no sound output yet", "hint": "It does not play sound, or its audio is not ready: try again in a moment" },
+        "in-call": { "title": who + " is in call mode", "hint": "A headset on its call profile plays mono: switch it back to music first" },
+        "member-left": { "title": who + " disconnected", "hint": "Listening together ended with it" },
+        "link-stopped": { "title": "Listening together stopped", "hint": "The shared output ended: drag one device onto the other again" },
+        "none": { "title": "Nothing is shared", "hint": "Drag a connected device onto another to listen together" }
+    };
+    var n = notes[why] || notes["link-stopped"];
+    return { "title": n.title, "hint": n.hint, "anchor": "listen-together" };
+}

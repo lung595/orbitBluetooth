@@ -38,9 +38,15 @@ Item {
     readonly property PaperColors paper: PaperColors {}
     readonly property bool light: Theme.isLightMode
     readonly property color deviceColor: light ? Theme.primary : night.primary
-    // This PC's arc never passes for the device's (Palette.apart)
+    // Listening together: the second output's quarter, never a twin of the first
+    readonly property color secondColor: {
+        const c = Palette.apart(light ? Theme.secondary : night.secondary, deviceColor);
+        return Qt.rgba(c.r, c.g, c.b, 1);
+    }
+    // This PC's arc never passes for an output's (Palette.apart)
     readonly property color pcColor: {
-        const c = Palette.apart(light ? Theme.tertiary : night.tertiary, deviceColor);
+        const own = Palette.apart(light ? Theme.tertiary : night.tertiary, deviceColor);
+        const c = overlay.split ? Palette.apart(own, secondColor) : own;
         return Qt.rgba(c.r, c.g, c.b, 1);
     }
     // The glass behind the pills at the foot (the facts, the note)
@@ -87,6 +93,7 @@ Item {
         grid: true
         additive: !screenItem.light
         deviceColor: screenItem.deviceColor
+        secondColor: screenItem.secondColor
         pcColor: screenItem.pcColor
         trackColor: screenItem.light ? screenItem.paper.fg(0.16) : screenItem.night.ink(0.14)
         inkColor: screenItem.light ? screenItem.paper.ink : screenItem.night.ink(0.92)
@@ -97,6 +104,10 @@ Item {
         pcLevel: screenItem.overlay.pcLevel
         deviceMuted: screenItem.overlay.deviceMuted
         pcMuted: screenItem.overlay.pcMuted
+        split: screenItem.overlay.split
+        secondLevel: screenItem.overlay.secondLevel
+        secondMuted: screenItem.overlay.secondMuted
+        secondIcon: screenItem.overlay.secondIcon
         deviceIcon: screenItem.overlay.deviceIcon
         pcIcon: screenItem.overlay.pcIcon
         picture: screenItem.overlay.picture || null
@@ -111,6 +122,7 @@ Item {
         smartWheel: true
         numbers: true
         deviceLabel: screenItem.overlay.deviceName || "Device"
+        secondLabel: screenItem.overlay.secondName || "Device"
         onStepped: (part, dir) => {
             screenItem.overlay.stepLevel(part, dir);
             screenItem.touched();

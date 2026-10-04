@@ -1,7 +1,7 @@
 import QtQuick
 import "Polar.js" as Polar
 
-// The two moons of the scope (PolarScope): the knobs at the end of each
+// The moons of the scope (PolarScope), two (three listening together): the knobs at the end of each
 // lit arc, to drag. A muted level shows a hollow moon in the muted ink; the
 // one under the pointer, being dragged or just scrolled grows a little
 Item {
@@ -33,10 +33,19 @@ Item {
     Moon {
         visible: moons.scope.hasDevice
         radiusAt: moons.scope.outer
-        deg: Polar.end("outer", moons.scope.shownDevice)
+        deg: Polar.end(moons.scope.split ? "d1" : "outer", moons.scope.shownDevice)
         tint: moons.scope.deviceMuted ? moons.scope.mutedColor : moons.scope.deviceColor
         hollow: moons.scope.deviceMuted
         big: moons.scope.talking === "device" || moons.scope.dragging === "device" || moons.scope.pointer.hover === "device"
+    }
+    // Listening together: the second output's moon, on the right quarter
+    Moon {
+        visible: moons.scope.split
+        radiusAt: moons.scope.outer
+        deg: Polar.end("d2", moons.scope.shownSecond)
+        tint: moons.scope.secondMuted ? moons.scope.mutedColor : moons.scope.secondColor
+        hollow: moons.scope.secondMuted
+        big: moons.scope.talking === "second" || moons.scope.dragging === "second" || moons.scope.pointer.hover === "second"
     }
     Moon {
         radiusAt: moons.scope.inner

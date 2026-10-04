@@ -21,6 +21,16 @@ Item {
         x: scope.cx - scope.outer - width / 2
         y: scope.cy + 6
     }
+    // Listening together: the second output's, at the foot of the right quarter
+    DankIcon {
+        visible: scope.split
+        name: scope.secondMuted ? "volume_off" : scope.secondIcon
+        size: scope.iconSize
+        color: scope.secondMuted ? scope.mutedColor : scope.secondColor
+        rotation: -scope.rotation
+        x: scope.cx + scope.outer - width / 2
+        y: scope.cy + 6
+    }
     DankIcon {
         name: scope.pcMuted ? "volume_off" : scope.pcIcon
         size: scope.iconSize
@@ -50,10 +60,17 @@ Item {
     }
     Readout {
         radiusAt: scope.outer
-        deg: Polar.end("outer", scope.shownDevice)
+        deg: Polar.end(scope.split ? "d1" : "outer", scope.shownDevice)
         text: Math.round(Math.max(0, scope.deviceLevel) * 100) + "%"
         color: scope.deviceColor
         shown: scope.hasDevice && !scope.sideNumbers && (scope.numbers || scope.talking === "device" || scope.dragging === "device")
+    }
+    Readout {
+        radiusAt: scope.outer
+        deg: Polar.end("d2", scope.shownSecond)
+        text: Math.round(scope.secondLevel * 100) + "%"
+        color: scope.secondColor
+        shown: scope.split && !scope.sideNumbers && (scope.numbers || scope.talking === "second" || scope.dragging === "second")
     }
     Readout {
         // Inside the inner arc, so it never meets the outer moon
@@ -62,11 +79,12 @@ Item {
         deg: Polar.end("inner", scope.shownPc)
         text: Math.round(scope.pcLevel * 100) + "%"
         color: scope.pcColor
-        shown: !scope.sideNumbers && (scope.numbers || scope.talking === "pc" || scope.dragging === "pc")
+        // Split, the sides belong to the two outputs: this PC's stays here
+        shown: (!scope.sideNumbers || scope.split) && (scope.numbers || scope.talking === "pc" || scope.dragging === "pc")
     }
 
     // Beside the half circles: the device's level on the left, where its
-    // arc starts, this PC's on the right
+    // arc starts, this PC's on the right (the second output's when split)
     component SideNumber: Column {
         property real level: 0
         property bool muted: false
@@ -118,12 +136,13 @@ Item {
         lit: scope.talking === "device" || scope.dragging === "device"
     }
     SideNumber {
+        readonly property string part: scope.split ? "second" : "pc"
         visible: scope.sideNumbers
         x: scope.width - width - 6
-        level: scope.pcLevel
-        muted: scope.pcMuted
-        tint: scope.pcColor
-        label: scope.pcLabel
-        lit: scope.talking === "pc" || scope.dragging === "pc"
+        level: scope.split ? scope.secondLevel : scope.pcLevel
+        muted: scope.split ? scope.secondMuted : scope.pcMuted
+        tint: scope.split ? scope.secondColor : scope.pcColor
+        label: scope.split ? scope.secondLabel : scope.pcLabel
+        lit: scope.talking === part || scope.dragging === part
     }
 }

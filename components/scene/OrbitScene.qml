@@ -292,6 +292,32 @@ Item {
         drag.end();
     }
 
+    // --- Listen together (drop a device onto another, OrbitTogether) ----------------
+    OrbitTogether {
+        id: together
+        scene: orbitRoot
+    }
+    function togetherRelevant(b, o) {
+        return together.relevant(b, o);
+    }
+    function togetherReady(b, o) {
+        return together.ready(b, o);
+    }
+    function togetherHint(b, o) {
+        return together.hint(b, o);
+    }
+    function dropTogether(b, o) {
+        together.drop(b, o);
+    }
+    function isTogether(address) {
+        return together.isMember(address);
+    }
+    function stopTogether() {
+        together.stop();
+    }
+    // The device the dragged one is over, when dropping would be about listening together
+    property var togetherDrop: null
+
     // --- Hiding (the black hole) ---------------------------------------------------
     OrbitHidden {
         id: hidden

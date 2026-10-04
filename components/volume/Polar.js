@@ -78,12 +78,17 @@ function zone(dx, dy, outer, inner, grip, split) {
 // beside the half circles, where the percentages sit, the left one is the
 // device's and the right one this PC's; anywhere else the nearer arc wins,
 // so an arc, the icon at its foot and the gap beside it all pick one side.
-function wheelPart(dx, dy, outer, inner, sideNumbers, hasDevice) {
+// Listening together (split) cuts the outer half in two: its right quarter
+// and the room beside it belong to "second", the other output.
+function wheelPart(dx, dy, outer, inner, sideNumbers, hasDevice, split) {
     if (!hasDevice)
         return "pc";
+    const far = dx < 0 ? "device" : split ? "second" : "pc";
     if (sideNumbers && Math.abs(dx) > outer)
-        return dx < 0 ? "device" : "pc";
-    return Math.sqrt(dx * dx + dy * dy) >= (outer + inner) / 2 ? "device" : "pc";
+        return far;
+    if (Math.sqrt(dx * dx + dy * dy) < (outer + inner) / 2)
+        return "pc";
+    return split ? far : "device";
 }
 
 // One line of cava's raw ascii output ("9;35;...;9;"), `bars` values per

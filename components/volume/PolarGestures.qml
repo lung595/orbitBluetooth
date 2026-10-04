@@ -14,16 +14,21 @@ MouseArea {
     enabled: scope.interactive
     hoverEnabled: true
     preventStealing: true
-    // The part under the pointer: "device", "pc" or ""
+    // The part under the pointer: "device", "second", "pc" or ""
     property string hover: ""
     cursorShape: hover || scope.dragging ? Qt.PointingHandCursor : Qt.ArrowCursor
 
+    // The arc each part is dragged along (Polar.arc): the outer half, or its
+    // two quarters when two outputs listen together
+    function _arcOf(part) {
+        return part === "pc" ? "inner" : part === "second" ? "d2" : scope.split ? "d1" : "outer";
+    }
     function partAt(m) {
-        const z = Polar.zone(m.x - scope.cx, m.y - scope.cy, scope.outer, scope.inner, Math.max(12, scope.stroke * 3), false);
-        return z === "outer" ? (scope.hasDevice ? "device" : "") : z === "inner" ? "pc" : "";
+        const z = Polar.zone(m.x - scope.cx, m.y - scope.cy, scope.outer, scope.inner, Math.max(12, scope.stroke * 3), scope.split);
+        return z === "inner" ? "pc" : z === "d2" ? "second" : z && scope.hasDevice ? "device" : "";
     }
     function valueAt(part, m) {
-        return Polar.valueAt(part === "device" ? "outer" : "inner", m.x - scope.cx, m.y - scope.cy);
+        return Polar.valueAt(_arcOf(part), m.x - scope.cx, m.y - scope.cy);
     }
     // The icons at the feet of the half circles mute or unmute their level
     function iconAt(m) {
@@ -31,6 +36,8 @@ MouseArea {
         const footY = scope.cy + 6 + scope.iconSize / 2;
         if (scope.hasDevice && near(scope.cx - scope.outer, footY))
             return "device";
+        if (scope.split && near(scope.cx + scope.outer, footY))
+            return "second";
         return near(scope.cx - scope.inner, footY) ? "pc" : "";
     }
 
@@ -64,7 +71,7 @@ MouseArea {
     // The level a wheel notch at m changes: the side under the pointer
     // (an arc, its icon or its number), never a dead spot
     function wheelPartAt(m) {
-        return Polar.wheelPart(m.x - scope.cx, m.y - scope.cy, scope.outer, scope.inner, scope.sideNumbers, scope.hasDevice);
+        return Polar.wheelPart(m.x - scope.cx, m.y - scope.cy, scope.outer, scope.inner, scope.sideNumbers, scope.hasDevice, scope.split);
     }
 
     // Scroll: 5 % steps, or the caller's own steps (smartWheel). A notch
@@ -88,7 +95,7 @@ MouseArea {
                 scope.stepped(part, steps > 0 ? 1 : -1);
             return;
         }
-        const now = part === "device" ? scope.deviceLevel : scope.pcLevel;
+        const now = part === "device" ? scope.deviceLevel : part === "second" ? scope.secondLevel : scope.pcLevel;
         scope.moved(part, Polar.clamp01(Math.round(now * 20 + steps) / 20));
     }
 }

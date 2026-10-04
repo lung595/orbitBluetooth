@@ -16,6 +16,8 @@ Item {
     // The outer color, and the one the center blends toward
     property color color: "white"
     property color color2: "white"
+    // The right half's outer color (listening together: the second output's)
+    property color colorRight: color
     // Muted: the picture dims instead of vanishing, the sound still flows
     property bool quiet: false
     // Additive light (dark screen), or plain paint (light screen)
@@ -34,6 +36,11 @@ Item {
     }
     onVisibleChanged: if (visible)
         canvas.requestPaint()
+
+    // The color of the outer light at an angle: the left half's or the right's
+    function _side(deg) {
+        return deg < Polar.TOP ? color : colorRight;
+    }
 
     // The wave's outline: one reach per step, from left to right
     function _shape(levels) {
@@ -89,36 +96,37 @@ Item {
         function drawDots(ctx, dim) {
             const groups = 5, tones = 3;
             const paths = [];
-            for (let g = 0; g < groups * tones; g++)
+            for (let g = 0; g < groups * tones * 2; g++)
                 paths.push([]);
             for (let i = 0; i < vis.model.dots.length; i++) {
                 const p = vis.model.dots[i];
                 const fade = (1 - p.life) * (1 - p.life);
                 const g = Math.min(groups - 1, Math.floor(fade * groups));
                 const tone = Math.min(tones - 1, Math.floor(p.dist / Math.max(0.001, vis.model.radiusFor(1)) * tones));
-                paths[tone * groups + g].push(p);
+                paths[((p.deg < Polar.TOP ? 0 : 1) * tones + tone) * groups + g].push(p);
             }
-            for (let tone = 0; tone < tones; tone++) {
-                const c = mix(vis.color2, vis.color, tone / (tones - 1));
-                for (let g = 0; g < groups; g++) {
-                    const list = paths[tone * groups + g];
-                    if (!list.length)
-                        continue;
-                    const a = (g + 0.5) / groups * dim;
-                    // A soft halo first, then the bright core
-                    for (let pass = 0; pass < 2; pass++) {
-                        ctx.beginPath();
-                        for (let i = 0; i < list.length; i++) {
-                            const p = list[i];
-                            const at = xy(p.deg, p.dist * vis.radius * (1 + 0.14 * p.life));
-                            const r = pass === 0 ? p.size * 1.9 : p.size * 0.62;
-                            ctx.moveTo(at[0] + r, at[1]);
-                            ctx.arc(at[0], at[1], r, 0, Math.PI * 2);
-                        }
-                        ctx.fillStyle = rgba(c, pass === 0 ? a * 0.16 : a);
-                        ctx.fill();
-                    }
+            for (let half = 0; half < 2; half++)
+                for (let tone = 0; tone < tones; tone++) {
+                    const c = mix(vis.color2, half === 0 ? vis.color : vis.colorRight, tone / (tones - 1));
+                    for (let g = 0; g < groups; g++)
+                        fillDots(ctx, paths[(half * tones + tone) * groups + g], c, (g + 0.5) / groups * dim);
                 }
+        }
+        // One group of dots: a soft halo first, then the bright core
+        function fillDots(ctx, list, c, a) {
+            if (!list.length)
+                return;
+            for (let pass = 0; pass < 2; pass++) {
+                ctx.beginPath();
+                for (let i = 0; i < list.length; i++) {
+                    const p = list[i];
+                    const at = xy(p.deg, p.dist * vis.radius * (1 + 0.14 * p.life));
+                    const r = pass === 0 ? p.size * 1.9 : p.size * 0.62;
+                    ctx.moveTo(at[0] + r, at[1]);
+                    ctx.arc(at[0], at[1], r, 0, Math.PI * 2);
+                }
+                ctx.fillStyle = rgba(c, pass === 0 ? a * 0.16 : a);
+                ctx.fill();
             }
         }
 
@@ -134,13 +142,14 @@ Item {
                 const from = xy(angles[k], base), to = xy(angles[k], end);
                 const grad = ctx.createLinearGradient(from[0], from[1], to[0], to[1]);
                 grad.addColorStop(0, rgba(vis.color2, 0.25 * dim));
-                grad.addColorStop(1, rgba(mix(vis.color2, vis.color, v), 0.95 * dim));
+                const tint = vis._side(angles[k]);
+                grad.addColorStop(1, rgba(mix(vis.color2, tint, v), 0.95 * dim));
                 for (let pass = 0; pass < 2; pass++) {
                     ctx.beginPath();
                     ctx.moveTo(from[0], from[1]);
                     ctx.lineTo(to[0], to[1]);
                     ctx.lineWidth = pass === 0 ? w * 2.6 : w;
-                    ctx.strokeStyle = pass === 0 ? rgba(vis.color, 0.07 * dim * (0.3 + v)) : grad;
+                    ctx.strokeStyle = pass === 0 ? rgba(tint, 0.07 * dim * (0.3 + v)) : grad;
                     ctx.stroke();
                 }
                 // The peak mark, a short tick across the ray
@@ -148,7 +157,7 @@ Item {
                 const at = xy(angles[k], pk);
                 ctx.beginPath();
                 ctx.arc(at[0], at[1], w * 0.5, 0, Math.PI * 2);
-                ctx.fillStyle = rgba(vis.color, 0.9 * dim);
+                ctx.fillStyle = rgba(tint, 0.9 * dim);
                 ctx.fill();
             }
         }
@@ -165,6 +174,16 @@ Item {
                 ctx.quadraticCurveTo(pts[s][0], pts[s][1], (pts[s][0] + pts[s + 1][0]) / 2, (pts[s][1] + pts[s + 1][1]) / 2);
             const last = pts[pts.length - 1];
             ctx.lineTo(last[0], last[1]);
+        }
+        // The outline's ink: one color, or, listening together, the first
+        // output's on the left turning into the second's on the right
+        function lineInk(ctx, dim) {
+            if (Qt.colorEqual(vis.colorRight, vis.color))
+                return rgba(vis.color, 0.9 * dim);
+            const grad = ctx.createLinearGradient(vis.centerX - vis._r, 0, vis.centerX + vis._r, 0);
+            grad.addColorStop(0.42, rgba(vis.color, 0.9 * dim));
+            grad.addColorStop(0.58, rgba(vis.colorRight, 0.9 * dim));
+            return grad;
         }
         function drawWaves(ctx, dim) {
             ctx.lineJoin = "round";
@@ -183,7 +202,7 @@ Item {
                 outline(ctx, shape, 1);
                 // A thin line over a faint, wider glow
                 ctx.lineWidth = pass === 0 ? Math.max(3, vis._r * 0.035) : 1.25;
-                ctx.strokeStyle = rgba(vis.color, (pass === 0 ? 0.08 : 0.9) * dim);
+                ctx.strokeStyle = pass === 0 ? rgba(vis.color, 0.08 * dim) : lineInk(ctx, dim);
                 ctx.stroke();
             }
         }

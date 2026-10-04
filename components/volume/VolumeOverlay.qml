@@ -248,6 +248,15 @@ TwoLevels {
         }
     }
     Connections {
+        target: root.secondAudio
+        function onVolumeChanged() {
+            root.poke();
+        }
+        function onMutedChanged() {
+            root.poke();
+        }
+    }
+    Connections {
         target: root.pcAudio
         function onVolumeChanged() {
             root.poke();

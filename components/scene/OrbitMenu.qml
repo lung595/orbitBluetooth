@@ -5,7 +5,8 @@ import "../card"
 import "../noise/Anc.js" as Anc
 
 // Right-click menu of an orbiting device: connect/disconnect, the headset's
-// noise-control modes when it has them, "Hide" (into the black hole) and
+// noise-control modes when it has them, "Stop together" for a device that
+// listens together with another, "Hide" (into the black hole) and
 // "Forget" (unpair), which asks for a second click.
 // It lives inside the scene (no extra window) and closes on any choice,
 // a click elsewhere or Escape.
@@ -49,6 +50,12 @@ Item {
                     "checked": info?.state?.mode === m
                 });
         }
+        if (scene.isTogether(b.address))
+            list.push({
+                "id": "separate",
+                "icon": "call_split",
+                "label": "Stop together"
+            });
         list.push({
             "id": "hide",
             "icon": "visibility_off",
@@ -100,6 +107,8 @@ Item {
             scene.startDisconnect(b);
         else if (id === "cancel")
             scene.cancelConnect(b);
+        else if (id === "separate")
+            scene.stopTogether();
         else if (id === "hide")
             scene.hideBody(b);
         else if (id === "forget")
@@ -155,9 +164,9 @@ Item {
                     radius: 10
                     color: danger && menu.confirmForget ? Theme.withAlpha(Theme.error, 0.16) : itemArea.containsMouse ? menu.paper.fg(0.08) : "transparent"
 
-                    // A hairline before "Hide" and before the first mode
+                    // A hairline before "Stop together" or "Hide" (once) and before the first mode
                     Rectangle {
-                        visible: index > 0 && (modelData.id === "hide" || (modelData.id.startsWith("anc:") && !menu.entries[index - 1].id.startsWith("anc:")))
+                        visible: index > 0 && (modelData.id === "separate" || (modelData.id === "hide" && menu.entries[index - 1].id !== "separate") || (modelData.id.startsWith("anc:") && !menu.entries[index - 1].id.startsWith("anc:")))
                         x: 8
                         width: parent.width - 16
                         height: 1
