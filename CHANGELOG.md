@@ -3,6 +3,19 @@
 All notable changes to Orbit Bluetooth are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.13.3 - 2026-10-04
+
+### Changed
+
+- Code only, nothing changes on screen: the hit test that tells which device is under a point moved from `OrbitScene` (404 → 393 lines) to `OrbitWorld`, which owns the devices.
+- The daemon's `dms ipc call orbitBluetooth` commands moved into `components/common/OrbitIpc.qml`. No behaviour change.
+- Internal: the noise-control service's snapshot merging moved to `AncSnapshot.js` (pure, tested); no behaviour change.
+- The pairing steps of the new-device pop-up (pair, key-press check, connect, time-out, demo script) moved out of `NewDeviceWatch.qml` into `PairingFlow.qml`. No behaviour change.
+
+### Fixed
+
+- The DMS journal no longer fills with a QML warning ("depends on non-bindable properties") each time the Dank Island opens its volume face. The island's click-away layer is now looked up once, when the face first holds it, instead of through a binding on a list that cannot be bound. Nothing changes on screen. The lookup lives in `ClickAwayHold` (one role: that layer), and an unused import is gone from `IslandFace`.
+
 ## 1.13.2 - 2026-10-04
 
 ### Changed

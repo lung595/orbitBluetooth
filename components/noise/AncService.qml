@@ -3,6 +3,7 @@ import Quickshell.Bluetooth
 import Quickshell.Io
 import qs.Common
 import "Anc.js" as Anc
+import "AncSnapshot.js" as Snapshot
 
 // Runs the Python helper (anc/orbit_anc.py) that speaks each headset's
 // vendor protocol, and publishes what it reports to every surface.
@@ -62,12 +63,7 @@ Item {
     }
 
     function _setState(address, value) {
-        const next = Object.assign({}, snapshots);
-        if (value)
-            next[address] = value;
-        else
-            delete next[address];
-        snapshots = next;
+        snapshots = Snapshot.put(snapshots, address, value || null);
         publish(snapshots);
     }
 
@@ -89,9 +85,7 @@ Item {
                 "ORBIT_ANC_NAME": deviceFor(address).deviceName || deviceFor(address).name || ""
             }
         });
-        const next = Object.assign({}, _sessions);
-        next[address] = proc;
-        _sessions = next;
+        _sessions = Snapshot.put(_sessions, address, proc);
         return proc;
     }
 
@@ -110,11 +104,8 @@ Item {
     }
 
     function watch(address, on) {
-        const next = Object.assign({}, _viewers);
-        next[address] = Math.max(0, (next[address] || 0) + (on ? 1 : -1));
-        if (!next[address])
-            delete next[address];
-        _viewers = next;
+        const count = Math.max(0, (_viewers[address] || 0) + (on ? 1 : -1));
+        _viewers = Snapshot.put(_viewers, address, count || null);
         _sync(address);
     }
 
@@ -129,19 +120,11 @@ Item {
             proc.write(line);
         } else {
             // Only one connection per headset: wait for the closing one
-            const q = Object.assign({}, _queue);
-            q[address] = (q[address] || []).concat([line]);
-            _queue = q;
+            _queue = Snapshot.put(_queue, address, (_queue[address] || []).concat([line]));
         }
-        // Optimistic update so the UI answers instantly; the helper confirms
-        const cur = snapshots[address];
-        if (cur && cur.state) {
-            const st = Object.assign({}, cur.state);
-            st[key] = key === "ambient" ? parseInt(value) : (key === "voice" || key === "chat") ? value === "on" : value;
-            _setState(address, Object.assign({}, cur, {
-                "state": st
-            }));
-        }
+        const updated = Snapshot.withSetting(snapshots[address], key, value);
+        if (updated)
+            _setState(address, updated);
         _release(address);
         return true;
     }
@@ -161,18 +144,14 @@ Item {
             device.disconnect();
             return;
         }
-        const next = Object.assign({}, _leaving);
-        next[address] = true;
-        _leaving = next;
+        _leaving = Snapshot.put(_leaving, address, true);
         leaveTimer.restart();
     }
 
     function _finishLeaving(address) {
         if (!_leaving[address])
             return;
-        const next = Object.assign({}, _leaving);
-        delete next[address];
-        _leaving = next;
+        _leaving = Snapshot.put(_leaving, address, null);
         const device = deviceFor(address);
         if (device && device.connected)
             device.disconnect();
@@ -232,45 +211,15 @@ Item {
     }
 
     function _onLine(address, line) {
-        let msg;
-        try {
-            msg = JSON.parse(line);
-        } catch (e) {
-            return;
-        }
-        const prev = snapshots[address] || {};
-        const next = Object.assign({}, prev, msg, {
-            "live": msg.status !== "error",
-            "at": Date.now()      // freshness of battery/charging readings
-        });
-        // Some headsets cannot report every mode when asked (the XM6 reads
-        // "noise cancelling" and "off" alike): an unknown mode keeps the
-        // last one we set or were notified of.
-        if (msg.state && msg.state.mode === null && prev.state && prev.state.mode)
-            next.state = Object.assign({}, msg.state, {
-                "mode": prev.state.mode
-            });
-        // A command waiting for the next session: the closing one has not
-        // seen it, so its settings are stale and must not undo what the UI
-        // already shows (the mode would flash back, e.g. Silence -> Off ->
-        // Silence). Its battery readings are still fresh.
-        if ((_queue[address] || []).length && msg.state && prev.state)
-            next.state = Object.assign({}, msg.state, {
-                "mode": prev.state.mode,
-                "ambient": prev.state.ambient,
-                "voice": prev.state.voice,
-                "chat": prev.state.chat
-            });
-        _setState(address, next);
+        const next = Snapshot.merge(snapshots[address], line, (_queue[address] || []).length > 0, Date.now());
+        if (next)
+            _setState(address, next);
     }
 
     function _onExit(proc) {
         const address = proc.address;
-        if (_sessions[address] === proc) {
-            const next = Object.assign({}, _sessions);
-            delete next[address];
-            _sessions = next;
-        }
+        if (_sessions[address] === proc)
+            _sessions = Snapshot.put(_sessions, address, null);
         const prev = snapshots[address];
         if (prev)
             _setState(address, Object.assign({}, prev, {
@@ -279,9 +228,7 @@ Item {
         proc.destroy();
         _finishLeaving(address);
         const queued = _queue[address] || [];
-        const q = Object.assign({}, _queue);
-        delete q[address];
-        _queue = q;
+        _queue = Snapshot.put(_queue, address, null);
         // After an error, stay quiet until the user asks again (no retry loop)
         if (prev && prev.status === "error")
             return;

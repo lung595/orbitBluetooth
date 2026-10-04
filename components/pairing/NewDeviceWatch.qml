@@ -1,6 +1,5 @@
 import QtQuick
 import Quickshell
-import Quickshell.Bluetooth
 import Quickshell.Wayland
 import qs.Services
 import "../device/DeviceCatalog.js" as Catalog
@@ -81,18 +80,14 @@ Item {
         onQueued: root._showNext()
     }
 
-    function _family(d) {
-        return Catalog.families[Catalog.resolve(d, ({}))] || "";
-    }
-
     // --- The pop-up --------------------------------------------------------------
     property string current: ""
-    // "offer", "pairing", "connecting", "done" or "failed"
-    property string phase: "offer"
+    // The pairing steps (PairingFlow): "offer", "pairing", "confirm", "connecting", "done" or "failed"
+    property alias phase: flow.phase
     property bool shown: false
     property var _screen: null
     // Why the last pairing failed (newDeviceStatus), "" otherwise
-    property string lastError: ""
+    property alias lastError: flow.lastError
     // A name typed in the sheet before connecting, applied once connected
     property string pendingName: ""
     // The pointer is over the sheet (set by NewDeviceWindow): nothing closes meanwhile
@@ -127,21 +122,6 @@ Item {
         return "OK";
     }
 
-    Timer {
-        id: demoStep
-        interval: 1100
-        onTriggered: {
-            if (root.phase === "pairing") {
-                // The demo has no real device to check: it moves on itself
-                root.demoDevice.paired = true;
-                root.phase = "connecting";
-                restart();
-            } else if (root.phase === "connecting") {
-                root.demoDevice.connected = true;
-            }
-        }
-    }
-
     function _showNext() {
         if (current || asleep || fullscreen)
             return;
@@ -155,7 +135,7 @@ Item {
     function _openOn(address) {
         const top = ToplevelManager.activeToplevel;
         _screen = top && top.screens && top.screens.length ? top.screens[0] : Quickshell.screens[0];
-        phase = "offer";
+        flow.reset();
         pendingName = "";
         current = address;
         showDelay.restart();
@@ -168,9 +148,8 @@ Item {
     }
 
     function close() {
-        _dropUnconfirmed();
+        flow.release();
         shown = false;
-        connectTimeout.stop();
         if (_ancWatching && anc)
             anc.watch(current, false);
         _ancWatching = false;
@@ -204,136 +183,35 @@ Item {
         close();
     }
 
-    // Same path as dragging a device into the orbit (OrbitScene.startConnect)
+    PairingFlow {
+        id: flow
+        current: root.current
+        device: root.device
+        demo: root._demo
+        demoDevice: root.demoDevice
+        onArrived: {
+            // The name typed in the sheet becomes the BlueZ alias, like a
+            // rename in the detail card
+            if (root.pendingName && root.pendingName !== Catalog.deviceName(root.device))
+                root.device.name = root.pendingName;
+            // Ask the headset for its modes, for the selector in the sheet
+            if (root.anc && !root._demo && Anc.family(Catalog.modelName(root.device))) {
+                root.anc.watch(root.current, true);
+                root._ancWatching = true;
+            }
+        }
+    }
+
     function connect() {
-        const d = device;
-        if (!d)
-            return;
-        const address = current;
-        lastError = "";
-        connectTimeout.restart();
-        _checked = false;
-        if (_demo) {
-            phase = "pairing";
-            demoStep.restart();
-            return;
-        }
-        if (d.paired || d.bonded) {
-            // Paired before, from here or DMS: the user already chose it
-            _checked = true;
-            phase = "connecting";
-            BluetoothService.connectDeviceWithTrust(d);
-            return;
-        }
-        phase = "pairing";
-        BluetoothService.pairDevice(d, res => {
-            if (root.current !== address || (root.phase !== "pairing" && root.phase !== "connecting"))
-                return;
-            if (res && res.error) {
-                root.lastError = String(res.error);
-                // A fixed line: the error text may carry a device name or address (value 11)
-                console.warn("orbitBluetooth: pairing failed while " + root.phase);
-                root.phase = "failed";
-                connectTimeout.stop();
-                return;
-            }
-            root._checkThenConnect(d, address);
-        });
+        flow.connect();
     }
-
-    // Trust only after checking it cannot also type (P115)
-    function _checkThenConnect(d, address) {
-        profileCheck.check(d, _family(d), verdict => {
-            if (root.current !== address)
-                return;
-            if (verdict === "input") {
-                // Blocked by ProfileCheck until the user answers in the sheet
-                root.phase = "confirm";
-                connectTimeout.stop();
-            } else if (verdict === "refused") {
-                root.lastError = "could not check";
-                root.phase = "failed";
-                connectTimeout.stop();
-            } else if (root.phase === "pairing" || root.phase === "confirm") {
-                root.phase = "connecting";
-                if (d.connected)
-                    root._connected();
-                else
-                    BluetoothService.connectDeviceWithTrust(d);
-            } else if (root.phase === "done") {
-                root._checked = true;
-            }
-        });
-    }
-
-    // "Pair anyway": the user knows this headset sends its buttons as keys
     function confirmInput() {
-        const d = device;
-        if (phase !== "confirm" || !d)
-            return;
-        profileCheck.allow(d);
-        _checked = true;
-        phase = "connecting";
-        connectTimeout.restart();
-        BluetoothService.connectDeviceWithTrust(d);
-    }
-
-    // Leaving the question unanswered means no: the device is forgotten
-    function _dropUnconfirmed() {
-        if (phase === "confirm" && device && !_demo)
-            profileCheck.deny(device);
+        flow.confirmInput();
     }
 
     function cancel() {
-        demoStep.stop();
-        _dropUnconfirmed();
-        const d = device;
-        if (d) {
-            if (d.pairing)
-                d.cancelPair();
-            d.disconnect();
-        }
+        flow.abort();
         later();
-    }
-
-    // Connected after the check: Bluetooth LE lists its profiles only once
-    // connected, so look once more (it may still turn out to type)
-    property bool _checked: false
-    function _connected() {
-        phase = "done";
-        connectTimeout.stop();
-        if (!_checked && !_demo)
-            _checkThenConnect(device, current);
-        // The name typed in the sheet becomes the BlueZ alias, like a
-        // rename in the detail card
-        if (pendingName && pendingName !== Catalog.deviceName(device))
-            device.name = pendingName;
-        // Ask the headset for its modes, for the selector in the sheet
-        if (anc && !_demo && Anc.family(Catalog.modelName(device))) {
-            anc.watch(current, true);
-            _ancWatching = true;
-        }
-    }
-
-    Connections {
-        target: root.device
-        function onConnectedChanged() {
-            if (root.device.connected && root.phase === "connecting")
-                root._connected();
-        }
-        // Stay in "pairing" until ProfileCheck has run: it moves to "connecting"
-        function onPairedChanged() {
-        }
-    }
-
-    // Pairing waits for the user in DMS's pairing dialog: be patient
-    Timer {
-        id: connectTimeout
-        interval: 45000
-        onTriggered: if (root.phase === "pairing" || root.phase === "connecting") {
-            root.lastError = "timed out in " + root.phase;
-            root.phase = "failed";
-        }
     }
 
     // Long enough to read the battery and pick a mode, then it folds back
@@ -353,8 +231,4 @@ Item {
     }
 
     Component.onDestruction: scan.stop()
-
-    ProfileCheck {
-        id: profileCheck
-    }
 }

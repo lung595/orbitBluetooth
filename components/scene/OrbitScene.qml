@@ -331,17 +331,6 @@ Item {
         menu.popup(b, point);
     }
 
-    // A device drawn under this scene point, if any (devices passing behind
-    // the core still get their clicks)
-    function bodyAt(x, y) {
-        for (let i = 0; i < worldItem.bodies.count; i++) {
-            const b = worldItem.bodies.itemAt(i);
-            if (b && !b.leaving && Math.hypot(x - b.px, y - b.py) < b.diameter * b.baseScale / 2)
-                return b;
-        }
-        return null;
-    }
-
     // --- Focus and rename (the detail card) ----------------------------------
     property bool renaming: false
     OrbitFocus {

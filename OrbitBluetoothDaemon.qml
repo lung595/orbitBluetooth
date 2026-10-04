@@ -9,8 +9,6 @@ import "components/noise"
 import "components/pairing"
 import "components/volume"
 import "components/common/Address.js" as Address
-import "components/common/Guide.js" as Guide
-import "components/noise/Anc.js" as Anc
 
 // Event-driven bookkeeping shared by every surface. BlueZ exposes neither a
 // connection timestamp, a charging state nor a discharge rate, so we record
@@ -125,107 +123,13 @@ Item {
         }
     }
 
-    // dms ipc call orbitBluetooth anc nc | ambient | off | adaptive
-    // dms ipc call orbitBluetooth deviceVolume | pcVolume up | down | +5 | -5 | 40
-    // dms ipc call orbitBluetooth volume up | down   (smart steps, D264)
-    // dms ipc call orbitBluetooth hidden | unhideAll
-    // dms ipc call orbitBluetooth newDeviceDemo | newDeviceStatus
-    IpcHandler {
-        target: "orbitBluetooth"
-
-        // Shows the new-device pop-up with a made-up headset
-        function newDeviceDemo(): string {
-            return newDeviceWatch.demo();
-        }
-
-        // Why the pop-up's last background scan was skipped, if it was
-        function newDeviceStatus(): string {
-            return JSON.stringify({
-                "enabled": newDeviceWatch.offering,
-                "backgroundScan": newDeviceWatch.prefs.offerScan,
-                "lastScan": newDeviceWatch.lastSkip ? "skipped: " + newDeviceWatch.lastSkip : "ran",
-                "showing": newDeviceWatch.current,
-                "phase": newDeviceWatch.current ? newDeviceWatch.phase : "",
-                "lastError": newDeviceWatch.lastError
-            });
-        }
-
-        function anc(mode: string): string {
-            const address = ancService.primary();
-            if (!address)
-                return "No supported headset connected · " + Guide.url("noise-control");
-            if (Anc.ORDER.indexOf(mode) < 0)
-                return "Modes: " + Anc.ORDER.join(", ") + " · " + Guide.url("noise-control");
-            ancService.send(address, "mode", mode);
-            return "OK";
-        }
-
-        // Next mode on the first connected headset (off is skipped when possible)
-        function ancCycle(): string {
-            const address = ancService.primary();
-            if (!address)
-                return "No supported headset connected · " + Guide.url("noise-control");
-            ancService.cycle(address);
-            return "OK";
-        }
-
-        // The level inside the Bluetooth device in use (absolute volume)
-        function deviceVolume(level: string): string {
-            const why = audioRoute.setLevel("device", level, "");
-            return why ? Guide.levelNote(why) + " · " + Guide.url("the-two-volumes") : "OK";
-        }
-
-        // What this PC sends to it (or to the current output with no device)
-        function pcVolume(level: string): string {
-            const why = audioRoute.setLevel("pc", level, "");
-            return why ? Guide.levelNote(why) + " · " + Guide.url("the-two-volumes") : "OK";
-        }
-
-        // The level heard: the device's own when it has one, else this PC's.
-        // Bound to the volume keys, a slow press is 1 %, a fast run speeds up
-        // Binds the volume keys to Orbit's smart steps ("on"), gives them
-        // back to DMS ("off"), or tells what they do now ("status")
-        function volumeKeys(arg: string): string {
-            const a = String(arg || "").trim().toLowerCase();
-            if (a === "on")
-                keyBinder.enable();
-            else if (a === "off")
-                keyBinder.disable();
-            else if (a !== "status")
-                return "Use: volumeKeys on | off | status · " + Guide.url("volume-keys");
-            return a === "status" ? keyBinder.keys : "OK";
-        }
-
-        function volume(direction: string): string {
-            const d = String(direction || "").trim().toLowerCase();
-            if (d !== "up" && d !== "down")
-                return "Use: volume up | down · " + Guide.url("smart-volume-steps");
-            const why = audioRoute.stepHeard(d === "up" ? 1 : -1);
-            return why ? Guide.levelNote(why) + " · " + Guide.url("the-two-volumes") : "OK";
-        }
-
-        // Names of the devices hidden in the black hole, one per line
-        function hidden(): string {
-            const map = prefs.hiddenDevices;
-            const names = Object.keys(map).map(a => map[a] + " (" + a + ")");
-            return names.length ? names.join("\n") : "No hidden devices";
-        }
-
-        // Brings every hidden device back into the orbit
-        function unhideAll(): string {
-            prefs.set("hiddenDevices", ({}));
-            return "OK";
-        }
-
-        function ancStatus(): string {
-            const address = ancService.primary();
-            const s = ancService.snapshots[address];
-            if (!address)
-                return "No supported headset connected · " + Guide.url("noise-control");
-            if (!s || !s.state)
-                return "Unknown (open the headset card once, or use the always-connected engine) · " + Guide.url("noise-control");
-            return JSON.stringify(s.state);
-        }
+    // The commands of `dms ipc call orbitBluetooth` (OrbitIpc)
+    OrbitIpc {
+        ancService: ancService
+        route: audioRoute
+        keys: keyBinder
+        newDevices: newDeviceWatch
+        prefs: prefs
     }
 
     function _publish(name, value) {

@@ -31,4 +31,31 @@ eq("next skips off", Anc.nextMode(["nc", "ambient", "off"], "ambient"), "nc");
 eq("next from unknown", Anc.nextMode(["nc", "ambient", "off"], null), "nc");
 eq("next with only on/off", Anc.nextMode(["nc", "off"], "nc"), "off");
 
+
+// Helper reports merged into the snapshot (AncSnapshot.js)
+const Snap = load("AncSnapshot.js", ["merge", "withSetting", "put"]);
+const prev = { state: { mode: "nc", ambient: 5, voice: false, chat: true }, battery: 1 };
+const line = (o) => JSON.stringify(o);
+eq("merge: not JSON", Snap.merge(prev, "oops", false, 1), null);
+eq("merge: live and time", Snap.merge(null, line({ status: "ok" }), false, 7), { status: "ok", live: true, at: 7 });
+eq("merge: error is not live", Snap.merge(prev, line({ status: "error" }), false, 7).live, false);
+eq("merge: unknown mode keeps ours", Snap.merge(prev, line({ state: { mode: null, ambient: 9 } }), false, 1).state, { mode: "nc", ambient: 9 });
+eq("merge: pending keeps settings", Snap.merge(prev, line({ state: { mode: "off", ambient: 9, voice: true, chat: false, x: 1 } }), true, 1).state, { mode: "nc", ambient: 5, voice: false, chat: true, x: 1 });
+eq("merge: not pending takes report", Snap.merge(prev, line({ state: { mode: "off" } }), false, 1).state, { mode: "off" });
+eq("merge: keeps other fields", Snap.merge(prev, line({ state: { mode: "off" } }), false, 1).battery, 1);
+
+// Optimistic command echo
+eq("withSetting: no state", Snap.withSetting({}, "mode", "off"), null);
+eq("withSetting: mode", Snap.withSetting(prev, "mode", "off").state.mode, "off");
+eq("withSetting: ambient int", Snap.withSetting(prev, "ambient", "12").state.ambient, 12);
+eq("withSetting: chat bool", Snap.withSetting(prev, "chat", "off").state.chat, false);
+eq("withSetting: keeps old", prev.state.mode, "nc");
+
+// Copy-on-write map updates
+const map = { a: 1 };
+eq("put: adds without touching the old map", Snap.put(map, "b", 2), { a: 1, b: 2 });
+eq("put: old map unchanged", map, { a: 1 });
+eq("put: null removes", Snap.put(map, "a", null), {});
+eq("put: falsy values are kept", Snap.put(map, "z", 0), { a: 1, z: 0 });
+
 done();
