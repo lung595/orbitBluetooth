@@ -4,7 +4,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const P = load("Perspective.js", ["PITCH", "FLAT", "REACH", "MID", "FIELDS", "lerp", "copy", "distance", "size", "haze", "depthAt", "flat"]);
+const P = load("Perspective.js", ["PITCH", "FLAT", "REACH", "MID", "FIELDS", "lerp", "copy", "distance", "size", "haze", "lean", "depthAt", "flat"]);
 
 const near = v => Math.round(v * 1000) / 1000;
 
@@ -34,6 +34,9 @@ eq("haze: the further the darker, in both views", [0, 1].map(p => [-1, -0.5, 0, 
 eq("haze: a nearest body is never dimmed", [P.haze(1, 0), P.haze(1, 0.5), P.haze(1, 1)], [1, 1, 1]);
 
 // --- a body that has no slot -----------------------------------------------------
+eq("lean: the scene's own view leaves the belt as it is, at any depth", [-1, 0, 1].map(d => P.lean(d, 0)), [1, 1, 1]);
+eq("lean: in the profile view it is the size's share of its middle line, so the near side of the belt is bigger and the far side smaller", [-1, 0, 1].map(d => near(P.lean(d, 1))), [near(0.6 / P.MID), 1, near(1 / P.MID)]);
+eq("lean: half way in is half way between", near(P.lean(1, 0.5)), near((1 + 1 / P.MID) / 2));
 eq("depthAt: on the middle line it is 0, at the bottom of the belt 1, at the top -1", [P.depthAt(g, g.cy), P.depthAt(g, g.cy + g.ry), P.depthAt(g, g.cy - g.ry)], [0, 1, -1]);
 eq("depthAt: lower on the screen is nearer, and it stays in -1..1 off the belt", [P.depthAt(g, g.cy + g.ry / 2), P.depthAt(g, g.cy + g.ry * 5), P.depthAt(g, g.cy - g.ry * 5)], [0.5, 1, -1]);
 eq("depthAt: a flat belt reads the same way", P.depthAt({ cy: 100, ry: 0 }, 100.5), 0.5);

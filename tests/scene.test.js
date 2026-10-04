@@ -5,7 +5,7 @@ const { load, eq, done } = imports.lib;
 
 const Cover = load("Cover.js", ["covered"]);
 const Orbit = load("Orbit.js", ["pick", "plan", "changes"]);
-const Physics = load("Physics.js", ["spring", "norm", "ringSlot", "beltSlot", "beltRadius", "dragTarget", "dragArm", "dropRadius", "dropOnto", "separate", "moving"]);
+const Physics = load("Physics.js", ["spring", "norm", "ringSlot", "beltSlot", "beltRadius", "dragTarget", "dragArm", "HIT_MIN", "hitDiameter", "dropRadius", "dropOnto", "separate", "moving"]);
 
 // Ambient motion pauses on a screen hidden behind windows (P123).
 // Made-up layout: three screens, sizes in logical pixels.
@@ -154,6 +154,9 @@ eq("a window without layout yet does not count", Cover.covered(spaces, [{ worksp
     eq("drop: twice the disc's radius once past the floor", [Physics.dropRadius(big), Physics.dropRadius(Object.assign({}, big, { baseScale: 0.5 }))], [200, 100]);
     eq("drop: a smaller body (far in the ring) has a smaller zone", [Physics.dropOnto(mover, [big], 240, 50) === big, Physics.dropOnto(mover, [Object.assign({}, big, { baseScale: 0.5 })], 240, 50)], [true, null]);
     eq("drop: a tiny planet keeps the 60 px floor", [Physics.dropRadius(Object.assign({}, mate, { diameter: 10 })), Physics.dropRadius(Object.assign({}, mate, { diameter: 10, baseScale: 0.2 }))], [60, 60]);
+    // The zone a click lands in (D297)
+    eq("hit: at least 28 px, however small the disc is drawn", [Physics.HIT_MIN, Physics.hitDiameter({ diameter: 51, baseScale: 0.2 }), Physics.hitDiameter({ diameter: 20, baseScale: 0.3 })], [28, 51, 28]);
+    eq("hit: as wide as the disc when it is drawn wider than the body", [Physics.hitDiameter({ diameter: 51, baseScale: 1.2 }), Physics.hitDiameter({ diameter: 51, baseScale: 1 })], [51 * 1.2, 51]);
 }
 
 done();

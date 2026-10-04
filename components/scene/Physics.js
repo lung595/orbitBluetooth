@@ -100,6 +100,15 @@ function dragArm(g, holding, x, y) {
     };
 }
 
+// A body is caught within a disc of at least HIT_MIN px however small it is
+// drawn, so a planet far away in the profile view is as easy to click as a near
+// one (D297); wider when it is drawn wider (the source of a group)
+var HIT_MIN = 28;
+
+function hitDiameter(o) {
+    return Math.max(HIT_MIN, o.diameter * Math.max(1, o.baseScale));
+}
+
 // A drop lands within twice a disc's radius of its centre, and never closer
 // than DROP_MIN scene pixels, so a small planet far in the ring is as easy to
 // hit as a big one (D294)

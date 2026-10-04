@@ -4,7 +4,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const C = load("Centre.js", ["PERIOD", "MAX_SHIFT", "GROUP_SIZE", "TILT", "clamp01", "ease", "approach", "grow", "sizes", "labelOffset", "groupAt", "away", "phaseAt", "copySlot", "depthSize", "parallax", "copiesOf", "roleOf", "label", "pulse"]);
+const C = load("Centre.js", ["PERIOD", "MAX_SHIFT", "GROUP_SIZE", "TILT", "clamp01", "ease", "approach", "grow", "sizes", "labelOffset", "groupAt", "bodyZ", "away", "phaseAt", "copySlot", "depthSize", "parallax", "copiesOf", "roleOf", "label", "pulse"]);
 const V = load("MasterVolume.js");
 const P = load("Perspective.js", ["FLAT", "size"]);
 
@@ -65,6 +65,14 @@ eq("orbit: with the clock stopped the angles stay put", [C.copySlot(R, centre, 1
 const back = C.groupAt(g, 1, slot);
 eq("orbit: a group that stepped back has a smaller orbit around its new centre", [Math.hypot(C.copySlot(R, back, 0, 2, 0).x - back.x, 0) < R, C.copySlot(R, back, 0, 2, 0).x > back.x], [true, true]);
 eq("orbit: far side is a little smaller, never tiny", [C.depthSize(1), C.depthSize(0), C.depthSize(-1) >= 0.7], [1, 0.85, true]);
+
+// --- the stacking order ---------------------------------------------------------
+const body = (o) => Object.assign({ py: 200, depth: 0, inSlot: false, role: "" }, o);
+eq("z: out of a group the far half of the ring passes behind the core, the rest sorts by height", [C.bodyZ(body({ inSlot: true, depth: -0.5 }), false, 0), C.bodyZ(body({ inSlot: true, depth: 0.5 }), false, 0), C.bodyZ(body({}), false, 0)], [10 + 2, 300, 300]);
+eq("z: in a group everything sorts by height, the far half of the ring included, so the host (100 + y) sorts with it", [C.bodyZ(body({ inSlot: true, depth: -0.5, py: 150 }), true, 0), C.bodyZ(body({ inSlot: true, depth: -0.5, py: 250 }), true, 0)], [250, 350]);
+eq("z: a member is where the group is, its source in the middle", [C.bodyZ(body({ role: "source", depth: 1, py: 10 }), true, 1300), C.bodyZ(body({ role: "source", depth: 1, py: 999 }), false, 1300)], [1300, 1300]);
+eq("z: its far copies behind the source, the near ones in front, whatever their height", [-1, -0.4, 0.4, 1].map(depth => C.bodyZ(body({ role: "copy", depth, py: 5 }), true, 1300)), [1299, 1299.6, 1300.4, 1301]);
+eq("z: a body outside the group is behind it when the group is lifted over the system, and sorts with it otherwise", [C.bodyZ(body({ py: 400 }), true, 100 + 190 + 1000) < 100 + 190 + 1000, C.bodyZ(body({ py: 400 }), true, 100 + 190 + 40) > 100 + 190 + 40], [true, true]);
 
 // --- the sky behind the camera --------------------------------------------------
 eq("parallax: the sky drifts opposite to the camera, a fraction of the way", [C.parallax(g, { x: g.cx + 100, y: g.cy }).x < 0, C.parallax(g, { x: g.cx, y: g.cy + 100 }).y < 0], [true, true]);

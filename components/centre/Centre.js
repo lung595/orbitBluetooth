@@ -79,6 +79,20 @@ function groupAt(g, stage, slot) {
     };
 }
 
+// The stacking order (z) of device body `b` among its siblings. In the scene's
+// own view the far half of the connected ring passes behind the host's core
+// (z 50) and the rest sorts by height. In the profile view everything sorts by
+// height, the host among them. The members of the group keep together around
+// the group's own order `groupZ` (Sun.groupZ): its far copies behind its
+// source, the near ones in front.
+function bodyZ(b, grouped, groupZ) {
+    if (b.role)
+        return groupZ + (b.role === "source" ? 0 : b.depth);
+    if (!grouped && b.inSlot && b.depth < 0)
+        return 10 + b.py * 0.01;
+    return 100 + b.py;
+}
+
 // How far the host has left the centre for its path around the group (0..1):
 // the group takes the centre (0..1) unless it has stepped back to give the
 // centre to the host (0..1)

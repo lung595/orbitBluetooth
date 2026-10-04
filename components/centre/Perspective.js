@@ -50,6 +50,13 @@ function haze(depth, profile) {
     return lerp(0.8 + 0.2 * size(depth, 0), size(depth, 1), profile);
 }
 
+// How much bigger or smaller than usual a body of the outer belt looks at
+// `depth`: it has no ring slot to give it a size, so this is a factor on its own
+// (1 on the middle line, and everywhere in the scene's own view)
+function lean(depth, profile) {
+    return lerp(1, size(depth, 1) / MID, profile);
+}
+
 // The depth of a body that has no orbit slot, from where it is: the lower on
 // the screen the nearer. `g` is the geometry the body lives in.
 function depthAt(g, y) {

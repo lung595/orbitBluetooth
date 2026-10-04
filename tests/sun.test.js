@@ -4,7 +4,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const S = load("Sun.js", ["PERIOD", "SPAN", "SIZE", "REST", "STOP", "DROP", "system", "advance", "view", "groupView", "drop", "hostZ"]);
+const S = load("Sun.js", ["PERIOD", "SPAN", "SIZE", "REST", "STOP", "LIFT", "system", "advance", "view", "groupView", "lift", "hostZ", "groupZ"]);
 const C = load("Centre.js", ["TILT", "sizes", "groupAt"]);
 const P = load("Physics.js", ["norm", "ringSlot", "beltSlot", "dragArm", "separate"]);
 const V = load("Perspective.js", ["MID", "size"]);
@@ -89,12 +89,14 @@ const gb = S.groupView(g, sz, back);
 eq("group: stepped back it is smaller and elsewhere, and so is where a member is let go", [gb.cx === back.x, gb.cy === back.y, near(gb.rx), near(gb.rx * gb.innerNorm), near(gb.rx * gb.detachNorm)], [true, true, near(g.rx * back.scale), near(sz.radius * back.scale), near((sz.radius + sz.copy / 2 + g.bodySize) * back.scale)]);
 
 // --- the host's stacking order ---------------------------------------------------
-eq("z: at rest the host keeps its usual place", S.hostZ({ y: g.cy }, false, 0), 50);
-eq("z: in the profile view the host sorts with the bodies (100 + y): its ring's far side is behind it, the near side in front", [S.hostZ({ y: g.cy }, true, 0), 100 + (g.cy - 20) < S.hostZ({ y: g.cy }, true, 0), 100 + (g.cy + 20) > S.hostZ({ y: g.cy }, true, 0)], [100 + g.cy, true, true]);
-eq("z: half way through the recall the host is still in front", [S.drop(0), S.drop(0.5), S.drop(0.51), S.drop(1)], [0, 0, S.DROP, S.DROP]);
-// The group's lowest body is a copy on the near side of its orbit
-const lowest = 100 + g.cy - sz.radius * C.TILT - sz.copy;
-eq("z: in the group's view the whole system is behind the group, all the way round the sun's path", phases.every(p => S.hostZ(full(p), true, 1) < lowest), true);
-eq("z: so is the nearest body of that system (z = 100 + y less the drop)", 100 + g.cy + g.ry - S.drop(1) < lowest, true);
+eq("z: at rest the host keeps its usual place", S.hostZ({ y: g.cy }, false), 50);
+eq("z: in the profile view the host sorts with the bodies (100 + y): its ring's far side is behind it, the near side in front", [S.hostZ({ y: g.cy }, true), 100 + (g.cy - 20) < S.hostZ({ y: g.cy }, true), 100 + (g.cy + 20) > S.hostZ({ y: g.cy }, true)], [100 + g.cy, true, true]);
+eq("z: half way through the recall the host is still in front, then the group is lifted over it", [S.lift(0), S.lift(0.5), S.lift(0.51), S.lift(1)], [0, 0, S.LIFT, S.LIFT]);
+// Fedora's view: the group is a planet on the host's ring and sorts by its height like any body
+eq("z: on the near side of the host's ring the group is in front of the host, on the far side behind it", [S.groupZ({ y: g.cy + 20 }, 0) > S.hostZ({ y: g.cy }, true), S.groupZ({ y: g.cy - 20 }, 0) < S.hostZ({ y: g.cy }, true)], [true, true]);
+// The group's own view: its lowest member is a far copy, depth -1, one below its z
+const lowest = S.groupZ({ y: g.cy }, 1) - 1;
+eq("z: in the group's view the whole system is behind the group, all the way round the sun's path", phases.every(p => S.hostZ(full(p), true) < lowest), true);
+eq("z: so is the nearest body of that system and any body in the scene (z = 100 + y)", [100 + g.cy + g.ry < lowest, 100 + g.height < lowest], [true, true]);
 
 done();

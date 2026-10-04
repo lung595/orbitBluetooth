@@ -18,7 +18,7 @@ var SIZE = 0.45;                 // the system's size at the sun's mid distance,
 var REST = -3 * Math.PI / 4;     // where the sun starts, and stays with Reduce motion: up on the left, behind
 var STOP = 0.4;                  // seconds the sun takes to stop while a device is dragged, and to set off
 var AT_REST = 50;                // stacking order of the host at rest, as before: under the bodies
-var DROP = 1000;                 // stacking order the host's whole system loses under the group, so the group is always in front
+var LIFT = 1000;                 // stacking order the group gains over the host's whole system once it has the centre, so it is always in front
 
 // Where the system is for the sun at `phase` once the group has the centre by
 // `away` (0..1): its centre, its scale, and its depth (> 0 on the near side,
@@ -68,17 +68,25 @@ function groupView(g, s, c) {
     return v;
 }
 
-// What the host's system loses of its stacking order: nothing while the host
-// has the centre, all of DROP once the group has it (half way through the
-// recall, where the two pass each other)
-function drop(away) {
-    return away > 0.5 ? DROP : 0;
+// What the group gains of its stacking order: nothing while the host has the
+// centre, all of LIFT once the group has it (half way through the recall,
+// where the two pass each other)
+function lift(away) {
+    return away > 0.5 ? LIFT : 0;
 }
 
 // The host's stacking order among the bodies (their z is 100 + y). In the
 // profile view the host sorts with them: a body on the far side of its ring is
-// behind the host, one on the near side in front. Under the group's whole
-// view it is far behind. At rest it keeps its usual place.
-function hostZ(host, grouped, away) {
-    return grouped ? 100 + host.y - drop(away) : AT_REST;
+// behind the host, one on the near side in front. At rest it keeps its usual
+// place.
+function hostZ(host, grouped) {
+    return grouped ? 100 + host.y : AT_REST;
+}
+
+// The stacking order of the group as a whole (the members, the volume ring,
+// the beams all sort around it): by its height like any body, so when it is
+// a planet on the host's ring it passes in front of the host and then behind
+// it; and over everything of the host's system once it has the centre.
+function groupZ(group, away) {
+    return 100 + group.y + lift(away);
 }
