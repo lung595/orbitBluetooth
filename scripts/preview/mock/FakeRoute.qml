@@ -102,6 +102,17 @@ QtObject {
         function memberNode(address) {
             return address === "02:00:00:00:10:06" ? fake.headset.sink : fake._others[address] || null;
         }
+        // The drag's rules of the real session, as far as the scene reads them:
+        // an address the route does not know is a device that is not connected
+        function relevant(a, b) {
+            return !!fake.known(a) && !!fake.known(b);
+        }
+        function dropCheck(a, b) {
+            return fake.known(a) ? null : {
+                "why": "not-connected",
+                "address": a
+            };
+        }
     }
     function known(address) {
         if (address === "02:00:00:00:10:06")

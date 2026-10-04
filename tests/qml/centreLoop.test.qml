@@ -21,6 +21,7 @@ Item {
     readonly property string headset: "02:00:00:00:10:06"
     readonly property string one: "02:00:00:00:20:01"
     readonly property string two: "02:00:00:00:20:02"
+    readonly property string mouse: "D4:1A:88:10:5B:77"
 
     FakeRoute {
         id: route
@@ -79,6 +80,25 @@ Item {
             "then": 300,
             "run": () => {
                 check("motion on: the loop runs, the orbit turns", [scene.settled, scene.orbitTime > h.seen], [false, true]);
+            }
+        },
+        {
+            "then": 300,
+            "run": () => {
+                // A device that is not connected, dragged onto the group, is told to connect first (value 10)
+                const src = scene.centre.bodyOf(h.headset), mouse = scene.centre.bodyOf(h.mouse);
+                scene.beginDrag(mouse, {
+                    "x": mouse.px,
+                    "y": mouse.py
+                });
+                scene.updateDrag({
+                    "x": src.px,
+                    "y": src.py
+                });
+                check("an unconnected device over the group is taken as a drop", scene.togetherDrop === src, true);
+                scene.endDrag();
+                check("released there, it is told to connect first", scene.note ? scene.note.title.endsWith(" is not connected") : null, true);
+                scene.note = null;
             }
         },
         {

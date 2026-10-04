@@ -51,7 +51,7 @@ Item {
             const all = [];
             for (let i = 0; i < bodies.count; i++)
                 all.push(bodies.itemAt(i));
-            const o = Physics.dropOnto(b, all, p.x, p.y);
+            const o = Physics.dropOnto(b, all, p.x, p.y, scene.centre.wanted);
             target = scene.together.relevant(b, o) ? o : null;
         }
         if (target === scene.togetherDrop)
