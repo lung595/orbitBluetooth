@@ -10,7 +10,9 @@ import "Physics.js" as Physics
 //    card), 30 Hz for the drift, 20 Hz for Ambient alone on the desktop;
 //  - nothing at all once the scene has settled.
 // A Listen together at the centre rides this same step (the group's orbit,
-// the camera's voyage, the beams): it adds no timer of its own.
+// the camera's voyage, the sun's path, the beams): it adds no timer of its
+// own. The devices outside the group live in the sun's geometry then (the
+// scene's own while there is no group): `geo`.
 Item {
     id: physics
     required property var scene
@@ -46,7 +48,7 @@ Item {
 
     // Places a body for its first frame: spat out of the black hole, or at
     // its own spot just outside the belt
-    function _spawn(b) {
+    function _spawn(b, geo) {
         const from = scene.spawnFrom[b.address];
         if (from) {
             b.px = from.x;
@@ -57,15 +59,15 @@ Item {
             b.pop();
         } else {
             const a = b.homeHash * Math.PI * 2;
-            b.px = scene.cx + Math.cos(a) * scene.rx * 1.25;
-            b.py = scene.cy + Math.sin(a) * scene.ry * 1.25;
+            b.px = geo.cx + Math.cos(a) * geo.rx * 1.25;
+            b.py = geo.cy + Math.sin(a) * geo.ry * 1.25;
         }
         b.spawned = true;
     }
 
     // Where body b wants to be this step, and how stiffly it gets there
     // (`held`: its place in the Listen together group, if it is in one)
-    function _target(b, all, inner, outer, innerPhase, outerPhase, amp, held) {
+    function _target(b, all, geo, inner, outer, innerPhase, outerPhase, amp, held) {
         const s = scene;
         let t;
         if (b.focused) {
@@ -76,11 +78,11 @@ Item {
                 "zeta": 0.78
             };
         } else if (b.dragging) {
-            t = Physics.dragTarget(s, b, s.dragX, s.dragY);
+            t = Physics.dragTarget(centre.geometryOf(b), b, s.dragX, s.dragY);
         } else if (held) {
             t = held;
         } else if (b.inSlot) {
-            const slot = Physics.ringSlot(s, inner.indexOf(b), inner.length, innerPhase);
+            const slot = Physics.ringSlot(geo, inner.indexOf(b), inner.length, innerPhase);
             b.depth = slot.depth;
             t = {
                 "x": slot.x,
@@ -89,7 +91,7 @@ Item {
                 "zeta": 0.7
             };
         } else {
-            const slot = Physics.beltSlot(s, outer.indexOf(b), outer.length, outerPhase, b.homeHash, Physics.beltRadius(s, b.signal), s.clock, amp);
+            const slot = Physics.beltSlot(geo, outer.indexOf(b), outer.length, outerPhase, b.homeHash, Physics.beltRadius(geo, b.signal), s.clock, amp);
             b.depth = 0;
             t = {
                 "x": slot.x,
@@ -106,13 +108,13 @@ Item {
                 "zeta": 0.9
             };
         } else if (b.leaving) {
-            const a = Math.atan2(b.py - s.cy, b.px - s.cx);
-            t.x = s.cx + Math.cos(a) * s.rx * 1.3;
-            t.y = s.cy + Math.sin(a) * s.ry * 1.3;
+            const a = Math.atan2(b.py - geo.cy, b.px - geo.cx);
+            t.x = geo.cx + Math.cos(a) * geo.rx * 1.3;
+            t.y = geo.cy + Math.sin(a) * geo.ry * 1.3;
             t.k = 30;
         }
         if (!b.dragging && !b.focused && !b.swallowing && !held)
-            Physics.separate(s, b, t, all, !!s.focusBody, centre.core);
+            Physics.separate(geo, b, t, all, !!s.focusBody, centre.core);
         if (!s.motion && !b.dragging)
             t.zeta = 1;
         return t;
@@ -133,6 +135,7 @@ Item {
             s.holeSpin += dt * (0.32 + 1.8 * s.holeFeed);
         }
         centre.advance(dt, timeDriven);
+        const geo = centre.sunGeometry();
 
         const all = [];
         for (let i = 0; i < repeater.count; i++) {
@@ -153,9 +156,9 @@ Item {
         let maxLag = 0;     // px, farthest any body is from where it should be
         for (const b of all) {
             if (!b.spawned)
-                _spawn(b);
-            const held = centre.target(b);
-            const t = _target(b, all, inner, outer, innerPhase, outerPhase, amp, held);
+                _spawn(b, geo);
+            const held = centre.target(b, dt);
+            const t = _target(b, all, geo, inner, outer, innerPhase, outerPhase, amp, held);
             if (t.snap) {
                 // Reduce motion: the group's members are put in place, not flown there
                 b.px = t.x;
@@ -163,15 +166,16 @@ Item {
                 b.vx = b.vy = 0;
             } else
                 Physics.spring(b, t.x, t.y, t.k, t.zeta, dt);
-            // The group's own voyage is not a gesture's aftermath: no display-synced frames for it
-            if (!b.dragging && !held)
+            // The group's own voyage (and the system's with it) is not a
+            // gesture's aftermath: no display-synced frames for it
+            if (!b.dragging && !held && !centre.travelling)
                 maxLag = Math.max(maxLag, Math.hypot(t.x - b.px, t.y - b.py));
             moving = centre.size(b, dt) || moving || Physics.moving(b, t.x, t.y);
         }
 
         // The black hole: an outer-belt slot, floating like the others
         const h = physics._hole;
-        const slot = Physics.beltSlot(s, outer.indexOf(h), outer.length, outerPhase, h.homeHash, Physics.beltRadius(s, 0.2), s.clock, amp);
+        const slot = Physics.beltSlot(geo, outer.indexOf(h), outer.length, outerPhase, h.homeHash, Physics.beltRadius(geo, 0.2), s.clock, amp);
         if (!h.spawned) {
             h.px = slot.x;
             h.py = slot.y;

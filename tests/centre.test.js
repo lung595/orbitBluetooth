@@ -4,7 +4,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const C = load("Centre.js", ["PERIOD", "MAX_SHIFT", "HOST_SIZE", "GROUP_SIZE", "TILT", "clamp01", "lerp", "ease", "approach", "backSpot", "sizes", "labelOffset", "ringNorm", "RING_MAX", "groupAt", "hostAt", "away", "phaseAt", "copySlot", "depthSize", "parallax", "copiesOf", "roleOf", "label", "pulse"]);
+const C = load("Centre.js", ["PERIOD", "MAX_SHIFT", "GROUP_SIZE", "TILT", "clamp01", "lerp", "ease", "approach", "backSpot", "sizes", "labelOffset", "groupAt", "away", "phaseAt", "copySlot", "depthSize", "parallax", "copiesOf", "roleOf", "label", "pulse"]);
 const V = load("MasterVolume.js");
 
 const near = (v, d) => Math.round(v * 1000) / 1000;
@@ -19,13 +19,12 @@ eq("ease: starts and ends flat, half way is half", [C.ease(0), C.ease(0.5), C.ea
 eq("ease: stays in 0..1", [C.ease(-3), C.ease(7)], [0, 1]);
 eq("approach: a step of dt over the duration, never past the target", [near(C.approach(0, 1, 0.2, 0.8)), C.approach(0.9, 1, 0.2, 0.8), C.approach(1, 0, 0.4, 0.8)], [0.25, 1, 0.5]);
 eq("approach: a zero duration lands at once", C.approach(0, 1, 0.03, 0), 1);
+// A size in px follows its goal at the pace of the voyage (a new source does not pop)
 eq("away: the host is at the back once the group has the centre", [C.away(0, 0), C.away(1, 0), C.away(1, 1), C.away(0.5, 0)], [0, 1, 0, 0.5]);
 
 // --- where things sit -----------------------------------------------------------
 eq("back spot: up on the left, inside the scene", [C.backSpot(g).x < g.cx, C.backSpot(g).y < g.cy, C.backSpot(g).x > 0, C.backSpot(g).y > 0], [true, true, true, true]);
-eq("host: at the centre, then small at the back", [C.hostAt(g, 0), C.hostAt(g, 1).scale], [{ x: g.cx, y: g.cy, scale: 1 }, C.HOST_SIZE]);
-eq("group: at the centre, then stepped back to the same spot", [C.groupAt(g, 0), C.groupAt(g, 1).x === C.hostAt(g, 1).x && C.groupAt(g, 1).y === C.hostAt(g, 1).y, C.groupAt(g, 1).scale], [{ x: g.cx, y: g.cy, scale: 1 }, true, C.GROUP_SIZE]);
-eq("host at the back is about 40 % of its size", C.hostAt(g, 1).scale, 0.4);
+eq("group: at the centre, then stepped back to the back spot, smaller", [C.groupAt(g, 0), C.groupAt(g, 1)], [{ x: g.cx, y: g.cy, scale: 1 }, { x: C.backSpot(g).x, y: C.backSpot(g).y, scale: C.GROUP_SIZE }]);
 
 const s = C.sizes(g);
 eq("sizes: the source is exactly as big as the host's core, a copy smaller than a ring planet", [s.source, s.copy < g.bodySize, s.copy >= 12], [g.coreSize, true, true]);
@@ -92,15 +91,10 @@ eq("master: one member alone is the general level itself", round(V.scale([0.7], 
 eq("pointer: the ring reads 0 at the top and goes clockwise", [V.fromPointer(0, 0, 0, -10, 0.5), V.fromPointer(0, 0, 10, 0, 0.3), V.fromPointer(0, 0, 0, 10, 0.5), near(V.fromPointer(0, 0, -10, 0, 0.7))], [0, 0.25, 0.5, 0.75]);
 eq("pointer: crossing the top stops at the end instead of jumping to the other", [V.fromPointer(0, 0, -1, -10, 0.1), V.fromPointer(0, 0, 1, -10, 0.9)], [0, 1]);
 
-// --- the name under the centre, the ring that opens ------------------------------
+// --- the name under the centre --------------------------------------------------
 for (const [what, scene] of [["bar popout", g], ["small scene", small]]) {
     const z = C.sizes(scene);
     eq("label offset (" + what + "): under the ring and under the copies' lowest point", [C.labelOffset(z) > z.ring, C.labelOffset(z) > z.radius * C.TILT + z.copy / 2], [true, true]);
 }
-eq("ring: shut, it stays the ring's usual share", [C.ringNorm(g, 0.56, 0), C.ringNorm(small, 0.56, 0)], [0.56, 0.56]);
-eq("ring: open, it is wider than usual so the devices on it clear the copies", [C.ringNorm(g, 0.56, 1) > 0.56, C.ringNorm(small, 0.56, 1) > 0.56], [true, true]);
-eq("ring: never into the outer belt", [C.ringNorm(g, 0.56, 1) <= C.RING_MAX, C.ringNorm(small, 0.56, 1) <= C.RING_MAX], [true, true]);
-eq("ring: it opens along with the camera, never narrower on the way", [0, 0.25, 0.5, 0.75, 1].map(open => C.ringNorm(g, 0.56, open)).every((v, i, all) => i === 0 || v >= all[i - 1]), true);
-eq("ring: a ring already wider than the group needs is left alone", C.ringNorm(g, 0.9, 1), 0.9);
 
 done();

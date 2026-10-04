@@ -2,13 +2,15 @@ import QtQuick
 import Quickshell.Services.Pipewire
 import qs.Common
 import "components/centre"
+import "components/centre/Sun.js" as Sun
 import "mock"
 
 // Test of OrbitCentre and CentreVolume (D281-D285): while the setting allows it
 // and a Listen together is on, the group takes the centre (the camera's voyage
 // is a fade with Reduce motion and nothing at all while nobody looks), the
-// source sits in the middle, its copies on an even tilted orbit, the host small
-// at the back; the beams' clock runs only while sound plays and the scene is
+// source sits in the middle, its copies on an even tilted orbit, the host
+// revolving around them like a sun (smaller behind, bigger in front, fixed with
+// Reduce motion) with the devices outside the group; the beams' clock runs only while sound plays and the scene is
 // awake with motion on; the ring's general volume moves every member and keeps
 // the gaps, a wheel over a copy moves its own level or says why it cannot
 // instead of staying silent (value 10). The scene is a stand-in with only what
@@ -37,10 +39,20 @@ Item {
         property var note: null
         property var notes: []
         property int wakes: 0
+        property var dragBody: null
         readonly property real cx: 260
         readonly property real cy: 220
         readonly property real rx: 213
         readonly property real ry: 146
+        readonly property real ringRy: ry * innerNorm * 0.8
+        readonly property real ringCy: cy + ry * innerNorm * 0.2
+        readonly property real innerNorm: 0.56
+        readonly property real snapNorm: 0.7
+        readonly property real detachNorm: 0.8
+        readonly property real outerMinNorm: 0.8
+        readonly property real holeX: cx
+        readonly property real holeY: cy + ry
+        readonly property real holeHorizon: 30
         readonly property real coreSize: 75
         readonly property real bodySize: 59
         function wake() {
@@ -155,8 +167,12 @@ Item {
         check("the voyage is half done after half of its time", near(centre.grouping, 0.5, 0.001), true);
         run(0.5, true);
         check("then it has landed: the loop may rest", [centre.grouping, centre.travelling], [1, false]);
-        check("the host is small at the back, the group whole in the middle", [centre.host.scale, centre.group.scale, centre.group.x, centre.group.y], [0.4, 1, 260, 220]);
-        check("the host keeps out a disc at its size", centre.core.r, 75 * 0.5 * 0.4);
+        check("the group is whole in the middle of the view", [centre.group.scale, centre.group.x, centre.group.y], [1, 260, 220]);
+        const s = Sun.system(scene, centre.sunPhase, 1);
+        check("the host is the sun's system: its place and its size", [centre.host.x, centre.host.y, centre.host.scale], [s.x, s.y, s.k]);
+        check("the sun starts at its rest spot and has turned with the time that passed", near(centre.sunPhase, Sun.REST + 0.9 / Sun.PERIOD * 2 * Math.PI), true);
+        check("it is smaller than the host was alone, and off the middle", [centre.host.scale < 1, centre.host.x !== 260 && centre.host.y !== 220], [true, true]);
+        check("the host keeps out a disc at its size", near(centre.core.r, 75 * 0.5 * centre.host.scale), true);
     }
 
     function places() {
@@ -173,7 +189,39 @@ Item {
         const gone = body(h.one);
         gone.leaving = true;
         check("a member on its way out is let go", [centre.target(gone), gone.role], [null, "copy"]);
-        check("members have no tether to the host", [centre.tetherless(h.one), centre.tetherless("02:00:00:00:99:99")], [true, true]);
+        check("members have no tether to the host, the others keep theirs", [centre.tetherless(h.one), centre.tetherless("02:00:00:00:99:99")], [true, false]);
+    }
+
+    // The solar system (value 6, 9): the group stays in the middle of the view
+    // and the others turn around the sun, not around the middle
+    function sun() {
+        route.sharing = [h.headset, h.one, h.two];
+        run(1, true);
+        const member = body(h.one), other = body("02:00:00:00:99:99");
+        centre.target(member, 0.1);
+        const sunView = centre.sunGeometry(), groupView = centre.groupGeometry();
+        check("a device outside the group lives around the sun", [centre.geometryOf(other).cx, centre.geometryOf(other).cy, sunView.cx, sunView.cy], [centre.host.x, centre.host.y, centre.host.x, centre.host.y]);
+        check("a member is dragged in the group's own geometry, in the middle", [centre.geometryOf(member).cx, centre.geometryOf(member).cy, groupView.cx, groupView.cy], [260, 220, 260, 220]);
+        check("the sun's view is the host's size", [sunView.rx, sunView.coreSize], [scene.rx * centre.host.scale, scene.coreSize * centre.host.scale]);
+        check("the group's ring is the copies' orbit", [groupView.ringCy, near(groupView.ringRy, centre.sizes.radius * 0.55)], [220, true]);
+        // It turns while the scene's time runs (counter-proof: not without it)
+        let before = centre.sunPhase;
+        run(1, true);
+        check("the sun moves while the time runs", centre.sunPhase > before, true);
+        const spot = [centre.host.x, centre.host.y];
+        before = centre.sunPhase;
+        run(1, false);
+        check("and stays where it is while the time is stopped (Reduce motion, asleep)", [centre.sunPhase, [centre.host.x, centre.host.y]], [before, spot]);
+        check("the group does not move for it", [centre.group.x, centre.group.y, centre.target(member, 0.1) === null], [260, 220, false]);
+        // It slows to a stop under a dragged device, then goes on
+        scene.dragBody = member;
+        run(1, true);
+        before = centre.sunPhase;
+        run(1, true);
+        check("the sun stops under a dragged device", centre.sunPhase, before);
+        scene.dragBody = null;
+        run(1, true);
+        check("and sets off again after it", centre.sunPhase > before, true);
     }
 
     function beams() {
@@ -250,10 +298,11 @@ Item {
         centre.release();
         // A little over its time: the steps add up to it only within rounding
         run(0.6, true);
-        check("a click on the group: it takes the centre back", [centre.recalled, centre.stage, centre.host.scale], [false, 0, 0.4]);
+        check("a click on the group: it takes the centre back", [centre.recalled, centre.stage, centre.host.scale], [false, 0, Sun.system(scene, centre.sunPhase, 1).k]);
         route.sharing = [];
         run(1, true);
         check("the group ends: the parts unload", [centre.shown, centre.members], [false, []]);
+        check("and the next group's sun starts from its rest spot again", centre.sunPhase, Sun.REST);
     }
 
     function volumes() {
@@ -301,6 +350,7 @@ Item {
     Component.onCompleted: {
         forming();
         places();
+        sun();
         beams();
         reduceMotion();
         asleep();

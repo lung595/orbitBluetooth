@@ -22,11 +22,11 @@ Item {
         visible: label.visible && label.opacity > 0
     }
 
-    // Name + connection timer. Orbiting bodies in the upper half put their
-    // label above so it never collides with the host core.
+    // Name + connection timer. Orbiting bodies in the upper half (above the
+    // host) put their label above so it never collides with the host core.
     Column {
         id: label
-        readonly property bool above: caption.body.inSlot && caption.body.py < caption.body.scene.cy
+        readonly property bool above: caption.body.inSlot && caption.body.py < caption.body.scene.centre.host.y
         readonly property real gap: caption.body.diameter * caption.body.baseScale / 2 + 5
         y: above ? caption.body.height / 2 - gap - height : caption.body.height / 2 + gap
         anchors.horizontalCenter: parent.horizontalCenter

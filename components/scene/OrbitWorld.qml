@@ -10,7 +10,9 @@ import "../device"
 // The orbit itself, back to front: the two orbits, the radar ping, the
 // connection waves, the host core and its name, the device bodies, and the
 // cards that slide up over them. Bodies and cards are siblings so a
-// focused body can sit above its card as the card's glyph.
+// focused body can sit above its card as the card's glyph. While a Listen
+// together has the centre, the host's system (its orbits and waves, its core
+// and the bodies outside the group) revolves around the group as a sun.
 Item {
     id: world
     required property var scene
@@ -44,51 +46,74 @@ Item {
         return null;
     }
 
-    // Outer field: dotted orbit
-    Repeater {
-        model: 64
-        Rectangle {
-            readonly property real a: index / 64 * Math.PI * 2
-            readonly property real r: (1 + world.scene.outerMinNorm) / 2
-            x: world.scene.cx + Math.cos(a) * world.scene.rx * r - 0.75
-            y: world.scene.cy + Math.sin(a) * world.scene.ry * r - 0.75
-            width: 1.5
-            height: 1.5
-            radius: 0.75
-            color: "white"
-            opacity: 0.2 * world.dim * (world.scene.btOn ? 1 : 0.3)
-            visible: world.scene.width > 0
-        }
-    }
+    // The host's orbits and the waves thrown from them, drawn once in the
+    // scene's own layout and carried (moved and scaled, nothing redrawn) to
+    // where the sun is: its path and size come from the centre
+    Item {
+        id: systemLayer
+        width: parent.width
+        height: parent.height
+        transformOrigin: Item.TopLeft
+        scale: world.centre.system.k
+        x: world.centre.system.x - world.scene.cx * scale
+        y: world.centre.system.y - world.scene.cy * scale
 
-    // Connected orbit ring
-    Shape {
-        id: innerRing
-        anchors.fill: parent
-        preferredRendererType: Shape.CurveRenderer
-        opacity: world.dim * (world.scene.btOn ? 1 : 0.3)
-
-        readonly property bool guiding: !!world.scene.dragBody && !world.scene.dragBody.holding
-        readonly property bool armedIn: guiding && world.scene.dragBody.armed
-
-        Behavior on opacity {
-            NumberAnimation {
-                duration: 400
+        // Outer field: dotted orbit
+        Repeater {
+            model: 64
+            Rectangle {
+                readonly property real a: index / 64 * Math.PI * 2
+                readonly property real r: (1 + world.scene.outerMinNorm) / 2
+                x: world.scene.cx + Math.cos(a) * world.scene.rx * r - 0.75
+                y: world.scene.cy + Math.sin(a) * world.scene.ry * r - 0.75
+                width: 1.5
+                height: 1.5
+                radius: 0.75
+                color: "white"
+                opacity: 0.2 * world.dim * (world.scene.btOn ? 1 : 0.3)
+                visible: world.scene.width > 0
             }
         }
 
-        ShapePath {
-            strokeColor: innerRing.armedIn ? Theme.withAlpha(world.scene.night.primary, 0.85) : innerRing.guiding ? Theme.withAlpha(world.scene.night.primary, 0.45) : world.scene.night.ink(0.1)
-            strokeWidth: innerRing.armedIn ? 1.8 : 1
-            fillColor: innerRing.armedIn ? Theme.withAlpha(world.scene.night.primary, 0.05) : "transparent"
-            PathAngleArc {
-                centerX: world.scene.cx
-                centerY: world.scene.ringCy
-                radiusX: world.scene.rx * world.scene.innerNorm
-                radiusY: world.scene.ringRy
-                startAngle: 0
-                sweepAngle: 360
+        // Connected orbit ring
+        Shape {
+            id: innerRing
+            anchors.fill: parent
+            preferredRendererType: Shape.CurveRenderer
+            opacity: world.dim * (world.scene.btOn ? 1 : 0.3)
+
+            readonly property bool guiding: !!world.scene.dragBody && !world.scene.dragBody.holding
+            readonly property bool armedIn: guiding && world.scene.dragBody.armed
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 400
+                }
             }
+
+            ShapePath {
+                strokeColor: innerRing.armedIn ? Theme.withAlpha(world.scene.night.primary, 0.85) : innerRing.guiding ? Theme.withAlpha(world.scene.night.primary, 0.45) : world.scene.night.ink(0.1)
+                strokeWidth: innerRing.armedIn ? 1.8 : 1
+                fillColor: innerRing.armedIn ? Theme.withAlpha(world.scene.night.primary, 0.05) : "transparent"
+                PathAngleArc {
+                    centerX: world.scene.cx
+                    centerY: world.scene.ringCy
+                    radiusX: world.scene.rx * world.scene.innerNorm
+                    radiusY: world.scene.ringRy
+                    startAngle: 0
+                    sweepAngle: 360
+                }
+            }
+        }
+
+        // Connection waves (elliptical, follow the orbit's perspective)
+        RingWave {
+            id: waveA
+            scene: world.scene
+        }
+        RingWave {
+            id: waveB
+            scene: world.scene
         }
     }
 
@@ -109,16 +134,6 @@ Item {
         readonly property real t: (world.scene.fxTime % 2.6) / 2.6
         scale: (1 + 2.2 * (1 - Math.pow(1 - t, 3))) * world.centre.host.scale
         opacity: 0.35 * (1 - t) * (1 - t) * (world.centre.hostAway ? 0.6 : 1)
-    }
-
-    // Connection waves (elliptical, follow the orbit's perspective)
-    RingWave {
-        id: waveA
-        scene: world.scene
-    }
-    RingWave {
-        id: waveB
-        scene: world.scene
     }
 
     Item {
@@ -163,13 +178,13 @@ Item {
         id: core
         scene: world.scene
         world: world
-        z: 50
+        z: world.centre.hostZ
     }
 
     LabelGlow {
         x: hostName.x + hostName.width / 2 - width / 2
         y: hostName.y + hostName.height / 2 - height / 2
-        z: 49
+        z: world.centre.hostZ - 1
         spanX: hostName.width + 26
         spanY: hostName.height + 12
         color: world.scene.night.primary
@@ -184,7 +199,7 @@ Item {
         // Under the host, which is smaller (and dimmer) when it sits at the back;
         // the name keeps its size there, as at 40 % it could not be read
         y: world.centre.host.y + core.height / 2 * world.centre.host.scale + 4
-        z: 50
+        z: world.centre.hostZ
         text: UserInfoService.hostname || ""
         color: world.scene.night.ink(0.72)
         font.pixelSize: Math.max(9, Math.round(world.scene.coreSize * 0.14))

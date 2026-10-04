@@ -43,15 +43,12 @@ Item {
     readonly property real cy: height / 2
     readonly property real rx: Math.max(40, width / 2 - bodySize * 0.8)
     readonly property real ry: Math.max(30, height / 2 - bodySize * 1.25)
-    readonly property real baseNorm: 0.56      // connected orbit
-    // It opens around a Listen together that has taken the centre (OrbitCentre)
-    readonly property real innerNorm: centreCtl.ringNorm
+    readonly property real innerNorm: 0.56     // connected orbit
     // Perspective: a tilted circle is still an ellipse, just shifted. The
     // connected ring keeps its near (bottom) edge and its far (top) edge
     // reaches the host core's edge, so devices on the far side pass behind it
     readonly property real innerFrontRy: ry * innerNorm
-    // ...and loses its perspective offset then, as the group sits in its middle
-    readonly property real innerBackRy: Math.min(innerFrontRy, coreSize * 0.5 + (innerFrontRy - coreSize * 0.5) * centreCtl.away)
+    readonly property real innerBackRy: Math.min(innerFrontRy, coreSize * 0.5)
     readonly property real ringRy: (innerFrontRy + innerBackRy) / 2
     readonly property real ringCy: cy + (innerFrontRy - innerBackRy) / 2
     readonly property real outerMinNorm: 0.8  // strongest signal

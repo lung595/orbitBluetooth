@@ -29,7 +29,7 @@ Item {
             return;
         const wasArmed = b.armed;
         const wasHide = b.hideArmed;
-        const arm = Physics.dragArm(scene, b.holding, p.x, p.y);
+        const arm = Physics.dragArm(scene.centre.geometryOf(b), b.holding, p.x, p.y);
         b.hideArmed = arm.hide;
         scene.holeFeed = arm.feed;
         b.armed = arm.armed;

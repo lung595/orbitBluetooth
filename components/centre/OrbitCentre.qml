@@ -1,13 +1,17 @@
 import QtQuick
 import "Centre.js" as Centre
+import "Sun.js" as Sun
 
 // The scene while a Listen together takes the centre (D281-D285): the source
-// planet in the middle, its copies orbiting it, the host small and dimmed at
-// the back. This is the state, and the answers the parts ask (where a member
-// sits, how big it is, where the host is). It owns no timer: OrbitPhysics
-// calls advance() on its own step, so the voyage, the orbit and the beams ride
-// the one loop that already stops when nobody looks (and, with Reduce motion,
-// never starts).
+// planet in the middle with its copies orbiting it, and the host revolving
+// around the group like a sun, its ring and belt of devices with it, smaller
+// when it is behind and bigger when it is in front. This is the state, and
+// the answers the parts ask (where a member sits, how big it is, where the
+// host is, in which geometry a device is dragged). It owns no timer:
+// OrbitPhysics calls advance() on its own step, so the voyage, the orbit, the
+// sun and the beams ride the one loop that already stops when nobody looks.
+// With Reduce motion nothing keeps turning: the group lands with a short
+// fade and the sun stays where it rests.
 Item {
     id: centre
 
@@ -45,20 +49,31 @@ Item {
     // faster than the drift (60 Hz) so the voyage is smooth
     readonly property bool travelling: grouping !== _goalGrouping || stage !== _goalStage
 
-    // --- Where things sit (Centre.js) --------------------------------------------
+    // --- Where things sit (Centre.js, Sun.js) ------------------------------------
     readonly property var sizes: Centre.sizes(scene)
     readonly property var group: Centre.groupAt(scene, Centre.ease(stage))
     readonly property real away: Centre.away(grouping, stage)
-    readonly property var host: Centre.hostAt(scene, away)
+    // The sun's angle on its path (it starts at its rest spot and stays there
+    // with Reduce motion) and how fast it goes, 0..1: it slows to a stop under
+    // a dragged device and sets off again after it
+    property real sunPhase: Sun.REST
+    property real _sunSpeed: 1
+    // Where the host's system is: its centre, its scale and its depth
+    readonly property var system: Sun.system(scene, sunPhase, away)
+    readonly property var host: ({
+            "x": system.x,
+            "y": system.y,
+            "scale": system.k
+        })
     readonly property bool hostAway: away > 0.5
-    // The connected ring opens around the group so the other devices clear it
-    readonly property real ringNorm: Centre.ringNorm(scene, scene.baseNorm, away)
     // The host's keep-out disc for the bodies of the outer belt
     readonly property var core: ({
             "x": host.x,
             "y": host.y,
             "r": scene.coreSize * 0.5 * host.scale
         })
+    // In front of the group on the near side of its path, behind it on the far side
+    readonly property real hostZ: Sun.hostZ(scene, host, grouped)
 
     // The sky drifts a little the way the camera went: set once the voyage is
     // half done, and the starfield glides there (its own short transition)
@@ -96,15 +111,31 @@ Item {
     function holds(b) {
         return isMember(b.address) && !b.leaving && !b.swallowing;
     }
-    // No tether to the host while the host is away; once it is recalled, the
-    // devices outside the group get theirs back
+    // The members of the group have no tether to the host (they are the
+    // centre now); the devices outside it keep theirs to the sun
     function tetherless(address) {
-        return grouped && !(stage >= 1 && !isMember(address));
+        return grouped && members.indexOf(address) >= 0;
+    }
+
+    // The scene's geometry as the devices outside the group live in it: the
+    // sun's, with the connected ring and the belt around it. The scene itself
+    // while the group is not there.
+    function sunGeometry() {
+        return away > 0 ? Sun.view(scene, system) : scene;
+    }
+    // ...and the group's, for a member that is dragged out of it
+    function groupGeometry() {
+        return Sun.groupView(scene, sizes, group);
+    }
+    // The geometry a body is dragged in: its group's, or the sun's
+    function geometryOf(b) {
+        return holds(b) ? groupGeometry() : sunGeometry();
     }
 
     // Where a member of the group wants to be (null for anyone else), and its
-    // role there. A held member writes its own depth and disc size.
-    function target(b) {
+    // role there. A held member writes its own depth and disc size, which
+    // grows to its role at the pace of the voyage (a new source does not pop).
+    function target(b, dt) {
         b.role = Centre.roleOf(isMember(b.address) ? members : [], source, b.address);
         if (!holds(b))
             return null;
@@ -143,23 +174,33 @@ Item {
         return b.roleMix !== goal;
     }
 
-    // One step of the scene's loop: the camera, the stage and the beams
+    // One step of the scene's loop: the camera, the stage, the sun and the beams
     function advance(dt, driven) {
         const secs = scene.motion ? Centre.VOYAGE : Centre.FADE;
         const awake = scene.awake;
         grouping = awake ? Centre.approach(grouping, _goalGrouping, dt, secs) : _goalGrouping;
         stage = awake ? Centre.approach(stage, _goalStage, dt, Centre.RECALL) : _goalStage;
+        if (driven && grouped) {
+            _sunSpeed = Centre.approach(_sunSpeed, scene.dragBody ? 0 : 1, dt, Sun.STOP);
+            sunPhase = Sun.advance(sunPhase, dt, Centre.ease(_sunSpeed));
+        }
         if (driven && playing)
             beamTime += dt;
         _tidy();
     }
 
-    // Back at rest with no group: nothing to keep, the parts unload
+    // Back at rest with no group: nothing to keep, the parts unload, and the
+    // sun starts from its rest spot next time
     function _tidy() {
-        if (!wanted && grouping === 0 && members.length > 0) {
+        if (wanted || grouping > 0)
+            return;
+        if (members.length > 0) {
             members = [];
             source = "";
         }
+        // Whether the session emptied its list before it ended or not
+        sunPhase = Sun.REST;
+        _sunSpeed = 1;
     }
 
     // The host comes back to the centre and the group steps back, and the
