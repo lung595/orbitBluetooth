@@ -5,7 +5,7 @@ const { load, eq, done } = imports.lib;
 
 const Cover = load("Cover.js", ["covered"]);
 const Orbit = load("Orbit.js", ["pick", "plan", "changes"]);
-const Physics = load("Physics.js", ["spring", "norm", "ringSlot", "beltSlot", "beltRadius", "dragTarget", "dragArm", "dropOnto", "separate", "moving"]);
+const Physics = load("Physics.js", ["spring", "norm", "ringSlot", "beltSlot", "beltRadius", "dragTarget", "dragArm", "dropRadius", "dropOnto", "separate", "moving"]);
 
 // Ambient motion pauses on a screen hidden behind windows (P123).
 // Made-up layout: three screens, sizes in logical pixels.
@@ -142,13 +142,18 @@ eq("a window without layout yet does not count", Cover.covered(spaces, [{ worksp
     const mate = { px: 100, py: 50, diameter: 40, baseScale: 1, connected: true };
     const mate2 = { px: 110, py: 50, diameter: 40, baseScale: 1, connected: true };
     const mover = { px: 0, py: 0, connected: true };
-    eq("drop: the pointer inside a connected body's disc", [Physics.dropOnto(mover, [mover, mate], 115, 50) === mate, Physics.dropOnto(mover, [mover, mate], 125, 50)], [true, null]);
+    // A disc of 40 px is small: the drop radius is its floor (60), not twice its radius (40)
+    eq("drop: the pointer within the drop radius of a connected body", [Physics.dropOnto(mover, [mover, mate], 115, 50) === mate, Physics.dropOnto(mover, [mover, mate], 155, 50) === mate, Physics.dropOnto(mover, [mover, mate], 165, 50)], [true, true, null]);
     eq("drop: the nearest centre wins", Physics.dropOnto(mover, [mate, mate2], 108, 50) === mate2, true);
     eq("drop: never on itself, a leaving or an unconnected body", [Physics.dropOnto(mate, [mate], 100, 50), Physics.dropOnto(mover, [Object.assign({}, mate, { leaving: true })], 100, 50), Physics.dropOnto(mover, [Object.assign({}, mate, { connected: false })], 100, 50)], [null, null, null]);
     eq("drop: an unconnected dragged body listens to nobody", Physics.dropOnto({ connected: false }, [mate], 100, 50), null);
     eq("drop: with `anyone`, an unconnected dragged body is over the member", Physics.dropOnto({ connected: false }, [mate], 100, 50, true) === mate, true);
     eq("drop: even with `anyone`, only a connected body can be dropped onto", Physics.dropOnto({ connected: false }, [Object.assign({}, mate, { connected: false })], 100, 50, true), null);
-    eq("drop: a smaller body (far in the ring) has a smaller disc", Physics.dropOnto(mover, [Object.assign({}, mate, { baseScale: 0.5 })], 115, 50), null);
+    // Past the floor the radius is twice the disc's: 200 px wide gives 200, half-scaled 100
+    const big = Object.assign({}, mate, { diameter: 200 });
+    eq("drop: twice the disc's radius once past the floor", [Physics.dropRadius(big), Physics.dropRadius(Object.assign({}, big, { baseScale: 0.5 }))], [200, 100]);
+    eq("drop: a smaller body (far in the ring) has a smaller zone", [Physics.dropOnto(mover, [big], 240, 50) === big, Physics.dropOnto(mover, [Object.assign({}, big, { baseScale: 0.5 })], 240, 50)], [true, null]);
+    eq("drop: a tiny planet keeps the 60 px floor", [Physics.dropRadius(Object.assign({}, mate, { diameter: 10 })), Physics.dropRadius(Object.assign({}, mate, { diameter: 10, baseScale: 0.2 }))], [60, 60]);
 }
 
 done();

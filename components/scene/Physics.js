@@ -100,10 +100,23 @@ function dragArm(g, holding, x, y) {
     };
 }
 
+// A drop lands within twice a disc's radius of its centre, and never closer
+// than DROP_MIN scene pixels, so a small planet far in the ring is as easy to
+// hit as a big one (D294)
+var DROP_REACH = 2;
+var DROP_MIN = 60;
+
+// How near a body's centre the pointer must be for a drop to listen together
+// with it; the invitation lights up from the same distance
+function dropRadius(o) {
+    return Math.max(DROP_MIN, DROP_REACH * o.diameter * o.baseScale / 2);
+}
+
 // The connected body under a dragged connected one, when the pointer at
-// (x, y) is over its disc: what dropping would listen together with (D254).
-// null for anything else. `anyone`: an unconnected body counts too, so that
-// dropping it on the listening group can say it must be connected first.
+// (x, y) is within its drop radius: what dropping would listen together with
+// (D254). null for anything else. `anyone`: an unconnected body counts too,
+// so that dropping it on the listening group can say it must be connected
+// first.
 function dropOnto(b, all, x, y, anyone) {
     if (!b.connected && !anyone)
         return null;
@@ -112,7 +125,7 @@ function dropOnto(b, all, x, y, anyone) {
         if (o === b || o.leaving || !o.connected)
             continue;
         const d = Math.hypot(x - o.px, y - o.py);
-        if (d < o.diameter * o.baseScale / 2 && d < bestD) {
+        if (d < dropRadius(o) && d < bestD) {
             best = o;
             bestD = d;
         }
