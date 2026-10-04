@@ -80,7 +80,8 @@ orbitBluetooth/
 │   │   ├── BlackHole.qml, RingWave.qml   # the "Hidden" black hole (two shaders), the connected ring's wave
 │   │   └── Starfield.qml, Vignette.qml, NightColors.qml
 │   ├── device/                  # one orbiting device
-│   │   ├── DeviceBody.qml, EnergyBeam.qml, LabelGlow.qml  # body (drag, interaction), charging beam (shaders/beam.frag), label glow
+│   │   ├── DeviceBody.qml, BodyFace.qml, BodyPointer.qml, QuickDisconnect.qml  # body (state, motion), its look, its mouse, its close button
+│   │   ├── ConnectingFx.qml, LockRing.qml, EnergyBeam.qml, LabelGlow.qml  # connection comet and rings, lock ring, charging beam (shaders/beam.frag), label glow
 │   │   ├── BodyTether.qml, ChargeBeam.qml, BodyArcs.qml, BodyLabel.qml  # tether to the core, charge beam, rings (noise control, battery), caption
 │   │   ├── DeviceGlyph.qml, DeviceCatalog.js, Glyphs.js   # device icons
 │   │   └── EarbudsTrio.qml, EarbudArt.qml, Earbuds.js     # case + buds mini orbit
