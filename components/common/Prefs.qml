@@ -90,6 +90,8 @@ QtObject {
     readonly property string popupMode: _get("popupMode", "replace")
     // "compact", "medium" or "large"
     readonly property string popupSize: _get("popupSize", "medium")
+    // The screens it shows on (D286): "focused" (where you are) or "all"
+    readonly property string popupScreens: _get("popupScreens", "focused") === "all" ? "all" : "focused"
     // The vectorscope's cloud: 60 frames a second ("Smooth") or 30 ("Light")
     readonly property int scopeFps: parseInt(_get("scopeFps", "30")) === 60 ? 60 : 30
     // How the vectorscope draws the sound: "points", "rays", "waves", "none"

@@ -132,9 +132,11 @@ When a volume changes, from a key, the command line or anywhere else, Orbit can 
 - **Where** (**Sound → Pop-up**): *In the Dank Island* (the default), *Under the bar widget*, *Right screen edge*, or *Off* to keep DMS's own OSD.
 - **Dank Island**: on screens that have one, Orbit's screen appears **inside the island**, which grows to fit. A screen without an island gets the pop-up where DMS's OSD would show.
 - **Only one volume pop-up**: with any choice but *Off*, DMS's own volume OSD is switched off, see [DMS's own volume OSD](#dmss-own-volume-osd).
+- **Screens** (**Sound → Screens**): *Where I am* (default) shows the pop-up only on the screen with the focus, and one still up on the screen you just left closes; *Every screen* shows it everywhere. If the focused screen is not one where the pop-up can show, it shows everywhere, never nowhere.
 - **Size** (**Sound → Size**): *Compact*, *Medium* (default) or *Large*.
 - **It grows out of the island** with DMS's own spring, and folds back by itself. How it moves is up to DMS: *Settings → Dank Island → Reduce Motion* (or the global *Reduce Motion*) makes it follow the keys at once, which costs much less shell time.
 - **Scroll over it** to keep changing the level with [smart steps](#smart-volume-steps); drag a moon or click an icon, as on the card. It closes by itself a moment after the last change.
+- **The info line starts folded** each time: the details you unfolded are not kept for the next pop-up.
 - With no Bluetooth audio device, it shows this PC's level alone.
 
 ### DMS's own volume OSD

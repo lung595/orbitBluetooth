@@ -3,6 +3,17 @@
 All notable changes to Orbit Bluetooth are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Added
+
+- **The volume pop-up shows on the screen you are on.** With two or more screens, a volume change used to pop up on every one of them. Now only the screen with the focus shows it, inside its Dank Island or as a pop-up; one left open on the screen you just left closes. *Settings → Sound → Screens* chooses: *Where I am* (default) or *Every screen*. If the focused screen is not one where Orbit can show the pop-up, it shows everywhere rather than nowhere.
+
+### Fixed
+
+- **The audiophile details no longer open by themselves.** The info line under the volume pop-up stays folded each time the pop-up opens; what you unfolded last time is not kept.
+- **No volume pill left behind after a screenshot.** A screenshot makes DMS fold the Dank Island straight away; Orbit's face went with it, but DMS's own compact volume pill (speaker, blue slider and percentage, which looks like DMS's OSD) was left up with no timer to remove it, until the next click. Orbit now sends the island home when DMS folds it behind the face. DMS's own volume OSD was off all along: nothing about it changed.
+
 ## 1.13.3 - 2026-10-04
 
 ### Changed

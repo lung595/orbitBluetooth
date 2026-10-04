@@ -8,7 +8,7 @@ const Volume = load("Volume.js", ["clamp", "step", "validSink"]);
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "arc", "end", "point", "angleOf", "valueAt", "zone", "wheelPart", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
 const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded", "note"]);
-const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "filterArgs", "muteTarget", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "shownLevels"]);
+const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "filterArgs", "muteTarget", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "popupScreen", "shownLevels"]);
 
 // --- Volume tick (Volume.js) ------------------------------------------------------
 eq("same step: no tick", Volume.step(0.61) === Volume.step(0.62), true);
@@ -107,6 +107,10 @@ eq("foot icons", [Route.iconFor("headphonesPremium"), Route.iconFor("earbudsStem
 eq("pop-up sizes, medium by default", [Route.popupSize("compact"), Route.popupSize("x"), Route.popupSize("large").h], [{ w: 300, h: 172 }, { w: 420, h: 236 }, 300]);
 
 // The volume pop-up (D258): where it stands, which levels it shows
+// The screen it shows on (D286): the focused one, never nowhere
+eq("pop-up on the focused screen only", Route.popupScreen("focused", "DP-2", ["HDMI-A-1", "DP-2"]), "DP-2");
+eq("pop-up on every screen when asked", Route.popupScreen("all", "DP-2", ["HDMI-A-1", "DP-2"]), "");
+eq("pop-up on every screen when the focus is unknown or has no pop-up", [Route.popupScreen("focused", "", ["DP-2"]), Route.popupScreen("focused", "eDP-1", ["DP-2"]), Route.popupScreen("focused", "DP-2", [])], ["", "", ""]);
 eq("pop-up lies flat in place of DMS's OSD", Route.popupLayout("replace", false, false, "medium"), { w: 420, h: 236, upright: false, rotation: 0 });
 eq("upright on the right edge, flat side against it", Route.popupLayout("edge", false, false, "large"), { w: 300, h: 540, upright: true, rotation: -90 });
 // Smart volume steps (D264), rhythms taken from a real recording
