@@ -1,26 +1,17 @@
 """Sony headphones: the "MDR" protocol over RFCOMM (v1 and v2).
 
-Written from the byte-level facts documented by Gadgetbridge and
-mos9527/SonyHeadphonesClient (no code copied).
-
-Frame: 3E | escaped(type, seq, length u32 BE, payload, checksum) | 3C
-- checksum = sum of the unescaped bytes from type to payload, mod 256;
-- 3C/3D/3E inside a frame are sent as 3D followed by (byte & EF);
-- every data frame from the headset must be acknowledged, and we keep only
-  one command in flight until the headset acknowledges it.
-
-v1 (WH-1000XM3/XM4, WF-1000XM3...) and v2 (WH-1000XM5/XM6, WF-1000XM4/XM5,
-LinkBuds, ULT...) share the framing but not every payload. On v2 the list of
-supported functions tells which noise-control layout the model expects.
+The framing lives in sony_frame.py. v1 (WH-1000XM3/XM4, WF-1000XM3...) and v2
+(WH-1000XM5/XM6, WF-1000XM4/XM5, LinkBuds, ULT...) share it but not every
+payload. Every data frame from the headset must be acknowledged, and we keep
+only one command in flight until the headset acknowledges it. On v2 the list
+of supported functions tells which noise-control layout the model expects.
 """
 
 from .base import Protocol
+from .sony_frame import END, START, T_ACK, T_DATA, decode, encode
 
 UUID_V2 = "956c7b26-d49a-4ba8-b03f-b17d393cb6e2"
 UUID_V1 = "96cc203e-5068-46ad-b32d-e316f5e069ba"
-
-START, END, ESCAPE = 0x3E, 0x3C, 0x3D
-T_ACK, T_DATA, T_DATA2 = 0x01, 0x0C, 0x0E
 
 # How long to wait for an acknowledgement before sending again
 RETRY_SECONDS = 1.25
@@ -34,34 +25,6 @@ FN_BATTERY_CASE = {0x22: 0x02, 0x2A: 0x0A}
 FN_SPEAK_TO_CHAT = 0xFC
 
 AMBIENT_MAX = 20
-
-
-def encode(dtype, seq, payload):
-    body = bytes([dtype, seq]) + len(payload).to_bytes(4, "big") + bytes(payload)
-    raw = body + bytes([sum(body) & 0xFF])
-    out = bytearray([START])
-    for b in raw:
-        out += bytes([ESCAPE, b & 0xEF]) if b in (START, END, ESCAPE) else bytes([b])
-    out.append(END)
-    return bytes(out)
-
-
-def decode(escaped):
-    """Unescaped (type, seq, payload) of the bytes between 3E and 3C, or None."""
-    raw, i = bytearray(), 0
-    while i < len(escaped):
-        if escaped[i] == ESCAPE and i + 1 < len(escaped):
-            raw.append(escaped[i + 1] | 0x10)
-            i += 2
-        else:
-            raw.append(escaped[i])
-            i += 1
-    if len(raw) < 7:
-        return None
-    length = int.from_bytes(raw[2:6], "big")
-    if len(raw) != 7 + length or sum(raw[:-1]) & 0xFF != raw[-1]:
-        return None
-    return raw[0], raw[1], bytes(raw[6:6 + length])
 
 
 class Sony(Protocol):
