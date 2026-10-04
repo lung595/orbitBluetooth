@@ -68,6 +68,10 @@ QtObject {
     readonly property string ancEngine: _get("ancEngine", "demand")
     // Turn conversation awareness off when a headset disconnects or reconnects
     readonly property bool ancChatOff: _get("ancChatOff", true)
+    // Pause what plays on a Sony headset when it is taken off, resume it
+    // when it is put back (D277). On by default: it only acts on its own
+    // pauses, and costs one open control connection per such headset
+    readonly property bool wearPause: _get("wearPause", true)
     // Look up real pictures of device models online (the only use of the
     // network, off by default, see pictures/orbit_pictures.py)
     readonly property bool realPictures: _get("realPictures", false)

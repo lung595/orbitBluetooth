@@ -8,6 +8,7 @@ import "components/common"
 import "components/noise"
 import "components/pairing"
 import "components/volume"
+import "components/wear"
 import "components/common/Address.js" as Address
 
 // Event-driven bookkeeping shared by every surface. BlueZ exposes neither a
@@ -16,8 +17,9 @@ import "components/common/Address.js" as Address
 // Everything reacts to D-Bus property changes. The one timer is the short
 // background scan of the "new device" pop-up (NewDeviceWatch, setting).
 // The only processes are the noise-control helper (see AncService), only
-// while a supported headset is connected and being controlled, and the
-// opt-in picture lookup.
+// while a supported headset is connected and being controlled (or, with
+// "Pause when you take the headset off" on, while a Sony headset with a
+// wearing sensor is connected), and the opt-in picture lookup.
 // Privacy: all data stays in memory for the current session; nothing is
 // sent anywhere. The one exception is opt-in and off by default: with "Real
 // device pictures" on, PictureService looks up the model name of paired
@@ -54,7 +56,15 @@ Item {
         active: prefs.ancEnabled
         engine: prefs.ancEngine
         chatOffOnDisconnect: prefs.ancChatOff
+        wearPause: prefs.wearPause
         publish: map => root._publish("anc", map)
+    }
+
+    // Pauses the music when a Sony headset comes off, resumes it on return
+    WearPause {
+        id: wearPause
+        ancService: ancService
+        active: prefs.wearPause
     }
 
     // Real device pictures: off by default, the only use of the network
@@ -126,6 +136,7 @@ Item {
     // The commands of `dms ipc call orbitBluetooth` (OrbitIpc)
     OrbitIpc {
         ancService: ancService
+        wear: wearPause
         route: audioRoute
         keys: keyBinder
         newDevices: newDeviceWatch

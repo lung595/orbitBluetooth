@@ -9,6 +9,7 @@ import "../noise/Anc.js" as Anc
 // handler sits inside a Scope that carries the services: properties declared
 // on an IpcHandler itself would be listed as IPC signals.
 //   anc nc | ambient | off | adaptive      ancCycle | ancStatus
+//   chatEnds short | standard | long | never   wearStatus
 //   deviceVolume | pcVolume up | down | +5 | -5 | 40
 //   volume up | down   (smart steps, D264)   volumeKeys on | off | status
 //   hidden | unhideAll      newDeviceDemo | newDeviceStatus
@@ -16,6 +17,7 @@ Scope {
     id: ipc
 
     required property var ancService
+    required property var wear
     required property var route
     required property var keys
     required property var newDevices
@@ -58,6 +60,41 @@ Scope {
                 return "No supported headset connected · " + Guide.url("noise-control");
             ipc.ancService.cycle(address);
             return "OK";
+        }
+
+        // How long a Speak-to-Chat conversation lasts before it ends by itself
+        function chatEnds(duration: string): string {
+            const index = Anc.chatEndsIndex(duration);
+            const url = Guide.url("how-long-a-conversation-lasts");
+            if (index < 0)
+                return "Use: chatEnds " + Anc.CHAT_ENDS.join(" | ") + " · " + url;
+            const address = ipc.ancService.primary("sony");
+            const known = address ? ipc.ancService.snapshots[address] : null;
+            if (!known || !known.features || !known.features.chatEnds)
+                return "No headset has said how long a conversation lasts (open its card once) · " + url;
+            ipc.ancService.send(address, "chatEnds", index);
+            return "OK";
+        }
+
+        // What pause-on-removal sees: the headset's state, and how many
+        // players it holds paused. The raw status code helps to check a model.
+        function wearStatus(): string {
+            const url = Guide.url("pause-when-you-take-the-headset-off");
+            if (!ipc.prefs.wearPause)
+                return "Pause on removal is off (Settings, Headphones) · " + url;
+            if (!ipc.prefs.ancEnabled)
+                return "Noise control is off: pause on removal uses its connection · " + url;
+            const address = ipc.ancService.primary("sony");
+            if (!address)
+                return "No Sony headset connected · " + url;
+            const report = ipc.wear.statusOf(address);
+            if (report.state === "waiting")
+                return "Waiting for the headset to answer · " + url;
+            if (report.state === "error")
+                return "Could not reach the headset · " + url;
+            if (report.state === "unsupported")
+                return "This headset does not report wearing · " + url;
+            return JSON.stringify(report);
         }
 
         // The level inside the Bluetooth device in use (absolute volume)
