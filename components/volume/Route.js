@@ -162,14 +162,14 @@ function ipcLevel(arg, current) {
 // Absolute volume (AVRCP): BlueZ gives the device's audio transport a
 // "Volume" property only when the device takes its level from the PC.
 // `busctl tree --list org.bluez` lists object paths; the transport is
-// "<device path>/sepN/fdM".
+// "<device path>/sepN/fdM" (older BlueZ) or "<device path>/fdM" (BlueZ 5.87).
 function transportPath(tree, devicePath) {
     if (!Address.isDevicePath(devicePath))
         return "";
     const lines = String(tree || "").split("\n");
     for (let i = 0; i < lines.length; i++) {
         const p = lines[i].trim();
-        if (p.indexOf(devicePath + "/") === 0 && /^\/sep[0-9]+\/fd[0-9]+$/.test(p.slice(devicePath.length)))
+        if (p.indexOf(devicePath + "/") === 0 && /^(\/sep[0-9]+)?\/fd[0-9]+$/.test(p.slice(devicePath.length)))
             return p;
     }
     return "";

@@ -68,6 +68,10 @@ eq("ipc rejects the rest", [Route.ipcLevel("150", 0), Route.ipcLevel("", 0), Rou
 const DEV = "/org/bluez/hci0/dev_AA_BB_CC_DD_EE_01";
 const tree = "/org/bluez\n/org/bluez/hci0\n" + DEV + "\n" + DEV + "/sep1\n" + DEV + "/sep1/fd0\n/org/bluez/hci0/dev_AA_BB_CC_DD_EE_02/sep1/fd1\n";
 eq("transport of the device", Route.transportPath(tree, DEV), DEV + "/sep1/fd0");
+// BlueZ 5.87 lists the transport right under the device, the remote endpoints beside it (P162)
+const flat = "/org/bluez\n/org/bluez/hci0\n" + DEV + "\n" + DEV + "/fd0\n" + DEV + "/sep1\n" + DEV + "/sep2\n";
+eq("transport right under the device", Route.transportPath(flat, DEV), DEV + "/fd0");
+eq("an endpoint is not a transport", Route.transportPath("/org/bluez\n" + DEV + "\n" + DEV + "/sep1\n", DEV), "");
 eq("no transport: no absolute volume", [Route.transportPath("/org/bluez\n" + DEV + "\n", DEV), Route.transportPath(tree, "/org/bluez/hci0/dev_x")], ["", ""]);
 eq("transport volume", [Route.transportVolume('{"type":"q","data":65}'), Route.transportVolume("oops"), Route.transportVolume('{"type":"q","data":300}')], [65, -1, -1]);
 eq("level notes say why", [Guide.levelNote("no-device").length > 0, Guide.levelNote("bad-level").indexOf("0 to 100") > 0], [true, true]);
