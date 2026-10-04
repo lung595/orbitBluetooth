@@ -36,12 +36,14 @@ function globals(mode, t) {
                     "ambientMax": 20,
                     "levelMode": "ambient",
                     "voice": true,
-                    "chat": true
+                    "chat": true,
+                    "chatEnds": true
                 }, {
                     "mode": mode === "ancfocus" ? "ambient" : "nc",
                     "ambient": 14,
                     "voice": true,
                     "chat": false,
+                    "chatEnds": 1,
                     "battery": {}
                 }),
                 // Earbuds: case charging; in "budsdock" both buds charge in it
