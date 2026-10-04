@@ -42,7 +42,7 @@ Tools: `gjs` (JS tests), Python 3 (helper and its tests), `ffmpeg` (GIFs), Qt 6 
 
 Every surface shows the same scene, `components/scene/OrbitScene.qml`. It only holds the state the parts share and wires them; each role has its own file, and the parts reach each other through the scene's functions (`scene.hideBody(b)`, `scene.ancSend(...)`), never through one another. The drag (`OrbitDrag`), hiding in the black hole (`OrbitHidden`), focus, rename and Escape (`OrbitFocus`), noise control (`OrbitAnc`), the daemon's data and clock (`OrbitDaemonData`) and the detail card's measures (`FocusLayout`) are each a short file; they open the cards (`card/FocusCard.qml`, `card/HiddenCard.qml`, `scene/OrbitMenu.qml`). `scene/OrbitPhysics.qml` moves every device (`device/DeviceBody.qml`) in one step per frame, with the maths in `scene/Physics.js` (pure, tested). What floats above the world (`pairing/OfferCard.qml`, `scene/ScanChip.qml`, `scene/AdapterNotice.qml`, the hint and the note) is grouped by `scene/OrbitChrome.qml`.
 
-Logic that can be tested lives in **pure `.js` files** with no QML: `card/Charge.js` (charge analysis), `card/Endurance.js` (rated battery life), `card/CardStatus.js` (the detail card's wording), `scene/Physics.js` (springs, slots, clearances), `noise/Anc.js` (noise-control decisions), `volume/Polar.js` (the scope's geometry and sound picture), `volume/Route.js`, `volume/Steps.js` and `volume/Keys.js` (volumes), `common/Address.js` (the shapes of a Bluetooth address and of its BlueZ path, checked before any command), `device/Earbuds.js`, `device/DeviceCatalog.js` and `device/Glyphs.js` (icons).
+Logic that can be tested lives in **pure `.js` files** with no QML: `card/Charge.js` (charge analysis), `card/Endurance.js` (rated battery life), `card/CardStatus.js` (the detail card's wording), `scene/Physics.js` (springs, slots, clearances), `noise/Anc.js` (noise-control decisions), `volume/Polar.js` (the scope's geometry and sound picture), `volume/Route.js`, `volume/Steps.js`, `volume/Keys.js` and `volume/Audiophile.js` (volumes and what plays), `common/Address.js` (the shapes of a Bluetooth address and of its BlueZ path, checked before any command), `device/Earbuds.js`, `device/DeviceCatalog.js` and `device/Glyphs.js` (icons).
 
 **The volume scope** (detail card, pop-up, Dank Island) runs one `cava` and computes one picture for every screen that shows it: `volume/TwoLevels.qml` holds an output's two levels, its `ScopeFeed.qml` (cava, only while someone looks) and its `ScopeModel.qml` (points, rays or waves, moved by cava's frames, fading alone, then stopped). `PolarScope.qml` keeps the geometry, eases the levels and holds the picture; `PolarArcs.qml` draws the half circles, `PolarMoons.qml` the knobs, `PolarGestures.qml` takes the drag, wheel and mute click, and `PolarVisual.qml` only paints the shared picture at its own size.
 
@@ -99,6 +99,7 @@ orbitBluetooth/
 │   │   ├── TwoLevels.qml        # an output's two volumes, its cava and its picture (base of CardVolume, VolumeOverlay)
 │   │   ├── CardVolume.qml, Volume.js         # the detail card's two volumes and tick (Volume.js pure, tested)
 │   │   ├── VolumeOverlay.qml, VolumePopup.qml, IslandFace.qml  # volume pop-up per screen, its face inside Dank Island
+│   │   ├── AudioFacts.qml, FactsLine.qml, Audiophile.js  # what plays: `pactl` read on demand, the line with its info button, parsing (pure, tested)
 │   │   ├── VolumeStrip.qml      # menus: the two volumes folded into a thin line, unfolds on click
 │   │   ├── ScopeScreen.qml      # the dark scope screen shared by card, pop-up and island
 │   │   ├── PolarScope.qml, PolarVisual.qml, Polar.js   # geometry and easing, the painted picture (Polar.js pure, tested)
@@ -133,8 +134,8 @@ orbitBluetooth/
 ├── uninstall/
 │   ├── orbit_uninstall.py       # erases what DMS keeps once Orbit is removed
 │   └── tests/                   # unittest, on fake shell files
-├── tests/qml/                   # pop-up scenario and polar scope tests, stubs for Quickshell/DMS
-├── tests/*.test.js, lib.js, run.sh  # gjs: one file per role (noise, battery, device, pairing, common, volume, scene), the shared loader, the runner
+├── tests/qml/                   # pop-up scenario, polar scope and audio facts tests, stubs for Quickshell/DMS
+├── tests/*.test.js, lib.js, run.sh  # gjs: one file per role (noise, battery, card, device, pairing, common, volume, audiophile, scene), the shared loader, the runner
 ├── shaders/                     # .frag sources, compiled .qsb, build.sh
 ├── scripts/
 │   ├── gen_sounds.py            # synthesizes sounds/*.wav
@@ -150,7 +151,7 @@ orbitBluetooth/
 (cd anc && python3 -m unittest discover -s tests -t .)   # noise-control protocols
 (cd pictures && python3 -m unittest discover -s tests -t .)   # picture lookup, without network
 (cd uninstall && python3 -m unittest discover -s tests -t .)  # uninstall sweep, on fake shell files
-sh tests/qml/run.sh                                       # new-device pop-up scenario and polar scope (Qt 6)
+sh tests/qml/run.sh                                       # new-device pop-up scenario, polar scope, audio facts (Qt 6)
 sh tests/run.sh                                          # every pure .js module, one test file per role (or gjs tests/volume.test.js for one)
 ```
 

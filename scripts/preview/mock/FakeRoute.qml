@@ -19,6 +19,7 @@ QtObject {
                 }
             },
             "pc": follow ? null : {
+                "name": "orbit_pc_filter",
                 "audio": {
                     "volume": 0.85,
                     "muted": false

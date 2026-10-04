@@ -23,7 +23,7 @@ Window {
     // "-cc" like the Control Center tile (same, from a smaller minimum),
     // "-follow" gives the headset no level of its own (no absolute volume),
     // "-fold" starts the card's volumes folded, as in the menus, and
-    // "-unfold" shows them unfolded there
+    // "-unfold" shows them unfolded there, "-facts" opens the audio details
     readonly property string rawMode: args[args.length - 2]
     readonly property var parts: rawMode.split("-")
     readonly property bool bright: parts.indexOf("bright") > 0
@@ -34,6 +34,7 @@ Window {
     readonly property bool follow: parts.indexOf("follow") > 0
     readonly property bool fold: parts.indexOf("fold") > 0 || unfold
     readonly property bool unfold: parts.indexOf("unfold") > 0
+    readonly property bool facts: parts.indexOf("facts") > 0
     readonly property string mode: parts[0]
     readonly property string out: args[args.length - 1]
     readonly property bool glass: mode.startsWith("desktop")
@@ -161,12 +162,12 @@ Window {
         return 50;
     }
 
-    // The open card's scope, wherever it sits in the tree
-    function findScope(item) {
-        if (item.objectName === "cardScope")
+    // An item of the open card by its objectName, wherever it sits in the tree
+    function findNamed(item, name) {
+        if (item.objectName === name)
             return item;
         for (const c of item.children) {
-            const r = findScope(c);
+            const r = findNamed(c, name);
             if (r)
                 return r;
         }
@@ -187,9 +188,17 @@ Window {
         running: win.mode.endsWith("focus")
         interval: 2600 + 1400
         onTriggered: {
-            const scope = win.findScope(win.contentItem);
+            const scope = win.findNamed(win.contentItem, "cardScope");
             if (scope && scope.visible)
                 scope.simulate(State.soundFrame, 0.7);
+            // What PipeWire would say of the headset and this PC's filter
+            // (the preview runs no command)
+            const facts = win.findNamed(win.contentItem, "audioFacts");
+            if (facts)
+                facts._all = State.fakeSinks;
+            const line = win.findNamed(win.contentItem, "factsLine");
+            if (line)
+                line.expanded = win.facts;
         }
     }
     Timer {

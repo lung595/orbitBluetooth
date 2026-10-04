@@ -53,7 +53,8 @@ Item {
         route: card.scene.audioRoute
         prefs: card.scene.prefs
         address: card.body && card.body.connected ? card.body.address : ""
-        live: card.visible && card.scene.awake && !card.picking && !card.volumeFolded
+        seen: card.visible && card.scene.awake && !card.picking
+        live: seen && !card.volumeFolded
     }
     // In the menus the volumes start as a thin line, so the card fits
     // without scrolling; a click unfolds the scope
@@ -103,6 +104,16 @@ Item {
                 text: CardStatus.kindLine(card.body)
                 color: card.muted
                 font.pixelSize: Theme.fontSizeSmall
+            }
+
+            // What the sound is: connection, codec, rate (D260)
+            FactsLine {
+                visible: shown && !card.picking
+                width: parent.width
+                height: implicitHeight
+                source: volumes
+                ink: card.ink
+                muted: card.muted
             }
 
             // One gap between the title block, the battery and the controls

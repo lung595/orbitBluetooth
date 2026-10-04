@@ -6,13 +6,17 @@ import qs.Common
 // hold it on its own spring, with its own glass and shape. The island's
 // slider underneath is hidden while Orbit shows, and comes back when this
 // face goes (plugin off): nothing of DMS is written (value 12, D259).
-// Collapsed, the sheet is invisible and so is this: nothing runs.
+// Collapsed, the sheet is invisible and so is this: nothing runs. While it
+// is up, the island follows the volume keys at once, without its spring
+// (IslandSnap): a burst of steps then costs next to nothing.
 Item {
     id: face
 
     required property var overlay
     // The island's IslandController on that screen
     required property var controller
+    // The island's host window (a DankIslandHostWindow)
+    required property var host
 
     anchors.fill: parent
 
@@ -36,6 +40,35 @@ Item {
     readonly property bool ours: _sheetOf === "volume"
     visible: ours
 
+    // --- The island's motion ------------------------------------------------------
+    // DMS's DankIslandSurface, found by its motion settings so that a
+    // renamed item does not matter; null if a DMS update moves them
+    readonly property var surface: _islandAbove(parent)
+    function _islandAbove(item) {
+        while (item && !(item.reducedMotion !== undefined && item.springStiffness !== undefined))
+            item = item.parent;
+        return item;
+    }
+    // The full-screen layer DMS maps under an expanded island, found by its
+    // shape (a window with a mask and an exclusive zone); null if a DMS
+    // update changes it
+    readonly property var clickAway: _clickAwayOf(host)
+    function _clickAwayOf(host) {
+        const objects = host ? host.data : [];
+        for (let i = 0; i < objects.length; i++) {
+            const o = objects[i];
+            if (typeof o.exclusiveZone === "number" && o.mask !== undefined && o.visible !== undefined)
+                return o;
+        }
+        return null;
+    }
+    // Kept from the first open until the island has folded back
+    IslandSnap {
+        id: snap
+        surface: face.surface
+        clickAway: face.clickAway
+    }
+
     // --- Open and close ----------------------------------------------------------
     // The island grows into its volume sheet, unless the user has opened
     // something else in it on purpose
@@ -43,11 +76,16 @@ Item {
         const c = controller;
         if (c.inputSuspended || (c.expanded && c.activeActivity !== "volume"))
             return false;
-        if (!c.requestSystemActivity("volume"))
-            return false;
-        c.expanded = true;
-        hide.restart();
-        return true;
+        snap.hold();
+        const ok = c.requestSystemActivity("volume");
+        if (ok) {
+            c.expanded = true;
+            hide.restart();
+        }
+        // The island never showed us: let go of its motion
+        if (!shown)
+            snap.release();
+        return ok;
     }
     // A level set from the face itself: it stays, the clock restarts
     function keep() {
@@ -73,8 +111,12 @@ Item {
         }
     }
     onShownChanged: {
-        if (!shown)
+        if (shown) {
+            snap.hold();
+        } else {
             hide.stop();
+            snap.release();
+        }
         overlay.islandShown(face, shown);
     }
 

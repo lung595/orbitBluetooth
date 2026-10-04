@@ -5,6 +5,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## Unreleased
 
+### Added
+
+- **What really plays.** Under a device's name on its card, and in the volume pop-up for any output, one short line says what the sound is: how it is connected (Bluetooth, USB, HDMI, S/PDIF, analog), the codec (LDAC, AAC, aptX HD, SBC...), the sample rate and the bit depth, for example *Bluetooth · LDAC · 96 kHz · 24 bit*. A small info button unfolds the rest: channels, and a note when this PC resamples on the way to the device. *Settings → Sound → Audio details* chooses, fact by fact, what shows on the line and what shows when unfolded. It is read from PipeWire (`pactl`) only while the card or the pop-up is on screen; nothing runs otherwise, and nothing leaves the PC.
+
+### Changed
+
+- **Lighter volume keys on a Dank Island.** While Orbit's face is up, the island follows the keys at once (no spring, no cross-fade) and DMS's full-screen click-away layer is hidden; both are given back when the keys stop. The visualizer's `cava` only starts 700 ms after the last key, so a burst of steps does not pay its start-up cost. All in memory: no setting of DMS is written.
+- *Visualizer motion* now defaults to *Light* (30 images per second); *Smooth* (60) stays one click away in *Settings → Sound*.
+
+## 1.12.1 - 2026-10-03
+
 ### Fixed
 
 - A failed pairing no longer writes the error text to the journal (it can carry a device name or address): the journal gets a fixed line with the step that failed; the text still shows on the pairing sheet.

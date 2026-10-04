@@ -29,6 +29,7 @@ Column {
         width: parent.width
         height: Math.round(width * 0.44) + noteRoom
         noteBelow: true
+        showFacts: false
         overlay: section.levels
         live: section.levels.live
 

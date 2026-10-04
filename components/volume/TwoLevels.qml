@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Common
 import qs.Services
+import "Audiophile.js" as Audiophile
 import "Polar.js" as Polar
 import "Route.js" as Route
 import "../device/DeviceCatalog.js" as Catalog
@@ -37,7 +38,7 @@ Item {
     readonly property string deviceName: dev ? Catalog.deviceName(dev.device) : ""
 
     readonly property string style: prefs ? prefs.scopeStyle : "points"
-    readonly property int fps: prefs ? prefs.scopeFps : 60
+    readonly property int fps: prefs ? prefs.scopeFps : 30
     readonly property bool reduceMotion: prefs ? prefs.reduceMotion : false
 
     // A gesture moved a level (CardVolume plays its tick on it)
@@ -62,6 +63,25 @@ Item {
         style: Polar.styleOf(levels.style)
         fps: levels.fps
         gain: levels.heardLevel
+    }
+
+    // --- What the output is (D260) ---------------------------------------------------
+    // Read only while someone looks and some fact is chosen; the line for
+    // the card or pop-up, the rows for the unfolded detail
+    readonly property var _sink: dev ? dev.sink : (route ? route.pcNode(null) : null)
+    readonly property bool _wantsFacts: prefs ? (Object.values(prefs.factsLine).includes(true) || Object.values(prefs.factsMore).includes(true)) : false
+    // Someone looks at the output (the card is on screen, the pop-up shows)
+    property bool looking: listening
+    AudioFacts {
+        id: audioFacts
+        active: levels.looking && levels._wantsFacts
+        sink: levels._sink ? levels._sink.name : ""
+        pcSink: levels.dev && levels.dev.pc ? levels.dev.pc.name : ""
+    }
+    readonly property string factsLine: prefs ? Audiophile.line(audioFacts.facts, prefs.factsLine, audioFacts.pcFacts) : ""
+    readonly property var factsRows: prefs ? Audiophile.rows(audioFacts.facts, prefs.factsMore, audioFacts.pcFacts) : []
+    function refreshFacts() {
+        audioFacts.refresh();
     }
 
     // --- Gestures ----------------------------------------------------------------

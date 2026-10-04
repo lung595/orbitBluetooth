@@ -12,6 +12,8 @@ TwoLevels {
 
     property string address: ""
     property bool live: false
+    // The card is on screen, folded volume or not (the facts line shows)
+    property bool seen: false
 
     dev: route && address ? route.find(address) : null
     // The device plays through PipeWire: there is something to show
@@ -19,6 +21,7 @@ TwoLevels {
     // The card's own picture of the sound (the pop-up has its own)
     soundNode: dev ? dev.sink : null
     listening: live && ready
+    looking: seen && ready
 
     // No level of its own: say why, with the guide's link (value 10)
     readonly property var note: ready && !deviceAudio ? {

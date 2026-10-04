@@ -81,3 +81,21 @@ var soundFrame = {
     "l": [0.92, 0.85, 0.8, 0.72, 0.66, 0.62, 0.55, 0.5, 0.44, 0.4, 0.33, 0.28, 0.22, 0.18, 0.12, 0.08],
     "r": [0.9, 0.8, 0.7, 0.66, 0.58, 0.5, 0.47, 0.4, 0.36, 0.3, 0.26, 0.2, 0.16, 0.12, 0.08, 0.05]
 };
+
+// What `pactl` would say of the headset and this PC's filter, for the audio details
+var fakeSinks = {
+    "bluez_output.02_00_00_00_10_06.1": {
+        "connection": "Bluetooth",
+        "codec": "LDAC",
+        "rate": 96000,
+        "bits": 24,
+        "channels": 2
+    },
+    "orbit_pc_filter": {
+        "connection": "",
+        "codec": "",
+        "rate": 48000,
+        "bits": 32,
+        "channels": 2
+    }
+};
