@@ -28,6 +28,8 @@ Item {
     readonly property real shown: Depth.level(depth, motion)
     // Fades with the gesture: a short move, only when `hold` changes
     property real mix: hold ? 0 : 1
+    // True while the blurred copy exists (never outside a group)
+    readonly property bool copied: copy.active
     readonly property bool ready: (copy.item as FrozenBlur)?.ready ?? false
     // True while the copy hides the live source completely
     readonly property bool frozen: Depth.covered(shown, ready, mix)
