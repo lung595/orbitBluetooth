@@ -1,5 +1,6 @@
 pragma Singleton
 import QtQuick
+
 QtObject {
     property bool isLightMode: false
     property color primary: "#C5E66A"
@@ -25,5 +26,7 @@ QtObject {
     property real spacingL: 16
     property real spacingXL: 24
     property real cornerRadius: 12
-    function withAlpha(c, a) { return Qt.rgba(c.r, c.g, c.b, a); }
+    function withAlpha(c, a) {
+        return Qt.rgba(c.r, c.g, c.b, a);
+    }
 }

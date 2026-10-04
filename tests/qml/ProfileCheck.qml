@@ -18,6 +18,12 @@ QtObject {
             done("input");
         });
     }
-    function allow(device) { device.blocked = false; }
-    function deny(device) { device.trusted = false; device.forget(); device.blocked = false; }
+    function allow(device) {
+        device.blocked = false;
+    }
+    function deny(device) {
+        device.trusted = false;
+        device.forget();
+        device.blocked = false;
+    }
 }

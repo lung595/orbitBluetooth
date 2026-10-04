@@ -99,7 +99,7 @@ Item {
     property bool hovered: false
     // Noise control of the connected headset, once the sheet asked for it
     property bool _ancWatching: false
-    readonly property var ancInfo: anc && current && !_demo ? (anc.states[current] || null) : null
+    readonly property var ancInfo: anc && current && !_demo ? (anc.snapshots[current] || null) : null
     readonly property var device: _demo ? demoDevice : current ? offers.deviceFor(current) : null
     // Only for a device that is paired with this computer: one merely seen
     // in pairing mode may be a stranger's, and its name is not ours to send

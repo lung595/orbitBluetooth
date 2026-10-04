@@ -36,8 +36,14 @@ Window {
     Rectangle {
         anchors.fill: parent
         gradient: Gradient {
-            GradientStop { position: 0; color: win.p[7] }
-            GradientStop { position: 1; color: win.p[8] }
+            GradientStop {
+                position: 0
+                color: win.p[7]
+            }
+            GradientStop {
+                position: 1
+                color: win.p[8]
+            }
         }
     }
     // The bar, so the sheet reads as coming out of it
@@ -60,12 +66,32 @@ Window {
         kind: "headphonesSlim"
         battery: 80
         life: win.recording ? Math.max(0, 1 - (win.now - win.started) / 30000) : 0.64
-        features: Offer.features({ "family": "sony", "hours": 30, "kind": "headphonesSlim" })
+        features: Offer.features({
+            "family": "sony",
+            "hours": 30,
+            "kind": "headphonesSlim"
+        })
         ancModes: [
-            { "id": "nc", "icon": "noise_control_on", "label": "ANC" },
-            { "id": "adaptive", "icon": "auto_awesome", "label": "Adaptive" },
-            { "id": "ambient", "icon": "hearing", "label": "Ambient" },
-            { "id": "off", "icon": "noise_control_off", "label": "Off" }
+            {
+                "id": "nc",
+                "icon": "noise_control_on",
+                "label": "ANC"
+            },
+            {
+                "id": "adaptive",
+                "icon": "auto_awesome",
+                "label": "Adaptive"
+            },
+            {
+                "id": "ambient",
+                "icon": "hearing",
+                "label": "Ambient"
+            },
+            {
+                "id": "off",
+                "icon": "noise_control_off",
+                "label": "Off"
+            }
         ]
         ancMode: "nc"
         pictureSource: win.picture ? "file://" + win.picture : ""

@@ -1,3 +1,6 @@
 pragma Singleton
 import QtQuick
-QtObject { property var screens: ["screen0"] }
+
+QtObject {
+    property var screens: ["screen0"]
+}
