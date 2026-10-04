@@ -254,6 +254,20 @@ Item {
             }
         },
         {
+            // With motion on the new source is carried to the middle by its spring, not put there
+            "then": 1500,
+            "run": () => {
+                check("motion on: the new source is still on its way, off the middle", Math.hypot(...h.at(h.two).map((v, i) => v - [scene.cx, scene.cy][i])) > 3, true);
+            }
+        },
+        {
+            "then": 0,
+            "run": () => {
+                const [x, y] = h.at(h.two);
+                check("motion on: the spring has brought the new source to the middle", Math.hypot(x - scene.cx, y - scene.cy) < 3, true);
+            }
+        },
+        {
             // The group ends: the camera goes back, then the parts unload
             "then": 1500,
             "run": () => {
