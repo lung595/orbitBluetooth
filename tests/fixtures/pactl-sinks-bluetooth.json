@@ -1,0 +1,26 @@
+[
+  {
+    "index": 70,
+    "state": "RUNNING",
+    "name": "bluez_output.AA_BB_CC_DD_EE_01.1",
+    "description": "Acme Buds",
+    "ports": [
+      {
+        "name": "headset-output",
+        "description": "Headset",
+        "priority": 0,
+        "availability_group": "",
+        "availability": "available",
+        "type": "Headset"
+      }
+    ],
+    "active_port": "headset-output",
+    "properties": {
+      "media.class": "Audio/Sink",
+      "device.api": "bluez5",
+      "device.bus": "bluetooth",
+      "device.form_factor": "headset",
+      "device.icon_name": "audio-headset-bluetooth"
+    }
+  }
+]

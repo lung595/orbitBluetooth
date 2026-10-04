@@ -1,0 +1,17 @@
+[
+  {
+    "index": 63,
+    "state": "SUSPENDED",
+    "name": "alsa_output.usb-Acme_Dongle_DAC-00.analog-stereo",
+    "description": "Acme Dongle DAC Analog Stereo",
+    "ports": [],
+    "active_port": null,
+    "properties": {
+      "media.class": "Audio/Sink",
+      "device.api": "alsa",
+      "device.class": "sound",
+      "device.bus": "usb",
+      "api.alsa.card": "4"
+    }
+  }
+]

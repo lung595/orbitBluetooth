@@ -1,0 +1,14 @@
+[
+  {
+    "index": 80,
+    "state": "RUNNING",
+    "name": "orbit_pc_AA_BB_CC_DD_EE_01",
+    "description": "Orbit PC copy (Acme Buds)",
+    "ports": [],
+    "active_port": null,
+    "properties": {
+      "media.class": "Audio/Sink",
+      "node.virtual": "true"
+    }
+  }
+]
