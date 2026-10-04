@@ -1,5 +1,4 @@
 import QtQuick
-import qs.Common
 
 // Orbit's volume face inside a Dank Island (D263): created in memory as a
 // child of the island's own expanded volume sheet, so the island grows to
@@ -41,23 +40,10 @@ Item {
     visible: ours
 
     // --- The island's click-away layer -------------------------------------------
-    // The full-screen layer DMS maps under an expanded island, found by its
-    // shape (a window with a mask and an exclusive zone); null if a DMS
-    // update changes it
-    readonly property var clickAway: _clickAwayOf(host)
-    function _clickAwayOf(host) {
-        const objects = host ? host.data : [];
-        for (let i = 0; i < objects.length; i++) {
-            const o = objects[i];
-            if (typeof o.exclusiveZone === "number" && o.mask !== undefined && o.visible !== undefined)
-                return o;
-        }
-        return null;
-    }
-    // Kept from the first open until the island has folded back
+    // Kept hidden from the first open until the island has folded back
     ClickAwayHold {
         id: layerHold
-        clickAway: face.clickAway
+        host: face.host
     }
 
     // --- Open and close ----------------------------------------------------------

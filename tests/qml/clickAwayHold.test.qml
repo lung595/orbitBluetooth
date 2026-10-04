@@ -1,22 +1,35 @@
 import QtQuick
 import "components/volume"
 
-// Test of ClickAwayHold: while held, DMS's full-screen click-away layer is
+// Test of ClickAwayHold: it finds DMS's full-screen click-away layer among
+// its host window's children by its shape; while held, that layer is
 // hidden; once let go (a moment after release()), or gone with its owner,
 // DMS's own value is back. The island's own motion is never touched, and
 // nothing is ever written for good (value 12). Run with tests/qml/run.sh.
 Item {
     id: h
 
-    // DMS's click-away layer, mapped while the island is open
+    // DMS's click-away layer, mapped while the island is open: a window
+    // with a mask and an exclusive zone, among other children of the host
     property bool open: true
     QtObject {
         id: screenLayer
         property bool visible: h.open
+        property int exclusiveZone: -1
+        property var mask: null
+    }
+    // Another child of the host, which is not the layer
+    QtObject {
+        id: decoy
+        property bool visible: true
+    }
+    QtObject {
+        id: screenHost
+        property var data: [decoy, screenLayer]
     }
     ClickAwayHold {
         id: hold
-        clickAway: screenLayer
+        host: screenHost
         delay: 40
     }
     // A second layer, for an owner that goes while it holds (the face when
@@ -25,16 +38,27 @@ Item {
     QtObject {
         id: screenLayer2
         property bool visible: h.open2
+        property int exclusiveZone: -1
+        property var mask: null
+    }
+    QtObject {
+        id: screenHost2
+        property var data: [screenLayer2]
+    }
+    // A host with nothing that looks like the layer (a DMS update)
+    QtObject {
+        id: bareHost
+        property var data: [decoy]
     }
     Component {
         id: ownerMaker
         Item {
             id: owner
-            required property var clickAway
+            required property var host
             property alias hold: inner
             ClickAwayHold {
                 id: inner
-                clickAway: owner.clickAway
+                host: owner.host
                 delay: 40
             }
         }
@@ -59,7 +83,8 @@ Item {
             "then": 0,
             "run": () => {
                 hold.hold();
-                check("held: the layer is hidden", [screenLayer.visible, hold.held], [false, true]);
+                check("held: the layer is hidden, found by its shape", [screenLayer.visible, hold.held], [false, true]);
+                check("held: the host's other children are left alone", decoy.visible, true);
                 h.open = false;
                 h.open = true;
                 check("held: DMS mapping it again does not undo it", screenLayer.visible, false);
@@ -101,7 +126,7 @@ Item {
             "run": () => {
                 check("released for good: the layer is back", [screenLayer.visible, hold.held], [true, false]);
                 h.owner = ownerMaker.createObject(h, {
-                    "clickAway": screenLayer2
+                    "host": screenHost2
                 });
                 h.owner.hold.hold();
                 check("a second owner holds its own layer", screenLayer2.visible, false);
@@ -116,10 +141,16 @@ Item {
                 check("and its binding is alive", screenLayer2.visible, false);
                 h.open2 = true;
                 h.owner = ownerMaker.createObject(h, {
-                    "clickAway": null
+                    "host": null
                 });
                 h.owner.hold.hold();
-                check("no layer to hold: nothing breaks", h.owner.hold.held, true);
+                check("no host: nothing breaks", h.owner.hold.held, true);
+                h.owner.destroy();
+                h.owner = ownerMaker.createObject(h, {
+                    "host": bareHost
+                });
+                h.owner.hold.hold();
+                check("no layer in the host: nothing breaks, nothing hidden", [h.owner.hold.held, decoy.visible], [true, true]);
                 h.owner.destroy();
             }
         }
