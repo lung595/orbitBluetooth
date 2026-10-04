@@ -41,6 +41,19 @@ eq("a session with no wired member has no automatic delay", Delay.delaysFor({ "s
 eq("no plan, no taps, no latencies", [Delay.delaysFor(null, latencies, 0), Delay.delaysFor({ "source": "", "taps": [] }, latencies, 0), Delay.delaysFor(plan, null, 0), Delay.delaysFor(plan, {}, 0), Delay.delaysFor({ "source": BT1 }, latencies, 0), Delay.delaysFor(undefined, undefined, 0)], [{}, {}, {}, {}, {}, {}]);
 eq("the delays are those the copies take", Together.commands({ "source": BT1, "taps": [{ "member": W1, "capture": "orbit_pc_AA_BB_CC_DD_EE_01", "playback": W1 }] }, Delay.delaysFor(plan, latencies, 0))[0].command[6], "0.195");
 
+// --- The latencies the graph gives, and the delays added up ------------------------------------
+const BTSINK = "bluez_output.AA_BB_CC_DD_EE_01.1";
+const sinks = { [BT1]: BTSINK, [W1]: "alsa_output.usb-Acme_Demo_Headset-00.analog-stereo" };
+eq("a member's latency is the one of its sink", Delay.latenciesOf(sinks, { [BTSINK]: { "latencyMs": 218.7 }, [sinks[W1]]: { "latencyMs": 21 } }), { [BT1]: 218.7, [W1]: 21 });
+eq("a wired output the graph gives no time for counts as 0", Delay.latenciesOf(sinks, { [BTSINK]: { "latencyMs": 200 }, [sinks[W1]]: {} }), { [BT1]: 200, [W1]: 0 });
+eq("a Bluetooth output with no figure is left out, never guessed", Delay.latenciesOf(sinks, { [BTSINK]: {}, [sinks[W1]]: { "latencyMs": 5 } }), { [W1]: 5 });
+eq("nothing read yet: only the wired outputs answer, with 0", [Delay.latenciesOf(sinks, {}), Delay.latenciesOf(sinks, null), Delay.latenciesOf(sinks, undefined)], new Array(3).fill({ [W1]: 0 }));
+eq("a figure that is not a latency is no figure", Delay.latenciesOf(sinks, { [BTSINK]: { "latencyMs": "200" }, [sinks[W1]]: { "latencyMs": -4 } }), { [W1]: 0 });
+eq("no sinks, no latencies", [Delay.latenciesOf(null, {}), Delay.latenciesOf({}, { [BTSINK]: { "latencyMs": 5 } }), Delay.latenciesOf(undefined, undefined)], [{}, {}, {}]);
+eq("the delays of a copy are the automatic one and its own", Delay.total({ [W1]: 195 }, { [W1]: 20, [BT2]: 50 }), { [W1]: 215, [BT2]: 50 });
+eq("the sum is capped like any delay, and a zero is not listed", [Delay.total({ [W1]: 900 }, { [W1]: 900 }), Delay.total({ [W1]: 0 }, { [BT2]: 0 })], [{ [W1]: Together.MAX_DELAY_MS }, {}]);
+eq("no delay of either kind", [Delay.total(null, null), Delay.total({}, undefined), Delay.total(undefined, { [BT2]: 40 })], [{}, {}, { [BT2]: 40 }]);
+
 // --- A wired source waits in its filter, never the Bluetooth outputs ---------------------------
 const wired = { "source": W1, "taps": [tap(BT1, "c"), tap(W2, "c"), tap(BT2, "c")] };
 const heard = { [W1]: 5, [W2]: 5, [BT1]: 200, [BT2]: 250 };

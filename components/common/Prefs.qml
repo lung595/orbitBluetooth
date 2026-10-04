@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Common
 import qs.Services
+import "../together/Delay.js" as Delay
 import "../volume/Audiophile.js" as Audiophile
 import "../volume/Polar.js" as Polar
 import "../volume/Steps.js" as Steps
@@ -65,6 +66,9 @@ QtObject {
     // While a Listen together session plays, the source takes the center and
     // the other outputs orbit it (off: the scene keeps its usual layout)
     readonly property bool togetherCentre: _get("togetherCentre", true)
+    // Listen together: a nudge (ms, -100..100) on the automatic wait of the
+    // wired outputs, for what the figures cannot know (a speaker's own delay)
+    readonly property int togetherFineDelay: Delay.cleanFine(Number(_get("togetherFineDelay", 0)))
     readonly property string imageFolder: _get("imageFolder", "")
     property var glyphOverrides: ({})
     readonly property bool ancEnabled: _get("ancEnabled", true)

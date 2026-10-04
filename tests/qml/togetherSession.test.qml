@@ -1,23 +1,35 @@
 import QtQuick
 import Quickshell.Io
 import "components/together"
+import "components/volume/Route.js" as Route
 
 // Test of Listen together (TogetherSession and its copies): who is in and who
 // is not, which copies run for them (one per member that is copied to, a
 // newcomer never cuts the others), what happens when a member is away, in a
 // call or gone (D279: away keeps its place, only a Bluetooth disconnect or
 // the user removes it), when the session ends, and the level the members
-// share. The processes are the stand-in of Quickshell.Io listed in
-// ProcessLog. Run with tests/qml/run.sh.
+// share; then the wired outputs of D298 (members found by their node, the
+// delay filter of a wired source, the waits read from the graph). The
+// processes are the stand-in of Quickshell.Io listed in ProcessLog. Run with
+// tests/qml/run.sh.
 Item {
     id: h
 
-    // A fake AudioRoute: devices by address, replaced as a whole when one changes
+    // A fake AudioRoute: devices by address and wired outputs by node name,
+    // each replaced as a whole when one changes
     QtObject {
         id: route
         property var devices: ({})
+        property var wired: ({})
+        property var filters: ({})
         function known(address) {
             return devices[address] || null;
+        }
+        function wiredSink(name) {
+            return wired[name] || null;
+        }
+        function wiredFilter(name) {
+            return filters[name] || null;
         }
         function deviceNode(device) {
             return null;
@@ -36,6 +48,9 @@ Item {
     readonly property string c: "AA:BB:CC:DD:EE:03"
     readonly property string d: "AA:BB:CC:DD:EE:04"
     readonly property string e: "AA:BB:CC:DD:EE:05"
+    // Two made-up wired outputs (D298)
+    readonly property string w1: "alsa_output.test_one"
+    readonly property string w2: "alsa_output.test_two"
 
     function key(address) {
         return address.replace(/:/g, "_");
@@ -71,18 +86,96 @@ Item {
         route.devices = next;
     }
 
-    // The copies that run, as "member <- where it is copied from", by the last two digits
+    // The processes of the session: the copies and the delay filter of a wired
+    // source, not the graph reader
+    function live() {
+        return ProcessLog.live.filter(p => p.command[0] !== "pw-dump");
+    }
+    // A node as the lines below name it: a Bluetooth output or filter by the
+    // last two digits of its address (and "pc" for the filter), a wired output
+    // by its name after "alsa_output.", the delay filter of one as "f-" and that
+    function labelOf(node) {
+        if (/^orbit_wired_w_/.test(node))
+            return "f-" + node.slice(14, -17);
+        if (/^alsa_output\./.test(node))
+            return node.slice(12);
+        return /([0-9A-F]{2})(\.1)?$/.exec(node)[1] + (/^orbit_pc_/.test(node) ? "pc" : "");
+    }
+    // The copies that run, as "member <- where it is copied from", and the
+    // delay filter as "filter(wired output)"
     function copies() {
         const out = [];
-        for (const p of ProcessLog.live) {
-            const member = /orbit_together_[0-9A-F_]*([0-9A-F]{2})_in/.exec(p.command[4])[1];
-            const from = /target\.object=\S*?([0-9A-F]{2})(\.1)?\s/.exec(p.command[4])[1];
-            out.push(member + "<-" + from + (/orbit_pc_/.test(p.command[4]) ? "pc" : ""));
+        for (const p of live()) {
+            if (/media\.class=Audio\/Sink/.test(p.command[4])) {
+                out.push("filter(" + /node\.name = "alsa_output\.([^"]*)"/.exec(p.command[4])[1] + ")");
+                continue;
+            }
+            const m = /node\.name=orbit_together_(\S+?)_in\s/.exec(p.command[4])[1];
+            const member = /^w_/.test(m) ? m.slice(2, -17) : m.slice(-2);
+            out.push(member + "<-" + labelOf(/target\.object=(\S+)\s/.exec(p.command[4])[1]));
         }
         return out.sort();
     }
-    function live() {
-        return ProcessLog.live.slice();
+    // A wired output node, as PipeWire lists it, and the delay filter in front of it
+    function wire(name, description) {
+        const next = Object.assign({}, route.wired);
+        next[name] = {
+            "name": name,
+            "description": description,
+            "nickname": "",
+            "audio": {
+                "volume": 1,
+                "muted": false
+            }
+        };
+        route.wired = next;
+    }
+    function unwire(name) {
+        const next = Object.assign({}, route.wired);
+        delete next[name];
+        route.wired = next;
+    }
+    function filterUp(name, up) {
+        const next = Object.assign({}, route.filters);
+        if (up)
+            next[name] = {
+                "name": Route.wiredFilterName(name)
+            };
+        else
+            delete next[name];
+        route.filters = next;
+    }
+    // What `pw-dump` says: each output's name with the time it reports (ns, 0 for none)
+    function dumpOf(latencies) {
+        return JSON.stringify(Object.keys(latencies).map(name => ({
+                    "info": {
+                        "props": {
+                            "media.class": "Audio/Sink",
+                            "node.name": name
+                        },
+                        "params": {
+                            "Latency": [
+                                {
+                                    "direction": "Input",
+                                    "maxNs": latencies[name]
+                                }
+                            ]
+                        }
+                    }
+                })));
+    }
+    // The graph reader asked for its answer: gives it, and says it is over
+    function answerGraph(latencies) {
+        const reader = ProcessLog.live.find(p => p.command[0] === "pw-dump");
+        if (!reader || !reader.running)
+            return false;
+        reader.stdout.text = dumpOf(latencies);
+        reader.running = false;
+        reader.exited(0);
+        return true;
+    }
+    function readerRunning() {
+        return ProcessLog.live.some(p => p.command[0] === "pw-dump" && p.running);
     }
 
     property int failures: 0
@@ -109,6 +202,15 @@ Item {
     // that disconnects leaves once the update that told so is over
     property var steps: []
     property int next: 0
+    // A step that must let a timer of the code run (the graph reader waits
+    // 400 ms) holds the next one until this time
+    property double holdUntil: 0
+    function wait(ms) {
+        holdUntil = Date.now() + ms;
+    }
+    // Long enough for the member that left to be taken out (Qt.callLater runs
+    // when it likes relative to a 1 ms timer, more so on a busy machine)
+    readonly property int leaveMs: 30
     Timer {
         id: stepper
         // 1 ms: a 0 ms timer never fires under the offscreen test platform
@@ -116,6 +218,8 @@ Item {
         repeat: true
         running: false
         onTriggered: {
+            if (Date.now() < h.holdUntil)
+                return;
             if (h.next >= h.steps.length) {
                 stepper.stop();
                 print(h.failures ? h.failures + " failure(s)" : "all passed");
@@ -126,7 +230,7 @@ Item {
         }
     }
     Component.onCompleted: {
-        steps = [step1, step2, step3, step4, step5, step6, step7, step8, step9];
+        steps = [step1, step2, step3, step4, step5, step6, step7, step8, step9, step10, step11, step12, step13, step14];
         stepper.start();
     }
 
@@ -212,6 +316,7 @@ Item {
             "connected": false,
             "sink": null
         });
+        h.wait(h.leaveMs);
     }
 
     function step5() {
@@ -247,6 +352,7 @@ Item {
         patch(d, {
             "connected": false
         });
+        h.wait(h.leaveMs);
     }
 
     function step8() {
@@ -311,5 +417,123 @@ Item {
         session.realign(a);
         check("the source's filter came up: the others follow", route.devices[b].pc.audio.volume, 0.9);
         session.end("ended", "");
+    }
+
+    // The sink of a Bluetooth output with the codec it plays
+    function sinkWith(address, codec) {
+        const s = sinkOf(address);
+        s.properties["api.bluez5.codec"] = codec;
+        return s;
+    }
+    // The wired outputs' process: the delay filter's, or null
+    function filterProcess() {
+        return live().find(p => /media\.class=Audio\/Sink/.test(p.command[4])) || null;
+    }
+    function copyProcess() {
+        return live().find(p => !/media\.class=Audio\/Sink/.test(p.command[4])) || null;
+    }
+
+    function step10() {
+        // --- A wired output next to a Bluetooth one (D298) --------------------------------
+        plug(a, 0.7);
+        plug(b);
+        wire(w1, "Studio\u0007 Interface");
+        wire(w2, "Headset");
+        check("a wired output is a member by its node", session.check([w1, b]), null);
+        check("one that is not there is not connected", session.check([w1, "alsa_output.test_gone"]).why, "not-connected");
+        check("a name that is not an output's is refused", [session.check([w1, "alsa_output.x y"]).why, session.check([w1, "alsa_output.a..b"]).why, session.check([w1, "nonsense"]).why], ["bad-address", "bad-address", "bad-address"]);
+        check("a wired output has the name of its node, cleaned", [session.nameOf(w1), session.nameOf("alsa_output.test_gone")], ["Studio Interface", ""]);
+        check("a wired output takes part with a drop too", session.dropCheck(w1, b), null);
+
+        check("start with a wired source and a Bluetooth output", session.start([w1, b]), null);
+        check("the first with an output is the source", [session.members, session.source], [[w1, b], w1]);
+        check("the copy reads the wired output, no wait is made up", copies(), ["02<-test_one"]);
+        check("the face shows the wired source's own level", [session.sharedNode === route.wired[w1], session.memberNode(w2) === route.wired[w2], session.sharedNodes.length], [true, true, 0]);
+
+        check("a wired output joins by a drop onto a member", [session.join(w2, b), session.members], [null, [w1, b, w2]]);
+        check("its copy reads the same source", copies(), ["02<-test_one", "test_two<-test_one"]);
+        check("a wired output can be removed", [session.remove(w2), session.members], [null, [w1, b]]);
+
+        h.wait(500);
+    }
+
+    function step11() {
+        check("the graph is read once, a moment after the session forms", readerRunning(), true);
+        check("it answers: 218 ms for the headset, nothing for the wired output", answerGraph({
+            "alsa_output.test_one": 0,
+            "bluez_output.AA_BB_CC_DD_EE_02.1": 218000000
+        }), true);
+        check("the wired source waits in its own filter, the copy goes on", copies(), ["02<-test_one", "filter(test_one)"]);
+        check("it waits as long as the Bluetooth output adds", filterProcess().command[6], "0.218");
+
+        const filter = filterProcess();
+        const copy = copyProcess();
+        filterUp(w1, true);
+        check("the filter is up: the copy reads its monitor, the filter stays", [copies(), live().indexOf(filter) >= 0], [["02<-f-test_one", "filter(test_one)"], true]);
+        check("the copy was restarted to read it", live().indexOf(copy), -1);
+
+        const reading = copyProcess();
+        session.fineDelayMs = 30;
+        check("a nudge moves the wait: the filter is replaced", [filterProcess() !== filter, filterProcess().command[6]], [true, "0.248"]);
+        check("the copy was not restarted", copyProcess() === reading, true);
+
+        const nudged = filterProcess();
+        session.setDelay(b, 50);
+        check("a delay of the headset's own is its copy's, the filter is left alone", [copyProcess().command[6], filterProcess() === nudged], ["0.050", true]);
+        session.setDelay(b, 0);
+        session.fineDelayMs = 0;
+        check("both back to nothing", [filterProcess().command[6], copyProcess().command.length], ["0.218", 6]);
+
+        // The headset changes its codec: the graph is read again
+        patch(b, {
+            "sink": sinkWith(b, "ldac")
+        });
+        h.wait(500);
+    }
+
+    function step12() {
+        check("a codec change makes the graph be read again", readerRunning(), true);
+        check("the new figure moves the wait", [answerGraph({
+                "alsa_output.test_one": 0,
+                "bluez_output.AA_BB_CC_DD_EE_02.1": 150000000
+            }), filterProcess().command[6]], [true, "0.150"]);
+
+        // The wired source is unplugged: it leaves, and with fewer than two the session ends
+        h.ends = [];
+        unwire(w1);
+        filterUp(w1, false);
+        h.wait(h.leaveMs);
+    }
+
+    function step13() {
+        check("an unplugged wired output ends a session of two", [session.active, h.ends, copies()], [false, ["member-left:ne"], []]);
+        check("nothing reads the graph outside a session", ProcessLog.live.some(p => p.command[0] === "pw-dump"), false);
+
+        // A Bluetooth source, a wired output to copy to
+        h.ends = [];
+        wire(w1, "Studio Interface");
+        plug(a, 0.7);
+        plug(b);
+        check("start with a Bluetooth source and a wired output", session.start([a, w2]), null);
+        check("the wired member is copied to, from the source's filter", [session.source, copies()], [a, ["test_two<-01pc"]]);
+        check("only the source's level is shared", session.sharedNodes.map(n => n.name), ["orbit_pc_" + key(a)]);
+        h.wait(500);
+    }
+
+    function step14() {
+        check("the graph said 200 ms for the Bluetooth output, nothing for the wired one", answerGraph({
+            "bluez_output.AA_BB_CC_DD_EE_01.1": 200000000,
+            "alsa_output.test_two": 0
+        }), true);
+        check("the wired copy waits for it, there is no filter", [copyProcess().command[6], filterProcess()], ["0.200", null]);
+        session.fineDelayMs = 20;
+        check("the nudge moves the wired copy", copyProcess().command[6], "0.220");
+        session.fineDelayMs = -9999;
+        check("a nudge is held within 100 ms either way", copyProcess().command[6], "0.100");
+        session.fineDelayMs = 0;
+        check("a Bluetooth copy never waits", [session.join(b, a), copies()], [null, ["02<-01pc", "test_two<-01pc"]]);
+        check("only the wired copy has a delay", live().filter(p => p.command.length === 7).length, 1);
+        session.end("ended", "");
+        check("the session ended: nothing is left running", [live().length, ProcessLog.live.length], [0, 0]);
     }
 }

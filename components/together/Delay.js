@@ -24,6 +24,24 @@ function cleanFine(ms) {
     return typeof ms === "number" && isFinite(ms) ? Math.max(-MAX_FINE_MS, Math.min(MAX_FINE_MS, ms)) : 0;
 }
 
+// What each member adds before it is heard (ms), { member: ms }, from the sink
+// each one plays on (`sinks`, { member: node name }) and what PipeWire's graph
+// reports (`graph`, AudioGraph.parseDump: { node name: { latencyMs } }). A wired
+// output the graph gives no time for counts as 0: it answers within a few
+// milliseconds and the user's correction covers the rest. A Bluetooth output
+// with no figure is left out, never guessed (autoDelayMs then waits for nothing).
+function latenciesOf(sinks, graph) {
+    const out = {};
+    for (const who of Object.keys(sinks || {})) {
+        const known = graph && graph[sinks[who]];
+        if (known && isLatency(known.latencyMs))
+            out[who] = known.latencyMs;
+        else if (Member.isWired(who))
+            out[who] = 0;
+    }
+    return out;
+}
+
 // What a copy must wait (ms, a whole number, 0..Together.MAX_DELAY_MS): the
 // time the source takes to be heard more than the member does, plus the
 // user's correction. 0 when either latency is not known: no figure is made up,
@@ -49,6 +67,19 @@ function delaysFor(plan, latencies, fineMs) {
         const ms = autoDelayMs(latencies[plan.source], latencies[tap.member], fineMs);
         if (ms > 0)
             out[tap.member] = ms;
+    }
+    return out;
+}
+
+// The delay of every copy: the automatic one and the user's own (both
+// { member: ms }) added, capped like any other; only the copies that wait are in
+// the answer
+function total(auto, manual) {
+    const out = {};
+    for (const who of Object.keys(auto || {}).concat(Object.keys(manual || {}))) {
+        const ms = Together.cleanDelay((auto && auto[who] || 0) + (manual && manual[who] || 0));
+        if (ms > 0)
+            out[who] = ms;
     }
     return out;
 }

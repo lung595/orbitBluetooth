@@ -2,29 +2,37 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQml
 import Quickshell.Services.Pipewire
+import "Delay.js" as Delay
+import "Member.js" as Member
 import "Together.js" as Together
+import "Wired.js" as Wired
 
-// Listen together (D254, D277): two to four Bluetooth outputs play the same
-// sound. This is the session: who the members are, where the sound is taken
-// from, and the copies that carry it to the other members (TogetherLink),
-// which exist only while the session does. Event-driven: nothing here polls,
-// and with no session nothing is loaded.
-// A member stays a member while BlueZ says it is connected, even when its
-// output goes quiet or a multipoint headset hands its link to the phone: its
-// copy is simply stopped while the output is away and started again when it
-// returns, and no stream is ever held towards it (D279). The session ends
-// when fewer than two members remain, on the user's request, or if a copy
-// dies. Nothing here touches a device's Bluetooth link.
+// Listen together (D254, D277, D298): two to four outputs, Bluetooth or wired,
+// play the same sound. This is the session: who the members are, where the
+// sound is taken from, and the copies that carry it to the other members
+// (TogetherLink), which exist only while the session does. Event-driven:
+// nothing here polls, and with no session nothing is loaded.
+// A Bluetooth member stays a member while BlueZ says it is connected, even
+// when its output goes quiet or a multipoint headset hands its link to the
+// phone: its copy is simply stopped while the output is away and started again
+// when it returns, and no stream is ever held towards it (D279). A wired
+// member is there while its output node is. The session ends when fewer than
+// two members remain, on the user's request, or if a copy dies. Nothing here
+// touches a device's Bluetooth link.
 Item {
     id: session
 
-    // The daemon's AudioRoute: which Bluetooth devices there are and their outputs
+    // The daemon's AudioRoute: which Bluetooth devices there are and their
+    // outputs, and the wired outputs and their delay filters
     required property var route
+    // The user's nudge on the automatic wait of the wired outputs (ms)
+    property int fineDelayMs: 0
 
-    // The members (addresses with colons) in the order they joined, which is
-    // also the order of the arcs on screen; [] while nothing is shared
+    // The members (a Bluetooth address with colons, or a wired output's node
+    // name: Member.js) in the order they joined, which is also the order of the
+    // arcs on screen; [] while nothing is shared
     property var members: []
-    // Extra delay of a member's copy in ms ({ address: ms }), for this session
+    // Extra delay of a member's copy in ms ({ member: ms }), for this session
     // only: nothing is saved
     property var delays: ({})
     readonly property bool active: members.length >= 2
@@ -36,26 +44,51 @@ Item {
     // A member disconnected and the others go on
     signal memberLeft(string address)
 
-    // The name the user sees, for a note
-    function nameOf(address) {
-        const d = route.known(address);
+    // The name the user sees, for a note: a device's name, or a wired
+    // output's description (cleaned, and never written to a log)
+    function nameOf(who) {
+        if (Member.isWired(who)) {
+            const n = route.wiredSink(who);
+            return n ? Wired.labelOf(n.nickname || n.description) : "";
+        }
+        const d = route.known(who);
         return d ? d.name : "";
     }
-    function isMember(address) {
-        return members.indexOf(address) >= 0;
+    function isMember(who) {
+        return members.indexOf(who) >= 0;
     }
 
-    // --- What Together.js asks about a device ---------------------------------------
-    function _facts(address) {
-        const d = route.known(address);
+    // --- What Together.js asks about an output ---------------------------------------
+    // A wired output is there while its node is (no profile, no filter of the
+    // PC level); `pc` is then the delay filter Orbit runs in front of it, once
+    // it exists
+    function _facts(who) {
+        if (Member.isWired(who)) {
+            const n = route.wiredSink(who);
+            return n ? {
+                "connected": true,
+                "sink": n.name,
+                "profile": ""
+            } : null;
+        }
+        const d = route.known(who);
         return d ? {
             "connected": d.connected,
             "sink": d.sink ? d.sink.name : "",
             "profile": _profile(d)
         } : null;
     }
-    function _sound(address) {
-        const d = route.known(address);
+    function _sound(who) {
+        if (Member.isWired(who)) {
+            const n = route.wiredSink(who);
+            const f = route.wiredFilter(who);
+            return n ? {
+                "sink": n.name,
+                "pc": f ? f.name : "",
+                "profile": ""
+            } : null;
+        }
+        const d = route.known(who);
         return d ? {
             "sink": d.sink ? d.sink.name : "",
             "pc": d.pc ? d.pc.name : "",
@@ -64,6 +97,9 @@ Item {
     }
     function _profile(d) {
         return d.sink && d.sink.properties ? d.sink.properties["api.bluez5.profile"] : "";
+    }
+    function _codec(d) {
+        return d.sink && d.sink.properties ? d.sink.properties["api.bluez5.codec"] || "" : "";
     }
 
     // --- Who takes part ---------------------------------------------------------------
@@ -90,7 +126,7 @@ Item {
         const r = Together.refusal(list, _facts);
         if (r)
             return r;
-        _begin(list.map(Together.address));
+        _begin(list.map(Together.member));
         return null;
     }
     // Adds devices to the session
@@ -98,7 +134,7 @@ Item {
         const r = joinCheck(list);
         if (r)
             return r;
-        _admit(list.map(Together.address));
+        _admit(list.map(Together.member));
         return null;
     }
     function _begin(list) {
@@ -115,15 +151,15 @@ Item {
     function dropCheck(a, b) {
         if (!active)
             return check([a, b]);
-        if (!isMember(Together.address(a)) && !isMember(Together.address(b)))
+        if (!isMember(Together.member(a)) && !isMember(Together.member(b)))
             return {
                 "why": "outside",
-                "address": Together.address(a)
+                "address": Together.member(a)
             };
         const newcomers = Together.merge(members, a, b).slice(members.length);
         return newcomers.length ? joinCheck(newcomers) : {
             "why": "already",
-            "address": Together.address(a)
+            "address": Together.member(a)
         };
     }
     // The drop itself: starts a session, or adds the one of the two that is
@@ -135,13 +171,13 @@ Item {
         if (active)
             _admit(Together.merge(members, a, b).slice(members.length));
         else
-            _begin([Together.address(a), Together.address(b)]);
+            _begin([Together.member(a), Together.member(b)]);
         return null;
     }
     // A member leaves on the user's request; the session ends if fewer than
     // two remain
     function remove(address) {
-        const a = Together.address(address);
+        const a = Together.member(address);
         if (!isMember(a))
             return {
                 "why": "not-member",
@@ -171,7 +207,7 @@ Item {
             gone.forEach(a => memberLeft(a));
     }
 
-    // A member's copy waits this long, 0..500 ms (a restart of that copy, no more)
+    // A member's copy waits this long more, 0..1000 ms (a restart of that copy, no more)
     function setDelay(address, ms) {
         delays = Together.withDelay(delays, members, address, ms);
     }
@@ -182,24 +218,61 @@ Item {
     readonly property var plan: active ? Together.plan(members, _sound, Pipewire.defaultAudioSink ? Pipewire.defaultAudioSink.name : "") : null
     readonly property string source: plan ? plan.source : ""
 
+    // --- How long each output waits (D298) -------------------------------------------------
+    // What each member adds before it is heard, read from PipeWire's graph:
+    // once when the session forms and again when a member's output, codec or
+    // profile changes (MemberLatency, which exists only during a session)
+    readonly property var latencies: latencyLoader.item ? latencyLoader.item.latencies : ({})
+    readonly property var _sinks: {
+        const out = {};
+        for (const a of active ? members : []) {
+            const f = _facts(a);
+            if (f && f.sink)
+                out[a] = f.sink;
+        }
+        return out;
+    }
+    // Text, so that it signals only when a figure may have changed
+    readonly property string _signature: JSON.stringify((active ? members : []).map(a => {
+        const d = Member.isWired(a) ? null : route.known(a);
+        return [a, _sinks[a] || "", d ? _codec(d) : "", d ? _profile(d) : ""];
+    }))
+    Loader {
+        id: latencyLoader
+        active: session.active
+        sourceComponent: MemberLatency {
+            sinks: session._sinks
+            signature: session._signature
+        }
+    }
+
     // The copies to run, kept while they do not change so that a level or a
-    // name moving does not restart anything
+    // name moving does not restart anything. A wired source waits in a filter
+    // of its own (the first entry), the other wired members in their copies,
+    // each with the user's own delay added.
     property var _copies: []
     function _replan() {
-        const wanted = active ? Together.commands(plan, delays) : [];
+        let wanted = [];
+        if (active) {
+            const waits = Delay.waitsFor(plan, latencies, fineDelayMs);
+            wanted = Together.commands(plan, Delay.total(waits.taps, delays), waits.source);
+        }
         if (JSON.stringify(wanted) !== JSON.stringify(_copies))
             _copies = wanted;
     }
     onPlanChanged: _replan()
     onDelaysChanged: _replan()
     onActiveChanged: _replan()
+    onLatenciesChanged: _replan()
+    onFineDelayMsChanged: _replan()
 
     // --- Members that leave -------------------------------------------------------------
-    // The members BlueZ no longer says are connected, as one text so that the
+    // The members that are no longer there (BlueZ says a device is not
+    // connected, a wired output's node is gone), as one text so that the
     // handler runs when the set changes, not each time a device updates
     readonly property string _gone: members.filter(a => {
-        const d = route.known(a);
-        return !d || !d.connected;
+        const f = _facts(a);
+        return !f || !f.connected;
     }).join(",")
     // Leaving changes `members`, which `_gone` reads: it is done once this
     // update is over, not inside it
@@ -210,13 +283,24 @@ Item {
     }
 
     // --- The levels the face shows (D254) ---------------------------------------------------
-    // A member's own level (the device's, else the one of its output)
-    function memberNode(address) {
-        const d = route.known(address);
+    // A wired output's level is readable once PipeWire is asked for it (a
+    // Bluetooth device's is, by its RouteDevice): only the members' outputs
+    PwObjectTracker {
+        objects: (session.active ? session.members : []).filter(a => Member.isWired(a)).map(a => session.route.wiredSink(a)).filter(n => !!n)
+    }
+    // A member's own level (the device's, else the one of its output; a wired
+    // output has only its own)
+    function memberNode(who) {
+        if (Member.isWired(who))
+            return route.wiredSink(who);
+        const d = route.known(who);
         return d ? (route.deviceNode(d) || d.sink) : null;
     }
-    // The level the face shows: this PC's level on the source
+    // The level the face shows: this PC's level on the source (a wired
+    // source's output level)
     readonly property var sharedNode: {
+        if (Member.isWired(source))
+            return route.wiredSink(source);
         const d = source ? route.known(source) : null;
         return d ? (route.pcNode(d) || d.sink) : null;
     }
@@ -225,7 +309,9 @@ Item {
     // must all hold the same one: writing one writes them all
     // (Route.levelNodes). A source without that filter is copied after
     // its output level (it is the PC level there), so nothing is shared: each
-    // member then plays that sound at its own level.
+    // member then plays that sound at its own level. So does a wired source,
+    // whose copies are taken before its output level, and a wired member,
+    // which has no filter of the PC level.
     readonly property var sharedNodes: {
         const d = active && source ? route.known(source) : null;
         if (!d || !d.pc)
