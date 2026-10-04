@@ -19,21 +19,25 @@ Item {
         spanY: label.height + 14
         color: caption.body.night.primary
         strength: caption.body.connected || caption.body.hovered ? 0.26 : caption.body.scene.anyConnected ? 0.1 : 0.18
+        opacity: label.opacity
         visible: label.visible && label.opacity > 0
     }
 
-    // Name + connection timer. Orbiting bodies in the upper half put their
-    // label above so it never collides with the host core.
+    // Name + connection timer. Orbiting bodies in the upper half (above the
+    // host) put their label above so it never collides with the host core.
     Column {
         id: label
-        readonly property bool above: caption.body.inSlot && caption.body.py < caption.body.scene.cy
+        readonly property bool above: caption.body.inSlot && caption.body.py < caption.body.scene.centre.host.y
         readonly property real gap: caption.body.diameter * caption.body.baseScale / 2 + 5
         y: above ? caption.body.height / 2 - gap - height : caption.body.height / 2 + gap
         anchors.horizontalCenter: parent.horizontalCenter
         spacing: 1
         // A member of a Listen together group is named under the center instead
         visible: (caption.body.scene.prefs.showLabels && caption.body.role === "") || caption.body.hovered || caption.body.dragging
-        opacity: caption.body.scene.focusBody || caption.body.scene.hiddenOpen || caption.body.swallowing || caption.body.hideArmed ? 0 : 1
+        // While a group has the centre, the devices around the sun keep quiet
+        // (their names would crowd the small system): a name shows on hover or drag
+        readonly property real quiet: caption.body.hovered || caption.body.dragging ? 0 : caption.body.scene.centre.away
+        opacity: caption.body.scene.focusBody || caption.body.scene.hiddenOpen || caption.body.swallowing || caption.body.hideArmed ? 0 : 1 - quiet
 
         StyledText {
             anchors.horizontalCenter: parent.horizontalCenter

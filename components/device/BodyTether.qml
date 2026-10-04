@@ -11,14 +11,15 @@ Item {
 
     parent: body.scene.tetherLayer
     visible: opacity > 0.01
-    x: body.scene.cx
-    y: body.scene.cy
-    rotation: Math.atan2(body.py - body.scene.cy, body.px - body.scene.cx) * 180 / Math.PI
+    readonly property var host: body.scene.centre.host
+    x: host.x
+    y: host.y
+    rotation: Math.atan2(body.py - host.y, body.px - host.x) * 180 / Math.PI
     opacity: body.leaving || body.focused || body.swallowing ? 0 : tetherAlpha * (body.scene.focusBody || body.scene.hiddenOpen ? 0.15 : 1)
 
-    readonly property real dist: Math.hypot(body.px - body.scene.cx, body.py - body.scene.cy)
+    readonly property real dist: Math.hypot(body.px - host.x, body.py - host.y)
     readonly property real tetherAlpha: {
-        // The host is away at the back while a Listen together has the center
+        // The members of a Listen together have no tether: they are the center
         if (body.scene.centre.tetherless(body.address))
             return 0;
         if (body.dragging && body.holding)
@@ -42,12 +43,12 @@ Item {
     }
 
     Rectangle {
-        x: tether.body.scene.coreSize / 2
+        x: tether.body.scene.coreSize / 2 * tether.host.scale
         y: -height / 2
         // Connecting: pulses between half and full (0.35 to 0.7 overall)
         opacity: tether.body.phase === "connecting" ? 0.5 + 0.5 * Math.abs(Math.sin(tether.body.scene.clock * 4)) : 1
-        height: tether.thickness * (tether.body.dragging && tether.body.holding ? Math.max(0.4, 1.4 - (tether.dist / (tether.body.scene.rx * tether.body.scene.innerNorm) - 1) * 1.2) : 1)
-        width: Math.max(0, (tether.dist - tether.body.scene.coreSize / 2 - tether.body.diameter * tether.body.baseScale / 2) * tether.reach)
+        height: tether.thickness * (tether.body.dragging && tether.body.holding ? Math.max(0.4, 1.4 - (tether.dist / (tether.body.scene.rx * tether.body.scene.innerNorm * tether.host.scale) - 1) * 1.2) : 1)
+        width: Math.max(0, (tether.dist - tether.body.scene.coreSize / 2 * tether.host.scale - tether.body.diameter * tether.body.baseScale / 2) * tether.reach)
         radius: height / 2
         gradient: Gradient {
             orientation: Gradient.Horizontal

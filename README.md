@@ -82,7 +82,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 - **Drag to connect** with a magnet snap, elastic tether to disconnect.
 - **Two volumes**: open a connected audio device and its card shows the device's own level and this PC's as two half circles, with the sound itself moving inside. Drag or scroll each, click the planet to mute, and a soft tick plays in the device itself.
 - **Volume pop-up and smart steps**: whenever a volume changes, the same screen shows both levels inside Dank Island (or in place of DMS's OSD, which is switched off); 1 % per slow notch, faster when you scroll or press fast, and your volume keys can use it in one click.
-- **Listen together**: drag one connected audio device onto another (halos and a thread of light show where it can go) and both play the same sound; drag a third (up to four) onto any of them. The volumes' half circle splits into one arc per output, and **the source takes the center of the orbit** while the others circle it, with a ring around it for the group's volume. It comes apart by itself when one disconnects, and ends with the shell.
+- **Listen together**: drag one connected audio device onto another (halos and a thread of light show where it can go) and both play the same sound; drag a third (up to four) onto any of them. The volumes' half circle splits into one arc per output, and **the source takes the center of the view** while the others circle it, with a ring around it for the group's volume, and this computer circles the group like a sun. It comes apart by itself when one disconnects, and ends with the shell.
 - **What really plays**: a short line under the device name and in the pop-up, for example *Bluetooth · LDAC · 96 kHz · 24 bit*, and a button that unfolds the rest: channels, profile, the codec's bit rate, latency and the audio quantum, each only when it can be honestly read.
 - **Live charging**: energy beam, time to full, charge speed, session chart.
 - **Earbuds trio**: the case and both buds in their own mini orbit, each with its battery.
@@ -108,7 +108,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 | Drag a connected audio device onto another (or onto any device already in the group) | Listen together: the same sound on both, up to 4 outputs ([more](docs/GUIDE.md#listen-together)) |
 | Scroll over the ring around the center planet, or over the planet | The group's general volume, the gaps between outputs kept ([more](docs/GUIDE.md#the-volume-at-the-center)) |
 | Scroll over an output orbiting the center | That output's own volume |
-| Click this computer, dimmed at the back | It takes the center back; click the group to bring it back ([more](docs/GUIDE.md#the-source-at-the-center)) |
+| Click this computer (the sun around the group) | It takes the center back; click the group to bring it back ([more](docs/GUIDE.md#the-source-at-the-center)) |
 | Right-click a device | Menu: connect, noise-control modes, leave or stop listening together, hide, forget |
 | Forget a device (unpair) | Right-click → **Forget**, click again to confirm; or the 🗑 button of its detail card |
 | Drag a device into the black hole | Hide it (it stays connected) |

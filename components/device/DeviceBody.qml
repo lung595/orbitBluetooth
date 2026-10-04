@@ -193,8 +193,9 @@ Item {
     // front): full size in front, half size behind, for a sense of depth
     readonly property real depthScale: 0.75 + 0.25 * depth
     // The desktop widget floats over the wallpaper: its devices are a
-    // quarter smaller than in the panels, the host keeps its size
-    readonly property real ringScale: (slotMix * depthScale + (1 - slotMix) * (0.66 + 0.34 * signal)) * connectedMix * (scene.glass ? 0.75 : 1)
+    // quarter smaller than in the panels, the host keeps its size. They
+    // shrink and grow with the host's system as it revolves around a group.
+    readonly property real ringScale: (slotMix * depthScale + (1 - slotMix) * (0.66 + 0.34 * signal)) * connectedMix * (scene.glass ? 0.75 : 1) * scene.centre.system.k
     readonly property real baseScale: focused ? 1 : ringScale + (roleDiameter / diameter - ringScale) * roleMix
     readonly property bool hovered: mouse.containsMouse && !scene.focusBody && !scene.hiddenOpen
 
