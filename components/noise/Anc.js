@@ -79,6 +79,15 @@ function nextMode(modes, current) {
     return loop[(i + 1) % loop.length];
 }
 
+// How long a Speak-to-Chat conversation lasts before it ends by itself: the
+// headset's own values 0..3, in order. Shown and typed by these names.
+var CHAT_ENDS = ["short", "standard", "long", "never"];
+
+// The headset's value for a typed name, or -1
+function chatEndsIndex(text) {
+    return CHAT_ENDS.indexOf(String(text || "").trim().toLowerCase());
+}
+
 function errorText(error) {
     if (!error)
         return "";

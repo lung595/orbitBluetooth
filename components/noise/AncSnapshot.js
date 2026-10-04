@@ -4,7 +4,7 @@
 // how a helper report or a local command updates what the UI shows.
 
 // Settings the UI must not see rewound by a report that predates them
-var SETTINGS = ["mode", "ambient", "voice", "chat"];
+var SETTINGS = ["mode", "ambient", "voice", "chat", "chatEnds"];
 
 // Merges one JSON line from the helper into the previous snapshot.
 // `pending` is true while a command waits for the next session. Returns
@@ -35,21 +35,36 @@ function merge(prev, line, pending, now) {
     if (pending && msg.state && prev.state) {
         var kept = {};
         SETTINGS.forEach(function (k) {
-            kept[k] = prev.state[k];
+            // A setting the earlier state never had must not erase the report's
+            if (prev.state[k] !== undefined)
+                kept[k] = prev.state[k];
         });
         next.state = Object.assign({}, msg.state, kept);
     }
     return next;
 }
 
+// What a command's value text means in the state, or undefined for a key
+// that has no state of its own to echo (the helper alone reports it)
+function _parse(key, value) {
+    if (key === "ambient" || key === "chatEnds") {
+        var n = parseInt(value);
+        return isNaN(n) ? undefined : n;
+    }
+    if (key === "voice" || key === "chat")
+        return value === "on";
+    return key === "mode" ? value : undefined;
+}
+
 // Optimistic update so the UI answers instantly; the helper confirms.
 // Returns the snapshot with `key` set to the command's `value` text, or
-// null when there is no state to update yet.
+// null when there is no state to update yet or nothing to echo.
 function withSetting(snapshot, key, value) {
-    if (!snapshot || !snapshot.state)
+    var parsed = _parse(key, value);
+    if (!snapshot || !snapshot.state || parsed === undefined)
         return null;
     var st = Object.assign({}, snapshot.state);
-    st[key] = key === "ambient" ? parseInt(value) : (key === "voice" || key === "chat") ? value === "on" : value;
+    st[key] = parsed;
     return Object.assign({}, snapshot, {
         "state": st
     });

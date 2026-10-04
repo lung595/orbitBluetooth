@@ -1,26 +1,19 @@
 """Sony headphones: the "MDR" protocol over RFCOMM (v1 and v2).
 
-Written from the byte-level facts documented by Gadgetbridge and
-mos9527/SonyHeadphonesClient (no code copied).
-
-Frame: 3E | escaped(type, seq, length u32 BE, payload, checksum) | 3C
-- checksum = sum of the unescaped bytes from type to payload, mod 256;
-- 3C/3D/3E inside a frame are sent as 3D followed by (byte & EF);
-- every data frame from the headset must be acknowledged, and we keep only
-  one command in flight until the headset acknowledges it.
-
-v1 (WH-1000XM3/XM4, WF-1000XM3...) and v2 (WH-1000XM5/XM6, WF-1000XM4/XM5,
-LinkBuds, ULT...) share the framing but not every payload. On v2 the list of
-supported functions tells which noise-control layout the model expects.
+The framing lives in sony_frame.py. v1 (WH-1000XM3/XM4, WF-1000XM3...) and v2
+(WH-1000XM5/XM6, WF-1000XM4/XM5, LinkBuds, ULT...) share it but not every
+payload. Every data frame from the headset must be acknowledged, and we keep
+only one command in flight until the headset acknowledges it. On v2 the list
+of supported functions tells which noise-control layout the model expects.
+Wearing detection and the Speak-to-Chat timing are in sony_extras.py.
 """
 
 from .base import Protocol
+from .sony_extras import SonyExtras
+from .sony_frame import END, START, T_ACK, T_DATA, T_DATA2, decode, encode
 
 UUID_V2 = "956c7b26-d49a-4ba8-b03f-b17d393cb6e2"
 UUID_V1 = "96cc203e-5068-46ad-b32d-e316f5e069ba"
-
-START, END, ESCAPE = 0x3E, 0x3C, 0x3D
-T_ACK, T_DATA, T_DATA2 = 0x01, 0x0C, 0x0E
 
 # How long to wait for an acknowledgement before sending again
 RETRY_SECONDS = 1.25
@@ -36,43 +29,15 @@ FN_SPEAK_TO_CHAT = 0xFC
 AMBIENT_MAX = 20
 
 
-def encode(dtype, seq, payload):
-    body = bytes([dtype, seq]) + len(payload).to_bytes(4, "big") + bytes(payload)
-    raw = body + bytes([sum(body) & 0xFF])
-    out = bytearray([START])
-    for b in raw:
-        out += bytes([ESCAPE, b & 0xEF]) if b in (START, END, ESCAPE) else bytes([b])
-    out.append(END)
-    return bytes(out)
-
-
-def decode(escaped):
-    """Unescaped (type, seq, payload) of the bytes between 3E and 3C, or None."""
-    raw, i = bytearray(), 0
-    while i < len(escaped):
-        if escaped[i] == ESCAPE and i + 1 < len(escaped):
-            raw.append(escaped[i + 1] | 0x10)
-            i += 2
-        else:
-            raw.append(escaped[i])
-            i += 1
-    if len(raw) < 7:
-        return None
-    length = int.from_bytes(raw[2:6], "big")
-    if len(raw) != 7 + length or sum(raw[:-1]) & 0xFF != raw[-1]:
-        return None
-    return raw[0], raw[1], bytes(raw[6:6 + length])
-
-
-class Sony(Protocol):
+class Sony(SonyExtras, Protocol):
     transport = ("rfcomm", [UUID_V2, UUID_V1], None)
 
     def __init__(self, send, name=""):
         super().__init__(send, name)
         self.version = 0          # 1 or 2 once the headset answered the init
         self.seq = 0              # our sequence number, flipped by each ACK
-        self.queue = []           # payloads waiting for the one in flight
-        self.inflight = None      # (payload, sent at, tries)
+        self.queue = []           # (table, payload) waiting for the one in flight
+        self.inflight = None      # (table, payload, sent at, tries)
         self.nc_type = None       # v2 layout byte (0x19, 0x17, 0x15, 0x22), 0x02 on v1
         self.nc_candidates = []   # v2 layouts still to try when the list is silent
         self.wind = False         # v1 models with a wind-reduction setting
@@ -80,21 +45,22 @@ class Sony(Protocol):
         self.sensitivity = 0
         self.level = 10           # ambient level, kept while in other modes
         self.voice = False
+        self.init_extras()
 
     # --- transport ---------------------------------------------------------
 
     def start(self):
         self._queue(b"\x00\x00")  # protocol info: tells v1 from v2
 
-    def _queue(self, payload):
-        self.queue.append(bytes(payload))
+    def _queue(self, payload, table=T_DATA):
+        self.queue.append((table, bytes(payload)))
         self._pump()
 
     def _pump(self, now=None):
         if self.inflight is None and self.queue:
-            payload = self.queue.pop(0)
-            self.send(encode(T_DATA, self.seq, payload))
-            self.inflight = (payload, now, 1)
+            table, payload = self.queue.pop(0)
+            self.send(encode(table, self.seq, payload))
+            self.inflight = (table, payload, now, 1)
         self.awaiting = len(self.queue) + (1 if self.inflight else 0)
 
     def wants_tick(self):
@@ -103,17 +69,17 @@ class Sony(Protocol):
     def tick(self, now):
         if not self.inflight:
             return
-        payload, sent, tries = self.inflight
+        table, payload, sent, tries = self.inflight
         if sent is None:
-            self.inflight = (payload, now, tries)
+            self.inflight = (table, payload, now, tries)
         elif now - sent > RETRY_SECONDS:
             if tries >= MAX_TRIES:
                 # Unanswered: move on (unknown command on this model)
                 self.inflight = None
                 self._on_silence(payload)
             else:
-                self.send(encode(T_DATA, self.seq, payload))
-                self.inflight = (payload, now, tries + 1)
+                self.send(encode(table, self.seq, payload))
+                self.inflight = (table, payload, now, tries + 1)
         self._pump(now)
 
     def frames(self):
@@ -144,6 +110,8 @@ class Sony(Protocol):
         self.send(encode(T_ACK, 1 - seq, b""))
         if dtype == T_DATA and payload:
             self._data(payload)
+        elif dtype == T_DATA2 and payload:
+            self.data2(payload)
         self._pump()
 
     # --- replies and notifications -------------------------------------------
@@ -160,11 +128,17 @@ class Sony(Protocol):
             self._on_battery(p)
         elif op in (0xF7, 0xF9):
             self._on_speak_to_chat(p)
+        elif op in (0xFB, 0xFD):
+            self.on_chat_ends(p)
+        elif op == 0xC9:
+            self.on_unit_log(p)
 
     def _on_protocol_info(self, p):
         if self.version:
             return
         self.version = 2 if len(p) >= 8 else 1
+        # Byte 7 says whether the headset also speaks the second table
+        self.table2 = self.version == 2 and p[7] == 0x00
         if self.version == 2:
             self._queue(b"\x06\x00")  # which functions this model supports
         else:
@@ -189,6 +163,8 @@ class Sony(Protocol):
         if FN_SPEAK_TO_CHAT in codes:
             self.features["chat"] = True
             self._queue(b"\xf6\x0c")
+            self._queue(b"\xfa\x0c")  # how long a conversation lasts (extended parameter)
+        self.on_functions(codes)
 
     def _probe_noise(self):
         if self.nc_candidates:

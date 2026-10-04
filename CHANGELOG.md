@@ -15,11 +15,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - **Multipoint headsets keep working.** A member whose output is handed to your phone stays a member (no message, no flapping), plays again when it returns, and is dropped only on a real Bluetooth disconnection or when you take it out. Orbit opens no stream, silence or keep-alive toward any output. [Guide](docs/GUIDE.md#works-with-multipoint-headsets)
 - **`dms ipc call orbitBluetooth`**: `together "<address> <address>..."` (one quoted argument, spaces or commas, 2 to 4 connected audio devices), `togetherAdd <address>`, `togetherRemove <address>`, `togetherDelay <address> <ms>` (hold one output back, 0 to 500 ms, this session only), `togetherStatus` (JSON) and `separate`. Every argument is validated and capped, and a refusal says why.
 - A short note, with the GitHub mark linking to the guide, says why a device cannot join (not connected, no sound output yet, on its call profile, the same device twice, a fifth device, nobody listening yet).
+- **Pause when you take the headset off** (Sony headsets with a wearing sensor, on by default). When the headset says both sides are off, what plays on it pauses; when it is worn again, Orbit resumes only the players it paused itself and that are still paused. It never starts music, ignores a player that plays elsewhere, and treats the first reading after a connection as a reference that pauses nothing. To hear it, Orbit keeps one control connection open to such a headset while it is connected (no polling, no timer; the headset reports by itself). The matching of a player to the headset is strict (names of the MPRIS player against names of the PipeWire streams that reach the headset), so it does nothing rather than pause the wrong player. Orbit never opens an audio stream or changes the output, so multipoint is untouched. Switch: *Settings → Headphones → Pause when you take the headset off*; check it with `dms ipc call orbitBluetooth wearStatus`. Other brands are not supported yet. The packets come from the MIT-licensed SonyHeadphonesClient and have not been confirmed on a headset of Orbit's own, see [the guide](docs/GUIDE.md#pause-when-you-take-the-headset-off).
+- **How long a conversation lasts** (Sony): a *Conversation ends* row (*Short*, *Standard*, *Long*, *Never*) in the headset's card, shown once the headset has said what it is set to, and `dms ipc call orbitBluetooth chatEnds standard`. The sensitivity of Speak-to-Chat is kept. Not yet confirmed on a headset of Orbit's own, see [the guide](docs/GUIDE.md#how-long-a-conversation-lasts).
 
 ### Fixed
 
 - **The audiophile details no longer open by themselves.** The info line under the volume pop-up stays folded each time the pop-up opens; what you unfolded last time is not kept.
 - **No volume pill left behind after a screenshot.** A screenshot makes DMS fold the Dank Island straight away; Orbit's face went with it, but DMS's own compact volume pill (speaker, blue slider and percentage, which looks like DMS's OSD) was left up with no timer to remove it, until the next click. Orbit now sends the island home when DMS folds it behind the face. DMS's own volume OSD was off all along: nothing about it changed.
+- Switching *Noise control* off now closes the headset sessions that were open (a handler listened to a property that never changes).
+- A helper that cannot start (no Python 3, a crash at once) no longer risks being started again in a loop: a session reopens by itself only after one that reached a ready headset.
+
+### Changed
+
+- Internal: the Sony framing moved to `anc/protocols/sony_frame.py`; the extras (wearing, conversation length) live in `sony_extras.py`; the pause logic is `components/wear/` (`Wear.js` pure and tested, `WearPause.qml`, `WearHeadset.qml`, `HeadsetStreams.qml`).
 
 ### Known limits
 

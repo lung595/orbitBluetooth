@@ -12,10 +12,14 @@ Common vocabulary, used as-is by the QML side:
                     "adaptive" (AirPods adaptive noise level)
       "voice":      True when "focus on voice" exists
       "chat":       True when a conversation-detection feature exists
+      "chatEnds":   True once the headset reported how long a conversation lasts
+      "wear":       True when the headset can report whether it is worn
   }
   state = {
       "mode": "off" | "nc" | "ambient" | "adaptive" | None,
       "ambient": int | None, "voice": bool | None, "chat": bool | None,
+      "chatEnds": 0-3 | None (short, standard, long, never),
+      "wearing": 0-4 | None (the headset's own code: 0 worn, 4 both off),
       "battery": {"left"|"right"|"case"|"single": {"level": 0-100, "charging": bool}}
   }
 """
@@ -49,8 +53,10 @@ class Protocol:
         # kept and applied as soon as it exists
         self.deferred = {}
         self.model = ""
-        self.features = {"modes": [], "ambientMax": 0, "levelMode": "ambient", "voice": False, "chat": False}
-        self.state = {"mode": None, "ambient": None, "voice": None, "chat": None, "battery": {}}
+        self.features = {"modes": [], "ambientMax": 0, "levelMode": "ambient", "voice": False, "chat": False,
+                         "chatEnds": False, "wear": False}
+        self.state = {"mode": None, "ambient": None, "voice": None, "chat": None,
+                      "chatEnds": None, "wearing": None, "battery": {}}
 
     # --- to implement per brand ------------------------------------------
 
@@ -77,6 +83,12 @@ class Protocol:
 
     def set_chat(self, enabled):
         pass
+
+    def set_chat_ends(self, duration):
+        pass
+
+    def set_wear(self, enabled):
+        """Starts (or stops) reporting whether the headset is worn."""
 
     def refresh(self):
         """Asks the headset for its current state again."""
@@ -132,6 +144,10 @@ class Protocol:
                 self.set_chat(value in ("1", "true", "on"))
             else:
                 self.deferred["chat"] = value
+        elif key == "chatEnds" and self.features["chatEnds"] and value in ("0", "1", "2", "3"):
+            self.set_chat_ends(int(value))
+        elif key == "wear" and self.features["wear"]:
+            self.set_wear(value in ("1", "true", "on"))
 
     def flush_deferred(self):
         if self.ready and self.deferred.get("chat") is not None and self.features["chat"]:

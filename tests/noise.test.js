@@ -3,7 +3,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const Anc = load("Anc.js", ["family", "nextMode", "ordered"]);
+const Anc = load("Anc.js", ["family", "nextMode", "ordered", "chatEndsIndex", "CHAT_ENDS"]);
 
 // Brand detection by Bluetooth name
 const names = {
@@ -24,6 +24,11 @@ const names = {
 };
 for (const n in names)
     eq("family(" + JSON.stringify(n) + ")", Anc.family(n), names[n]);
+
+// How long a conversation lasts: the names map to the headset's values 0..3
+eq("chatEnds names", Anc.CHAT_ENDS, ["short", "standard", "long", "never"]);
+eq("chatEndsIndex", ["short", " Long ", "NEVER", "standard"].map(Anc.chatEndsIndex), [0, 2, 3, 1]);
+eq("chatEndsIndex: not a name", ["", "2", "forever", null, undefined].map(Anc.chatEndsIndex), [-1, -1, -1, -1, -1]);
 
 // Mode order and cycling (right-click menu, IPC ancCycle)
 eq("ordered", Anc.ordered(["off", "ambient", "nc"]), ["nc", "ambient", "off"]);
@@ -50,6 +55,12 @@ eq("withSetting: mode", Snap.withSetting(prev, "mode", "off").state.mode, "off")
 eq("withSetting: ambient int", Snap.withSetting(prev, "ambient", "12").state.ambient, 12);
 eq("withSetting: chat bool", Snap.withSetting(prev, "chat", "off").state.chat, false);
 eq("withSetting: keeps old", prev.state.mode, "nc");
+eq("withSetting: how long a conversation lasts is a number", Snap.withSetting(prev, "chatEnds", "2").state.chatEnds, 2);
+eq("withSetting: a bad number is not echoed", Snap.withSetting(prev, "ambient", "loud"), null);
+eq("withSetting: a key with no state of its own is not echoed", Snap.withSetting(prev, "wear", "on"), null);
+eq("merge: pending keeps the conversation length", Snap.merge({ state: { chatEnds: 1 } }, line({ state: { chatEnds: 3 } }), true, 1).state.chatEnds, 1);
+eq("merge: pending takes a setting the old state never had", Snap.merge({ state: { mode: "nc" } }, line({ state: { mode: "off", chatEnds: 2 } }), true, 1).state, { mode: "nc", chatEnds: 2 });
+eq("merge: the wearing reading is never held back", Snap.merge({ state: { wearing: 0 } }, line({ state: { wearing: 4 } }), true, 1).state.wearing, 4);
 
 // Copy-on-write map updates
 const map = { a: 1 };
