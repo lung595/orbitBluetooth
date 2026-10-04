@@ -84,7 +84,8 @@ QtObject {
     readonly property bool separatePc: _get("separatePc", true)
     // This PC's level per device, address -> 0..1 (D256)
     property var pcLevels: ({})
-    // The volume pop-up (D258): "replace" (in place of DMS's volume OSD),
+    // The volume pop-up (D258): "replace" (in the Dank Island, else in place
+    // of DMS's volume OSD, which is switched off, D273),
     // "bar" (under the bar widget), "edge" (right screen edge) or "off"
     readonly property string popupMode: _get("popupMode", "replace")
     // "compact", "medium" or "large"

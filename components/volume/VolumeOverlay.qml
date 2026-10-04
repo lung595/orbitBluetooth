@@ -8,8 +8,10 @@ import "Keys.js" as Keys
 // The volume pop-up, without opening anything (D252, D258): whenever a
 // level of the output in use changes (volume keys, `dms ipc call`, the
 // device's own buttons through AVRCP, DMS's slider, another app), the two
-// volumes show on every screen, as DMS does with its OSD: inside the Dank
-// Island where there is one (IslandFace, D263), else in a VolumePopup. Event-driven: it listens to PipeWire's change signals, nothing polls.
+// volumes show on every screen, in place of DMS's OSD, which is switched off
+// (DmsOsdOff, D273): inside the Dank Island where there is one (IslandFace,
+// D263), else in a VolumePopup. Event-driven: it listens to PipeWire's
+// change signals, nothing polls.
 // Hidden, nothing runs: the pop-ups' content is unloaded and the one sound
 // feed they share (cava) is stopped.
 TwoLevels {
@@ -21,6 +23,13 @@ TwoLevels {
     // "replace" (DMS's OSD place), "bar", "edge" or "off"
     readonly property string mode: prefs.popupMode
     readonly property string size: prefs.popupSize
+
+    // One pop-up on screen, and it is Orbit's: DMS's volume OSD stays off
+    // unless the user turned Orbit's pop-up off (D273)
+    DmsOsdOff {
+        settings: SettingsData
+        active: root.mode !== "off"
+    }
 
     // The Bluetooth device in use, or null for any other output (sound
     // card, HDMI): then only this PC's half circle shows (D258)
@@ -83,8 +92,7 @@ TwoLevels {
             return;
         _settled = false;
         settle.restart();
-        // After DMS's own OSD has shown for the same change: showing last
-        // makes OSDManager hide DMS's (one OSD per screen)
+        // Once per turn of the event loop, however many levels changed in it
         Qt.callLater(_showAll);
     }
     // Starting cava costs about as much as the whole burst of keys (a fixed
@@ -141,8 +149,10 @@ TwoLevels {
                     face.open();
                 done.push(host.screen);
             } else if (c.activeActivity === "volume" && !c.expanded) {
-                // In memory only (no setting written, D259, D261); an island
-                // the user opened on purpose is left alone
+                // DMS's OSD is off, but its switch may be turned back on
+                // meanwhile: the island's own volume face is sent home. In
+                // memory only (D259, D261); an island the user opened on
+                // purpose is left alone
                 c.finishTransient();
             }
         }

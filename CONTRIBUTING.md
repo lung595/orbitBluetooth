@@ -99,6 +99,7 @@ orbitBluetooth/
 │   │   ├── TwoLevels.qml        # an output's two volumes, its cava and its picture (base of CardVolume, VolumeOverlay)
 │   │   ├── CardVolume.qml, Volume.js         # the detail card's two volumes and tick (Volume.js pure, tested)
 │   │   ├── VolumeOverlay.qml, VolumePopup.qml, IslandFace.qml  # volume pop-up per screen, its face inside Dank Island
+│   │   ├── DmsOsdOff.qml        # holds DMS's own volume OSD off, in memory, while the pop-up is on (D273)
 │   │   ├── AudioFacts.qml, FactsLine.qml, Audiophile.js  # what plays: `pactl` read on demand, the line with its info button, parsing (pure, tested)
 │   │   ├── VolumeStrip.qml      # menus: the two volumes folded into a thin line, unfolds on click
 │   │   ├── ScopeScreen.qml      # the dark scope screen shared by card, pop-up and island
