@@ -173,15 +173,24 @@ Item {
             check("Noise control off: the wearing session closes too", h.session(h.a).stdinEnabled, false);
             h.end(h.a, 0);
             check("and none is left", [h.session(h.a), h.session(h.b)], [null, null]);
-        }, () => {
-            print(h.failures ? h.failures + " failure(s)" : "all passed");
-            Qt.exit(h.failures ? 1 : 0);
         }]
     property int i: 0
+    // A step that throws is a failure, not a test that never ends
     Timer {
         interval: 100
         repeat: true
         running: true
-        onTriggered: h.steps[h.i++]()
+        onTriggered: {
+            try {
+                h.steps[h.i++]();
+            } catch (e) {
+                h.failures++;
+                print("FAIL step " + h.i + " threw: " + e);
+            }
+            if (h.i >= h.steps.length) {
+                print(h.failures ? h.failures + " failure(s)" : "all passed");
+                Qt.exit(h.failures ? 1 : 0);
+            }
+        }
     }
 }

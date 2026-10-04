@@ -2,3 +2,4 @@ module Quickshell.Services.Pipewire
 singleton Pipewire 1.0 Pipewire.qml
 PwObjectTracker 1.0 PwObjectTracker.qml
 PwNodePeakMonitor 1.0 PwNodePeakMonitor.qml
+PwNodeLinkTracker 1.0 PwNodeLinkTracker.qml

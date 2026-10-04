@@ -5,7 +5,7 @@
 # Bluetooth adapter: stubs/ stands in for Quickshell and the DMS services,
 # Device.qml for a BlueZ device, and NewDeviceWindow.qml replaces the real
 # layer-shell window. Needs Qt 6 (qml, qml6, qml-qt6 or PySide6).
-# Run from anywhere: sh tests/qml/run.sh
+# Run from anywhere: sh tests/qml/run.sh [name]   (a name keeps only the tests whose file name contains it)
 # The stubs come last: the last import path wins, and the preview imports
 # (Theme, StyledText) have their own, smaller qs.Services.
 set -e
@@ -17,7 +17,7 @@ trap 'rm -rf "$work"' EXIT
 # beside it, and two stand-ins over the real window and D-Bus check
 cp -r "$root"/components "$work"/
 cp "$here"/ProfileCheck.qml "$here"/NewDeviceWindow.qml "$work"/components/pairing/
-cp "$here"/Device.qml "$here"/*.test.qml "$work"/
+cp "$here"/Device.qml "$here"/Player.qml "$here"/*.test.qml "$work"/
 # Quickshell's device list is a model with .values; the stub keeps a plain list
 sed -i 's/Bluetooth\.devices\.values/Bluetooth.list/g' "$work"/components/pairing/*.qml "$work"/components/noise/*.qml
 export QT_QPA_PLATFORM=offscreen
@@ -26,7 +26,7 @@ export QT_FORCE_STDERR_LOGGING=1 QT_LOGGING_RULES='qml.debug=true;js.debug=true'
 # Fedora keeps Qt 6's tools out of PATH
 for tool in qml6 qml-qt6 qml /usr/lib64/qt6/bin/qml; do
     if command -v "$tool" >/dev/null 2>&1; then
-        for test in "$work"/*.test.qml; do
+        for test in "$work"/*"${1:-}"*.test.qml; do
             "$tool" -I "$root/scripts/preview/imports" -I "$here/stubs" "$test"
         done
         exit 0
