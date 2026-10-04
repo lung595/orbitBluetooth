@@ -42,21 +42,22 @@ Item {
     }
 
     // The connected device under the pointer, while neither the black hole
-    // nor the tear point has the drop
+    // nor the tear point has the drop. A device that is not connected yet is
+    // taken to the group at the centre too, to be told to connect it first.
     function _overDevice(b, p) {
         let target = null;
-        if (b.connected && !b.armed && !b.hideArmed) {
+        if ((b.connected ? !b.armed : scene.centre.wanted) && !b.hideArmed) {
             const bodies = scene.world.bodies;
             const all = [];
             for (let i = 0; i < bodies.count; i++)
                 all.push(bodies.itemAt(i));
             const o = Physics.dropOnto(b, all, p.x, p.y);
-            target = scene.togetherRelevant(b, o) ? o : null;
+            target = scene.together.relevant(b, o) ? o : null;
         }
         if (target === scene.togetherDrop)
             return;
         scene.togetherDrop = target;
-        if (target && scene.togetherReady(b, target)) {
+        if (target && scene.together.ready(b, target)) {
             target.pop();
             scene.sounds.play("snap");
         }
@@ -72,7 +73,7 @@ Item {
         const mate = scene.togetherDrop;
         scene.togetherDrop = null;
         if (mate && !b.hideArmed) {
-            scene.dropTogether(b, mate);
+            scene.together.drop(b, mate);
         } else if (b.hideArmed) {
             b.hideArmed = false;
             scene.hideBody(b);

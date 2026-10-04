@@ -82,7 +82,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 - **Drag to connect** with a magnet snap, elastic tether to disconnect.
 - **Two volumes**: open a connected audio device and its card shows the device's own level and this PC's as two half circles, with the sound itself moving inside. Drag or scroll each, click the planet to mute, and a soft tick plays in the device itself.
 - **Volume pop-up and smart steps**: whenever a volume changes, the same screen shows both levels inside Dank Island (or in place of DMS's OSD, which is switched off); 1 % per slow notch, faster when you scroll or press fast, and your volume keys can use it in one click.
-- **Listen together**: drag one connected audio device onto another and both play the same sound; drag a third (up to four) onto any of them. The volumes' half circle splits into one arc per output. It comes apart by itself when one disconnects, and ends with the shell.
+- **Listen together**: drag one connected audio device onto another and both play the same sound; drag a third (up to four) onto any of them. The volumes' half circle splits into one arc per output, and **the source takes the center of the orbit** while the others circle it, with a ring around it for the group's volume. It comes apart by itself when one disconnects, and ends with the shell.
 - **What really plays**: a short line under the device name and in the pop-up, for example *Bluetooth · LDAC · 96 kHz · 24 bit*, and a button that unfolds the rest: channels, profile, the codec's bit rate, latency and the audio quantum, each only when it can be honestly read.
 - **Live charging**: energy beam, time to full, charge speed, session chart.
 - **Earbuds trio**: the case and both buds in their own mini orbit, each with its battery.
@@ -106,6 +106,9 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 | Scroll over a half circle, its icon or its percentage, or drag a moon | That level: the device's or this PC's, with smart steps; a soft tick plays in the device every 5 % ([more](docs/GUIDE.md#the-two-volumes)) |
 | Click the planet of an open audio device | Mute or unmute |
 | Drag a connected audio device onto another (or onto any device already in the group) | Listen together: the same sound on both, up to 4 outputs ([more](docs/GUIDE.md#listen-together)) |
+| Scroll over the ring around the center planet, or over the planet | The group's general volume, the gaps between outputs kept ([more](docs/GUIDE.md#the-volume-at-the-center)) |
+| Scroll over an output orbiting the center | That output's own volume |
+| Click this computer, dimmed at the back | It takes the center back; click the group to bring it back ([more](docs/GUIDE.md#the-source-at-the-center)) |
 | Right-click a device | Menu: connect, noise-control modes, leave or stop listening together, hide, forget |
 | Forget a device (unpair) | Right-click → **Forget**, click again to confirm; or the 🗑 button of its detail card |
 | Drag a device into the black hole | Hide it (it stays connected) |
@@ -128,6 +131,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Show unnamed devices (MAC address only) | Off |
 | | Quick disconnect button (× on hover) | Off |
 | | Center device | Automatic |
+| | The listening source takes the center (Listen together) | On |
 | Scanning | Scan automatically | On |
 | | Offer new devices (a *Connect* card in the view) | On |
 | | Pop-up for new headphones (listens to any search, free) | On |
@@ -201,6 +205,7 @@ Bind them in your compositor, for example in niri: `Mod+N { spawn "dms" "ipc" "c
 | Volume keys still use smart steps after removing Orbit while DMS was not running | They still work (they fall back to DMS); give them back: `dms keybinds set niri XF86AudioRaiseVolume "spawn dms ipc call audio increment 3" --allow-when-locked`, same with `XF86AudioLowerVolume` and `decrement`, see [Volume keys](docs/GUIDE.md#volume-keys) |
 | DMS's volume OSD stays off after removing Orbit | DMS saved its settings while Orbit held that switch off: turn **Volume** back on in DMS's *Settings → On-screen Displays*, see [DMS's own volume OSD](docs/GUIDE.md#dmss-own-volume-osd) |
 | Listen together refuses a device | A short note says why (not connected, no sound output yet, on a call profile, four already) and the GitHub mark opens [Listen together](docs/GUIDE.md#listen-together) |
+| An output orbiting the center ignores the wheel | It has no volume of its own (it follows this PC's level): a note says so, turn the ring around the center, see [The volume at the center](docs/GUIDE.md#the-volume-at-the-center) |
 | The outputs of Listen together are not in sync | Hold the early one back with `togetherDelay`, see [Limits](docs/GUIDE.md#limits) |
 | Time to full looks off | Some headsets report in 10 % steps; it improves over time |
 

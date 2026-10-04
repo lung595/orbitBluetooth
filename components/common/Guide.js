@@ -33,6 +33,12 @@ function noVolumeNote(name) {
     return { "title": (name || "This device") + " has no volume", "hint": "It does not play sound, or its audio is not ready yet", "anchor": "the-two-volumes" };
 }
 
+// Scrolled over a copy at the centre of a Listen together that has no level
+// of its own (it follows this PC's level, which the ring sets for everyone)
+function copyLevelNote(name) {
+    return { "title": (name || "This device") + " has no volume of its own", "hint": "It follows the group: turn the ring around the center", "anchor": "the-volume-at-the-center" };
+}
+
 // Pulled out of its orbit, but still connected a while later
 function stuckNote(name) {
     return { "title": (name || "This device") + " is still connected", "hint": "It may be in use: try again, or turn it off", "anchor": "if-it-does-not-disconnect" };

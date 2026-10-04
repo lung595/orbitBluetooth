@@ -62,6 +62,9 @@ QtObject {
     readonly property bool desktopAmbient: _get("desktopAmbient", false)
     readonly property real desktopBackdrop: _get("desktopBackdrop", 72) / 100
     readonly property string hostGlyph: _get("hostGlyph", "auto")
+    // While a Listen together session plays, the source takes the center and
+    // the other outputs orbit it (off: the scene keeps its usual layout)
+    readonly property bool togetherCentre: _get("togetherCentre", true)
     readonly property string imageFolder: _get("imageFolder", "")
     property var glyphOverrides: ({})
     readonly property bool ancEnabled: _get("ancEnabled", true)

@@ -132,13 +132,11 @@ Rectangle {
         onClicked: strip.unfold()
     }
 
-    WheelHandler {
-        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-        property real acc: 0
-        onWheel: e => {
+    NotchWheel {
+        onTurned: (notches, wheelX) => {
             // The level under the pointer, left to right: the outputs' (the
             // device's own when it is alone), this PC's last
-            const x = e.x - row.x;
+            const x = wheelX - row.x;
             let part = "pc";
             if (x < pcRow.x - row.spacing / 2)
                 for (let i = row.outputs - 1; i >= 0; i--)
@@ -146,12 +144,6 @@ Rectangle {
                         part = Polar.partOf(i, row.outputs);
                         break;
                     }
-            // Touchpads send small deltas: add them up to whole notches
-            acc += e.angleDelta.y;
-            const notches = Math.trunc(acc / 120);
-            if (notches === 0)
-                return;
-            acc -= notches * 120;
             for (let k = 0; k < Math.abs(notches); k++)
                 strip.stepped(part, notches > 0 ? 1 : -1);
         }

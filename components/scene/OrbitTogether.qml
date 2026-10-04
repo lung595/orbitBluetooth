@@ -13,18 +13,20 @@ Item {
 
     readonly property var session: scene.audioRoute ? scene.audioRoute.together : null
 
-    function _name(address) {
+    // The name the user sees, for a note and for the group's label
+    function nameOf(address) {
         return Catalog.deviceName(scene.deviceMap[address]) || (session ? session.nameOf(address) : "");
     }
 
-    // Worth a hint: both are connected and one of them plays sound
+    // Worth a hint: both are connected and one of them plays sound, or `b` is
+    // not connected yet and `o` listens (the hint says to connect it first)
     function relevant(b, o) {
-        return !!session && !!b && !!o && session.relevant(b.address, o.address);
+        return !!session && !!b && !!o && (session.relevant(b.address, o.address) || (!b.connected && session.isMember(o.address)));
     }
     // The note for this drop, null when it can be done
     function _note(b, o) {
         const r = session ? session.dropCheck(b.address, o.address) : null;
-        return r ? Guide.togetherNote(r.why, _name(r.address)) : null;
+        return r ? Guide.togetherNote(r.why, nameOf(r.address)) : null;
     }
     // Under the orbit while the dragged device is over another
     function hint(b, o) {
@@ -69,11 +71,11 @@ Item {
         target: together.session
         function onEnded(why, address) {
             if (why !== "ended" && together.scene.active)
-                together.scene.explain(Guide.togetherNote(why, together._name(address)));
+                together.scene.explain(Guide.togetherNote(why, together.nameOf(address)));
         }
         function onMemberLeft(address) {
             if (together.scene.active)
-                together.scene.explain(Guide.togetherNote("member-out", together._name(address)));
+                together.scene.explain(Guide.togetherNote("member-out", together.nameOf(address)));
         }
     }
 }

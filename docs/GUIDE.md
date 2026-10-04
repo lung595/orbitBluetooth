@@ -8,7 +8,7 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 - [The orbit](#the-orbit) · [If it does not connect](#if-it-does-not-connect) · [If it does not disconnect](#if-it-does-not-disconnect) · [Bluetooth is off](#bluetooth-is-off)
 - [The detail card](#the-detail-card)
 - [The two volumes](#the-two-volumes) · [Separate PC volume](#separate-pc-volume) · [Volume pop-up](#volume-pop-up) · [Smart volume steps](#smart-volume-steps) · [Volume keys](#volume-keys) · [What really plays](#what-really-plays)
-- [Listen together](#listen-together) · [What it costs](#what-it-costs) · [Limits](#limits) · [Works with multipoint headsets](#works-with-multipoint-headsets)
+- [Listen together](#listen-together) · [The source at the center](#the-source-at-the-center) · [The volume at the center](#the-volume-at-the-center) · [What it costs](#what-it-costs) · [Limits](#limits) · [Works with multipoint headsets](#works-with-multipoint-headsets)
 - [Earbuds: the trio](#earbuds-the-trio)
 - [Hiding devices: the black hole](#hiding-devices-the-black-hole)
 - [Noise control](#noise-control) · [Pause when you take the headset off](#pause-when-you-take-the-headset-off) · [How long a conversation lasts](#how-long-a-conversation-lasts)
@@ -238,9 +238,34 @@ The same sound on **two, three or four** Bluetooth outputs at once: the headset 
 - **Which sound is copied**: the one you hear. If one of the outputs is your current output, its sound is copied to all the others; otherwise the first one in the session. Orbit never changes your default output. If you later make another member your output, the copies follow it a moment after.
 - **Each level is its own**: every output keeps its own volume (its buttons), and this PC's level reaches them all. Moving this PC's level moves it for **every** output that has Orbit's [separate PC volume](#separate-pc-volume); when a device joins, its PC level is set to the one the session has. Each such output keeps that last level afterwards, as the PC level of a device always is. An output with no filter of its own (a device that follows this PC's level) keeps **its own** level: Orbit never writes the volume that PipeWire remembers for a device.
 
+### The source at the center
+
+While a group listens, the **source** (the output you hear, the first one of the group) takes the middle of the orbit and the other outputs orbit around it. Turn it off in **Settings → Orbit → The listening source takes the center**; without it the scene looks as before.
+
+- **What you see**: the camera follows the source to the middle in under a second. The source grows there; the other outputs orbit it, one turn in about 25 s, equally spaced on a tilted ring, a little bigger on the near side. This computer shrinks to about 40 % and rests, dimmed, up on the left at the back, and the stars glide a little the way the camera went. A soft beam joins the source to each copy, and a small pulse travels along it **only while sound plays**. The group's name sits under the center: *XM6 + Marantz* (with more outputs, the names that fit, then *+1*).
+- **The other devices** keep their ring, which opens a little wider around the group so they stay clear of it.
+- **Bring this computer back**: click it at the back. It returns to the middle and the group steps back, smaller, to its place. Click any device of the group to bring the group back to the center. A click on a device of the group at the center opens its card, as before.
+- **Add one more**: drop a connected audio device on the center planet (or on any other device of the group). A device that is not connected gets a short note, with a link to [Listen together](#listen-together), telling you to connect it first; the other refusals are in [Limits](#limits).
+- **Reduce motion**: no trip. The group is put in place at once, nothing orbits and nothing pulses.
+- **Hidden means frozen**: while the session is locked, the screen is off or windows cover the widget, the group is placed at once and nothing runs, not even the question to PipeWire of whether sound plays.
+- **Everywhere**: the same scene in the Control Center, the bar pop-out and the desktop widget.
+- **Whether sound plays** is read from PipeWire's own events (an active link into the source's output) and only while someone sees the group move. It is a best effort and only drives the pulse: if the beams pulse in silence, or stay still while sound plays, nothing else is affected.
+
+### The volume at the center
+
+A ring around the center planet is the **general volume** of the group.
+
+- **Set it**: drag along the ring (it fills clockwise from the top) or scroll over the ring or over the planet; its percentage shows while the pointer is on the ring. One notch is one smart step, and the level lands on whole percents. DMS's own volume pop-up waits while you do.
+- **What it moves**: with Orbit's [separate PC volume](#separate-pc-volume) the ring is this PC's level, which reaches every output together. Without it, the ring scales every output's **own** level by the same ratio, so the gaps stay: from 50 % to 80 %, an output at 40 % goes to 64 % and one at 30 % to 48 %. The ring shows the loudest output, and nobody goes past 100 %: the loudest one stops the ring there, so the gaps are kept. At 0 % everyone is silent, so there are no gaps left; turning it up again brings them all to the same level.
+- **One output's own level**: scroll over a copy. Its own level moves, and a thin arc around it shows it while the pointer is on it. The source's own level is on its [card](#the-two-volumes), and the ring leaves it alone.
+- **A copy without a level of its own** (a device that follows this PC's level) says so in a short note, *… has no volume of its own*, with a link to this section: turn the ring instead.
+- Nothing is saved: Orbit sets the same levels the card sets, and only while you act.
+
 ### What it costs
 
 Nothing while no session runs. During one, Orbit runs **one small sound process per output beyond the first** (two outputs: one, four outputs: three). Each is **passive**, so with no sound playing it holds nothing open and every output can fall asleep as before. They belong to the shell: they disappear when the shell ends, even after a crash, and nothing is written to disk or to your sound setup. A session saves nothing: the only thing kept is each output's PC level, which Orbit already remembers per device.
+
+The center has no timer of its own: the trip, the orbit and the beams ride the scene's one loop, which stops by itself when nobody sees the scene (and never starts with Reduce motion). The CPU of the center has **not been measured yet**.
 
 ### Limits
 
@@ -249,6 +274,8 @@ Nothing while no session runs. During one, Orbit runs **one small sound process 
 - **A video's picture is not delayed** either: with a large delay, lips drift from the sound.
 - **The level is shared through Orbit's own filters.** If the output you hear has **no** such filter (a device without absolute volume), the copies take its sound after its volume, so nothing can be shared: each output plays at its own level, and the copies follow the level of the source. Orbit prefers that to applying a level twice.
 - **Call profile**: a headset whose microphone is in use drops to a narrow call mode; Orbit does not take it in until it is back on its music profile. A member that falls into a call keeps its place and plays again when the call ends.
+- **At the center, the ring sets the group's level, not the source device's**: the source's own level stays on its card, and there is no `dms ipc call` for the general level yet.
+- **Dropping a device that is not connected** on the group says to connect it first; Orbit does not connect it for you here.
 - **Dragging a member outward** is the usual gesture that disconnects a device, so it leaves the session by disconnecting. To take it out and keep it connected, use **Leave together** or `togetherRemove`.
 - **If one output goes away** (a headset handed over to your phone, an output that fell asleep), it stays a member and picks the sound up again when it returns, without a message. A member leaves only on a real Bluetooth disconnection, or when you take it out.
 
@@ -481,6 +508,7 @@ Grouped in tabs: **Orbit** (with Reset), **Scanning**, **Headphones** (with devi
 | | Show unnamed devices | Off | Devices that only expose a MAC address |
 | | Quick disconnect button | Off | An × on connected devices, on hover |
 | | Center device | Automatic | Icon of this machine (laptop or desktop is detected) |
+| | The listening source takes the center | On | While Listen together plays, the source sits in the middle and the other outputs orbit it, see [The source at the center](#the-source-at-the-center) |
 | Scanning | Scan automatically | On | Start discovery when a view opens; otherwise click the center |
 | | Offer new devices | On | A card with *Connect* inside the Orbit view; the pop-up has its own switch |
 | | Pop-up for new headphones | On | A pop-up under the bar for new headphones any search finds, see [New headphones pop-up](#new-headphones-pop-up); it only listens |

@@ -16,7 +16,8 @@ Item {
     z: 60
     x: body.scene.cx
     y: body.scene.cy
-    opacity: body.charging && !body.leaving && !body.focused ? (body.scene.focusBody ? 0.15 : 1) : 0
+    // No beam while the host is away at the back (a Listen together has the center)
+    opacity: body.charging && !body.leaving && !body.focused && !body.scene.centre.tetherless(body.address) ? (body.scene.focusBody ? 0.15 : 1) : 0
     visible: opacity > 0.01
 
     readonly property real start: body.scene.coreSize / 2

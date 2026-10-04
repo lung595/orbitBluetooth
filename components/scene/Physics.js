@@ -102,9 +102,10 @@ function dragArm(g, holding, x, y) {
 
 // The connected body under a dragged connected one, when the pointer at
 // (x, y) is over its disc: what dropping would listen together with (D254).
-// null for anything else.
-function dropOnto(b, all, x, y) {
-    if (!b.connected)
+// null for anything else. `anyone`: an unconnected body counts too, so that
+// dropping it on the listening group can say it must be connected first.
+function dropOnto(b, all, x, y, anyone) {
+    if (!b.connected && !anyone)
         return null;
     let best = null, bestD = Infinity;
     for (const o of all) {
@@ -123,7 +124,9 @@ function dropOnto(b, all, x, y) {
 // out of the host core (unless the body rides the ring, which passes behind
 // it) and out of the black hole, which only takes what is dropped in.
 // `focusOpen`: a detail card is open, bodies may overlap the center.
-function separate(g, b, t, all, focusOpen) {
+// `core`: where the host is and how big ({ x, y, r }) when it is not at the
+// center (a Listen together has taken it); omitted, the host sits at the center.
+function separate(g, b, t, all, focusOpen, core) {
     for (const o of all) {
         if (o === b || o.leaving)
             continue;
@@ -138,11 +141,12 @@ function separate(g, b, t, all, focusOpen) {
     }
     if (focusOpen)
         return;
-    const cd = Math.max(0.001, Math.hypot(t.x - g.cx, t.y - g.cy));
-    const minD = g.coreSize * 0.5 + g.bodySize * 0.55;
+    const c = core || { "x": g.cx, "y": g.cy, "r": g.coreSize * 0.5 };
+    const cd = Math.max(0.001, Math.hypot(t.x - c.x, t.y - c.y));
+    const minD = c.r + g.bodySize * 0.55;
     if (cd < minD && !b.inSlot) {
-        t.x = g.cx + (t.x - g.cx) / cd * minD;
-        t.y = g.cy + (t.y - g.cy) / cd * minD;
+        t.x = c.x + (t.x - c.x) / cd * minD;
+        t.y = c.y + (t.y - c.y) / cd * minD;
     }
     const hd = Math.max(0.001, Math.hypot(t.x - g.holeX, t.y - g.holeY));
     const holeD = g.holeHorizon * 2.2 + g.bodySize * 0.6;

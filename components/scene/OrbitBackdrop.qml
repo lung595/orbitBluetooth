@@ -2,7 +2,8 @@ import QtQuick
 import qs.Common
 
 // The sky behind the orbit, bottom to top: the desktop's glass veil, the
-// starfield (it leans away from a dragged device), the black hole drifting
+// starfield (it leans away from a dragged device, and drifts a little the way
+// the camera went when a Listen together takes the center), the black hole drifting
 // in the outer belt, and the dimming laid over them while a card is open.
 // A click on this empty sky closes that card.
 Item {
@@ -20,8 +21,8 @@ Item {
 
     Starfield {
         id: stars
-        x: -12 + (backdrop.scene.dragBody ? -(backdrop.scene.dragX - backdrop.scene.cx) * 0.025 : 0)
-        y: -12 + (backdrop.scene.dragBody ? -(backdrop.scene.dragY - backdrop.scene.cy) * 0.025 : 0)
+        x: -12 + backdrop.scene.centre.shift.x + (backdrop.scene.dragBody ? -(backdrop.scene.dragX - backdrop.scene.cx) * 0.025 : 0)
+        y: -12 + backdrop.scene.centre.shift.y + (backdrop.scene.dragBody ? -(backdrop.scene.dragY - backdrop.scene.cy) * 0.025 : 0)
         width: backdrop.scene.width + 24
         height: backdrop.scene.height + 24
         clock: backdrop.scene.clock

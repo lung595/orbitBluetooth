@@ -1,0 +1,104 @@
+// Listen together at the centre of the scene: the copies' orbit, the host and the group stepping
+// back, the sky's parallax, the label, and the general volume that keeps the gaps (D281-D285).
+// Run from the plugin root: gjs tests/centre.test.js (or every file: sh tests/run.sh)
+imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
+const { load, eq, done } = imports.lib;
+
+const C = load("Centre.js", ["PERIOD", "MAX_SHIFT", "HOST_SIZE", "GROUP_SIZE", "TILT", "clamp01", "lerp", "ease", "approach", "backSpot", "sizes", "labelOffset", "ringNorm", "RING_MAX", "groupAt", "hostAt", "away", "phaseAt", "copySlot", "depthSize", "parallax", "copiesOf", "roleOf", "label", "pulse"]);
+const V = load("MasterVolume.js");
+
+const near = (v, d) => Math.round(v * 1000) / 1000;
+const round = list => list.map(near);
+
+// A scene the size of the bar popout, and a small one
+const g = { cx: 210, cy: 190, rx: 170, ry: 125, coreSize: 65, bodySize: 51 };
+const small = { cx: 110, cy: 100, rx: 83, ry: 57, coreSize: 34, bodySize: 34 };
+
+// --- progress -------------------------------------------------------------------
+eq("ease: starts and ends flat, half way is half", [C.ease(0), C.ease(0.5), C.ease(1)], [0, 0.5, 1]);
+eq("ease: stays in 0..1", [C.ease(-3), C.ease(7)], [0, 1]);
+eq("approach: a step of dt over the duration, never past the target", [near(C.approach(0, 1, 0.2, 0.8)), C.approach(0.9, 1, 0.2, 0.8), C.approach(1, 0, 0.4, 0.8)], [0.25, 1, 0.5]);
+eq("approach: a zero duration lands at once", C.approach(0, 1, 0.03, 0), 1);
+eq("away: the host is at the back once the group has the centre", [C.away(0, 0), C.away(1, 0), C.away(1, 1), C.away(0.5, 0)], [0, 1, 0, 0.5]);
+
+// --- where things sit -----------------------------------------------------------
+eq("back spot: up on the left, inside the scene", [C.backSpot(g).x < g.cx, C.backSpot(g).y < g.cy, C.backSpot(g).x > 0, C.backSpot(g).y > 0], [true, true, true, true]);
+eq("host: at the centre, then small at the back", [C.hostAt(g, 0), C.hostAt(g, 1).scale], [{ x: g.cx, y: g.cy, scale: 1 }, C.HOST_SIZE]);
+eq("group: at the centre, then stepped back to the same spot", [C.groupAt(g, 0), C.groupAt(g, 1).x === C.hostAt(g, 1).x && C.groupAt(g, 1).y === C.hostAt(g, 1).y, C.groupAt(g, 1).scale], [{ x: g.cx, y: g.cy, scale: 1 }, true, C.GROUP_SIZE]);
+eq("host at the back is about 40 % of its size", C.hostAt(g, 1).scale, 0.4);
+
+const s = C.sizes(g);
+eq("sizes: the source is bigger than the host, a copy smaller than a ring planet", [s.source > g.coreSize, s.copy < g.bodySize, s.copy >= 12], [true, true, true]);
+eq("sizes: the volume ring is outside the source, the orbit outside the ring", [s.ring > s.source / 2, s.radius - s.copy / 2 - s.ring >= 12], [true, true]);
+const t = C.sizes(small);
+eq("sizes: on a small scene the copies shrink and the orbit still fits", [t.copy < s.copy, t.copy >= 12, t.radius <= small.rx * 0.9], [true, true, true]);
+
+// --- the copies' orbit ----------------------------------------------------------
+const centre = C.groupAt(g, 0);
+const R = s.radius;
+const slots = n => Array.from({ length: n }, (_, i) => C.copySlot(R, centre, i, n, 0.3));
+for (const n of [1, 2, 3]) {
+    const ring = slots(n);
+    eq("orbit: " + n + " copies are on one ellipse around the source", round(ring.map(p => Math.hypot((p.x - centre.x) / R, (p.y - centre.y) / (R * C.TILT)))), Array(n).fill(1));
+}
+const three = slots(3);
+const turn = i => Math.atan2((three[i].y - centre.y) / C.TILT, three[i].x - centre.x);
+const gap = (a, b) => near(((turn(b) - turn(a)) + 4 * Math.PI) % (2 * Math.PI));
+eq("orbit: three copies are equidistant (a third of a turn apart)", [gap(0, 1), gap(1, 2), gap(2, 0)], Array(3).fill(near(2 * Math.PI / 3)));
+eq("orbit: four copies are a quarter of a turn apart", near(C.copySlot(R, centre, 1, 4, 0).x - centre.x), near(0));
+eq("orbit: the near side has a positive depth, the far side a negative one", [C.copySlot(R, centre, 0, 4, Math.PI / 2).depth, C.copySlot(R, centre, 0, 4, -Math.PI / 2).depth], [1, -1]);
+eq("orbit: one turn takes 25 s and comes back to the start", [near(C.phaseAt(C.PERIOD) - C.phaseAt(0)), near(C.phaseAt(C.PERIOD / 4) - C.phaseAt(0))], [near(2 * Math.PI), near(Math.PI / 2)]);
+eq("orbit: with the clock stopped the angles stay put", [C.copySlot(R, centre, 1, 3, C.phaseAt(5)), C.copySlot(R, centre, 1, 3, C.phaseAt(5))].every((p, _, a) => JSON.stringify(p) === JSON.stringify(a[0])), true);
+const back = C.groupAt(g, 1);
+eq("orbit: a group that stepped back has a smaller orbit around its new centre", [Math.hypot(C.copySlot(R, back, 0, 2, 0).x - back.x, 0) < R, C.copySlot(R, back, 0, 2, 0).x > back.x], [true, true]);
+eq("orbit: far side is a little smaller, never tiny", [C.depthSize(1), C.depthSize(0), C.depthSize(-1) >= 0.7], [1, 0.85, true]);
+
+// --- the sky behind the camera --------------------------------------------------
+eq("parallax: the sky drifts opposite to the camera, a fraction of the way", [C.parallax(g, { x: g.cx + 100, y: g.cy }).x < 0, C.parallax(g, { x: g.cx, y: g.cy + 100 }).y < 0], [true, true]);
+eq("parallax: a source already at the centre moves nothing", C.parallax(g, { x: g.cx, y: g.cy }), { x: 0, y: 0 });
+eq("parallax: never past the margin around the stars", [C.parallax(g, { x: g.cx + 9999, y: g.cy - 9999 }).x, C.parallax(g, { x: g.cx + 9999, y: g.cy - 9999 }).y], [-C.MAX_SHIFT, C.MAX_SHIFT]);
+
+// --- who is who -----------------------------------------------------------------
+const members = ["A", "B", "C"];
+eq("roles: the source, the copies, and everyone else", [C.roleOf(members, "B", "B"), C.roleOf(members, "B", "A"), C.roleOf(members, "B", "Z")], ["source", "copy", ""]);
+eq("copies: everyone but the source, in the order they joined", C.copiesOf(members, "B"), ["A", "C"]);
+eq("copies: a new source changes who orbits, not the order", [C.copiesOf(members, "A"), C.copiesOf(members, "C")], [["B", "C"], ["A", "B"]]);
+
+// --- the name under the centre --------------------------------------------------
+eq("label: two members read 'XM6 + Marantz'", C.label(["XM6", "Marantz"]), "XM6 + Marantz");
+eq("label: three short names are all there", C.label(["XM6", "Marantz", "Kitchen"]), "XM6 + Marantz + Kitchen");
+eq("label: many or long names become +N", [C.label(["WH-1000XM6", "Marantz AV Receiver", "Kitchen speaker"]), C.label(["A", "B", "C", "D"]) === "A + B + C + D", C.label(["WH-1000XM6", "Marantz AV Receiver", "Kitchen speaker", "Bedroom"])], ["WH-1000XM6 + Marantz AV Receiver +1", true, "WH-1000XM6 + Marantz AV Receiver +2"]);
+eq("label: a nameless member is left out", C.label(["XM6", "", "Marantz"]), "XM6 + Marantz");
+
+// --- the pulse along a beam -----------------------------------------------------
+eq("pulse: starts and ends dark, brightest half way", [C.pulse(0, 0, 2).alpha, near(C.pulse(2, 0, 2).alpha), C.pulse(0.5, 0, 2).at], [0, 0, 0.25]);
+eq("pulse: the beams do not beat together", C.pulse(0, 0, 3).at !== C.pulse(0, 1, 3).at, true);
+eq("pulse: always on its beam", [0, 1.3, 7.9, 100].every(time => C.pulse(time, 1, 3).at >= 0 && C.pulse(time, 1, 3).at < 1), true);
+
+// --- the general volume (D284) --------------------------------------------------
+eq("master: 50 % to 80 % takes 40 % to 64 % and 30 % to 48 %", round(V.scale([0.4, 0.3], 0.5, 0.8)), [0.64, 0.48]);
+eq("master: going down keeps the gaps too", round(V.scale([0.64, 0.48], 0.8, 0.5)), [0.4, 0.3]);
+eq("master: the ratio between members never changes", (() => { const r = V.scale([0.6, 0.2], 0.6, 0.3); return near(r[0] / r[1]); })(), 3);
+eq("master: the general level is the loudest member", V.general([0.2, 0.9, 0.5]), 0.9);
+eq("master: the loudest member reaches 100 % and nobody passes it", round(V.scale([0.9, 0.3], 0.9, 1)), [1, 0.333]);
+eq("master: it cannot go higher than the loudest allows, so the gaps stay", [V.ceiling([0.4, 0.3], 0.5), V.ceiling([0.9, 0.3], 0.9)], [1.25, 1]);
+eq("master: a request past the ceiling stops there", round(V.scale([0.8, 0.4], 0.5, 2)), [1, 0.5]);
+eq("master: all silent, they all go to the level asked", V.scale([0, 0], 0, 0.4), [0.4, 0.4]);
+eq("master: to zero silences everyone", V.scale([0.4, 0.3], 0.5, 0), [0, 0]);
+eq("master: never below 0 or above 1", V.scale([1, 0.01], 1, -5).concat(V.scale([1, 0.01], 1, 5)), [0, 0, 1, 0.01]);
+eq("master: one member alone is the general level itself", round(V.scale([0.7], 0.7, 0.2)), [0.2]);
+eq("pointer: the ring reads 0 at the top and goes clockwise", [V.fromPointer(0, 0, 0, -10, 0.5), V.fromPointer(0, 0, 10, 0, 0.3), V.fromPointer(0, 0, 0, 10, 0.5), near(V.fromPointer(0, 0, -10, 0, 0.7))], [0, 0.25, 0.5, 0.75]);
+eq("pointer: crossing the top stops at the end instead of jumping to the other", [V.fromPointer(0, 0, -1, -10, 0.1), V.fromPointer(0, 0, 1, -10, 0.9)], [0, 1]);
+
+// --- the name under the centre, the ring that opens ------------------------------
+for (const [what, scene] of [["bar popout", g], ["small scene", small]]) {
+    const z = C.sizes(scene);
+    eq("label offset (" + what + "): under the ring and under the copies' lowest point", [C.labelOffset(z) > z.ring, C.labelOffset(z) > z.radius * C.TILT + z.copy / 2], [true, true]);
+}
+eq("ring: shut, it stays the ring's usual share", [C.ringNorm(g, 0.56, 0), C.ringNorm(small, 0.56, 0)], [0.56, 0.56]);
+eq("ring: open, it is wider than usual so the devices on it clear the copies", [C.ringNorm(g, 0.56, 1) > 0.56, C.ringNorm(small, 0.56, 1) > 0.56], [true, true]);
+eq("ring: never into the outer belt", [C.ringNorm(g, 0.56, 1) <= C.RING_MAX, C.ringNorm(small, 0.56, 1) <= C.RING_MAX], [true, true]);
+eq("ring: it opens along with the camera, never narrower on the way", [0, 0.25, 0.5, 0.75, 1].map(open => C.ringNorm(g, 0.56, open)).every((v, i, all) => i === 0 || v >= all[i - 1]), true);
+eq("ring: a ring already wider than the group needs is left alone", C.ringNorm(g, 0.9, 1), 0.9);
+
+done();
