@@ -4,7 +4,6 @@ Ideas, not promises, and no dates. Anything that would need the network or send 
 
 ## Planned
 
-- **More about what plays**: the Bluetooth codec's bit rate, the profile, the latency and the quantum in the unfolded details (the line, the sample rate, depth and resampling note ship in 1.13.0).
 - **An option to swap the two volumes' roles**: DMS's volume slider would set this PC's level, and the device's own level would be set in Orbit only.
 - **Listen together**: two headsets on one film. Bring a second headset next to the first and Orbit makes a shared PipeWire output for both. It comes apart by itself when one disconnects.
   - **Look**: the outer half circle splits at its top. The left quarter is the first headset and the right quarter the second. Each one lights up from its bottom corner toward the top, and both meet at the top at 100 %. Each quarter has its own cloud of points and its own theme color (`primary` and `secondary`). The inner half circle stays below, shared by both: the level this PC sends (`tertiary`).
@@ -23,5 +22,6 @@ Ideas, not promises, and no dates. Anything that would need the network or send 
 
 ## Known limits
 
+- *What really plays*: the bit rate is only shown where the codec makes it known (LDAC, aptX, aptX HD; never SBC or AAC), the latency is the PC's part only (the headset's own delay cannot be read), and the quantum only appears while the output is playing.
 - *Ambient motion* only pauses when windows fill the whole screen: a single floating or narrow window placed over the widget does not pause it, because niri does not tell where tiled windows sit on screen. On compositors other than niri it never pauses.
 - Some Sony headsets do not report charging, or drop Bluetooth while charging; this is a hardware limit.

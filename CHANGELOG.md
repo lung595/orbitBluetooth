@@ -3,6 +3,12 @@
 All notable changes to Orbit Bluetooth are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Added
+
+- **More about what plays.** The unfolded audio details now also say the Bluetooth **profile** (A2DP or HSP/HFP), the codec's **bit rate** (LDAC's 990, 660 or 330 kbps, or its range on *Auto*; aptX and aptX HD's fixed rates; nothing for SBC, AAC and others, whose rate is not published), the **latency** PipeWire reports, and the **quantum** (the audio buffer, for an output that is playing). Each has its two switches in *Settings → Sound → Audio details* (on the line, more info). Clicking the line now also unfolds the details in place. The bit rate and latency are read with `pw-dump`, the quantum with `pw-top`, only while the details are unfolded (or the fact is on the line), never in the background; the card grows to fit. New files: `Codecs.js`, `AudioGraph.js` (pure, tested) and `AudioGraph.qml` (the two readers).
+
 ## 1.13.3 - 2026-10-04
 
 ### Changed
