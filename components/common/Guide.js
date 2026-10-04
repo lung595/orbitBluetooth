@@ -39,6 +39,13 @@ function copyLevelNote(name) {
     return { "title": (name || "This device") + " has no volume of its own", "hint": "It follows the group: turn the ring around the center", "anchor": "the-volume-at-the-center" };
 }
 
+// Two Bluetooth outputs play at once on one adapter (RadioWatch): the radio
+// is shared, a heavy codec such as LDAC may lose quality or cut. Said once
+// per pair; Orbit lowers nothing.
+function radioNote() {
+    return { "title": "Two outputs share one Bluetooth radio", "hint": "Quality may drop or cut: a second adapter gives each its own", "anchor": "two-outputs-one-radio" };
+}
+
 // Pulled out of its orbit, but still connected a while later
 function stuckNote(name) {
     return { "title": (name || "This device") + " is still connected", "hint": "It may be in use: try again, or turn it off", "anchor": "if-it-does-not-disconnect" };

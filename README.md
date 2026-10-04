@@ -198,6 +198,7 @@ Bind them in your compositor, for example in niri: `Mod+N { spawn "dms" "ipc" "c
 | Bluetooth is off and **Turn on** does nothing | Airplane mode or a hardware switch blocks it: `rfkill unblock bluetooth`, see [Bluetooth is off](docs/GUIDE.md#bluetooth-is-off) |
 | No devices appear while scanning | Put the device in pairing mode; turn on **Show unnamed devices** |
 | A device charges but shows no lightning | Wait for its first level increase: the estimate starts then |
+| The sound cuts or loses quality with two devices playing | They share one Bluetooth radio: a short note says so once; a second Bluetooth adapter gives each its own, see [Two outputs, one radio](docs/GUIDE.md#two-outputs-one-radio) |
 | Noise control does not appear | Headset must be paired and supported, Python 3 installed; reopen the card |
 | Music does not pause when I take the Sony headset off | `dms ipc call orbitBluetooth wearStatus` says why; the Sony app on a phone may hold the headset's control connection, see [Pause when you take the headset off](docs/GUIDE.md#pause-when-you-take-the-headset-off) |
 | A device vanished | It is in the black hole: click it, or `dms ipc call orbitBluetooth unhideAll` |

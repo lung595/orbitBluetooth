@@ -23,6 +23,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Dropping a connected audio device on the center planet joins the group, and dropping one that is not connected says to connect it first.
 - **An invitation while you carry a device.** Carrying a connected audio device makes a soft halo breathe around each device it could listen together with, and a thread of light run toward the nearest, stronger as they come closer and whole once the pointer is over it; the hint says what dropping does. It is made only while such a device is carried (nothing runs at rest) and stands still with Reduce motion.
 - **Pulling a device out of the group makes it leave the group**, not disconnect. The hint reads *Release to leave the group*; the device stays connected and plays alone again.
+- **A note when two outputs share one Bluetooth radio.** The first time two outputs of the adapter play at once in a session (a Listen together with a LDAC headset and a receiver, say), a short note under the center says they share one radio and that the sound may lose quality or cut, with the GitHub mark linking to *Two outputs, one radio*. Once per pair, only while the orbit is open, nothing stored, no setting changed: Orbit never lowers a device's quality to make two fit.
 - **A member of a group cannot be hidden.** Dragging it to the black hole (or *Hide* in its menu) would leave it playing out of sight, so a short note, with the GitHub mark linking to the guide, says to pull it out of the group first.
 
 ### Fixed

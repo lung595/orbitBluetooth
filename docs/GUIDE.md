@@ -8,7 +8,7 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 - [The orbit](#the-orbit) · [If it does not connect](#if-it-does-not-connect) · [If it does not disconnect](#if-it-does-not-disconnect) · [Bluetooth is off](#bluetooth-is-off)
 - [The detail card](#the-detail-card)
 - [The two volumes](#the-two-volumes) · [Separate PC volume](#separate-pc-volume) · [Volume pop-up](#volume-pop-up) · [Smart volume steps](#smart-volume-steps) · [Volume keys](#volume-keys) · [What really plays](#what-really-plays)
-- [Listen together](#listen-together) · [The source at the center](#the-source-at-the-center) · [The volume at the center](#the-volume-at-the-center) · [What it costs](#what-it-costs) · [Limits](#limits) · [Works with multipoint headsets](#works-with-multipoint-headsets)
+- [Listen together](#listen-together) · [The source at the center](#the-source-at-the-center) · [The volume at the center](#the-volume-at-the-center) · [What it costs](#what-it-costs) · [Limits](#limits) · [Works with multipoint headsets](#works-with-multipoint-headsets) · [Two outputs, one radio](#two-outputs-one-radio)
 - [Earbuds: the trio](#earbuds-the-trio)
 - [Hiding devices: the black hole](#hiding-devices-the-black-hole)
 - [Noise control](#noise-control) · [Pause when you take the headset off](#pause-when-you-take-the-headset-off) · [How long a conversation lasts](#how-long-a-conversation-lasts)
@@ -288,6 +288,16 @@ A headset connected to this PC **and** to your phone gives the sound to whicheve
 - Orbit never disconnects, reconnects or trusts a device, and never touches a device's Bluetooth profile, to repair or start a session.
 - **Not proven**: this is built from how PipeWire and the headset are meant to work, and checked with a simulated sound server (outputs and copies go idle together, copies end with the shell). It has not been tried with a real multipoint headset yet: when the PC plays **while** the headset serves your phone, it is the headset that decides which one it listens to.
 - Rely on your headset's own switching to move between the PC and the phone; Listen together does not interfere.
+
+### Two outputs, one radio
+
+Your computer's Bluetooth adapter has **one radio**. When two outputs play at the same time (a Listen together, or two devices fed by different apps), each stream takes its share of the airtime. A heavy codec such as **LDAC** (up to 990 kbps) is the first to suffer: on *Auto* it lowers its own quality, and when the link cannot keep up the sound **cuts or turns harsh**, as if the signal were lost.
+
+- **What Orbit does**: the first time two outputs of your adapter play together in a session, a short note says *Two outputs share one Bluetooth radio*, with the GitHub mark that opens this section. It appears once per pair, only while the orbit is open, and goes away by itself. Nothing is stored.
+- **What Orbit does not do**: it never lowers a device's quality, codec or bit rate to make two fit. Both keep the best the device offers.
+- **What helps**: a **second Bluetooth adapter** (a small USB one) gives each device its own radio. Orbit reads the adapter chosen in Dank Material Shell, so for now it only shows that adapter's devices.
+- **Also worth trying**: keep the adapter away from USB 3 ports and busy cables, and turn off an output you are not listening to.
+- **Not proven**: the note appears whenever two outputs play, whatever their codecs: Orbit cannot know whether your radio copes. Two light streams (SBC or AAC) often do, an LDAC stream next to another one often does not.
 
 ## Earbuds: the trio
 

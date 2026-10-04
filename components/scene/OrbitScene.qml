@@ -314,6 +314,11 @@ Item {
     }
     readonly property alias centre: centreCtl
 
+    // --- Two outputs on one radio: a note, once per pair (OrbitRadio) ----------------
+    OrbitRadio {
+        scene: orbitRoot
+    }
+
     // --- Hiding (the black hole) ---------------------------------------------------
     OrbitHidden {
         id: hidden

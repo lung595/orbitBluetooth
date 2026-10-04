@@ -17,7 +17,14 @@ QtObject {
             property bool muted: false
         }
     }
+    // Further Bluetooth output sinks and link groups a test may set: the
+    // shared-radio note watches which outputs are fed sound
+    property var extraSinks: []
+    property var links: []
     readonly property QtObject nodes: QtObject {
-        readonly property var values: [headset]
+        readonly property var values: [headset].concat(extraSinks)
+    }
+    readonly property QtObject linkGroups: QtObject {
+        readonly property var values: links
     }
 }
