@@ -123,9 +123,10 @@ Item {
     // icons on the left stay reachable; centered under it with noteBelow.
     readonly property var note: overlay.note || null
 
-    // What the output is (D260), in a pill at the foot on the right, where
-    // the note goes, so the mute icons stay reachable. Not on the card,
-    // which has its own line under the name, and not while a note shows
+    // What the output is (D260), in a pill centered at the foot, under the
+    // fan's hub, clear of the mute icons at the left and the readouts at
+    // the right. Not on the card, which has its own line under the name,
+    // and not while a note shows
     property bool showFacts: true
     FactsLine {
         visible: screenItem.showFacts && !screenItem.note && !screenItem.upright
@@ -133,8 +134,7 @@ Item {
         up: true
         width: implicitWidth
         height: implicitHeight
-        anchors.right: screen.right
-        anchors.rightMargin: Theme.spacingM
+        anchors.horizontalCenter: screen.horizontalCenter
         anchors.bottom: screen.bottom
         anchors.bottomMargin: Theme.spacingXS
         ink: screenItem.light ? screenItem.paper.ink : screenItem.night.ink(0.95)

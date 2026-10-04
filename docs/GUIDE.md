@@ -171,7 +171,7 @@ How it works:
 
 ## What really plays
 
-Under the device's name on its card, and at the foot of the volume pop-up (the right side of the screen, for **any** output: a sound card, HDMI, a Bluetooth device), one short line says what the sound is:
+Under the device's name on its card, and at the foot of the volume pop-up (centered under the screen, for **any** output: a sound card, HDMI, a Bluetooth device), one short line says what the sound is:
 
 > Bluetooth · LDAC · 96 kHz · 24 bit
 
