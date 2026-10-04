@@ -4,7 +4,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const C = load("Centre.js", ["PERIOD", "MAX_SHIFT", "HOST_SIZE", "GROUP_SIZE", "TILT", "clamp01", "lerp", "ease", "approach", "backSpot", "sizes", "groupAt", "hostAt", "away", "phaseAt", "copySlot", "depthSize", "parallax", "copiesOf", "roleOf", "label", "pulse"]);
+const C = load("Centre.js", ["PERIOD", "MAX_SHIFT", "HOST_SIZE", "GROUP_SIZE", "TILT", "clamp01", "lerp", "ease", "approach", "backSpot", "sizes", "labelOffset", "ringNorm", "RING_MAX", "groupAt", "hostAt", "away", "phaseAt", "copySlot", "depthSize", "parallax", "copiesOf", "roleOf", "label", "pulse"]);
 const V = load("MasterVolume.js");
 
 const near = (v, d) => Math.round(v * 1000) / 1000;
@@ -12,7 +12,7 @@ const round = list => list.map(near);
 
 // A scene the size of the bar popout, and a small one
 const g = { cx: 210, cy: 190, rx: 170, ry: 125, coreSize: 65, bodySize: 51 };
-const small = { cx: 60, cy: 40, rx: 40, ry: 30, coreSize: 14, bodySize: 34 };
+const small = { cx: 110, cy: 100, rx: 83, ry: 57, coreSize: 34, bodySize: 34 };
 
 // --- progress -------------------------------------------------------------------
 eq("ease: starts and ends flat, half way is half", [C.ease(0), C.ease(0.5), C.ease(1)], [0, 0.5, 1]);
@@ -29,9 +29,9 @@ eq("host at the back is about 40 % of its size", C.hostAt(g, 1).scale, 0.4);
 
 const s = C.sizes(g);
 eq("sizes: the source is bigger than the host, a copy smaller than a ring planet", [s.source > g.coreSize, s.copy < g.bodySize, s.copy >= 12], [true, true, true]);
-eq("sizes: the orbit clears the source and the volume ring", s.radius - s.copy / 2 - s.source / 2 >= 14, true);
+eq("sizes: the volume ring is outside the source, the orbit outside the ring", [s.ring > s.source / 2, s.radius - s.copy / 2 - s.ring >= 12], [true, true]);
 const t = C.sizes(small);
-eq("sizes: on a small scene the copies shrink and the orbit still fits", [t.copy < s.copy, t.copy >= 12, t.radius <= small.rx * 0.9 + 6], [true, true, true]);
+eq("sizes: on a small scene the copies shrink and the orbit still fits", [t.copy < s.copy, t.copy >= 12, t.radius <= small.rx * 0.9], [true, true, true]);
 
 // --- the copies' orbit ----------------------------------------------------------
 const centre = C.groupAt(g, 0);
@@ -89,5 +89,16 @@ eq("master: never below 0 or above 1", V.scale([1, 0.01], 1, -5).concat(V.scale(
 eq("master: one member alone is the general level itself", round(V.scale([0.7], 0.7, 0.2)), [0.2]);
 eq("pointer: the ring reads 0 at the top and goes clockwise", [V.fromPointer(0, 0, 0, -10, 0.5), V.fromPointer(0, 0, 10, 0, 0.3), V.fromPointer(0, 0, 0, 10, 0.5), near(V.fromPointer(0, 0, -10, 0, 0.7))], [0, 0.25, 0.5, 0.75]);
 eq("pointer: crossing the top stops at the end instead of jumping to the other", [V.fromPointer(0, 0, -1, -10, 0.1), V.fromPointer(0, 0, 1, -10, 0.9)], [0, 1]);
+
+// --- the name under the centre, the ring that opens ------------------------------
+for (const [what, scene] of [["bar popout", g], ["small scene", small]]) {
+    const z = C.sizes(scene);
+    eq("label offset (" + what + "): under the ring and under the copies' lowest point", [C.labelOffset(z) > z.ring, C.labelOffset(z) > z.radius * C.TILT + z.copy / 2], [true, true]);
+}
+eq("ring: shut, it stays the ring's usual share", [C.ringNorm(g, 0.56, 0), C.ringNorm(small, 0.56, 0)], [0.56, 0.56]);
+eq("ring: open, it is wider than usual so the devices on it clear the copies", [C.ringNorm(g, 0.56, 1) > 0.56, C.ringNorm(small, 0.56, 1) > 0.56], [true, true]);
+eq("ring: never into the outer belt", [C.ringNorm(g, 0.56, 1) <= C.RING_MAX, C.ringNorm(small, 0.56, 1) <= C.RING_MAX], [true, true]);
+eq("ring: it opens along with the camera, never narrower on the way", [0, 0.25, 0.5, 0.75, 1].map(open => C.ringNorm(g, 0.56, open)).every((v, i, all) => i === 0 || v >= all[i - 1]), true);
+eq("ring: a ring already wider than the group needs is left alone", C.ringNorm(g, 0.9, 1), 0.9);
 
 done();

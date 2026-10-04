@@ -13,6 +13,7 @@ var RECALL = 0.5;       // seconds the host takes to come back and the group to 
 var HOST_SIZE = 0.4;    // the host's size at the back, of its size at the centre
 var GROUP_SIZE = 0.5;   // the group's size when it steps back
 var TILT = 0.55;        // orbit height over width: the flat view of the scene's own rings
+var RING_MAX = 0.76;    // the widest the connected ring opens, of the scene's belt
 var MAX_SHIFT = 12;     // px the sky may drift: the margin around the starfield
 var PARALLAX = 0.08;    // how far the sky follows the camera, far stars barely move
 
@@ -43,15 +44,36 @@ function backSpot(g) {
     return { "x": g.cx - g.rx * 0.62, "y": g.cy - g.ry * 0.62 };
 }
 
-// Sizes in px: the source planet, a copy, and the distance from the source to a
-// copy. The gap leaves room for the volume ring; on a small scene the copies
-// shrink so the orbit still fits.
+// Sizes in px: the source planet, the volume ring around it, a copy, and the
+// distance from the source to a copy. The ring sits just outside what the
+// source already wears (battery arc, noise-control halo) and the copies orbit
+// outside the ring; on a small scene the copies shrink so the orbit still fits.
 function sizes(g) {
     const source = Math.round(g.coreSize * 1.2);
-    const gap = Math.max(14, g.bodySize * 0.4);
+    const ring = source / 2 + Math.max(16, source * 0.2);
+    const gap = ring - source / 2 + 12;
     const room = g.rx * 0.9;
     const copy = Math.max(12, Math.min(g.bodySize * 0.85, source * 0.5, 2 * (room - source / 2 - gap)));
-    return { "source": source, "copy": copy, "radius": source / 2 + gap + copy / 2 };
+    return { "source": source, "ring": ring, "copy": copy, "radius": source / 2 + gap + copy / 2 };
+}
+
+// How far under the group's centre (px, at full size) the name goes: below
+// the ring and below the lowest point of the copies' orbit, so a copy passing
+// in front never covers it
+function labelOffset(s) {
+    return Math.max(s.ring, s.radius * TILT + s.copy / 2) + 8;
+}
+
+// How wide the connected ring is (a share of the scene's belt, as innerNorm)
+// while the group takes the centre: wide enough that the devices riding it
+// clear the copies' orbit, but never into the outer belt. `base` is the
+// ring's usual share, `open` (0..1) how far the group has taken the centre.
+function ringNorm(g, base, open) {
+    const s = sizes(g);
+    const margin = g.bodySize * 0.5 + 4;
+    const wide = (s.radius + s.copy / 2 + margin) / g.rx;
+    const tall = (s.radius * TILT + s.copy / 2 + margin) / g.ry;
+    return lerp(base, Math.max(base, Math.min(RING_MAX, Math.max(wide, tall))), open);
 }
 
 // The group (source and copies): centred, or stepped back (stage 0..1, eased)
