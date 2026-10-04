@@ -5,7 +5,7 @@ const { load, eq, done } = imports.lib;
 
 const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNote", "stuckNote", "levelNote"]);
 const Volume = load("Volume.js", ["clamp", "step", "validSink"]);
-const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "arc", "end", "point", "angleOf", "valueAt", "zone", "wheelPart", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
+const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "slices", "sliceAt", "partOf", "indexOf", "arc", "end", "point", "angleOf", "valueAt", "zone", "wheelPart", "iconSpot", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
 const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded", "note"]);
 const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "loopbackArgs", "filterArgs", "muteTarget", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "shownLevels"]);
@@ -57,28 +57,44 @@ eq("transport of the device", Route.transportPath(tree, DEV), DEV + "/sep1/fd0")
 eq("no transport: no absolute volume", [Route.transportPath("/org/bluez\n" + DEV + "\n", DEV), Route.transportPath(tree, "/org/bluez/hci0/dev_x")], ["", ""]);
 eq("transport volume", [Route.transportVolume('{"type":"q","data":65}'), Route.transportVolume("oops"), Route.transportVolume('{"type":"q","data":300}')], [65, -1, -1]);
 eq("level notes say why", [Guide.levelNote("no-device").length > 0, Guide.levelNote("bad-level").indexOf("0 to 100") > 0], [true, true]);
-
-// Polar vectorscope (D250, D254): angles clockwise from the right, top = 270
-eq("outer arc lights from the left", [Polar.arc("outer", 0.5), Polar.arc("inner", 2)], [{ start: 180, sweep: 90 }, { start: 180, sweep: 180 }]);
-eq("split: each quarter from its bottom corner", [Polar.arc("d1", 1), Polar.arc("d2", 0.5)], [{ start: 180, sweep: 90 }, { start: 360, sweep: -45 }]);
-eq("moons", [Polar.end("outer", 0), Polar.end("outer", 1), Polar.end("d2", 1)], [180, 360, 270]);
+// Polar vectorscope (D250, D254, D277): angles clockwise from the right, top = 270
+const one = Polar.slices(1)[0];
+eq("one outer arc is the whole half circle, lit from the left", [Polar.slices(1), Polar.arc(one, 0.5), Polar.arc(one, 2)], [[{ start: 180, end: 360, reverse: false }], { start: 180, sweep: 90 }, { start: 180, sweep: 180 }]);
+eq("two arcs: a gap at the top, the right one lit from its foot", [Polar.slices(2), Polar.arc(Polar.slices(2)[0], 1), Polar.arc(Polar.slices(2)[1], 0.5)], [[{ start: 180, end: 268, reverse: false }, { start: 272, end: 360, reverse: true }], { start: 180, sweep: 88 }, { start: 360, sweep: -44 }]);
+eq("three arcs: the middle one lights from the left, the ends toward it",
+    Polar.slices(3).map(s => [s.reverse, s.end - s.start]), [[false, 58], [false, 56], [true, 58]]);
+eq("four arcs meet in pairs at the top", Polar.slices(4).map(s => [s.start, s.end, s.reverse]),
+    [[180, 223, false], [227, 268, false], [272, 313, true], [317, 360, true]]);
+eq("a count out of range is clamped", [Polar.slices(0).length, Polar.slices(9).length, Polar.slices(2.9).length], [1, 4, 2]);
+eq("every arc's moon starts at its foot and ends at its top end", Polar.slices(4).map(s => [Polar.end(s, 0), Polar.end(s, 1)]), [[180, 223], [227, 268], [313, 272], [360, 317]]);
 const pTop = Polar.point(100, 100, 50, 270);
 eq("top point", [Math.round(pTop.x), Math.round(pTop.y)], [100, 50]);
-eq("drag value", [Polar.valueAt("outer", -10, 0), Polar.valueAt("outer", 0, -10), Polar.valueAt("outer", 10, 0), Polar.valueAt("inner", 7, -7)], [0, 0.5, 1, 0.75]);
-eq("below the baseline snaps to the nearer end", [Polar.valueAt("outer", 10, 5), Polar.valueAt("outer", -10, 5)], [1, 0]);
-eq("split drag", [Polar.valueAt("d1", 0, -10), Polar.valueAt("d1", -10, -10), Polar.valueAt("d2", 10, -10), Polar.valueAt("d2", -10, -10)], [1, 0.5, 0.5, 1]);
-eq("zones", [Polar.zone(0, -100, 100, 40, 10, false), Polar.zone(0, -42, 100, 40, 10, false), Polar.zone(0, -70, 100, 40, 10, false), Polar.zone(0, 30, 100, 40, 10, false)], ["outer", "inner", "", ""]);
+eq("which arc an angle belongs to", [Polar.sliceAt(180, 1), Polar.sliceAt(359, 1), Polar.sliceAt(200, 2), Polar.sliceAt(270, 2), Polar.sliceAt(250, 3), Polar.sliceAt(300, 3), Polar.sliceAt(360, 4), Polar.sliceAt(100, 4)], [0, 0, 0, 1, 1, 2, 3, 0]);
+eq("parts: the device's own, or one per output", [Polar.partOf(0, 1), Polar.partOf(0, 2), Polar.partOf(3, 4)], ["device", "m0", "m3"]);
+eq("arc of a part", ["device", "m0", "m3", "pc", "m4", "second", ""].map(Polar.indexOf), [0, 0, 3, -1, -1, -1, -1]);
+eq("drag value", [Polar.valueAt(one, -10, 0), Polar.valueAt(one, 0, -10), Polar.valueAt(one, 10, 0), Polar.valueAt(Polar.slices(1)[0], 7, -7)], [0, 0.5, 1, 0.75]);
+eq("below the baseline snaps to the nearer end", [Polar.valueAt(one, 10, 5), Polar.valueAt(one, -10, 5)], [1, 0]);
+const two = Polar.slices(2);
+eq("two outputs drag: each arc from its foot to the top", [Polar.valueAt(two[0], -10, 0), Polar.valueAt(two[0], 0, -10), Polar.valueAt(two[1], 10, 0), Polar.valueAt(two[1], 0, -10), Math.round(Polar.valueAt(two[0], -10, -10) * 100) / 100, Math.round(Polar.valueAt(two[1], 10, -10) * 100) / 100], [0, 1, 0, 1, 0.51, 0.51]);
+eq("zones", [Polar.zone(0, -100, 100, 40, 10, 1), Polar.zone(0, -42, 100, 40, 10, 1), Polar.zone(0, -70, 100, 40, 10, 1), Polar.zone(0, 30, 100, 40, 10, 1)], ["device", "pc", "", ""]);
+eq("zones with no outer arc: only this PC's", [Polar.zone(0, -100, 100, 82, 10, 0), Polar.zone(0, -82, 100, 82, 10, 0)], ["", "pc"]);
+// A point in the middle of each of four arcs, at the outer radius
+const mids = [200, 250, 290, 340].map(d => Polar.point(0, 0, 100, d));
+eq("zones: one part per output", mids.map(m => Polar.zone(m.x, m.y, 100, 40, 10, 4)), ["m0", "m1", "m2", "m3"]);
 // The wheel: arcs, icons at the feet, numbers beside the half circles and the gaps all pick a side
-eq("wheel on the arcs", [Polar.wheelPart(0, -100, 100, 44, false, true), Polar.wheelPart(0, -44, 100, 44, false, true)], ["device", "pc"]);
-eq("wheel on the icons at the feet", [Polar.wheelPart(-100, 14, 100, 44, false, true), Polar.wheelPart(-44, 14, 100, 44, false, true)], ["device", "pc"]);
-eq("wheel in the gaps: the nearer arc", [Polar.wheelPart(0, -80, 100, 44, false, true), Polar.wheelPart(0, -60, 100, 44, false, true), Polar.wheelPart(0, -10, 100, 44, false, true), Polar.wheelPart(0, -140, 100, 44, false, true)], ["device", "pc", "pc", "device"]);
-eq("wheel on the numbers beside: left device, right this PC", [Polar.wheelPart(-150, -60, 100, 44, true, true), Polar.wheelPart(150, -60, 100, 44, true, true)], ["device", "pc"]);
-eq("wheel beside without numbers: the nearer arc", [Polar.wheelPart(-150, -60, 100, 44, false, true), Polar.wheelPart(150, -60, 100, 44, false, true)], ["device", "device"]);
-eq("wheel when split: the right quarter and its side are the second output",
-    [Polar.wheelPart(30, -100, 100, 44, false, true, true), Polar.wheelPart(-30, -100, 100, 44, false, true, true), Polar.wheelPart(150, -60, 100, 44, true, true, true), Polar.wheelPart(-150, -60, 100, 44, true, true, true), Polar.wheelPart(30, -44, 100, 44, false, true, true)],
-    ["second", "device", "second", "device", "pc"]);
-eq("wheel with no device level: always this PC", [Polar.wheelPart(0, -100, 80, 66, false, false), Polar.wheelPart(-150, -60, 80, 66, true, false)], ["pc", "pc"]);
-eq("split zones", [Polar.zone(-60, -80, 100, 40, 10, true), Polar.zone(60, -80, 100, 40, 10, true)], ["d1", "d2"]);
+eq("wheel on the arcs", [Polar.wheelPart(0, -100, 100, 44, false, 1), Polar.wheelPart(0, -44, 100, 44, false, 1)], ["device", "pc"]);
+eq("wheel on the icons at the feet", [Polar.wheelPart(-100, 14, 100, 44, false, 1), Polar.wheelPart(-44, 14, 100, 44, false, 1)], ["device", "pc"]);
+eq("wheel in the gaps: the nearer arc", [Polar.wheelPart(0, -80, 100, 44, false, 1), Polar.wheelPart(0, -60, 100, 44, false, 1), Polar.wheelPart(0, -10, 100, 44, false, 1), Polar.wheelPart(0, -140, 100, 44, false, 1)], ["device", "pc", "pc", "device"]);
+eq("wheel on the numbers beside: left device, right this PC", [Polar.wheelPart(-150, -60, 100, 44, true, 1), Polar.wheelPart(150, -60, 100, 44, true, 1)], ["device", "pc"]);
+eq("wheel beside without numbers: the nearer arc", [Polar.wheelPart(-150, -60, 100, 44, false, 1), Polar.wheelPart(150, -60, 100, 44, false, 1)], ["device", "device"]);
+eq("wheel with two outputs: each half and its side", [Polar.wheelPart(30, -100, 100, 44, false, 2), Polar.wheelPart(-30, -100, 100, 44, false, 2), Polar.wheelPart(150, -60, 100, 44, true, 2), Polar.wheelPart(-150, -60, 100, 44, true, 2), Polar.wheelPart(30, -44, 100, 44, false, 2)], ["m1", "m0", "m1", "m0", "pc"]);
+eq("wheel with four outputs: one per arc", mids.map(m => Polar.wheelPart(m.x, m.y, 100, 44, false, 4)), ["m0", "m1", "m2", "m3"]);
+eq("wheel with no device level: always this PC", [Polar.wheelPart(0, -100, 80, 66, false, 0), Polar.wheelPart(-150, -60, 80, 66, true, 0)], ["pc", "pc"]);
+// Icons: the first and the last arc at the feet, the others inside their arc by the end they light from
+const spots = [0, 1, 2, 3].map(i => Polar.iconSpot(i, 4, 200, 300, 100, 20));
+eq("icons: feet for the ends", [spots[0], spots[3]], [{ x: 100, y: 316 }, { x: 300, y: 316 }]);
+eq("icons: the middle ones are inside their arc, above the baseline", spots.slice(1, 3).map(s => s.y < 300 && Math.hypot(s.x - 200, s.y - 300) < 100), [true, true]);
+eq("icons: the middle ones flank the top", spots[1].x < 200 && spots[2].x > 200, true);
 const fr = Polar.parseFrame("9;35;30;45;100;80;3;0;0;3;80;100;45;30;35;9;", 8);
 eq("cava frame: left reversed, low notes first", [fr.l, fr.r], [[0, 0.03, 0.8, 1, 0.45, 0.3, 0.35, 0.09], [0, 0.03, 0.8, 1, 0.45, 0.3, 0.35, 0.09]]);
 eq("bad frames", [Polar.parseFrame("1;2;3;", 8), Polar.parseFrame("a;b;c;d;e;f;g;h;i;j;k;l;m;n;o;p;", 8), Polar.parseFrame("", 8), Polar.parseFrame("0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;101;", 8)], [null, null, null, null]);
