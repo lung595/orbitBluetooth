@@ -3,7 +3,11 @@
 All notable changes to Orbit Bluetooth are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 1.13.2 - 2026-10-04
+
+### Changed
+
+- **The wheel changes the level you point at.** On the two volumes' screen (the card, the pop-up), scrolling over a half circle, the icon at its foot or its percentage changes that level, the device's or this PC's; between the half circles the nearer one takes it, and beside them the left percentage is the device's and the right one this PC's. Before, only the half circle itself counted and everything else changed the device. The level you scroll lights up (its moon grows, its percentage shines). A half notch left over from one level no longer counts toward the other.
 
 ## 1.13.1 - 2026-10-04
 

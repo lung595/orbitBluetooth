@@ -5,7 +5,7 @@ const { load, eq, done } = imports.lib;
 
 const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNote", "stuckNote", "levelNote"]);
 const Volume = load("Volume.js", ["clamp", "step", "validSink"]);
-const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "arc", "end", "point", "angleOf", "valueAt", "zone", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
+const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "arc", "end", "point", "angleOf", "valueAt", "zone", "wheelPart", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
 const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded", "note"]);
 const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "filterArgs", "muteTarget", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "shownLevels"]);
@@ -68,6 +68,13 @@ eq("drag value", [Polar.valueAt("outer", -10, 0), Polar.valueAt("outer", 0, -10)
 eq("below the baseline snaps to the nearer end", [Polar.valueAt("outer", 10, 5), Polar.valueAt("outer", -10, 5)], [1, 0]);
 eq("split drag", [Polar.valueAt("d1", 0, -10), Polar.valueAt("d1", -10, -10), Polar.valueAt("d2", 10, -10), Polar.valueAt("d2", -10, -10)], [1, 0.5, 0.5, 1]);
 eq("zones", [Polar.zone(0, -100, 100, 40, 10, false), Polar.zone(0, -42, 100, 40, 10, false), Polar.zone(0, -70, 100, 40, 10, false), Polar.zone(0, 30, 100, 40, 10, false)], ["outer", "inner", "", ""]);
+// The wheel: arcs, icons at the feet, numbers beside the half circles and the gaps all pick a side
+eq("wheel on the arcs", [Polar.wheelPart(0, -100, 100, 44, false, true), Polar.wheelPart(0, -44, 100, 44, false, true)], ["device", "pc"]);
+eq("wheel on the icons at the feet", [Polar.wheelPart(-100, 14, 100, 44, false, true), Polar.wheelPart(-44, 14, 100, 44, false, true)], ["device", "pc"]);
+eq("wheel in the gaps: the nearer arc", [Polar.wheelPart(0, -80, 100, 44, false, true), Polar.wheelPart(0, -60, 100, 44, false, true), Polar.wheelPart(0, -10, 100, 44, false, true), Polar.wheelPart(0, -140, 100, 44, false, true)], ["device", "pc", "pc", "device"]);
+eq("wheel on the numbers beside: left device, right this PC", [Polar.wheelPart(-150, -60, 100, 44, true, true), Polar.wheelPart(150, -60, 100, 44, true, true)], ["device", "pc"]);
+eq("wheel beside without numbers: the nearer arc", [Polar.wheelPart(-150, -60, 100, 44, false, true), Polar.wheelPart(150, -60, 100, 44, false, true)], ["device", "device"]);
+eq("wheel with no device level: always this PC", [Polar.wheelPart(0, -100, 80, 66, false, false), Polar.wheelPart(-150, -60, 80, 66, true, false)], ["pc", "pc"]);
 eq("split zones", [Polar.zone(-60, -80, 100, 40, 10, true), Polar.zone(60, -80, 100, 40, 10, true)], ["d1", "d2"]);
 const fr = Polar.parseFrame("9;35;30;45;100;80;3;0;0;3;80;100;45;30;35;9;", 8);
 eq("cava frame: left reversed, low notes first", [fr.l, fr.r], [[0, 0.03, 0.8, 1, 0.45, 0.3, 0.35, 0.09], [0, 0.03, 0.8, 1, 0.45, 0.3, 0.35, 0.09]]);

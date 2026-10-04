@@ -73,6 +73,19 @@ function zone(dx, dy, outer, inner, grip, split) {
     return "";
 }
 
+// The level a wheel notch belongs to, "device" or "pc", from the pointer's
+// place relative to the center (D275). Every spot answers, none is dead:
+// beside the half circles, where the percentages sit, the left one is the
+// device's and the right one this PC's; anywhere else the nearer arc wins,
+// so an arc, the icon at its foot and the gap beside it all pick one side.
+function wheelPart(dx, dy, outer, inner, sideNumbers, hasDevice) {
+    if (!hasDevice)
+        return "pc";
+    if (sideNumbers && Math.abs(dx) > outer)
+        return dx < 0 ? "device" : "pc";
+    return Math.sqrt(dx * dx + dy * dy) >= (outer + inner) / 2 ? "device" : "pc";
+}
+
 // One line of cava's raw ascii output ("9;35;...;9;"), `bars` values per
 // channel side by side: the left channel comes first with its low notes in
 // the middle, then the right one. Values 0..100 -> 0..1, low notes first.
