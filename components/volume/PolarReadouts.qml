@@ -3,33 +3,33 @@ import qs.Common
 import qs.Widgets
 import "Polar.js" as Polar
 
-// Who is who and how loud, over the polar scope (PolarScope): an icon at
-// the foot of each half circle, the percentage next to its moon while it
-// moves, or beside the half circles when there is room (D264). Fills the
+// Who is who and how loud, over the polar scope (PolarScope): an icon for
+// each half circle, the percentage next to its moon while it moves, or
+// beside the half circles when there is room (D264). Fills the
 // scope, so every position is in the scope's own coordinates.
 Item {
+    id: readouts
+
     // The scope (PolarScope.qml): its geometry, levels, colors and who talks
     required property var scope
 
-    // Who is who: an icon at the foot of each half circle, where it starts
-    DankIcon {
-        visible: scope.hasDevice
-        name: scope.deviceMuted ? "volume_off" : scope.deviceIcon
-        size: scope.iconSize
-        color: scope.deviceMuted ? scope.mutedColor : scope.deviceColor
-        rotation: -scope.rotation
-        x: scope.cx - scope.outer - width / 2
-        y: scope.cy + 6
-    }
-    // Listening together: the second output's, at the foot of the right quarter
-    DankIcon {
-        visible: scope.split
-        name: scope.secondMuted ? "volume_off" : scope.secondIcon
-        size: scope.iconSize
-        color: scope.secondMuted ? scope.mutedColor : scope.secondColor
-        rotation: -scope.rotation
-        x: scope.cx + scope.outer - width / 2
-        y: scope.cy + 6
+    // Who is who: an icon for each outer arc, at the foot of the half circle
+    // for the first and the last (where they start), inside the arc by the
+    // end it lights from for the others (Polar.iconSpot); this PC's at the
+    // foot of the inner half
+    Repeater {
+        model: scope.outputs.length
+        DankIcon {
+            required property int index
+            readonly property var out: scope.output(index)
+            readonly property var spot: Polar.iconSpot(index, scope.outputs.length, scope.cx, scope.cy, scope.outer, scope.iconSize)
+            name: out.muted ? "volume_off" : out.icon
+            size: scope.iconSize
+            color: out.muted ? scope.mutedColor : out.color
+            rotation: -scope.rotation
+            x: spot.x - width / 2
+            y: spot.y - height / 2
+        }
     }
     DankIcon {
         name: scope.pcMuted ? "volume_off" : scope.pcIcon
@@ -58,33 +58,37 @@ Item {
         font.weight: Font.DemiBold
         visible: shown
     }
-    Readout {
-        radiusAt: scope.outer
-        deg: Polar.end(scope.split ? "d1" : "outer", scope.shownDevice)
-        text: Math.round(Math.max(0, scope.deviceLevel) * 100) + "%"
-        color: scope.deviceColor
-        shown: scope.hasDevice && !scope.sideNumbers && (scope.numbers || scope.talking === "device" || scope.dragging === "device")
+    // The moon's number for one or two outputs; with more, PolarLegend names
+    // them where they cannot meet
+    Repeater {
+        model: scope.outputs.length <= 2 ? scope.outputs.length : 0
+        Readout {
+            required property int index
+            readonly property var out: scope.output(index)
+            radiusAt: scope.outer
+            deg: Polar.end(scope.sliceOf(index), scope.shownAt(index))
+            text: Math.round(out.level * 100) + "%"
+            color: out.color
+            shown: !scope.sideNumbers && (scope.numbers || scope.talking === out.part || scope.dragging === out.part)
+        }
     }
-    Readout {
-        radiusAt: scope.outer
-        deg: Polar.end("d2", scope.shownSecond)
-        text: Math.round(scope.secondLevel * 100) + "%"
-        color: scope.secondColor
-        shown: scope.split && !scope.sideNumbers && (scope.numbers || scope.talking === "second" || scope.dragging === "second")
+    PolarLegend {
+        scope: readouts.scope
     }
     Readout {
         // Inside the inner arc, so it never meets the outer moon
         radiusAt: scope.inner
         gap: -26
-        deg: Polar.end("inner", scope.shownPc)
+        deg: Polar.end(scope.innerSlice, scope.shownPc)
         text: Math.round(scope.pcLevel * 100) + "%"
         color: scope.pcColor
-        // Split, the sides belong to the two outputs: this PC's stays here
-        shown: (!scope.sideNumbers || scope.split) && (scope.numbers || scope.talking === "pc" || scope.dragging === "pc")
+        // Beside the half circles, the sides belong to the outputs, or to
+        // this PC when there is a single one
+        shown: (!scope.sideNumbers || scope.outputs.length > 1) && (scope.numbers || scope.talking === "pc" || scope.dragging === "pc")
     }
 
-    // Beside the half circles: the device's level on the left, where its
-    // arc starts, this PC's on the right (the second output's when split)
+    // Beside the half circles: the first output's level on the left, where
+    // its arc starts, on the right the second's, or this PC's with a single one
     component SideNumber: Column {
         property real level: 0
         property bool muted: false
@@ -127,22 +131,26 @@ Item {
         }
     }
     SideNumber {
+        readonly property var out: scope.output(0)
         visible: scope.sideNumbers && scope.hasDevice
         x: 6
-        level: Math.max(0, scope.deviceLevel)
-        muted: scope.deviceMuted
-        tint: scope.deviceColor
-        label: scope.deviceLabel
-        lit: scope.talking === "device" || scope.dragging === "device"
+        level: out.level
+        muted: out.muted
+        tint: out.color
+        label: out.label
+        lit: scope.talking === out.part || scope.dragging === out.part
     }
     SideNumber {
-        readonly property string part: scope.split ? "second" : "pc"
+        // The second output's, or this PC's when there is a single one
+        readonly property bool second: scope.outputs.length > 1
+        readonly property var out: scope.output(1)
+        readonly property string part: second ? out.part : "pc"
         visible: scope.sideNumbers
         x: scope.width - width - 6
-        level: scope.split ? scope.secondLevel : scope.pcLevel
-        muted: scope.split ? scope.secondMuted : scope.pcMuted
-        tint: scope.split ? scope.secondColor : scope.pcColor
-        label: scope.split ? scope.secondLabel : scope.pcLabel
+        level: second ? out.level : scope.pcLevel
+        muted: second ? out.muted : scope.pcMuted
+        tint: second ? out.color : scope.pcColor
+        label: second ? out.label : scope.pcLabel
         lit: scope.talking === part || scope.dragging === part
     }
 }

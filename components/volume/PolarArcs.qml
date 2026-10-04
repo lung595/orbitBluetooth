@@ -3,18 +3,17 @@ import QtQuick.Shapes
 import qs.Common
 import "Polar.js" as Polar
 
-// The half circles of the scope (PolarScope): a hairline track for each
-// level, a faint glow under the lit part, then the lit arc itself. One
-// Shape with the curve renderer; it only redraws when a level or a color
-// changes
-Shape {
+// The half circles of the scope (PolarScope): for each level a hairline
+// track, a faint glow under the lit part, then the lit arc itself. One Shape
+// per arc, with the curve renderer: it only redraws when its own level or
+// color changes, and an arc that is not there (fewer outputs) is not made
+Item {
     id: arcs
 
     // The scope (PolarScope.qml): its geometry, colors and eased levels
     required property var scope
 
     anchors.fill: parent
-    preferredRendererType: Shape.CurveRenderer
 
     component Arc: ShapePath {
         id: arcPath
@@ -35,99 +34,58 @@ Shape {
         }
     }
 
-    // One level's arc: lit up to its level, from the start `part` gives
-    // (Polar.arc), or just its hairline track when `track` is set
-    component Level: Arc {
-        property string part: "outer"
+    // One half circle, or one arc of the outer one: its track (where the
+    // level can go), the glow, and the line lit up to its level from the end
+    // `slice` (Polar.slices) says
+    component Half: Shape {
+        id: half
+        property real radius: 0
+        property var slice: arcs.scope.innerSlice
         property real level: 0
-        property bool on: true
         property bool muted: false
         property color tint: "white"
-        // The soft glow under the lit part, instead of the line itself
-        property bool glow: false
-        start: Polar.arc(part, level).start
-        sweep: Polar.arc(part, level).sweep
-        strokeWidth: glow ? arcs.scope.stroke * 4 : arcs.scope.stroke
-        strokeColor: !on || level <= 0.001 ? "transparent" : glow ? Theme.withAlpha(muted ? arcs.scope.mutedColor : tint, 0.07) : muted ? Theme.withAlpha(arcs.scope.mutedColor, 0.6) : tint
-    }
-    component Track: Arc {
-        property string part: "outer"
-        property bool on: true
-        start: Polar.arc(part, 1).start
-        sweep: Polar.arc(part, 1).sweep
-        strokeWidth: 1
-        strokeColor: on ? arcs.scope.trackColor : "transparent"
+        anchors.fill: parent
+        preferredRendererType: Shape.CurveRenderer
+        readonly property var _lit: Polar.arc(slice, level)
+        readonly property var _whole: Polar.arc(slice, 1)
+        readonly property bool _on: level > 0.001
+
+        Arc {
+            radius: half.radius
+            start: half._whole.start
+            sweep: half._whole.sweep
+            strokeWidth: 1
+            strokeColor: arcs.scope.trackColor
+        }
+        Arc {
+            radius: half.radius
+            start: half._lit.start
+            sweep: half._lit.sweep
+            strokeWidth: arcs.scope.stroke * 4
+            strokeColor: !half._on ? "transparent" : Theme.withAlpha(half.muted ? arcs.scope.mutedColor : half.tint, 0.07)
+        }
+        Arc {
+            radius: half.radius
+            start: half._lit.start
+            sweep: half._lit.sweep
+            strokeWidth: arcs.scope.stroke
+            strokeColor: !half._on ? "transparent" : half.muted ? Theme.withAlpha(arcs.scope.mutedColor, 0.6) : half.tint
+        }
     }
 
-    readonly property bool _split: scope.split
-
-    // Tracks: where each level can go. Split, the outer one is two quarters
-    // that stop a hair short of meeting, so the cut at the top shows
-    Track {
-        radius: arcs.scope.outer
-        on: arcs.scope.hasDevice && !arcs._split
+    Repeater {
+        model: arcs.scope.outputs.length
+        Half {
+            required property int index
+            radius: arcs.scope.outer
+            slice: arcs.scope.sliceOf(index)
+            level: arcs.scope.shownAt(index)
+            muted: arcs.scope.output(index).muted
+            tint: arcs.scope.output(index).color
+        }
     }
-    Track {
-        radius: arcs.scope.outer
-        part: "d1"
-        sweep: Polar.arc("d1", 0.97).sweep
-        on: arcs._split
-    }
-    Track {
-        radius: arcs.scope.outer
-        part: "d2"
-        sweep: Polar.arc("d2", 0.97).sweep
-        on: arcs._split
-    }
-    Track {
+    Half {
         radius: arcs.scope.inner
-    }
-    // A glow under each lit arc, then the levels themselves
-    Level {
-        radius: arcs.scope.outer
-        part: arcs._split ? "d1" : "outer"
-        level: arcs.scope.shownDevice
-        on: arcs.scope.hasDevice
-        muted: arcs.scope.deviceMuted
-        tint: arcs.scope.deviceColor
-        glow: true
-    }
-    Level {
-        radius: arcs.scope.outer
-        part: "d2"
-        level: arcs.scope.shownSecond
-        on: arcs._split
-        muted: arcs.scope.secondMuted
-        tint: arcs.scope.secondColor
-        glow: true
-    }
-    Level {
-        radius: arcs.scope.inner
-        part: "inner"
-        level: arcs.scope.shownPc
-        muted: arcs.scope.pcMuted
-        tint: arcs.scope.pcColor
-        glow: true
-    }
-    Level {
-        radius: arcs.scope.outer
-        part: arcs._split ? "d1" : "outer"
-        level: arcs.scope.shownDevice
-        on: arcs.scope.hasDevice
-        muted: arcs.scope.deviceMuted
-        tint: arcs.scope.deviceColor
-    }
-    Level {
-        radius: arcs.scope.outer
-        part: "d2"
-        level: arcs.scope.shownSecond
-        on: arcs._split
-        muted: arcs.scope.secondMuted
-        tint: arcs.scope.secondColor
-    }
-    Level {
-        radius: arcs.scope.inner
-        part: "inner"
         level: arcs.scope.shownPc
         muted: arcs.scope.pcMuted
         tint: arcs.scope.pcColor

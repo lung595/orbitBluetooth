@@ -2,11 +2,12 @@ import QtQuick
 import qs.Common
 import qs.Widgets
 import "../card"
-import "../common/Palette.js" as Palette
+import "Polar.js" as Polar
 
-// The card's two volumes folded into one thin line (bar pop-out and Control
+// The card's volumes folded into one thin line (bar pop-out and Control
 // Center, where the full scope would make the settings scroll): each level
-// as a slim bar with its icon and percentage. A click unfolds the scope;
+// as a slim bar with its icon and percentage (the percentage leaves when
+// four or more outputs share the line: the scope has it). A click unfolds the scope;
 // the wheel steps the level under the pointer, as on the scope. Nothing
 // runs here: it only shows the levels it is given.
 Rectangle {
@@ -22,6 +23,11 @@ Rectangle {
     // The card's surface colors, light or dark, like its stat tiles
     readonly property PaperColors paper: PaperColors {}
     readonly property color muted: paper.fg(0.42)
+    // The same colors as the scope's arcs (MemberPalette)
+    readonly property MemberPalette tones: MemberPalette {
+        count: strip.levels.members.length
+        bases: [Theme.primary, Theme.secondary, Theme.tertiary]
+    }
     implicitHeight: 32
     radius: height / 2
     color: paper.fg(hovered ? 0.08 : 0.045)
@@ -35,6 +41,7 @@ Rectangle {
         property bool muted: false
         property color tint: Theme.primary
         property real barWidth: 40
+        property bool compact: false
         spacing: Theme.spacingXS
         DankIcon {
             anchors.verticalCenter: parent.verticalCenter
@@ -57,6 +64,7 @@ Rectangle {
         }
         StyledText {
             anchors.verticalCenter: parent.verticalCenter
+            visible: !parent.compact
             width: 34
             text: parent.muted ? "Muted" : Math.round(parent.level * 100) + "%"
             font.pixelSize: Theme.fontSizeSmall
@@ -74,43 +82,36 @@ Rectangle {
         anchors.left: parent.left
         anchors.leftMargin: Theme.spacingM
         spacing: Theme.spacingM
+        // One level for each output listening together, else the device's own
+        // when it has one, then this PC's
+        readonly property int outputs: strip.levels.split ? strip.levels.members.length : strip.levels.deviceLevel >= 0 ? 1 : 0
+        readonly property int count: outputs + 1
+        readonly property bool compact: count > 3
         // Room for the bars once icons, numbers, gaps and the chevron are set
-        // Two outputs listening together (split) have a bar each, plus this PC's
-        readonly property int count: (strip.levels.deviceLevel >= 0 || strip.levels.split ? 1 : 0) + (strip.levels.split ? 1 : 0) + 1
-        readonly property real barWidth: Math.max(24, (strip.width - Theme.spacingM * 3 - 24 - count * (16 + 34 + Theme.spacingXS * 2) - (count - 1) * Theme.spacingM) / count)
+        readonly property real barWidth: Math.max(24, (strip.width - Theme.spacingM * 3 - 24 - count * (16 + (compact ? 0 : 34) + Theme.spacingXS * (compact ? 1 : 2)) - (count - 1) * Theme.spacingM) / count)
 
-        Level {
-            id: deviceRow
-            visible: strip.levels.deviceLevel >= 0 || strip.levels.split
-            icon: strip.levels.deviceIcon
-            level: Math.max(0, strip.levels.deviceLevel)
-            muted: strip.levels.deviceMuted
-            tint: Theme.primary
-            barWidth: row.barWidth
-        }
-        Level {
-            id: secondRow
-            visible: strip.levels.split
-            icon: strip.levels.secondIcon
-            level: strip.levels.secondLevel
-            muted: strip.levels.secondMuted
-            tint: {
-                const c = Palette.apart(Theme.secondary, Theme.primary);
-                return Qt.rgba(c.r, c.g, c.b, 1);
+        Repeater {
+            id: outputRows
+            model: row.outputs
+            Level {
+                required property int index
+                readonly property var out: strip.levels.split ? strip.levels.members[index] : null
+                icon: out ? out.icon : strip.levels.deviceIcon
+                level: out ? out.level : Math.max(0, strip.levels.deviceLevel)
+                muted: out ? out.muted : strip.levels.deviceMuted
+                tint: strip.tones.colors[index]
+                barWidth: row.barWidth
+                compact: row.compact
             }
-            barWidth: row.barWidth
         }
         Level {
             id: pcRow
             icon: strip.levels.pcIcon
             level: strip.levels.pcLevel
             muted: strip.levels.pcMuted
-            tint: {
-                const own = Palette.apart(Theme.tertiary, Theme.primary);
-                const c = strip.levels.split ? Palette.apart(own, secondRow.tint) : own;
-                return Qt.rgba(c.r, c.g, c.b, 1);
-            }
+            tint: strip.tones.pc
             barWidth: row.barWidth
+            compact: row.compact
         }
     }
 
@@ -135,10 +136,16 @@ Rectangle {
         acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
         property real acc: 0
         onWheel: e => {
-            // The level under the pointer, left to right: the device's when
-            // it has one, the second output's when split, this PC's last
+            // The level under the pointer, left to right: the outputs' (the
+            // device's own when it is alone), this PC's last
             const x = e.x - row.x;
-            const part = x >= pcRow.x - row.spacing / 2 ? "pc" : secondRow.visible && x >= secondRow.x - row.spacing / 2 ? "second" : deviceRow.visible ? "device" : "pc";
+            let part = "pc";
+            if (x < pcRow.x - row.spacing / 2)
+                for (let i = row.outputs - 1; i >= 0; i--)
+                    if (x >= outputRows.itemAt(i).x - row.spacing / 2 || i === 0) {
+                        part = Polar.partOf(i, row.outputs);
+                        break;
+                    }
             // Touchpads send small deltas: add them up to whole notches
             acc += e.angleDelta.y;
             const notches = Math.trunc(acc / 120);

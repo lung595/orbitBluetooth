@@ -1,9 +1,9 @@
 import QtQuick
 import "Polar.js" as Polar
 
-// The moons of the scope (PolarScope), two (three listening together): the knobs at the end of each
-// lit arc, to drag. A muted level shows a hollow moon in the muted ink; the
-// one under the pointer, being dragged or just scrolled grows a little
+// The moons of the scope (PolarScope): the knobs at the end of each lit arc,
+// to drag. A muted level shows a hollow moon in the muted ink; the one under
+// the pointer, being dragged or just scrolled grows a little
 Item {
     id: moons
 
@@ -14,11 +14,12 @@ Item {
     anchors.fill: parent
 
     component Moon: Rectangle {
+        property string part: ""
         property real radiusAt: 0
         property real deg: 180
         property color tint: "white"
         property bool hollow: false
-        property bool big: false
+        readonly property bool big: moons.scope.talking === part || moons.scope.dragging === part || moons.scope.pointer.hover === part
         readonly property real knob: big ? 11 : 8
         width: knob
         height: knob
@@ -30,28 +31,23 @@ Item {
         border.color: tint
     }
 
-    Moon {
-        visible: moons.scope.hasDevice
-        radiusAt: moons.scope.outer
-        deg: Polar.end(moons.scope.split ? "d1" : "outer", moons.scope.shownDevice)
-        tint: moons.scope.deviceMuted ? moons.scope.mutedColor : moons.scope.deviceColor
-        hollow: moons.scope.deviceMuted
-        big: moons.scope.talking === "device" || moons.scope.dragging === "device" || moons.scope.pointer.hover === "device"
-    }
-    // Listening together: the second output's moon, on the right quarter
-    Moon {
-        visible: moons.scope.split
-        radiusAt: moons.scope.outer
-        deg: Polar.end("d2", moons.scope.shownSecond)
-        tint: moons.scope.secondMuted ? moons.scope.mutedColor : moons.scope.secondColor
-        hollow: moons.scope.secondMuted
-        big: moons.scope.talking === "second" || moons.scope.dragging === "second" || moons.scope.pointer.hover === "second"
+    Repeater {
+        model: moons.scope.outputs.length
+        Moon {
+            required property int index
+            readonly property var out: moons.scope.output(index)
+            part: out.part
+            radiusAt: moons.scope.outer
+            deg: Polar.end(moons.scope.sliceOf(index), moons.scope.shownAt(index))
+            tint: out.muted ? moons.scope.mutedColor : out.color
+            hollow: out.muted
+        }
     }
     Moon {
+        part: "pc"
         radiusAt: moons.scope.inner
-        deg: Polar.end("inner", moons.scope.shownPc)
+        deg: Polar.end(moons.scope.innerSlice, moons.scope.shownPc)
         tint: moons.scope.pcMuted ? moons.scope.mutedColor : moons.scope.pcColor
         hollow: moons.scope.pcMuted
-        big: moons.scope.talking === "pc" || moons.scope.dragging === "pc" || moons.scope.pointer.hover === "pc"
     }
 }

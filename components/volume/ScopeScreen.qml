@@ -4,7 +4,6 @@ import qs.Widgets
 import "../card"
 import "../common"
 import "../scene"
-import "../common/Palette.js" as Palette
 
 // The vectorscope on its own screen (D262, D263), as the volume pop-up and
 // the Dank Island sheet both show it: DMS's themed frame around it is the
@@ -37,18 +36,14 @@ Item {
     readonly property NightColors night: NightColors {}
     readonly property PaperColors paper: PaperColors {}
     readonly property bool light: Theme.isLightMode
-    readonly property color deviceColor: light ? Theme.primary : night.primary
-    // Listening together: the second output's quarter, never a twin of the first
-    readonly property color secondColor: {
-        const c = Palette.apart(light ? Theme.secondary : night.secondary, deviceColor);
-        return Qt.rgba(c.r, c.g, c.b, 1);
+    // One color per output listening together, then this PC's: never twins
+    // (MemberPalette). Alone, the device keeps the primary
+    readonly property MemberPalette tones: MemberPalette {
+        count: screenItem.overlay.members.length
+        bases: screenItem.light ? [Theme.primary, Theme.secondary, Theme.tertiary] : [screenItem.night.primary, screenItem.night.secondary, screenItem.night.tertiary]
     }
-    // This PC's arc never passes for an output's (Palette.apart)
-    readonly property color pcColor: {
-        const own = Palette.apart(light ? Theme.tertiary : night.tertiary, deviceColor);
-        const c = overlay.split ? Palette.apart(own, secondColor) : own;
-        return Qt.rgba(c.r, c.g, c.b, 1);
-    }
+    readonly property color deviceColor: tones.colors[0]
+    readonly property color pcColor: tones.pc
     // The glass behind the pills at the foot (the facts, the note)
     readonly property color pillFill: light ? Theme.withAlpha(paper.fill(0.92), 0.92) : Theme.withAlpha(night.sky, 0.86)
     readonly property color pillStroke: light ? paper.fg(0.12) : night.ink(0.12)
@@ -93,7 +88,7 @@ Item {
         grid: true
         additive: !screenItem.light
         deviceColor: screenItem.deviceColor
-        secondColor: screenItem.secondColor
+        memberColors: screenItem.tones.colors
         pcColor: screenItem.pcColor
         trackColor: screenItem.light ? screenItem.paper.fg(0.16) : screenItem.night.ink(0.14)
         inkColor: screenItem.light ? screenItem.paper.ink : screenItem.night.ink(0.92)
@@ -104,10 +99,7 @@ Item {
         pcLevel: screenItem.overlay.pcLevel
         deviceMuted: screenItem.overlay.deviceMuted
         pcMuted: screenItem.overlay.pcMuted
-        split: screenItem.overlay.split
-        secondLevel: screenItem.overlay.secondLevel
-        secondMuted: screenItem.overlay.secondMuted
-        secondIcon: screenItem.overlay.secondIcon
+        members: screenItem.overlay.members
         deviceIcon: screenItem.overlay.deviceIcon
         pcIcon: screenItem.overlay.pcIcon
         picture: screenItem.overlay.picture || null
@@ -122,7 +114,6 @@ Item {
         smartWheel: true
         numbers: true
         deviceLabel: screenItem.overlay.deviceName || "Device"
-        secondLabel: screenItem.overlay.secondName || "Device"
         onStepped: (part, dir) => {
             screenItem.overlay.stepLevel(part, dir);
             screenItem.touched();

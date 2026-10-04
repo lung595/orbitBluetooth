@@ -238,31 +238,19 @@ TwoLevels {
         _faces = [];
     }
 
-    Connections {
-        target: root.deviceAudio
-        function onVolumeChanged() {
-            root.poke();
-        }
-        function onMutedChanged() {
-            root.poke();
-        }
-    }
-    Connections {
-        target: root.secondAudio
-        function onVolumeChanged() {
-            root.poke();
-        }
-        function onMutedChanged() {
-            root.poke();
-        }
-    }
-    Connections {
-        target: root.pcAudio
-        function onVolumeChanged() {
-            root.poke();
-        }
-        function onMutedChanged() {
-            root.poke();
+    // Any level or mute that moves, the device's, this PC's or a member's,
+    // raises the pop-up
+    Instantiator {
+        model: root.audios
+        delegate: Connections {
+            required property var modelData
+            target: modelData
+            function onVolumeChanged() {
+                root.poke();
+            }
+            function onMutedChanged() {
+                root.poke();
+            }
         }
     }
 
