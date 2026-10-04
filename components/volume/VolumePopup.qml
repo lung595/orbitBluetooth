@@ -7,8 +7,8 @@ import "Route.js" as Route
 // The volume pop-up on one screen (D252, D258): DMS's own OSD window
 // (DankOSD: same glass, shadow, spring and auto-hide), holding the polar
 // vectorscope. Showing it registers it with DMS's OSDManager, which keeps
-// one OSD per screen: DMS's volume OSD steps aside by itself, and none of
-// DMS's settings is written (value 12, D259).
+// one OSD per screen: another OSD (brightness, microphone) steps aside by
+// itself. DMS's volume OSD is already off (DmsOsdOff, D273).
 // The content (and the vectorscope's clock) only exists while it shows.
 DankOSD {
     id: popup

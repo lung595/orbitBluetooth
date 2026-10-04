@@ -129,11 +129,22 @@ Devices that follow this PC's level have one level only, whatever this setting s
 
 When a volume changes, from a key, the command line or anywhere else, Orbit can show **both levels at once** in a small pop-up: the same dark screen as the card, with the device's half circle, this PC's, and the sound inside.
 
-- **Where** (**Sound → Pop-up**): *In place of DMS's volume OSD* (the default: DMS's own OSD stays hidden on that screen), *Under the bar widget*, *Right screen edge*, or *Off* to keep DMS's OSD.
-- **Dank Island**: on screens where the island shows the volume, Orbit's screen appears **inside the island**, which grows to fit, instead of a second pop-up.
+- **Where** (**Sound → Pop-up**): *In the Dank Island* (the default), *Under the bar widget*, *Right screen edge*, or *Off* to keep DMS's own OSD.
+- **Dank Island**: on screens that have one, Orbit's screen appears **inside the island**, which grows to fit. A screen without an island gets the pop-up where DMS's OSD would show.
+- **Only one volume pop-up**: with any choice but *Off*, DMS's own volume OSD is switched off, see [DMS's own volume OSD](#dmss-own-volume-osd).
 - **Size** (**Sound → Size**): *Compact*, *Medium* (default) or *Large*.
+- **It grows out of the island** with DMS's own spring, and folds back by itself. How it moves is up to DMS: *Settings → Dank Island → Reduce Motion* (or the global *Reduce Motion*) makes it follow the keys at once, which costs much less shell time.
 - **Scroll over it** to keep changing the level with [smart steps](#smart-volume-steps); drag a moon or click an icon, as on the card. It closes by itself a moment after the last change.
 - With no Bluetooth audio device, it shows this PC's level alone.
+
+### DMS's own volume OSD
+
+So that only one volume pop-up shows, Orbit switches DMS's own volume OSD off while its pop-up is on (any choice but *Off*). That also stops DMS's Dank Island from opening its own volume face before Orbit's.
+
+- It is done **in memory**: Orbit holds DMS's *Volume* switch (*Settings → On-screen Displays*) off, and DMS's own value comes back when Orbit stops, when the plugin is turned off, or when you choose *Off*. Orbit writes nothing of DMS's.
+- **DMS's saves are guarded.** DMS saves all of its settings together whenever one changes (a theme, a bar...) and once when it starts. Orbit lets go of the switch for a quarter of a second around each save, so the file keeps your own *Volume* value and removing Orbit leaves nothing behind. In that quarter of a second DMS's OSD could show if you press a volume key.
+- **If DMS changes how it saves** (an update that renames the flag Orbit watches), Orbit cannot see the saves any more and the file may take the switch as off. Then turn **Volume** back on in DMS's *Settings → On-screen Displays*, and please open an issue.
+- The microphone, brightness and other OSDs are not touched.
 
 The sound inside is drawn only while the pop-up or a card shows:
 
@@ -388,7 +399,7 @@ Grouped in tabs: **Orbit** (with Reset), **Scanning**, **Headphones** (with devi
 | | Speed-up | Balanced | Gentle, Balanced or Fast: how far a quick run can go per notch |
 | | Step | 5 % | The step with *Fixed* steps |
 | | Volume keys | DMS | *Use smart steps* or *Give back to DMS*, see [Volume keys](#volume-keys) (niri) |
-| | Pop-up | In place of DMS's volume OSD | Under the bar widget, right screen edge or off, see [Volume pop-up](#volume-pop-up) |
+| | Pop-up | In the Dank Island | Under the bar widget, right screen edge or off (DMS's own OSD); with any other choice DMS's volume OSD is switched off, see [Volume pop-up](#volume-pop-up) |
 | | Size | Medium | Compact, Medium or Large |
 | | Visualizer | Points | Points, Rays, Waves or None |
 | | Visualizer motion | Light | Light (30 images/s) or Smooth (60) |
@@ -425,6 +436,7 @@ Removing Orbit leaves your machine exactly as it was before:
 - DMS deletes the plugin folder but keeps what it stored for the plugin. So when Orbit is unloaded and finds its folder gone, it erases its settings, its widgets (bars, Control Center, desktop and their positions) and its pictures cache.
 - It waits a few seconds first and checks again: an update that re-downloads the folder keeps everything.
 - Disabling Orbit, reloading or restarting the shell erase nothing.
+- One exception: if DMS saved its settings while Orbit held DMS's volume OSD off, that switch stays off, see [DMS's own volume OSD](#dmss-own-volume-osd).
 
 - If you gave your [volume keys](#volume-keys) to Orbit, they go back to DMS's default.
 

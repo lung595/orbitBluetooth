@@ -115,10 +115,10 @@ Column {
     SelectionSetting {
         settingKey: "popupMode"
         label: "Pop-up"
-        description: "Shows both levels whenever one changes"
+        description: "Shows both levels whenever one changes, and is the only volume pop-up: DMS's own OSD is switched off. In the Dank Island on screens that have one, else where DMS's OSD would show"
         options: [
             {
-                label: "In place of DMS's volume OSD",
+                label: "In the Dank Island",
                 value: "replace"
             },
             {
@@ -130,11 +130,19 @@ Column {
                 value: "edge"
             },
             {
-                label: "Off (DMS's OSD)",
+                label: "Off (DMS's own OSD)",
                 value: "off"
             }
         ]
         defaultValue: "replace"
+    }
+
+    StyledText {
+        width: parent.width
+        wrapMode: Text.WordWrap
+        font.pixelSize: Theme.fontSizeSmall
+        color: Theme.surfaceVariantText
+        text: "DMS's volume OSD is switched off in memory while a pop-up is on; Orbit writes nothing of DMS's, and it comes back when Orbit stops or the pop-up is Off"
     }
 
     SelectionSetting {
