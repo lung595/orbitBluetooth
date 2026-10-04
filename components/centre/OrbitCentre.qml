@@ -199,7 +199,8 @@ Item {
 
     function _take() {
         const next = session.members.slice();
-        const src = session.source || next[0];
+        // "" when the group is empty: a string property takes no undefined
+        const src = session.source || next[0] || "";
         if (members.length === 0)
             _origin = _positionOf(src);
         members = next;
