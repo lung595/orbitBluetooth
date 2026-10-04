@@ -361,6 +361,7 @@ What it does, exactly:
 
 - It pauses a media player only when the headset says **both sides are off**. One earcup or one bud, the case, or a code Orbit does not know changes nothing.
 - It pauses only the players whose sound goes **to that headset** at that moment. A player playing on your speakers is left alone.
+- **In a group, it pauses nothing.** While the headset [listens together](#listen-together) with other outputs, taking it off leaves the music playing: the others still play it. Putting it back on then resumes nothing either.
 - When you put the headset back on, it resumes **only the players it paused itself**, and only if they are **still paused**. Music you stopped yourself, started again by hand, or that a new player took over is not touched, and Orbit **never starts music** that was not playing.
 - The **first reading** after the connection only tells Orbit how you wear the headset. A headset that connects while it is off your head pauses nothing.
 - If the headset disconnects while Orbit holds a pause, Orbit forgets it: nothing resumes later on its own. Turning the option off does the same.

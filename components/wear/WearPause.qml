@@ -10,6 +10,8 @@ Item {
     id: root
 
     required property var ancService
+    // The daemon's TogetherSession: a headset in it is not paused when it comes off
+    required property var together
     // The setting (not `enabled`: that is Item's own)
     property bool active: true
 
@@ -51,6 +53,7 @@ Item {
 
         delegate: WearHeadset {
             wearing: root.ancService.snapshots[address]?.state?.wearing ?? null
+            inGroup: root.together.active && root.together.isMember(address)
         }
 
         onObjectAdded: (index, object) => {

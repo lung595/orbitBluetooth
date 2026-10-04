@@ -30,9 +30,20 @@ Item {
         }
     }
 
+    // What WearPause asks of the Listen together session
+    QtObject {
+        id: together
+        property var members: []
+        readonly property bool active: members.length >= 2
+        function isMember(address) {
+            return members.indexOf(address) >= 0;
+        }
+    }
+
     WearPause {
         id: wear
         ancService: anc
+        together: together
     }
 
     Component {
@@ -197,6 +208,14 @@ Item {
             check("paused again by hand: the headset coming back does not resume it", [h.spotify2.plays, h.spotify2.isPlaying], [0, false]);
             h.spotify2.playbackState = MprisPlaybackState.Playing;
             h.streams(["Spotify"]);
+            together.members = [h.addr, "02:00:00:00:20:01"];
+            h.report(4);
+        }, () => {
+            check("in a group, taking it off pauses nothing: the others still play", [h.spotify2.pauses, h.spotify2.isPlaying, status().holding], [2, true, 0]);
+            h.report(0);
+        }, () => {
+            check("back on in the group: nothing to resume, nothing started", [h.spotify2.plays, h.spotify2.isPlaying], [0, true]);
+            together.members = [];
             h.report(4);
         }, () => {
             check("a second headset follows: the first keeps what it holds", status().holding, 1);

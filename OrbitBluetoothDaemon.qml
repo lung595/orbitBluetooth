@@ -64,6 +64,7 @@ Item {
     WearPause {
         id: wearPause
         ancService: ancService
+        together: audioRoute.together
         active: prefs.wearPause
     }
 

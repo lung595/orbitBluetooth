@@ -87,7 +87,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 - **Live charging**: energy beam, time to full, charge speed, session chart.
 - **Earbuds trio**: the case and both buds in their own mini orbit, each with its battery.
 - **Noise control** for 13 headphone brands (Sony, Apple, Samsung, Bose, Huawei…).
-- **Pause when you take the headset off** (Sony headsets with a wearing sensor): what plays on the headset pauses when you take it off and resumes when you put it back, only what Orbit paused, and it never starts music. It keeps one control connection open ([more](docs/GUIDE.md#pause-when-you-take-the-headset-off)).
+- **Pause when you take the headset off** (Sony headsets with a wearing sensor): what plays on the headset pauses when you take it off and resumes when you put it back, only what Orbit paused, and it never starts music; in a Listen together group it pauses nothing, the others keep playing. It keeps one control connection open ([more](docs/GUIDE.md#pause-when-you-take-the-headset-off)).
 - **How long a conversation lasts** (Sony): *Short*, *Standard*, *Long* or *Never*, right in the headset's card ([more](docs/GUIDE.md#how-long-a-conversation-lasts)).
 - **Real device pictures** (opt-in, uses the internet): a photo of your headphones, phone or TV instead of an icon.
 - **Black hole**: drop a device you never use into it to hide it.
