@@ -3,6 +3,23 @@
 All notable changes to Orbit Bluetooth are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Added
+
+- **Listen together.** The same sound on two, three or four Bluetooth outputs at once (the headset and the receiver, two speakers...). Drag one connected audio device onto another, then drag more onto any device already in the group. Right-click a member for **Leave together** (with three or more) or **Stop together**; a device that disconnects leaves by itself and the group ends when fewer than two remain. Orbit runs one passive `pw-loopback` per output beyond the first, attached to the shell: with no sound playing it holds nothing open, so every output goes idle and sleeps as before, and the copies disappear with the shell, even after a crash. Orbit never changes your default output, never writes DMS's or WirePlumber's settings and never touches a device's Bluetooth link. [Guide](docs/GUIDE.md#listen-together)
+- **One arc per output.** While a group listens, the two volumes' outer half circle shows the outputs' own levels: with two, it is cut at the top (left half `primary`, right half `secondary`, each lit from its bottom corner toward the top, meeting at 100 %); with three or four, it splits into equal arcs, each lit from its bottom end toward the top, with its own theme color, moon and cloud of points. The inner half circle stays shared: this PC's level.
+- **This PC's level reaches every output.** Moving it moves it for each output that has Orbit's separate PC volume, and a joining output is set to the group's level. Outputs without such a filter keep their own level (Orbit never writes the volume PipeWire remembers for a device).
+- **Multipoint headsets keep working.** A member whose output is handed to your phone stays a member (no message, no flapping), plays again when it returns, and is dropped only on a real Bluetooth disconnection or when you take it out. Orbit opens no stream, silence or keep-alive toward any output. [Guide](docs/GUIDE.md#works-with-multipoint-headsets)
+- **`dms ipc call orbitBluetooth`**: `together "<address> <address>..."` (one quoted argument, spaces or commas, 2 to 4 connected audio devices), `togetherAdd <address>`, `togetherRemove <address>`, `togetherDelay <address> <ms>` (hold one output back, 0 to 500 ms, this session only), `togetherStatus` (JSON) and `separate`. Every argument is validated and capped, and a refusal says why.
+- A short note, with the GitHub mark linking to the guide, says why a device cannot join (not connected, no sound output yet, on its call profile, the same device twice, a fifth device, nobody listening yet).
+
+### Known limits
+
+- No synchronisation is promised: Bluetooth codecs have different delays and Orbit cannot measure them. `togetherDelay` holds one output back by hand; the output the sound is taken from never waits.
+- If the output you hear has no Orbit filter in front of it (a device without absolute volume), the copies take its sound after its volume: nothing is shared and each output plays at its own level.
+- Checked with a simulated PipeWire server and simulated devices only; real hardware (a multipoint headset handing over to a phone, an AV receiver) still has to be tried.
+
 ## 1.13.3 - 2026-10-04
 
 ### Changed

@@ -38,13 +38,15 @@ Tools: `gjs` (JS tests), Python 3 (helper and its tests), `ffmpeg` (GIFs), Qt 6 
 | Desktop | `OrbitBluetoothDesktop.qml` | Desktop widget, frozen until the pointer is over it |
 | Settings | `OrbitBluetoothSettings.qml` | Settings page |
 
-`components/` has one folder per feature: `scene/`, `device/`, `card/`, `volume/`, `pairing/`, `noise/` and `common/`. A file imports its neighbours directly and another feature's folder by path (`import "../card"`).
+`components/` has one folder per feature: `scene/`, `device/`, `card/`, `volume/`, `together/`, `pairing/`, `noise/` and `common/`. A file imports its neighbours directly and another feature's folder by path (`import "../card"`).
 
 Every surface shows the same scene, `components/scene/OrbitScene.qml`. It only holds the state the parts share and wires them; each role has its own file, and the parts reach each other through the scene's functions (`scene.hideBody(b)`, `scene.ancSend(...)`), never through one another. The drag (`OrbitDrag`), hiding in the black hole (`OrbitHidden`), focus, rename and Escape (`OrbitFocus`), noise control (`OrbitAnc`), the daemon's data and clock (`OrbitDaemonData`) and the detail card's measures (`FocusLayout`) are each a short file; they open the cards (`card/FocusCard.qml`, `card/HiddenCard.qml`, `scene/OrbitMenu.qml`). `scene/OrbitPhysics.qml` moves every device (`device/DeviceBody.qml`) in one step per frame, with the maths in `scene/Physics.js` (pure, tested). What floats above the world (`pairing/OfferCard.qml`, `scene/ScanChip.qml`, `scene/AdapterNotice.qml`, the hint and the note) is grouped by `scene/OrbitChrome.qml`.
 
-Logic that can be tested lives in **pure `.js` files** with no QML: `card/Charge.js` (charge analysis), `card/Endurance.js` (rated battery life), `card/CardStatus.js` (the detail card's wording), `scene/Physics.js` (springs, slots, clearances), `noise/Anc.js` (noise-control decisions), `noise/AncSnapshot.js` (merging a headset's reports into one snapshot), `volume/Polar.js` (the scope's geometry and sound picture), `volume/Route.js`, `volume/Steps.js`, `volume/Keys.js` and `volume/Audiophile.js` (volumes and what plays), `common/Address.js` (the shapes of a Bluetooth address and of its BlueZ path, checked before any command), `device/Earbuds.js`, `device/DeviceCatalog.js` and `device/Glyphs.js` (icons).
+Logic that can be tested lives in **pure `.js` files** with no QML: `card/Charge.js` (charge analysis), `card/Endurance.js` (rated battery life), `card/CardStatus.js` (the detail card's wording), `scene/Physics.js` (springs, slots, clearances), `noise/Anc.js` (noise-control decisions), `noise/AncSnapshot.js` (merging a headset's reports into one snapshot), `volume/Polar.js` (the scope's geometry and sound picture), `volume/Route.js`, `volume/Steps.js`, `volume/Keys.js` and `volume/Audiophile.js` (volumes and what plays), `together/Together.js` (who may listen together, where the sound is taken from, the command of each copy and what to start or stop, one keyed `diff`), `common/Address.js` (the shapes of a Bluetooth address and of its BlueZ path, checked before any command), `device/Earbuds.js`, `device/DeviceCatalog.js` and `device/Glyphs.js` (icons).
 
 **The volume scope** (detail card, pop-up, Dank Island) runs one `cava` and computes one picture for every screen that shows it: `volume/TwoLevels.qml` holds an output's two levels, its `ScopeFeed.qml` (cava, only while someone looks) and its `ScopeModel.qml` (points, rays or waves, moved by cava's frames, fading alone, then stopped). `PolarScope.qml` keeps the geometry, eases the levels and holds the picture; `PolarArcs.qml` draws the half circles, `PolarMoons.qml` the knobs, `PolarGestures.qml` takes the drag, wheel and mute click, and `PolarVisual.qml` only paints the shared picture at its own size.
+
+**Listen together** (`components/together/`) is the daemon's, reached through `AudioRoute.together`. `Together.js` (pure, tested by `tests/together.test.js`) decides; `TogetherSession.qml` holds the members (2 to 4), the delays and the plan, and keeps a session alive through suspends and hand-overs (a member leaves only on a BlueZ disconnection or when asked); `TogetherLink.qml` runs one `Process` per copy through an `Instantiator`, each `pw-loopback` started by `Route.loopbackArgs` (data only as positional parameters, so it dies with the shell). Both ends of a copy are `node.passive` and `node.dont-fallback` and no stream is ever held toward a member's output (D279). The scene side is `scene/OrbitTogether.qml` (the drop, the notes, Leave and Stop in `OrbitMenu.qml`); the IPC is in `common/OrbitIpc.qml`. A change to the copies must keep: no BlueZ call, no write to DMS or WirePlumber, nothing running at rest, and the level written to **all** members' filters together (`AudioRoute.writeLevel`). `tests/qml/togetherSession.test.qml` runs a session against the mock `Process` (`scripts/preview/imports/Quickshell/Io/ProcessLog.qml` records every start and stop).
 
 **Noise control** is the only part outside QML: QML cannot open a Bluetooth socket, so `components/noise/AncService.qml` runs `anc/orbit_anc.py`, which speaks each vendor protocol (`anc/protocols/`, one module per brand) through a JSON session on stdin/stdout. `anc/sdp.py` finds the RFCOMM channel.
 
@@ -79,7 +81,8 @@ orbitBluetooth/
 │   │   ├── OrbitPhysics.qml, Physics.js  # one motion step for every body (Physics.js pure, tested)
 │   │   ├── Cover.js             # is the desktop hidden behind windows? (pure, tested)
 │   │   ├── OrbitChrome.qml, ScanChip.qml, AdapterNotice.qml, OrbitNote.qml  # what floats above the world: scan chip, Bluetooth off, notes
-│   │   ├── OrbitMenu.qml        # the right-click menu
+│   │   ├── OrbitMenu.qml        # the right-click menu (with Leave / Stop together)
+│   │   ├── OrbitTogether.qml    # Listen together in the scene: the drop, the notes, leave and stop
 │   │   ├── BlackHole.qml, RingWave.qml   # the "Hidden" black hole (two shaders), the connected ring's wave
 │   │   └── Starfield.qml, Vignette.qml, NightColors.qml
 │   ├── device/                  # one orbiting device
@@ -110,6 +113,10 @@ orbitBluetooth/
 │   │   ├── ScopeFeed.qml, ScopeModel.qml     # live stereo bands from cava; the picture they move, once for every screen
 │   │   ├── AudioRoute.qml, RouteDevice.qml, Route.js   # the two levels of each output: PC filter, absolute volume, IPC
 │   │   └── VolumeKeys.qml, Keys.js, Steps.js # volume keys through `dms keybinds`, smart steps (pure, tested)
+│   ├── together/                # Listen together (D254, D277, D279)
+│   │   ├── Together.js          # who may join, where the sound comes from, the copies' commands (pure, tested)
+│   │   ├── TogetherSession.qml  # the members, delays and plan of a session; survives suspend and hand-over
+│   │   └── TogetherLink.qml     # one pw-loopback per extra output, started and stopped by key
 │   ├── pairing/                 # new device pop-up and pairing offer
 │   │   ├── NewDeviceWatch.qml, PairingFlow.qml, BackgroundScan.qml, OfferQueue.qml, DemoDevice.qml, Offer.js, Guard.js, ProfileCheck.qml  # pop-up, pairing steps, background scan, what to offer, demo, the input-device guard
 │   │   ├── NewDeviceWindow.qml, PairingSheet.qml, Palette.js  # the window and the sheet (the card, its keys and its parts)
@@ -138,7 +145,7 @@ orbitBluetooth/
 │   ├── orbit_uninstall.py       # erases what DMS keeps once Orbit is removed
 │   └── tests/                   # unittest, on fake shell files
 ├── tests/qml/                   # pop-up scenario, polar scope and audio facts tests, stubs for Quickshell/DMS
-├── tests/*.test.js, lib.js, run.sh  # gjs: one file per role (noise, battery, card, device, pairing, common, volume, audiophile, scene), the shared loader, the runner
+├── tests/*.test.js, lib.js, run.sh  # gjs: one file per role (noise, battery, card, device, pairing, common, volume, audiophile, together, scene), the shared loader, the runner
 ├── shaders/                     # .frag sources, compiled .qsb, build.sh
 ├── scripts/
 │   ├── gen_sounds.py            # synthesizes sounds/*.wav
@@ -154,7 +161,7 @@ orbitBluetooth/
 (cd anc && python3 -m unittest discover -s tests -t .)   # noise-control protocols
 (cd pictures && python3 -m unittest discover -s tests -t .)   # picture lookup, without network
 (cd uninstall && python3 -m unittest discover -s tests -t .)  # uninstall sweep, on fake shell files
-sh tests/qml/run.sh                                       # new-device pop-up scenario, polar scope, audio facts (Qt 6)
+sh tests/qml/run.sh                                       # new-device pop-up scenario, polar scope, audio facts, Listen together session (Qt 6)
 sh tests/run.sh                                          # every pure .js module, one test file per role (or gjs tests/volume.test.js for one)
 ```
 
@@ -182,6 +189,7 @@ Orbit must cost nothing while nobody looks at it. Keep these rules when changing
 - **Hidden means frozen**: the desktop orbit is asleep while windows fill its screen, even with *Ambient motion* on (`Cover.js`, pure, tested, reads niri's layout from DMS's `NiriService`).
 - **Run nothing while hidden**: discovery, polling and the noise-control helper only run while a view is open (the one exception is the new-device pop-up's 8 s background scan, with its battery and audio rules); everything pauses while the session is locked or the monitors are off.
 - **Load on demand**: the multimedia backend only when sounds are enabled.
+- **Listen together holds nothing at rest**: the copies are passive, never fall back to another output and no stream, silence or keep-alive is ever opened toward a member (a multipoint headset must be free to hand over to a phone). Check in an isolated PipeWire server (a scratch `PIPEWIRE_RUNTIME_DIR`, never the live one): with nothing playing every member output, copy and filter must be `idle`; a non-passive copy keeps the outputs `running`. Kill the shell stand-in with `kill -9` and every copy and node must be gone within two seconds.
 - **Honor DMS Reduce motion.**
 
 Measure before and after a change: CPU of the whole shell, % of one core, each state for 10 s, same machine (240 Hz screen). DMS alone: 0.7 %.
