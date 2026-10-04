@@ -25,11 +25,12 @@ function load(file, names) {
 
 const Anc = load("Anc.js", ["family", "nextMode", "ordered"]);
 const Charge = load("Charge.js", ["analyze", "formatShort", "timeText", "levelText", "statItems", "footnote"]);
+const CardStatus = load("CardStatus.js", ["kindLine", "statusIcon", "statusText", "detailText"]);
 const Endurance = load("Endurance.js", ["ratedHours"]);
 const Palette = load("Palette.js", ["contrast", "ensureContrast", "onColor", "lift", "isGrey", "toHsl", "apart"]);
 const Offer = load("Offer.js", ["scanBlocker", "isCandidate", "offerable", "headline", "features", "errorText"]);
 const Pictures = load("Pictures.js", ["queryFor", "creditText"]);
-const Catalog = load("DeviceCatalog.js", ["deviceName", "modelName", "resolve"]);
+const Catalog = load("DeviceCatalog.js", ["deviceName", "modelName", "resolve", "formatDuration"]);
 const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNote", "stuckNote", "levelNote"]);
 const Volume = load("Volume.js", ["clamp", "step", "validSink"]);
 const Address = load("Address.js", ["key", "colon", "find", "isDevicePath"]);
@@ -110,6 +111,31 @@ eq("ready at, reported: no ≈", tiles[0].value.startsWith("≈"), false);
 eq("tiles, full", Charge.statItems({ source: "system", state: "full", health: 0 }, false, now).length, 0);
 eq("footnote, reported", Charge.footnote(fill, true), "Reported by the device");
 eq("footnote, rated", Charge.footnote(drain, false), "From the rated battery life · refines as it drains");
+
+// The detail card's wording: kind line, status icon, status and detail lines
+const body = (o) => Object.assign({ kind: "headphones", connected: false, paired: false, charging: false, phase: "idle" }, o);
+eq("kind line, connected", CardStatus.kindLine(body({ connected: true, paired: true })), "Over-ear  ·  Connected");
+eq("kind line, paired", CardStatus.kindLine(body({ paired: true })), "Over-ear  ·  Paired");
+eq("kind line, nearby", CardStatus.kindLine(body({})), "Over-ear  ·  Available");
+eq("kind line, no body", CardStatus.kindLine(null), "");
+eq("status icon: connecting wins over charging", CardStatus.statusIcon(body({ phase: "connecting", charging: true }), null), "sync");
+eq("status icon: charging", CardStatus.statusIcon(body({ connected: true, charging: true }), null), "bolt");
+eq("status icon: full", CardStatus.statusIcon(body({ connected: true }), { state: "full" }), "battery_full");
+eq("status icon: connected, paired, none", ["connected", "paired", "none"].map((k, i) => CardStatus.statusIcon(body({ connected: i === 0, paired: i < 2 }), null)), ["bluetooth_connected", "bluetooth", "bluetooth"]);
+eq("status icon: no body", CardStatus.statusIcon(null, null), "bluetooth");
+eq("status: phases", ["connecting", "disconnecting"].map(p => CardStatus.statusText(body({ phase: p, connected: true }), null, 0, 0)), ["Connecting...", "Disconnecting..."]);
+eq("status: charging", CardStatus.statusText(body({ connected: true, charging: true }), { state: "charging" }, 0, 0), "Charging...");
+eq("status: full", CardStatus.statusText(body({ connected: true }), { state: "full" }, 0, 0), "Fully charged");
+eq("status: connected, since unknown", CardStatus.statusText(body({ connected: true }), null, 0, 5000), "Connected");
+eq("status: connected for a while", CardStatus.statusText(body({ connected: true }), null, 1000, 1000 + 90 * 60000), "Connected for 1:30:00");
+eq("status: paired or available", [true, false].map(p => CardStatus.statusText(body({ paired: p }), null, 0, 0)), ["Not connected", "Available nearby"]);
+eq("status: no body", CardStatus.statusText(null, null, 0, 0), "");
+eq("detail: level and time", CardStatus.detailText(body({ connected: true }), drain, 60), Charge.levelText(60, drain, false));
+eq("detail: charging uses the charging line", CardStatus.detailText(body({ connected: true, charging: true }), fill, 80), Charge.levelText(80, fill, true));
+eq("detail: connected, no battery", CardStatus.detailText(body({ connected: true }), null, -1), "No battery info");
+eq("detail: signal", CardStatus.detailText(body({ rawSignal: 0.456 }), null, -1), "Signal 46%");
+eq("detail: out of range", CardStatus.detailText(body({ rawSignal: 0 }), null, -1), "Out of range");
+eq("detail: no body", CardStatus.detailText(null, null, -1), "");
 
 
 // Rename: the alias is shown, but the device is still recognized by its own

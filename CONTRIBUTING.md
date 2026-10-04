@@ -42,7 +42,7 @@ Tools: `gjs` (JS tests), Python 3 (helper and its tests), `ffmpeg` (GIFs), Qt 6 
 
 Every surface shows the same scene, `components/scene/OrbitScene.qml`. It handles drag and focus and opens the cards (`card/FocusCard.qml`, `card/HiddenCard.qml`, `scene/OrbitMenu.qml`); `scene/OrbitPhysics.qml` moves every device (`device/DeviceBody.qml`) in one step per frame, with the maths in `scene/Physics.js` (pure, tested). Its chrome lives in `pairing/OfferCard.qml`, `scene/ScanChip.qml` and `scene/AdapterNotice.qml`.
 
-Logic that can be tested lives in **pure `.js` files** with no QML: `card/Charge.js` (charge analysis), `card/Endurance.js` (rated battery life), `scene/Physics.js` (springs, slots, clearances), `noise/Anc.js` (noise-control decisions), `volume/Polar.js` (the scope's geometry and sound picture), `volume/Route.js`, `volume/Steps.js` and `volume/Keys.js` (volumes), `common/Address.js` (the shapes of a Bluetooth address and of its BlueZ path, checked before any command), `device/Earbuds.js`, `device/DeviceCatalog.js` and `device/Glyphs.js` (icons).
+Logic that can be tested lives in **pure `.js` files** with no QML: `card/Charge.js` (charge analysis), `card/Endurance.js` (rated battery life), `card/CardStatus.js` (the detail card's wording), `scene/Physics.js` (springs, slots, clearances), `noise/Anc.js` (noise-control decisions), `volume/Polar.js` (the scope's geometry and sound picture), `volume/Route.js`, `volume/Steps.js` and `volume/Keys.js` (volumes), `common/Address.js` (the shapes of a Bluetooth address and of its BlueZ path, checked before any command), `device/Earbuds.js`, `device/DeviceCatalog.js` and `device/Glyphs.js` (icons).
 
 **The volume scope** (detail card, pop-up, Dank Island) runs one `cava` and computes one picture for every screen that shows it: `volume/TwoLevels.qml` holds an output's two levels, its `ScopeFeed.qml` (cava, only while someone looks) and its `ScopeModel.qml` (points, rays or waves, moved by cava's frames, fading alone, then stopped). `PolarScope.qml` draws the half circles and `PolarVisual.qml` only paints the shared picture at its own size.
 
@@ -86,9 +86,11 @@ orbitBluetooth/
 │   │   ├── DeviceGlyph.qml, DeviceCatalog.js, Glyphs.js   # device icons
 │   │   └── EarbudsTrio.qml, EarbudArt.qml, Earbuds.js     # case + buds mini orbit
 │   ├── card/                    # the detail and hidden-devices cards
-│   │   ├── FocusCard.qml, PlanetControl.qml  # detail card; focused glyph: click to mute, wheel for the volume
-│   │   ├── BatteryCard.qml, StatTiles.qml    # gauge, chart and READY AT / SPEED / HEALTH tiles
-│   │   ├── Charge.js, Endurance.js           # battery analysis (pure, tested)
+│   │   ├── FocusCard.qml, PlanetControl.qml  # detail card (layout of its sections); focused glyph: click to mute, wheel for the volume
+│   │   ├── CardActions.qml, CardButton.qml, NameBox.qml  # corner buttons (back, look, connect, hide, forget), their round button, the name and its rename
+│   │   ├── VolumeSection.qml, FoldButton.qml, GlyphPicker.qml  # the two volumes (strip or scope) and the button that folds them, the glyph grid
+│   │   ├── BatteryCard.qml, CardBattery.qml, StatTiles.qml  # gauge, chart and READY AT / SPEED / HEALTH tiles; the card's own wiring of them
+│   │   ├── Charge.js, Endurance.js, CardStatus.js  # battery analysis, rated life, the card's wording (pure, tested)
 │   │   └── HiddenCard.qml, PaperColors.qml   # hidden devices; light-theme colors
 │   ├── volume/                  # the two volumes and the scope
 │   │   ├── TwoLevels.qml        # an output's two volumes, its cava and its picture (base of CardVolume, VolumeOverlay)
