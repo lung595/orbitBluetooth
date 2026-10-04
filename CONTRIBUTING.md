@@ -50,7 +50,7 @@ Logic that can be tested lives in **pure `.js` files** with no QML: `card/Charge
 
 **New headphones pop-up**: `components/pairing/NewDeviceWatch.qml` (in the daemon) drives the pop-up and pairing, with `BackgroundScan.qml` (the opt-in short scan), `OfferQueue.qml` (what to offer next, snoozes; `Offer.js`, pure) and `DemoDevice.qml` (the made-up headset of the demo); `NewDeviceWindow.qml` is its layer-shell window and `PairingSheet.qml` the sheet itself (two skins, colours from `Palette.js`), which `scripts/preview/sheet.qml` renders offscreen with six test palettes, or records frame by frame. Before a new device is trusted, `ProfileCheck.qml` reads its Bluetooth profiles with `busctl` and `Guard.js` (pure, tested) decides: a non-input device that can also send key presses stays blocked until the user confirms. Never trust a device from its name alone.
 
-**Guided, never blocked**: `components/common/Guide.js` (pure, tested) builds the guide links and the short notes (`connectNote`); `scene/OrbitNote.qml` shows them at the bottom of the sky and `common/GuideLink.qml` is the GitHub mark (drawn by `common/GitHubMark.qml`) that opens a guide section on click. A new refusal gets a note and an anchor that exists in `docs/GUIDE.md` (the tests check it). Every new Quickshell import or service used by a component needs its mock in `scripts/preview/imports/`, or the previews break.
+**Guided, never blocked**: `components/common/Guide.js` (pure, tested) builds the guide links and the short notes (`connectNote`); `scene/OrbitNote.qml` shows them at the bottom of the sky and `common/GuideLink.qml` is the GitHub mark (drawn by `common/GitHubMark.qml`) that opens a guide section on click. A new refusal gets a note and an anchor that exists in `docs/GUIDE.md` (the tests check it). Every new Quickshell import or service used by a component needs its mock in `scripts/preview/imports/`, or the previews break; the made-up devices and state of the screenshots live in `scripts/preview/mock/`.
 
 **Uninstalling leaves nothing** (value 12): `components/common/UninstallSweep.qml` (in the daemon) reads `uninstall/orbit_uninstall.py` when Orbit loads; when Orbit is unloaded and its `plugin.json` is gone, it starts that script detached, from memory (`python3 -c`), since the folder no longer exists. The script waits 4 s, checks again (an update may re-clone the folder) and only then edits the shell's JSON files, which DMS watches. Never create QML objects in `Component.onDestruction`: it crashed the shell.
 
@@ -131,7 +131,7 @@ orbitBluetooth/
 ├── shaders/                     # .frag sources, compiled .qsb, build.sh
 ├── scripts/
 │   ├── gen_sounds.py            # synthesizes sounds/*.wav
-│   └── preview/                 # offscreen renderer with mock services
+│   └── preview/                 # offscreen renderer: shot.qml (modes), mock/ (devices, state, route, wallpaper), imports/ (mock services)
 ├── screenshots/                 # images used by the docs
 ├── sounds/
 └── docs/GUIDE.md                # user guide
