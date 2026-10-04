@@ -107,8 +107,8 @@ Item {
         b.phase = "disconnecting";
         disconnectWatch.body = b;
         disconnectWatch.restart();
-        if (connections.scene._ancService && connections.scene.ancCapable(b))
-            connections.scene._ancService.disconnectDevice(b.address);
+        if (connections.scene.ancService && connections.scene.ancCapable(b))
+            connections.scene.ancService.disconnectDevice(b.address);
         else
             b.device.disconnect();
         connections.scene.wake();
