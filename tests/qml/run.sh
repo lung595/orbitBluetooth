@@ -1,6 +1,7 @@
 #!/bin/sh
 # Runs the QML tests (the "new device" pop-up, the polar scope, the
-# keyboard-profile question of the connection flow) without Quickshell or a
+# keyboard-profile question of the connection flow, the noise-control sessions,
+# pausing music when a headset comes off) without Quickshell or a
 # Bluetooth adapter: stubs/ stands in for Quickshell and the DMS services,
 # Device.qml for a BlueZ device, and NewDeviceWindow.qml replaces the real
 # layer-shell window. Needs Qt 6 (qml, qml6, qml-qt6 or PySide6).
@@ -18,7 +19,7 @@ cp -r "$root"/components "$work"/
 cp "$here"/ProfileCheck.qml "$here"/NewDeviceWindow.qml "$work"/components/pairing/
 cp "$here"/Device.qml "$here"/*.test.qml "$work"/
 # Quickshell's device list is a model with .values; the stub keeps a plain list
-sed -i 's/Bluetooth\.devices\.values/Bluetooth.list/g' "$work"/components/pairing/*.qml
+sed -i 's/Bluetooth\.devices\.values/Bluetooth.list/g' "$work"/components/pairing/*.qml "$work"/components/noise/*.qml
 export QT_QPA_PLATFORM=offscreen
 # Print to the terminal, not to journald, including print() lines
 export QT_FORCE_STDERR_LOGGING=1 QT_LOGGING_RULES='qml.debug=true;js.debug=true'
