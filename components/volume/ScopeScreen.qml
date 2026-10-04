@@ -43,6 +43,9 @@ Item {
         const c = Palette.apart(light ? Theme.tertiary : night.tertiary, deviceColor);
         return Qt.rgba(c.r, c.g, c.b, 1);
     }
+    // The glass behind the pills at the foot (the facts, the note)
+    readonly property color pillFill: light ? Theme.withAlpha(paper.fill(0.92), 0.92) : Theme.withAlpha(night.sky, 0.86)
+    readonly property color pillStroke: light ? paper.fg(0.12) : night.ink(0.12)
     function _inner(r) {
         return Math.max(0, (r || 0) - margin);
     }
@@ -139,8 +142,8 @@ Item {
         anchors.bottomMargin: Theme.spacingXS
         ink: screenItem.light ? screenItem.paper.ink : screenItem.night.ink(0.95)
         muted: screenItem.light ? screenItem.paper.fg(0.6) : screenItem.night.ink(0.62)
-        fill: screenItem.light ? Theme.withAlpha(screenItem.paper.fill(0.92), 0.92) : Theme.withAlpha(screenItem.night.sky, 0.86)
-        stroke: screenItem.light ? screenItem.paper.fg(0.12) : screenItem.night.ink(0.12)
+        fill: screenItem.pillFill
+        stroke: screenItem.pillStroke
         onTouched: screenItem.touched()
     }
     Rectangle {
@@ -156,9 +159,9 @@ Item {
         height: noteRow.height + 4
         width: noteRow.width + Theme.spacingM * 2
         radius: height / 2
-        color: screenItem.light ? Theme.withAlpha(screenItem.paper.fill(0.92), 0.92) : Theme.withAlpha(screenItem.night.sky, 0.86)
+        color: screenItem.pillFill
         border.width: 1
-        border.color: screenItem.light ? screenItem.paper.fg(0.12) : screenItem.night.ink(0.12)
+        border.color: screenItem.pillStroke
 
         Row {
             id: noteRow

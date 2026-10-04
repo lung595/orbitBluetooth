@@ -5,8 +5,8 @@ import "Audiophile.js" as Audiophile
 // What the output in view is (D260): connection, codec, rate, depth. Asks
 // PipeWire's own tool for the listing once when it starts being `active`
 // (a view is on screen and the user shows some fact), and again on
-// `refresh()`; the listing is dropped when nothing looks at it. Arguments are fixed, no user data reaches a command. Nothing
-// runs while inactive.
+// `refresh()`; the listing is dropped when nothing looks at it. The command
+// is fixed: no user data reaches it. Nothing runs while inactive.
 Item {
     id: root
     objectName: "audioFacts" // found by the offscreen previews

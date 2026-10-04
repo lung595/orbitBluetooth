@@ -124,7 +124,7 @@ orbitBluetooth/
 ├── uninstall/
 │   ├── orbit_uninstall.py       # erases what DMS keeps once Orbit is removed
 │   └── tests/                   # unittest, on fake shell files
-├── tests/qml/                   # pop-up scenario and polar scope tests, stubs for Quickshell/DMS
+├── tests/qml/                   # pop-up scenario, polar scope and audio facts tests, stubs for Quickshell/DMS
 ├── tests/anc.test.js            # gjs: every pure .js module (noise control, battery, volumes, notes…)
 ├── shaders/                     # .frag sources, compiled .qsb, build.sh
 ├── scripts/
@@ -141,7 +141,7 @@ orbitBluetooth/
 (cd anc && python3 -m unittest discover -s tests -t .)   # noise-control protocols
 (cd pictures && python3 -m unittest discover -s tests -t .)   # picture lookup, without network
 (cd uninstall && python3 -m unittest discover -s tests -t .)  # uninstall sweep, on fake shell files
-sh tests/qml/run.sh                                       # new-device pop-up scenario and polar scope (Qt 6)
+sh tests/qml/run.sh                                       # new-device pop-up scenario, polar scope, audio facts (Qt 6)
 gjs tests/anc.test.js                                     # every pure .js module: noise control, battery, physics, volumes, scope
 ```
 
