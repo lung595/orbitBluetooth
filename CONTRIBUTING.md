@@ -121,6 +121,7 @@ orbitBluetooth/
 │   │   └── AncService.qml, AncPanel.qml, Anc.js
 │   └── common/                  # shared by every feature
 │       ├── Prefs.qml            # settings, shared by every surface
+│       ├── OrbitIpc.qml         # the `dms ipc call orbitBluetooth` commands, one call each on the owning service
 │       ├── Address.js                                    # address forms and BlueZ device path, one definition (pure, tested)
 │       ├── Guide.js, GuideLink.qml, GitHubMark.qml       # guide links and notes (value 10)
 │       ├── PictureService.qml, Pictures.js               # real device pictures (opt-in)

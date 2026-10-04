@@ -3,6 +3,12 @@
 All notable changes to Orbit Bluetooth are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Changed
+
+- The daemon's `dms ipc call orbitBluetooth` commands moved into `components/common/OrbitIpc.qml`. No behaviour change.
+
 ## 1.13.2 - 2026-10-04
 
 ### Changed
