@@ -19,6 +19,7 @@ Item {
     readonly property alias focusCard: focusCardItem
     readonly property alias tetherLayer: tetherLayerItem
     readonly property alias invitation: inviteLoader
+    readonly property alias ring: ringLoader
 
     readonly property real dim: world.scene.focusBody || world.scene.hiddenOpen ? 0.12 : 1
     readonly property var centre: world.scene.centre
@@ -150,6 +151,7 @@ Item {
         }
     }
     Loader {
+        id: ringLoader
         anchors.fill: parent
         z: 60
         active: world.centre.shown

@@ -68,6 +68,22 @@ Item {
             }
         },
         {
+            "then": 100,
+            "run": () => {
+                // A click on the ring lands where it is, even across the top from the level
+                const ring = scene.world.ring.item;
+                const at = v => [ring.width / 2 + Math.sin(v * 2 * Math.PI) * ring.radius, ring.height / 2 - Math.cos(v * 2 * Math.PI) * ring.radius];
+                route.writeLevel(route.shared, 0.9);
+                ring.press(...at(0.1));
+                check("a click just past the top reads there, not at the far end", Math.round(route.shared.audio.volume * 100), 10);
+                ring.press(...at(0.95));
+                ring.drag(...at(0.05));
+                check("held, crossing the top stops at the end", Math.round(route.shared.audio.volume * 100), 100);
+                ring.drag(...at(0.9));
+                check("and coming back follows the pointer", Math.round(route.shared.audio.volume * 100), 90);
+            }
+        },
+        {
             "then": 800,
             "run": () => {
                 check("and the orbit clock does not run", scene.orbitTime, h.seen);

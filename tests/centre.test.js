@@ -89,6 +89,7 @@ eq("master: never below 0 or above 1", V.scale([1, 0.01], 1, -5).concat(V.scale(
 eq("master: one member alone is the general level itself", round(V.scale([0.7], 0.7, 0.2)), [0.2]);
 eq("pointer: the ring reads 0 at the top and goes clockwise", [V.fromPointer(0, 0, 0, -10, 0.5), V.fromPointer(0, 0, 10, 0, 0.3), V.fromPointer(0, 0, 0, 10, 0.5), near(V.fromPointer(0, 0, -10, 0, 0.7))], [0, 0.25, 0.5, 0.75]);
 eq("pointer: crossing the top stops at the end instead of jumping to the other", [V.fromPointer(0, 0, -1, -10, 0.1), V.fromPointer(0, 0, 1, -10, 0.9)], [0, 1]);
+eq("pointer: with no reference (a fresh press) a click just left of the top reads near the end, just right near the start", [V.fromPointer(0, 0, -1, -10, NaN), V.fromPointer(0, 0, 1, -10, NaN)].map(v => Math.round(v * 100) / 100), [0.98, 0.02]);
 
 // --- the name under the centre, the ring that opens ------------------------------
 for (const [what, scene] of [["bar popout", g], ["small scene", small]]) {

@@ -17,6 +17,9 @@ Item {
     // Where the pointer grabs the ring: a band around it, easier to hit than
     // the thin line itself
     readonly property real band: 11
+    // Where the pointer last read the ring (0..1) while it is held; empty
+    // (NaN) until the first reading of a press
+    property real held: NaN
 
     // Full size, scaled with the group while it steps back; the arc is not
     // redrawn for that
@@ -27,6 +30,18 @@ Item {
     y: centre.group.y - height / 2
     scale: centre.group.scale
     opacity: centre.presence * (volume.ready ? 1 : 0.35)
+
+    // A press lands where the pointer is, whatever the level was: the way
+    // round the top is only kept while the pointer is held, from where it
+    // last was (not from the level, which lags and may be capped)
+    function press(x, y) {
+        held = NaN;
+        drag(x, y);
+    }
+    function drag(x, y) {
+        held = Master.fromPointer(width / 2, height / 2, x, y, held);
+        volume.set(held);
+    }
 
     LevelArc {
         anchors.centerIn: parent
@@ -49,13 +64,10 @@ Item {
                 return Math.abs(Math.hypot(point.x - ring.width / 2, point.y - ring.height / 2) - ring.radius) <= ring.band;
             }
         }
-        onPressed: m => move(m)
+        onPressed: m => ring.press(m.x, m.y)
         onPositionChanged: m => {
             if (pressed)
-                move(m);
-        }
-        function move(m) {
-            ring.volume.set(Master.fromPointer(ring.width / 2, ring.height / 2, m.x, m.y, ring.volume.level));
+                ring.drag(m.x, m.y);
         }
 
         NotchWheel {
