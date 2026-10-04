@@ -55,9 +55,9 @@ Item {
         () => { add("00:00:00:00:00:01", "Old Buds", "audio-headset"); },
         () => { check("cache at start is not offered", w.current, ""); },
         () => { BluetoothService.adapter.discovering = true; add("00:00:00:00:00:02", "Pixel 8", "phone"); add("00:00:00:00:00:03", "WH-1000XM6", "audio-headphones"); },
-        () => { check("new headphones offered", w.current, "00:00:00:00:00:03"); check("shown", w.shown, true); check("phase", w.phase, "offer"); check("phone not queued", w._queue, []); },
+        () => { check("new headphones offered", w.current, "00:00:00:00:00:03"); check("shown", w.shown, true); check("phase", w.phase, "offer"); check("phone not queued", w.offers.pending, []); },
         () => { remove("00:00:00:00:00:01"); add("00:00:00:00:00:01", "Old Buds", "audio-headset"); },
-        () => { check("startup device still snoozed", w._queue, []); w.pendingName = "Office headset"; w.connect(); check("pairing", w.phase, "pairing"); },
+        () => { check("startup device still snoozed", w.offers.pending, []); w.pendingName = "Office headset"; w.connect(); check("pairing", w.phase, "pairing"); },
         () => {},
         () => {
             check("done", w.phase, "done");
@@ -77,7 +77,7 @@ Item {
         () => {},
         () => { check("later closes", w.current, ""); remove("00:00:00:00:00:04"); add("00:00:00:00:00:04", "Galaxy Buds3", "audio-headset"); },
         () => { check("snoozed after later", w.current, ""); ToplevelManager.activeToplevel = { fullscreen: true, screens: ["s1"] }; add("00:00:00:00:00:05", "JBL Flip 6", "audio-speaker"); },
-        () => { check("held during fullscreen", w.current, ""); check("queued", w._queue, ["00:00:00:00:00:05"]); ToplevelManager.activeToplevel = { fullscreen: false, screens: ["s1"] }; },
+        () => { check("held during fullscreen", w.current, ""); check("queued", w.offers.pending, ["00:00:00:00:00:05"]); ToplevelManager.activeToplevel = { fullscreen: false, screens: ["s1"] }; },
         () => { check("shown after fullscreen", w.current, "00:00:00:00:00:05"); check("screen of active window", w._screen, "s1"); w.ignore(); },
         () => {},
         () => { check("ignored saved", Object.keys(prefs.ignoredDevices), ["00:00:00:00:00:05"]); remove("00:00:00:00:00:05"); add("00:00:00:00:00:05", "JBL Flip 6", "audio-speaker"); },
@@ -131,6 +131,6 @@ Item {
     Timer {
         interval: 600; repeat: true; running: true
         // New devices only count once the start-up cache is primed
-        onTriggered: { if (h.i === 2 && !w._primed) return; h.steps[h.i++](); }
+        onTriggered: { if (h.i === 2 && !w.offers._primed) return; h.steps[h.i++](); }
     }
 }
