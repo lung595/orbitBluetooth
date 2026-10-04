@@ -1,6 +1,5 @@
 import QtQuick
 import Quickshell
-import Quickshell.Bluetooth
 import Quickshell.Wayland
 import qs.Services
 import "../device/DeviceCatalog.js" as Catalog
