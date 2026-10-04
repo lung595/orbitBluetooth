@@ -101,7 +101,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 | --- | --- |
 | Put new headphones in pairing mode | A pairing sheet under the bar offers to connect them (<kbd>Enter</kbd> connects, <kbd>Esc</kbd> later) |
 | Drag a device inside the inner ring | Pair and connect |
-| Drag a connected device outward | Disconnect |
+| Drag a connected device outward | Disconnect (a device of a listening group only leaves the group) |
 | Click a device | Open its detail card |
 | Scroll over a half circle, its icon or its percentage, or drag a moon | That level: the device's or this PC's, with smart steps; a soft tick plays in the device every 5 % ([more](docs/GUIDE.md#the-two-volumes)) |
 | Click the planet of an open audio device | Mute or unmute |

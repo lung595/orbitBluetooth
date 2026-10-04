@@ -25,8 +25,10 @@ StyledText {
         if (b) {
             if (b.phase === "connecting")
                 return b.armed ? "Release to cancel" : "Pull away to cancel";
-            if (b.connected)
-                return b.armed ? "Release to disconnect" : "Pull away to disconnect";
+            if (b.connected) {
+                const what = hint.scene.together.isMember(b.address) ? "leave the group" : "disconnect";
+                return (b.armed ? "Release to " : "Pull away to ") + what;
+            }
             return b.armed ? "Release to connect" : "Bring it closer to connect";
         }
         if (!hint.scene.btOn)

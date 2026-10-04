@@ -5,7 +5,7 @@ import "Physics.js" as Physics
 // the magnet's reach (or the black hole's), and what it was armed for
 // happens when it is let go (connect, disconnect, cancel or hide). A
 // connected audio device let go over another one listens together with it
-// (togetherDrop, OrbitTogether). The state (dragBody, dragX, dragY,
+// (togetherDrop, OrbitTogether); pulled out of the group it leaves it. The state (dragBody, dragX, dragY,
 // holeFeed, togetherDrop) stays on the scene, where the bodies and the
 // world read it.
 Item {
@@ -78,7 +78,10 @@ Item {
             b.hideArmed = false;
             scene.hideBody(b);
         } else if (b.armed) {
-            if (b.connected)
+            // Pulled out of a group, a device leaves it and stays connected
+            if (scene.together.isMember(b.address))
+                scene.together.leave(b.address);
+            else if (b.connected)
                 scene.startDisconnect(b);
             else if (b.phase === "connecting")
                 scene.cancelConnect(b);

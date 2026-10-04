@@ -107,6 +107,18 @@ QtObject {
         function relevant(a, b) {
             return !!fake.known(a) && !!fake.known(b);
         }
+        // As the real session: a member leaves, and with fewer than two left
+        // the group ends. null when it was done.
+        function remove(address) {
+            if (!isMember(address))
+                return {
+                    "why": "not-member",
+                    "address": address
+                };
+            const next = fake.sharing.filter(a => a !== address);
+            fake.sharing = next.length < 2 ? [] : next;
+            return null;
+        }
         function dropCheck(a, b) {
             return fake.known(a) ? null : {
                 "why": "not-connected",

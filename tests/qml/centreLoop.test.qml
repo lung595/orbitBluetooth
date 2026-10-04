@@ -102,6 +102,25 @@ Item {
             }
         },
         {
+            "then": 300,
+            "run": () => {
+                // Pulled out of the group, a member leaves it but stays connected
+                const one = scene.centre.bodyOf(h.one);
+                scene.beginDrag(one, {
+                    "x": one.px,
+                    "y": one.py
+                });
+                scene.updateDrag({
+                    "x": scene.cx + scene.rx * 1.4,
+                    "y": scene.cy
+                });
+                check("pulled far from the group, the member is armed", one.armed, true);
+                scene.endDrag();
+                check("released there, it leaves the group", route.sharing, [h.headset, h.two]);
+                check("and it is not disconnected", one.phase !== "disconnecting", true);
+            }
+        },
+        {
             "then": 1500,
             "run": () => {
                 // The session locks: nobody sees it
