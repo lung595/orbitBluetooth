@@ -146,7 +146,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Pop-up size: Compact, Medium or Large | Medium |
 | | Visualizer: Points, Rays, Waves or None / motion: Smooth or Light | Points / Smooth |
 | | Sounds (short cues) / their volume | Off / 60 % |
-| | Audio details: per fact (connection, profile, codec, bit rate, sample rate, bit depth, channels, latency, quantum, resampling), on the line / when unfolded ([more](docs/GUIDE.md#what-really-plays)) | Line: all but channels and resampling; unfolded: all |
+| | Audio details: per fact (connection, profile, codec, bit rate, sample rate, bit depth, channels, latency, quantum, resampling), on the line / when unfolded ([more](docs/GUIDE.md#what-really-plays)) | Line: connection, codec, sample rate, bit depth; unfolded: all |
 | | Volume tick (a soft tick in the device while you change its volume) | On |
 | Desktop widget | Displays | All |
 | | Backdrop | 72 % |
@@ -210,7 +210,7 @@ Some Sony headsets do not report charging, or drop Bluetooth while charging: thi
 
 - **Safe pairing.** A new device is only trusted once Orbit has checked it is what it looks like; headphones that can also send key presses (for their buttons) are paired only if you say so. [More](docs/GUIDE.md#pairing-safety)
 - **No telemetry.** Connection times and battery history stay in memory; settings, hidden and ignored devices are stored by DMS.
-- **Noise control**: a small helper talks to your headset over a local Bluetooth socket, only while needed. With **Pause when you take the headset off** on, that connection stays open while a Sony headset with a wearing sensor is connected; Orbit pauses and resumes your players through MPRIS on the local D-Bus, keeps nothing and sends nothing.
+- **Noise control**: a small helper talks to your headset over a local Bluetooth socket, only while needed. With **Pause when you take the headset off** on, that connection stays open while a Sony headset with a wearing sensor is connected; Orbit pauses and resumes your players through MPRIS on the local D-Bus, keeps nothing and sends nothing; to the headset it sends one message when the connection opens, the request to log its wearing events.
 - **New headphones pop-up**: by default Orbit only listens to searches you start yourself; nothing runs in the background. The optional **Background scan** (off by default) does a local scan of 8 s about once a minute, only while the screen is on, no Bluetooth audio is connected and the battery is above the threshold.
 - **Two volumes**: talk to the local sound server (PipeWire) only; the tick is a sound file shipped with Orbit, the picture of the sound is read locally with `cava`.
 - **Listen together**: one small local sound process per output beyond the first, only while a group listens; it talks to PipeWire only, saves nothing, logs nothing, and ends with the shell. [More](docs/GUIDE.md#listen-together)

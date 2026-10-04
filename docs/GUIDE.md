@@ -339,7 +339,7 @@ What it does, exactly:
 - If the headset disconnects while Orbit holds a pause, Orbit forgets it: nothing resumes later on its own. Turning the option off does the same.
 - Orbit talks to the player through MPRIS on the local D-Bus, as the media keys do. Nothing is written to disk and nothing is sent anywhere.
 
-**What it costs.** To hear that you took the headset off, Orbit keeps **one control connection open** to the headset, the one noise control uses, while the headset is connected and only if the headset reports a wearing sensor. There is no polling and no timer: the headset reports by itself, and the small helper process sleeps between reports. A Sony headset accepts **one control connection at a time**, so while this is on, the Sony app on your phone may not be able to reach the headset's settings: turn the option off to free the connection. The sound is not involved: Orbit never opens an audio stream, never changes the output, and multipoint audio is untouched.
+**What it costs.** To hear that you took the headset off, Orbit keeps **one control connection open** to the headset, the one noise control uses, while the headset is connected and only if the headset reports a wearing sensor. There is no polling and no timer: the headset reports by itself, and the small helper process sleeps between reports. A Sony headset accepts **one control connection at a time**, so while this is on, the Sony app on your phone may not be able to reach the headset's settings: turn the option off to free the connection. To make the headset report that it was taken off, Orbit sends it **one message when the control connection opens**: the request to log its wearing events (the Sony protocol's operation log). Orbit never sends the opposite message and changes no other setting of the headset; the message has not yet been confirmed on a headset of Orbit's own. The sound is not involved: Orbit never opens an audio stream, never changes the output, and multipoint audio is untouched.
 
 **Which player belongs to which headset.** A player is paused only when one of its names (desktop entry, MPRIS name, title) equals one of the names of an application whose stream goes to the headset in PipeWire (application name, program, id), compared in lower case without spaces or marks. This is strict on purpose: pausing the wrong player would be worse than pausing none. If a player names itself differently from its sound, nothing happens, and an issue with the player's name is welcome.
 
@@ -499,6 +499,8 @@ Grouped in tabs: **Orbit** (with Reset), **Scanning**, **Headphones** (with devi
 | | Volume keys | DMS | *Use smart steps* or *Give back to DMS*, see [Volume keys](#volume-keys) (niri) |
 | | Pop-up | In the Dank Island | Under the bar widget, right screen edge or off (DMS's own OSD); with any other choice DMS's volume OSD is switched off, see [Volume pop-up](#volume-pop-up) |
 | | Size | Medium | Compact, Medium or Large |
+| | Screens | Where I am | Show the pop-up only on the screen with the focus, or on every screen, see [Volume pop-up](#volume-pop-up) |
+| | Audio details | Line: connection, codec, sample rate, bit depth; unfolded: all | Two switches per fact, *on the line* and *more info*, see [What really plays](#what-really-plays) |
 | | Visualizer | Points | Points, Rays, Waves or None |
 | | Visualizer motion | Light | Light (30 images/s) or Smooth (60) |
 | | Sounds | Off | Short cues on snap, connect and disconnect |
