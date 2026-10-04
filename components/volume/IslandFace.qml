@@ -15,6 +15,8 @@ Item {
     required property var overlay
     // The island's IslandController on that screen
     required property var controller
+    // The island's host window (a DankIslandHostWindow)
+    required property var host
 
     anchors.fill: parent
 
@@ -47,10 +49,24 @@ Item {
             item = item.parent;
         return item;
     }
+    // The full-screen layer DMS maps under an expanded island, found by its
+    // shape (a window with a mask and an exclusive zone); null if a DMS
+    // update changes it
+    readonly property var clickAway: _clickAwayOf(host)
+    function _clickAwayOf(host) {
+        const objects = host ? host.data : [];
+        for (let i = 0; i < objects.length; i++) {
+            const o = objects[i];
+            if (typeof o.exclusiveZone === "number" && o.mask !== undefined && o.visible !== undefined)
+                return o;
+        }
+        return null;
+    }
     // Kept from the first open until the island has folded back
     IslandSnap {
         id: snap
         surface: face.surface
+        clickAway: face.clickAway
     }
 
     // --- Open and close ----------------------------------------------------------

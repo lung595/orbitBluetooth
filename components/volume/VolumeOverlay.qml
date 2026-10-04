@@ -151,7 +151,8 @@ TwoLevels {
                 return null;
             face = faceComponent.createObject(sheet, {
                 "overlay": root,
-                "controller": host.islandController
+                "controller": host.islandController,
+                "host": host
             });
             if (face)
                 kept.push(face);

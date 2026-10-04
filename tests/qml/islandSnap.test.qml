@@ -16,9 +16,15 @@ Item {
         property bool reducedMotion: h.user
         property real springStiffness: 560
     }
+    // DMS's full-screen click-away layer, mapped while the island is open
+    QtObject {
+        id: layer
+        property bool visible: true
+    }
     IslandSnap {
         id: snap
         surface: island
+        clickAway: layer
         delay: 40
     }
     // A second island, for an owner that goes while it holds (the face when
@@ -65,6 +71,7 @@ Item {
                 h.user = true;
                 h.user = false;
                 check("held: the user's own toggles do not undo it", island.reducedMotion, true);
+                check("held: the click-away layer is unmapped", layer.visible, false);
             }
         },
         {
@@ -78,6 +85,7 @@ Item {
             "then": 0,
             "run": () => {
                 check("let go: DMS's setting is back", [island.reducedMotion, snap.held], [false, false]);
+                check("let go: the click-away layer is mapped again", layer.visible, true);
                 h.user = true;
                 check("and its binding is alive", island.reducedMotion, true);
                 h.user = false;
