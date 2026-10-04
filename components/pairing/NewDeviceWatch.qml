@@ -237,7 +237,8 @@ Item {
         function disconnect() {
             connected = false;
         }
-        function cancelPair() {}
+        function cancelPair() {
+        }
     }
 
     function demo() {
@@ -360,8 +361,8 @@ Item {
                 return;
             if (res && res.error) {
                 root.lastError = String(res.error);
-                // No device name in the journal: it may be a person's name
-                console.warn("orbitBluetooth: pairing failed: " + root.lastError);
+                // A fixed line: the error text may carry a device name or address (value 11)
+                console.warn("orbitBluetooth: pairing failed while " + root.phase);
                 root.phase = "failed";
                 connectTimeout.stop();
                 return;
@@ -451,7 +452,8 @@ Item {
                 root._connected();
         }
         // Stay in "pairing" until ProfileCheck has run: it moves to "connecting"
-        function onPairedChanged() {}
+        function onPairedChanged() {
+        }
     }
 
     // Pairing waits for the user in DMS's pairing dialog: be patient
