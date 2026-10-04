@@ -1,5 +1,6 @@
 .pragma library
 .import "../common/Address.js" as Address
+.import "../together/Member.js" as Member
 
 // Pure logic of the two volumes (AudioRoute.qml), tested in tests/*.test.js.
 //
@@ -56,8 +57,8 @@ function deviceSink(nodes, address) {
     return null;
 }
 
-function virtualSink(nodes, address) {
-    const name = virtualName(address);
+// The sink node called `name` among PipeWire's nodes (never a stream), or null
+function sinkNamed(nodes, name) {
     if (!name || !nodes)
         return null;
     for (let i = 0; i < nodes.length; i++) {
@@ -68,12 +69,16 @@ function virtualSink(nodes, address) {
     return null;
 }
 
+function virtualSink(nodes, address) {
+    return sinkNamed(nodes, virtualName(address));
+}
+
 // What DMS's output list shows for the virtual sink. Only letters, digits,
 // spaces and a few marks of the device's name survive: the text goes into
 // a module argument, never into a shell (value 11).
-function description(deviceName) {
+function description(deviceName, fallback) {
     const clean = String(deviceName || "").replace(/[^\p{L}\p{N} ()+._-]/gu, "").replace(/\s+/g, " ").trim().slice(0, 48);
-    return (clean || "Bluetooth") + " (Orbit)";
+    return (clean || fallback || "Bluetooth") + " (Orbit)";
 }
 
 // The one way Orbit runs a pw-loopback (the PC-level filter below, Listen
@@ -86,6 +91,11 @@ const LOOPBACK_SCRIPT = '{ cat >/dev/null; kill "$$" 2>/dev/null; } <&0 & exec p
 
 // Nothing is remembered by WirePlumber for the two ends Orbit creates
 const FORGET = " state.restore-props=false state.restore-target=false";
+
+// The longest wait Orbit puts in a pw-loopback (ms). A Bluetooth output can
+// announce more than 600 ms (LDAC at its safest, a TV), and a wired copy or
+// filter waits for what that adds; a second of stereo audio is under 400 KB.
+var MAX_DELAY_MS = 1000;
 
 function loopbackArgs(capture, playback, delaySeconds) {
     const args = ["bash", "-c", LOOPBACK_SCRIPT, "orbit", capture + FORGET, playback + FORGET];
@@ -106,6 +116,46 @@ function filterArgs(address, master, deviceName) {
     const capture = "media.class=Audio/Sink node.name=" + name + " node.description=\"" + description(deviceName) + "\"" + " filter.smart=true filter.smart.name=" + name + " filter.smart.target={ node.name = \"" + master + "\" }";
     const playback = "node.name=" + name + ".out node.passive=true";
     return loopbackArgs(capture, playback);
+}
+
+// --- The delay filter of a wired source (D298) ----------------------------------------------------
+// Bluetooth is never delayed, so when the sound is taken from a wired output
+// it is the wired output that waits, for what the Bluetooth ones add. The wait
+// cannot be put in a copy (the apps play straight to that output), so a smart
+// filter "orbit_wired_<key>" like the PC-level one is slipped in front of the
+// output, only while Listen together needs the wait. The copies read the
+// filter's monitor, the sound before the wait.
+
+var WIRED_PREFIX = "orbit_wired_";
+
+// The filter's name for a wired output's sink name, "" when it is not one
+function wiredFilterName(sink) {
+    const key = Member.isWired(sink) ? Member.key(sink) : "";
+    return key ? WIRED_PREFIX + key : "";
+}
+
+// Exactly the shape wiredFilterName gives (a name that goes into a property string)
+function isWiredFilter(name) {
+    return typeof name === "string" && name.length <= 60 && /^orbit_wired_w_[a-z0-9_]+$/.test(name);
+}
+
+// A wait as Together.delayArg writes it: seconds, at most three decimals
+var DELAY_SECONDS = /^[0-9](\.[0-9]{1,3})?$/;
+
+// The command of the filter in front of the wired output `sink` that waits
+// `delaySeconds` (a text, from Together.delayArg), or null when the sink is not
+// a wired output's name or the wait is none or too long. Like the PC-level
+// filter it dies with the shell, and its playback never falls back to another
+// output: if the wired one goes away the sound stops instead of leaving through
+// a speaker nobody chose.
+function wiredFilterArgs(sink, delaySeconds, deviceName) {
+    const name = wiredFilterName(sink);
+    const delay = String(delaySeconds);
+    if (!name || !DELAY_SECONDS.test(delay) || Number(delay) <= 0 || Number(delay) * 1000 > MAX_DELAY_MS)
+        return null;
+    const capture = "media.class=Audio/Sink node.name=" + name + " node.description=\"" + description(deviceName, "Wired output") + "\"" + " filter.smart=true filter.smart.name=" + name + " filter.smart.target={ node.name = \"" + sink + "\" }";
+    const playback = "node.name=" + name + ".out node.passive=true node.dont-fallback=true";
+    return loopbackArgs(capture, playback, delay);
 }
 
 // Clicking the planet: with one Bluetooth audio device connected, this PC

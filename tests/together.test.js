@@ -95,7 +95,7 @@ eq("playback: the member's sink, passive, never falls back", [/target\.object=bl
 eq("each copy has its own node names", [/node\.name=orbit_together_AA_BB_CC_DD_EE_02_in /.test(cmd[4]), /node\.name=orbit_together_AA_BB_CC_DD_EE_02_out /.test(cmd[5])], [true, true]);
 eq("no default-sink change, no module", /default|load-module/.test(cmd.join(" ")), false);
 eq("a delay goes in as the third parameter, in seconds", Together.args(tap, 120)[6], "0.120");
-eq("delay capped and cleaned", [Together.delayArg(0), Together.delayArg(-5), Together.delayArg("x"), Together.delayArg(9999), Together.delayArg(33.4), Together.cleanDelay(9999), Together.cleanDelay("abc"), Together.cleanDelay(40.6)], ["", "", "", "0.500", "0.033", 500, 0, 41]);
+eq("delay capped and cleaned", [Together.delayArg(0), Together.delayArg(-5), Together.delayArg("x"), Together.delayArg(9999), Together.delayArg(33.4), Together.cleanDelay(9999), Together.cleanDelay("abc"), Together.cleanDelay(40.6)], ["", "", "", "1.000", "0.033", 1000, 0, 41]);
 eq("a node name that is not a BlueZ output or an Orbit filter: no command", [Together.args({ "member": AV, "capture": "x y", "playback": tap.playback }), Together.args({ "member": AV, "capture": tap.capture, "playback": "a; b" }), Together.args({ "member": AV, "capture": "--help", "playback": tap.playback }), Together.args({ "member": "x", "capture": tap.capture, "playback": tap.playback }), Together.args(null)], [null, null, null, null, null]);
 
 const cmds = Together.commands(p3, { [SP1]: 80 });
@@ -120,7 +120,7 @@ eq("from nothing", Together.diff({}, cmds).start.length, 2);
 // --- Delays of members -------------------------------------------------------------------
 eq("a delay for a member", Together.withDelay({}, [XM, AV], AV, 120), { [AV]: 120 });
 eq("0 clears it", Together.withDelay({ [AV]: 120 }, [XM, AV], AV, 0), {});
-eq("capped", Together.withDelay({}, [XM, AV], AV, 9999), { [AV]: 500 });
+eq("capped", Together.withDelay({}, [XM, AV], AV, 9999), { [AV]: 1000 });
 eq("not a member: unchanged", Together.withDelay({ [AV]: 20 }, [XM, AV], SP1, 90), { [AV]: 20 });
 eq("a member that left loses its delay", Together.withDelay({ [AV]: 20, [SP1]: 30 }, [XM, AV], XM, 0), { [AV]: 20 });
 eq("garbage address", Together.withDelay({}, [XM, AV], "x", 5), {});
@@ -244,7 +244,7 @@ eq("a wired newcomer starts one copy and cuts none", [Together.diff(wrunning, To
 eq("a new delay restarts the wired copy only", [Together.diff(wrunning, Together.commands(pw, { [W1]: 190, [AV]: 40 })).stop, Together.diff(wrunning, Together.commands(pw, { [W1]: 190, [AV]: 40 })).start.map(w => w.key)], [[W1], [W1]]);
 eq("a wired member that leaves stops its copy only", Together.diff(wrunning, wcmds.slice(1)).stop, [W1]);
 
-eq("delays of a wired member", [Together.withDelay({}, [XM, W1], W1, 120), Together.withDelay({ [W1]: 120 }, [XM, W1], W1, 0), Together.withDelay({}, [XM, W1], W1, 9999), Together.withDelay({}, [XM, W1], W2, 90), Together.withDelay({}, [XM, W1], "alsa_output.x; y", 5)], [{ [W1]: 120 }, {}, { [W1]: 500 }, {}, {}]);
+eq("delays of a wired member", [Together.withDelay({}, [XM, W1], W1, 120), Together.withDelay({ [W1]: 120 }, [XM, W1], W1, 0), Together.withDelay({}, [XM, W1], W1, 9999), Together.withDelay({}, [XM, W1], W2, 90), Together.withDelay({}, [XM, W1], "alsa_output.x; y", 5)], [{ [W1]: 120 }, {}, { [W1]: 1000 }, {}, {}]);
 eq("a wired member that left loses its delay", Together.prune({ [W1]: 20, [AV]: 30 }, [XM, AV]), { [AV]: 30 });
 
 eq("a list typed with wired names", [Together.parseList(W1 + "," + XM), Together.parseList(W1 + " " + W2 + "  " + XM + " " + W3)], [[W1, XM], [W1, W2, XM, W3]]);

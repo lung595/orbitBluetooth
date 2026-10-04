@@ -23,7 +23,13 @@
 // How many outputs can listen together. Each one beyond the source costs one
 // small process, and a half circle holds four arcs a finger can still hit.
 var MAX_MEMBERS = 4;
-var MAX_DELAY_MS = 500;
+// The longest wait of a copy or of a wired source's filter: one number for
+// every pw-loopback Orbit runs (Route.js)
+var MAX_DELAY_MS = Route.MAX_DELAY_MS;
+
+// What the filter of a wired source is called in the list of processes: never
+// the token of a member (Member.js), so it cannot be taken for a copy
+var FILTER_KEY = "wired-source-filter";
 
 // Node names Orbit gives the two ends of a copy, followed by the member's key
 var NAME = "orbit_together_";
@@ -158,9 +164,11 @@ function without(members, who) {
 
 // --- Where the sound comes from ----------------------------------------------------------
 // `sound(member)` gives { sink, pc, profile }: node names ("" when none),
-// null for an output Orbit does not see. A member can be copied to when it has
-// an output of its own kind (see fits), and a Bluetooth one is not in its call
-// profile.
+// null for an output Orbit does not see. `pc` is the filter in front of the
+// output: the PC-level one of a Bluetooth output, or the delay filter of a
+// wired source (Route.wiredFilterArgs), once it exists. A member can be copied
+// to when it has an output of its own kind (see fits), and a Bluetooth one is
+// not in its call profile.
 function present(who, s) {
     return !!s && fits(who, s.sink) && (Member.isWired(who) || !inCall(s.profile));
 }
@@ -181,9 +189,10 @@ function source(members, sound, defaultSink) {
 // playback }] }, one tap per other member whose output is there. The capture
 // is the source's PC-level filter when it has one (its monitor is the sound
 // before this PC's level, which every member applies itself: the level is
-// shared, D254), else its sink (a wired source has no filter, only its sink);
-// the playback is the member's own sink, where WirePlumber puts that member's
-// filter in front, if it has one.
+// shared, D254), else its sink (a wired source has a filter only while it must
+// wait for Bluetooth, and its copies then read that filter's monitor, the
+// sound before the wait; else only its sink); the playback is the member's own
+// sink, where WirePlumber puts that member's filter in front, if it has one.
 function plan(members, sound, defaultSink) {
     const from = source(members, sound, defaultSink);
     const s = from ? sound(from) : null;
@@ -199,8 +208,9 @@ function plan(members, sound, defaultSink) {
 }
 
 // --- The copies ---------------------------------------------------------------------------
-// A delay (ms) for a copy, 0..500, "" for none. Only a copy can wait, so it
-// is the way to line up outputs of different latency (Bluetooth codecs).
+// A delay (ms) for a copy, 0..MAX_DELAY_MS, "" for none. A copy can wait, and
+// so can a wired source through its filter (filterCommand): that is the way
+// to line up outputs of different latency (Bluetooth codecs).
 function cleanDelay(ms) {
     const n = Math.round(Number(ms));
     return n > 0 ? Math.min(MAX_DELAY_MS, n) : 0;
@@ -217,13 +227,19 @@ function isOutput(name) {
     return Route.isDeviceSink(name) || Member.isWired(name);
 }
 
+// A node name a copy may read from: an output, or one of Orbit's filters (the
+// PC-level one of a Bluetooth output, the delay one of a wired source)
+function isSource(name) {
+    return isOutput(name) || Route.isVirtual(name) || Route.isWiredFilter(name);
+}
+
 // The command of one copy, or null when a node name is not one of Orbit's,
 // BlueZ's or a valid ALSA output's (value 11): the capture is an output or an
-// Orbit PC-level filter, the playback an output, and never the same one (a
-// copy of an output to itself would feed back).
+// Orbit filter, the playback an output, and never the same one (a copy of an
+// output to itself would feed back).
 function args(tap, delayMs) {
     const key = tap ? Member.key(tap.member) : "";
-    if (!key || !(Route.isVirtual(tap.capture) || isOutput(tap.capture)) || !isOutput(tap.playback) || tap.capture === tap.playback)
+    if (!key || !isSource(tap.capture) || !isOutput(tap.playback) || tap.capture === tap.playback)
         return null;
     const stream = " node.passive=true node.dont-fallback=true";
     const capture = "node.name=" + NAME + key + "_in target.object=" + tap.capture + " stream.capture.sink=true" + stream;
@@ -231,10 +247,22 @@ function args(tap, delayMs) {
     return Route.loopbackArgs(capture, playback, delayArg(delayMs));
 }
 
-// The copies to run: [{ key (the member), command }] for a plan and the
-// delays of the members ({ member: ms })
-function commands(p, delays) {
+// The command of the delay filter in front of a wired source, or null when the
+// source is not wired or has nothing to wait for (`ms` is how long it waits)
+function filterCommand(p, ms) {
+    const wait = delayArg(ms);
+    return p && wait && Member.isWired(p.source) ? Route.wiredFilterArgs(p.source, wait) : null;
+}
+
+// The processes to run: [{ key, command }], the delay filter of a wired source
+// first when it must wait (key FILTER_KEY), then one copy per tap (key: the
+// member), for a plan, the delays of the members ({ member: ms }) and the wait
+// of the wired source (ms)
+function commands(p, delays, sourceWaitMs) {
     const out = [];
+    const filter = filterCommand(p, sourceWaitMs);
+    if (filter)
+        out.push({ "key": FILTER_KEY, "command": filter });
     for (const tap of p ? p.taps : []) {
         const command = args(tap, delays ? delays[tap.member] : 0);
         if (command)

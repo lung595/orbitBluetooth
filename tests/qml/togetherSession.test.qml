@@ -197,11 +197,11 @@ Item {
         const after = live();
         check("a delayed copy carries it", after.filter(p => p.command.length === 7).map(p => p.command[6]), ["0.120"]);
         check("only that copy was replaced", before.filter(p => after.indexOf(p) >= 0).length, 2);
-        check("the delay is 0..500", session.delays, {
+        check("the delay is 0..1000", session.delays, {
             "AA:BB:CC:DD:EE:03": 120
         });
-        session.setDelay(c, 900);
-        check("too long is capped", session.delays["AA:BB:CC:DD:EE:03"], 500);
+        session.setDelay(c, 9000);
+        check("too long is capped", session.delays["AA:BB:CC:DD:EE:03"], 1000);
         session.setDelay(e, 100);
         check("a delay for a stranger is ignored", e in session.delays, false);
     }

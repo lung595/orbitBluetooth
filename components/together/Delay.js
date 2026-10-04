@@ -52,3 +52,40 @@ function delaysFor(plan, latencies, fineMs) {
     }
     return out;
 }
+
+// How long a wired SOURCE is heard later than it would be without Orbit,
+// without the user's correction (ms): the Bluetooth copy that takes the
+// longest to be heard sets it. 0 for a Bluetooth source, and when no latency
+// is known.
+function _sourceLag(plan, latencies) {
+    let lag = 0;
+    for (const tap of plan.taps)
+        if (!Member.isWired(tap.member))
+            lag = Math.max(lag, autoDelayMs(latencies[tap.member], latencies[plan.source], 0));
+    return lag;
+}
+
+// Everything that must wait in a plan: { source, taps }. `source` is the wait
+// (ms) of the wired source's filter, 0 for none: a wired source cannot be
+// delayed in a copy, so its filter waits instead, and the Bluetooth outputs
+// never do. `taps` is delaysFor's answer, counted from the moment the source is
+// heard (a wired copy beside a delayed wired source has that wait to add, since
+// the copies read the filter's monitor, the sound before the wait).
+function waitsFor(plan, latencies, fineMs) {
+    const none = { "source": 0, "taps": {} };
+    if (!plan || !Array.isArray(plan.taps) || !latencies)
+        return none;
+    if (!Member.isWired(plan.source))
+        return { "source": 0, "taps": delaysFor(plan, latencies, fineMs) };
+    const lag = _sourceLag(plan, latencies);
+    const heard = Object.assign({}, latencies);
+    if (isLatency(heard[plan.source]))
+        heard[plan.source] += lag;
+    // A correction with no Bluetooth copy to line up with has nothing to
+    // correct on the source: it moves the wired copies, as delaysFor says
+    const bluetooth = plan.taps.some(t => !Member.isWired(t.member) && isLatency(latencies[t.member]));
+    return {
+        "source": bluetooth && isLatency(latencies[plan.source]) ? Together.cleanDelay(lag + cleanFine(fineMs)) : 0,
+        "taps": delaysFor(plan, heard, fineMs)
+    };
+}
