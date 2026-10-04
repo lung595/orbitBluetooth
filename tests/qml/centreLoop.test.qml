@@ -70,6 +70,15 @@ Item {
         {
             "then": 100,
             "run": () => {
+                // The source's click zone is its disc, as big as it is drawn, not the square around it
+                const z = scene.centre.bodyOf(h.headset).pointer;
+                const mid = z.width / 2;
+                check("the disc answers the click, the corner of its square does not", [z.contains(Qt.point(mid, mid)), z.contains(Qt.point(mid + mid - 2, mid)), z.contains(Qt.point(3, 3))], [true, true, false]);
+            }
+        },
+        {
+            "then": 100,
+            "run": () => {
                 // A click on the ring lands where it is, even across the top from the level
                 const ring = scene.world.ring.item;
                 const at = v => [ring.width / 2 + Math.sin(v * 2 * Math.PI) * ring.radius, ring.height / 2 - Math.cos(v * 2 * Math.PI) * ring.radius];
@@ -114,6 +123,17 @@ Item {
                 check("an unconnected device over the group is taken as a drop", scene.togetherDrop === src, true);
                 scene.endDrag();
                 check("released there, it is told to connect first", scene.note ? scene.note.title.endsWith(" is not connected") : null, true);
+                scene.note = null;
+            }
+        },
+        {
+            "then": 300,
+            "run": () => {
+                // A member cannot be hidden: it would play on out of sight; it is told to leave first (value 10)
+                const two = scene.centre.bodyOf(h.two);
+                scene.hideBody(two);
+                check("hiding a member says why, with the way to the guide", scene.note ? [scene.note.title.endsWith(" listens together"), scene.note.anchor] : null, [true, "hiding-devices-the-black-hole"]);
+                check("and nothing moved: it is still there and in the group", [two.swallowing, route.sharing], [false, [h.headset, h.one, h.two]]);
                 scene.note = null;
             }
         },

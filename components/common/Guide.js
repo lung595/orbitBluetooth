@@ -68,6 +68,7 @@ function togetherNote(why, name) {
         "too-many": { "title": "Up to " + Together.MAX_MEMBERS + " devices listen together", "hint": "Let one leave first: right-click it, then Leave together" },
         "outside": { "title": "Drop it onto a device that listens together", "hint": "Only one group listens together: drag it onto a member, or stop the group first" },
         "already": { "title": who + " already listens together", "hint": "Drag another device onto it to add that one" },
+        "in-group": { "title": who + " listens together", "hint": "Pull it out of the group first (right-click, Leave together), then hide it", "anchor": "hiding-devices-the-black-hole" },
         "not-member": { "title": who + " is not listening together", "hint": "Only a device in the session can leave it" },
         "no-session": { "title": "Nobody listens together yet", "hint": "Drag one connected device onto another first" },
         "not-connected": { "title": who + " is not connected", "hint": "Connect it first, then drag it onto a device that listens" },

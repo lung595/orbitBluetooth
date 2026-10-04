@@ -19,7 +19,7 @@ StyledText {
     text: {
         const b = hint.scene.dragBody;
         if (b && b.hideArmed)
-            return "Release to hide";
+            return hint.scene.together.isMember(b.address) ? "It listens together: pull it out of the group first" : "Release to hide";
         if (b && hint.scene.togetherDrop)
             return hint.scene.together.hint(b, hint.scene.togetherDrop);
         if (b) {

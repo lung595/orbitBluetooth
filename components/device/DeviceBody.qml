@@ -384,6 +384,7 @@ Item {
         body: body
     }
 
+    readonly property alias pointer: mouse
     BodyPointer {
         id: mouse
         body: body

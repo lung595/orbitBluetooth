@@ -16,6 +16,12 @@ MouseArea {
     acceptedButtons: Qt.LeftButton | Qt.RightButton
     enabled: !pointer.body.leaving && !pointer.body.swallowing && !pointer.body.scene.focusBody && !pointer.body.scene.hiddenOpen
     cursorShape: pointer.body.dragging ? Qt.ClosedHandCursor : Qt.OpenHandCursor
+    // The disc itself: the square's corners belong to what lies behind
+    containmentMask: QtObject {
+        function contains(point: point): bool {
+            return Math.hypot(point.x - pointer.width / 2, point.y - pointer.height / 2) <= pointer.width / 2;
+        }
+    }
 
     property point pressPoint
     property double pressTime: 0

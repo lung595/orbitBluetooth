@@ -301,7 +301,7 @@ The drawings are chosen by name (stem or pebble buds; tall, wide or pebble case;
 
 ## Hiding devices: the black hole
 
-A small black hole drifts in the outer field. Drag a device you never use into it (or right-click it and pick **Hide**): it disappears from the orbit and the bar, but **stays connected**. Click the black hole to list what it holds and **Show** to bring a device back.
+A small black hole drifts in the outer field. Drag a device you never use into it (or right-click it and pick **Hide**): it disappears from the orbit and the bar, but **stays connected**. Click the black hole to list what it holds and **Show** to bring a device back. A device that [listens together](#listen-together) cannot be hidden while it is in the group: it would go on playing out of sight, so a short note says to pull it out first (right-click, **Leave together**).
 
 | Hidden devices | Right-click menu |
 | --- | --- |

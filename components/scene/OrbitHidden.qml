@@ -1,4 +1,5 @@
 import QtQuick
+import "../common/Guide.js" as Guide
 
 // Hiding a device in the black hole and getting it back. The device spirals
 // into the hole; once it vanished it is saved as hidden (it stays
@@ -12,6 +13,11 @@ Item {
     function hide(b) {
         if (!b || b.swallowing || b.leaving)
             return;
+        // A member would go on playing out of sight: it leaves the group first
+        if (scene.together.isMember(b.address)) {
+            scene.explain(Guide.togetherNote("in-group", scene.together.nameOf(b.address)));
+            return;
+        }
         if (scene.focusBody === b)
             scene.clearFocus();
         if (b.phase === "connecting")
