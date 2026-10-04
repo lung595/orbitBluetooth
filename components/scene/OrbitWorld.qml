@@ -31,6 +31,17 @@ Item {
         core.pulse();
     }
 
+    // A device drawn under this scene point, if any (devices passing behind
+    // the core still get their clicks)
+    function bodyAt(x, y) {
+        for (let i = 0; i < bodyRepeater.count; i++) {
+            const b = bodyRepeater.itemAt(i);
+            if (b && !b.leaving && Math.hypot(x - b.px, y - b.py) < b.diameter * b.baseScale / 2)
+                return b;
+        }
+        return null;
+    }
+
     // Outer field: dotted orbit
     Repeater {
         model: 64
@@ -117,6 +128,7 @@ Item {
     OrbitCore {
         id: core
         scene: world.scene
+        world: world
         z: 50
     }
 

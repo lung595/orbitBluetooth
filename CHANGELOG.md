@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## Unreleased
 
+### Changed
+
+- Code only, nothing changes on screen: the hit test that tells which device is under a point moved from `OrbitScene` (404 → 393 lines) to `OrbitWorld`, which owns the devices.
+
 ### Fixed
 
 - The DMS journal no longer fills with a QML warning (« depends on non-bindable properties ») each time the Dank Island opens its volume face. The island's click-away layer is now looked up once, when the face first holds it, instead of through a binding on a list that cannot be bound. Nothing changes on screen. The lookup lives in `ClickAwayHold` (one role: that layer), and an unused import is gone from `IslandFace`.

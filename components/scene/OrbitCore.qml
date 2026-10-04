@@ -9,6 +9,8 @@ import "../device"
 Item {
     id: core
     required property var scene
+    // The world this core sits in: it tells which device is under a point
+    required property var world
 
     // A short bump of the core when a device connects
     function pulse() {
@@ -99,7 +101,7 @@ Item {
         onPressed: mouse => {
             const inner = Math.hypot(mouse.x - width / 2, mouse.y - height / 2) < width * 0.35;
             const p = mapToItem(core.scene, mouse.x, mouse.y);
-            mouse.accepted = inner && !core.scene.bodyAt(p.x, p.y);
+            mouse.accepted = inner && !core.world.bodyAt(p.x, p.y);
         }
         onClicked: {
             core.scene.startScan();
