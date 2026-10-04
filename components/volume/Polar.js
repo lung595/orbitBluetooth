@@ -144,6 +144,18 @@ function iconSpot(index, count, cx, cy, outer, size) {
     return point(cx, cy, outer - size * 1.6, s.reverse ? s.end : s.start);
 }
 
+// Where the name and level of an arc are written when there are more than
+// two: out from the middle of the arc, leaning away from the centre on its
+// own side (`align`: the text ends there on the left, starts there on the
+// right, is centred at the top), whatever the levels: labels never meet.
+function legendSpot(index, count, cx, cy, outer, gap) {
+    const all = slices(count); // a delegate may still ask for an arc just gone
+    const s = all[Math.max(0, Math.min(index | 0, all.length - 1))];
+    const mid = (s.start + s.end) / 2;
+    const p = point(cx, cy, outer + gap, mid);
+    return { "x": p.x, "y": p.y, "align": Math.abs(mid - TOP) < 1 ? "center" : mid < TOP ? "right" : "left" };
+}
+
 // One line of cava's raw ascii output ("9;35;...;9;"), `bars` values per
 // channel side by side: the left channel comes first with its low notes in
 // the middle, then the right one. Values 0..100 -> 0..1, low notes first.

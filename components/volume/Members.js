@@ -21,6 +21,16 @@ function scales(heards) {
     return heards.map(h => Polar.scaleFor(h) / top);
 }
 
+// The cloud's sectors, one per output in order (this PC's alone when there
+// is none): its color, its size next to the loudest, and whether it is quiet
+// (the output or this PC is muted). `heards`: what each output is heard at.
+function sectors(outputs, heards, pcColor, pcMuted) {
+    if (!outputs.length)
+        return [{ "color": pcColor, "scale": 1, "quiet": pcMuted }];
+    const sizes = scales(heards);
+    return outputs.map((o, i) => ({ "color": o.color, "scale": sizes[i], "quiet": o.muted || pcMuted }));
+}
+
 // The size at a place along the half circle (0 at the left end, 1 at the
 // right) from each part's own size: they blend from one part's middle to the
 // next one's, so the picture has no step where two outputs meet

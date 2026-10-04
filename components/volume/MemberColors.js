@@ -4,8 +4,8 @@
 // The colours of the outputs listening together and of this PC's shared
 // level (D277), all from the theme: each output takes one of the theme's
 // accents (primary, secondary, tertiary, in that order), this PC's the
-// tertiary. An accent that passes for one already taken (hues less than a
-// fraction of a turn apart, or a grey) is turned to the hue farthest from
+// tertiary. An accent that passes for one already taken (hues too close for
+// the number of colours to tell apart, or a grey) is turned to the hue farthest from
 // every colour taken, keeping its own saturation and lightness, so a
 // palette stays itself and stays readable. Colours are {r, g, b} in 0..1.
 
@@ -32,10 +32,17 @@ function _farthest(taken, own) {
 }
 
 // `bases`: the theme's accents [primary, secondary, tertiary]. `count`
-// outputs (1..4) then this PC: count + 1 colours, this PC's last.
+// outputs (1..4) then this PC: count + 1 colours, this PC's last. A single
+// output keeps the colors it always had (D270): this PC's is the tertiary
+// turned away from the output's only when the two look alike.
 function pick(bases, count) {
-    const total = Math.max(1, Math.min(4, count | 0)) + 1;
-    const minGap = Math.min(0.25, 0.75 / total);
+    if (count < 2) {
+        const c = Palette.apart(bases[2], bases[0]);
+        return [{ "r": bases[0].r, "g": bases[0].g, "b": bases[0].b }, { "r": c.r, "g": c.g, "b": c.b }];
+    }
+    const total = Math.min(4, count | 0) + 1;
+    // Not a perfectly even spread: two thirds of it is enough to tell apart
+    const minGap = Math.min(0.2, 0.6 / total);
     const out = [];
     const hues = [];
     for (let k = 0; k < total; k++) {

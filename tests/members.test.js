@@ -4,9 +4,9 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const Palette = load("Palette.js", ["fromHsl", "toHsl", "isGrey"]);
+const Palette = load("Palette.js", ["fromHsl", "toHsl", "isGrey", "apart"]);
 const Polar = load("Polar.js", ["heardLevel", "scaleFor"]);
-const Members = load("Members.js", ["heardOf", "scales", "scaleAt", "easeAll", "settled"]);
+const Members = load("Members.js", ["heardOf", "scales", "scaleAt", "easeAll", "settled", "sectors"]);
 const MemberColors = load("MemberColors.js", ["pick"]);
 
 const m = (level, muted) => ({ "level": level, "muted": !!muted });
@@ -38,7 +38,16 @@ const apartBases = [hsl(0, 0.7, 0.6), hsl(0.45, 0.7, 0.6), hsl(0.72, 0.7, 0.6)];
 const alike = [hsl(0.75, 0.6, 0.8), hsl(0.76, 0.2, 0.75), hsl(0.78, 0.5, 0.82)];
 const greys = [hsl(0, 0, 0.8), hsl(0, 0.05, 0.7), hsl(0, 0, 0.6)];
 
+// The cloud's sectors
+const outs = [{ color: "red", muted: false }, { color: "green", muted: true }];
+eq("sectors: one per output, the loudest at full size", Members.sectors(outs, [0.5, 0.25], "blue", false).map(s => [s.color, s.quiet, s.scale === 1]), [["red", false, true], ["green", true, false]]);
+eq("sectors: a muted PC quiets them all", Members.sectors(outs, [0.5, 0.5], "blue", true).map(s => s.quiet), [true, true]);
+eq("sectors: no output, this PC's alone", Members.sectors([], [], "blue", false), [{ color: "blue", scale: 1, quiet: false }]);
 eq("accents that already differ are kept as they are", MemberColors.pick(apartBases, 2).map(rgb), [apartBases[0], apartBases[1], apartBases[2]].map(rgb));
+// Hues 0.2 / 0.7 / 0.47: the tertiary is 0.23 of a turn from the secondary, close but plainly another colour
+const near = [hsl(0.2, 0.7, 0.6), hsl(0.7, 0.7, 0.6), hsl(0.47, 0.7, 0.6)];
+eq("accents a little under an even spread apart are still kept (D254)", MemberColors.pick(near, 2).map(rgb), near.map(rgb));
+eq("a single output keeps the colours it always had (D270)", MemberColors.pick(alike, 1).map(rgb), [alike[0], Palette.apart(alike[2], alike[0])].map(rgb));
 eq("an output and this PC: count + 1 colours", [1, 2, 3, 4].map(n => MemberColors.pick(apartBases, n).length), [2, 3, 4, 5]);
 eq("a count out of range is clamped", [MemberColors.pick(apartBases, 0).length, MemberColors.pick(apartBases, 9).length], [2, 5]);
 eq("the first output always keeps the primary", [alike, greys].map(b => rgb(MemberColors.pick(b, 3)[0])), [alike, greys].map(b => rgb(b[0])));

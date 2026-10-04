@@ -5,7 +5,7 @@ const { load, eq, done } = imports.lib;
 
 const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNote", "stuckNote", "levelNote"]);
 const Volume = load("Volume.js", ["clamp", "step", "validSink"]);
-const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "slices", "sliceAt", "partOf", "indexOf", "arc", "end", "point", "angleOf", "valueAt", "zone", "wheelPart", "iconSpot", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
+const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "slices", "sliceAt", "partOf", "indexOf", "arc", "end", "point", "angleOf", "valueAt", "zone", "wheelPart", "iconSpot", "legendSpot", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
 const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded", "note"]);
 const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "loopbackArgs", "filterArgs", "muteTarget", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "shownLevels"]);
@@ -95,6 +95,14 @@ const spots = [0, 1, 2, 3].map(i => Polar.iconSpot(i, 4, 200, 300, 100, 20));
 eq("icons: feet for the ends", [spots[0], spots[3]], [{ x: 100, y: 316 }, { x: 300, y: 316 }]);
 eq("icons: the middle ones are inside their arc, above the baseline", spots.slice(1, 3).map(s => s.y < 300 && Math.hypot(s.x - 200, s.y - 300) < 100), [true, true]);
 eq("icons: the middle ones flank the top", spots[1].x < 200 && spots[2].x > 200, true);
+// The legend: outside each arc, leaning away from the centre, one place per arc whatever the levels
+const legend = n => [0, 1, 2, 3].slice(0, n).map(i => Polar.legendSpot(i, n, 200, 300, 100, 14));
+eq("legend, four outputs: left pair leans left, right pair leans right", legend(4).map(l => l.align), ["right", "right", "left", "left"]);
+eq("legend, three outputs: the middle one is centred above the top", legend(3).map(l => l.align), ["right", "center", "left"]);
+eq("legend: every label sits just outside its arc", legend(4).concat(legend(3)).map(l => Math.round(Math.hypot(l.x - 200, l.y - 300))), [114, 114, 114, 114, 114, 114, 114]);
+eq("legend: the middle label is straight above the centre", [Math.round(legend(3)[1].x), Math.round(legend(3)[1].y)], [200, 186]);
+eq("legend: an arc that is gone answers with the last one's place", [Polar.legendSpot(7, 3, 200, 300, 100, 14), Polar.legendSpot(-1, 3, 200, 300, 100, 14)], [Polar.legendSpot(2, 3, 200, 300, 100, 14), Polar.legendSpot(0, 3, 200, 300, 100, 14)]);
+eq("legend: no two labels share a place", new Set(legend(4).map(l => Math.round(l.x) + "," + Math.round(l.y))).size, 4);
 const fr = Polar.parseFrame("9;35;30;45;100;80;3;0;0;3;80;100;45;30;35;9;", 8);
 eq("cava frame: left reversed, low notes first", [fr.l, fr.r], [[0, 0.03, 0.8, 1, 0.45, 0.3, 0.35, 0.09], [0, 0.03, 0.8, 1, 0.45, 0.3, 0.35, 0.09]]);
 eq("bad frames", [Polar.parseFrame("1;2;3;", 8), Polar.parseFrame("a;b;c;d;e;f;g;h;i;j;k;l;m;n;o;p;", 8), Polar.parseFrame("", 8), Polar.parseFrame("0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;101;", 8)], [null, null, null, null]);
