@@ -137,6 +137,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Steps: *Smart* or *Fixed* ([more](docs/GUIDE.md#smart-volume-steps)) / Speed-up / Step | Smart / Balanced / 5 % |
 | | Volume keys: *Use smart steps* or *Give back to DMS* (niri, changed only when you click, [more](docs/GUIDE.md#volume-keys)) | DMS |
 | | Volume pop-up: in the Dank Island, under the bar widget, right screen edge or off ([more](docs/GUIDE.md#volume-pop-up)) | In the Dank Island |
+| | Pop-up screens: *Where I am* (only the focused screen) or *Every screen* ([more](docs/GUIDE.md#volume-pop-up)) | Where I am |
 | | Pop-up size: Compact, Medium or Large | Medium |
 | | Visualizer: Points, Rays, Waves or None / motion: Smooth or Light | Points / Smooth |
 | | Sounds (short cues) / their volume | Off / 60 % |

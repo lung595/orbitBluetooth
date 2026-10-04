@@ -18,6 +18,10 @@ Item {
     // VolumeOverlay: the levels to show, what to do with a gesture
     required property var overlay
     property bool live: false
+    // The unfolded facts are for the visit they were asked in: a pop-up
+    // (and the island sheet, which keeps this item) opens folded every time
+    onLiveChanged: if (!live)
+        facts.expanded = false
     // Drawn lying flat, turned upright on a side (Route.popupLayout)
     property bool upright: false
     property real turn: 0
@@ -132,6 +136,7 @@ Item {
     // and not while a note shows
     property bool showFacts: true
     FactsLine {
+        id: facts
         visible: screenItem.showFacts && !screenItem.note && !screenItem.upright
         source: screenItem.overlay
         up: true

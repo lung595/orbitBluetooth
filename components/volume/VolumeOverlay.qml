@@ -4,11 +4,13 @@ import Quickshell.Services.Pipewire
 import qs.Common
 import qs.Services
 import "Keys.js" as Keys
+import "Route.js" as Route
 
 // The volume pop-up, without opening anything (D252, D258): whenever a
 // level of the output in use changes (volume keys, `dms ipc call`, the
 // device's own buttons through AVRCP, DMS's slider, another app), the two
-// volumes show on every screen, in place of DMS's OSD, which is switched off
+// volumes show on the screen you are on (or every screen, D286), in place of
+// DMS's OSD, which is switched off
 // (DmsOsdOff, D273): inside the Dank Island where there is one (IslandFace,
 // D263), else in a VolumePopup. Event-driven: it listens to PipeWire's
 // change signals, nothing polls.
@@ -105,10 +107,16 @@ TwoLevels {
     }
     function _showAll() {
         _offerKeys();
+        _target = Route.popupScreen(prefs.popupScreens, CompositorService.getFocusedScreen()?.name ?? "", screens.map(s => s.name));
         const inIsland = _showInIslands();
         const list = popups.instances;
         for (let i = 0; i < list.length; i++) {
             const p = list[i];
+            if (!_wanted(p.modelData)) {
+                if (p.shouldBeVisible)
+                    p.hide();
+                continue;
+            }
             if (inIsland.indexOf(p.modelData) !== -1) {
                 if (p.shouldBeVisible)
                     p.hide();
@@ -123,6 +131,13 @@ TwoLevels {
             }
         }
         _quietIsland();
+    }
+
+    // The screen this burst shows on, "" for every screen (D286): read once
+    // per burst, so a pop-up never hops screens while it is up
+    property string _target: ""
+    function _wanted(screen) {
+        return _target === "" || screen.name === _target;
     }
 
     // --- Inside the Dank Island (D263) ----------------------------------------------
@@ -141,7 +156,9 @@ TwoLevels {
             const c = host?.islandController;
             if (!c)
                 continue;
-            const face = mode === "replace" ? _faceFor(host) : null;
+            const face = mode === "replace" && _wanted(host.screen) ? _faceFor(host) : null;
+            if (!_wanted(host.screen))
+                _closeFace(host);
             if (face) {
                 if (SessionData.suppressOSD)
                     face.keep();
@@ -157,6 +174,13 @@ TwoLevels {
             }
         }
         return done;
+    }
+
+    // A face left open on a screen the user has since left
+    function _closeFace(host) {
+        const face = _faces.find(f => !!f && f.controller === host.islandController);
+        if (face)
+            face.close();
     }
 
     function _faceFor(host) {

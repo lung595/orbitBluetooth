@@ -166,6 +166,23 @@ Column {
     }
 
     SelectionSetting {
+        settingKey: "popupScreens"
+        label: "Screens"
+        description: "Where the pop-up shows when a volume changes: on the screen you are working on, or on every screen"
+        options: [
+            {
+                label: "Where I am",
+                value: "focused"
+            },
+            {
+                label: "Every screen",
+                value: "all"
+            }
+        ]
+        defaultValue: "focused"
+    }
+
+    SelectionSetting {
         settingKey: "scopeStyle"
         label: "Visualizer"
         description: "How the sound is drawn inside the half circles: a cloud of points (where it sits left or right), a fan of rays or waves (its notes, bass at the top)"

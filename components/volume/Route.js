@@ -190,6 +190,15 @@ function popupLayout(mode, osdOnSide, osdOnLeft, size) {
     return upright ? { "w": s.h, "h": s.w, "upright": true, "rotation": rotation } : { "w": s.w, "h": s.h, "upright": false, "rotation": 0 };
 }
 
+// The one screen the volume pop-up shows on (D286): the focused one, or ""
+// for every screen ("all" asked, focus unknown, or a focused screen the
+// pop-up cannot show on, so it never ends up nowhere)
+function popupScreen(where, focusedName, names) {
+    if (where === "all" || !focusedName || names.indexOf(focusedName) === -1)
+        return "";
+    return focusedName;
+}
+
 // Which levels the pop-up shows, from the nodes AudioRoute gives
 // (deviceNode, pcNode). Both: two half circles. Only one level (a device
 // with no level of its own, "Separate PC volume" off, or an output that is
