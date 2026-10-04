@@ -124,6 +124,13 @@ eq("not a member: unchanged", Together.withDelay({ [AV]: 20 }, [XM, AV], SP1, 90
 eq("a member that left loses its delay", Together.withDelay({ [AV]: 20, [SP1]: 30 }, [XM, AV], XM, 0), { [AV]: 20 });
 eq("garbage address", Together.withDelay({}, [XM, AV], "x", 5), {});
 
+eq("delays of members that are gone are dropped", Together.prune({ [AV]: 20, [SP1]: 30 }, [XM, SP1]), { [SP1]: 30 });
+
+// --- A list typed on the command line ---------------------------------------------------------
+eq("commas, spaces or both", [Together.parseList(XM + "," + AV), Together.parseList(XM + " " + AV + "  " + SP1), Together.parseList(" " + XM + ", " + AV + " ")], [[XM, AV], [XM, AV, SP1], [XM, AV]]);
+eq("nothing, or too long to be addresses", [Together.parseList(""), Together.parseList("   "), Together.parseList(undefined), Together.parseList(("A".repeat(17) + ",").repeat(40)), Together.parseList(7)], [[], [], [], [], []]);
+eq("an injected text stays one bad item", Together.refusal(Together.parseList(XM + "; reboot"), known).why, "bad-address");
+
 // --- Status (IPC) --------------------------------------------------------------------------
 eq("no session", JSON.parse(Together.status(null)), { "active": false, "members": [], "from": "", "delaysMs": {} });
 eq("a session", JSON.parse(Together.status({ "members": [XM, AV, SP1], "source": XM, "delays": { [AV]: 40 } })), { "active": true, "members": [XM, AV, SP1], "from": XM, "delaysMs": { [AV]: 40 } });
@@ -131,7 +138,7 @@ eq("a session", JSON.parse(Together.status({ "members": [XM, AV, SP1], "source":
 // --- Notes (value 10) -----------------------------------------------------------------
 const guide = new TextDecoder().decode(GLib.file_get_contents(root + "/docs/GUIDE.md")[1]);
 const anchors = guide.split("\n").filter(l => /^#{2,3} /.test(l)).map(l => l.replace(/^#+ /, "").toLowerCase().replace(/[^a-z0-9 -]/g, "").replace(/ /g, "-"));
-const reasons = ["same", "bad-address", "not-connected", "no-audio", "in-call", "too-few", "too-many", "already", "not-member", "no-session", "member-out", "member-left", "link-stopped", "none", "unknown"];
+const reasons = ["same", "bad-address", "not-connected", "no-audio", "in-call", "too-few", "too-many", "outside", "already", "not-member", "no-session", "member-out", "member-left", "link-stopped", "none", "unknown"];
 reasons.forEach(w => {
     const n = Guide.togetherNote(w, "WH-1000XM6");
     eq("note " + w + " says what and what to do", !!(n.title && n.hint), true);

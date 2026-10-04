@@ -59,6 +59,7 @@ function togetherNote(why, name) {
         "bad-address": { "title": "Not a device address", "hint": "Use addresses like AA:BB:CC:DD:EE:FF" },
         "too-few": { "title": "Listening together needs two devices", "hint": "Drag one device onto another" },
         "too-many": { "title": "Up to 4 devices listen together", "hint": "Let one leave first: right-click it, then Leave together" },
+        "outside": { "title": "Drop it onto a device that listens together", "hint": "Only one group listens together: drag it onto a member, or stop the group first" },
         "already": { "title": who + " already listens together", "hint": "Drag another device onto it to add that one" },
         "not-member": { "title": who + " is not listening together", "hint": "Only a device in the session can leave it" },
         "no-session": { "title": "Nobody listens together yet", "hint": "Drag one connected device onto another first" },

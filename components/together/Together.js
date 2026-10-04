@@ -228,13 +228,20 @@ function diff(running, wanted) {
     return { "stop": stop, "start": start };
 }
 
-// The delays after `ms` was asked for `who` (a member of `members`)
-function withDelay(delays, members, who, ms) {
-    const a = address(who);
+// The delays of `delays` ({ address: ms }) that belong to a member of
+// `members`: a member that left takes its delay with it
+function prune(delays, members) {
     const next = {};
     for (const m of members)
         if (delays && delays[m])
             next[m] = delays[m];
+    return next;
+}
+
+// The delays after `ms` was asked for `who` (a member of `members`)
+function withDelay(delays, members, who, ms) {
+    const a = address(who);
+    const next = prune(delays, members);
     if (a && members.indexOf(a) >= 0) {
         const n = cleanDelay(ms);
         if (n)
@@ -243,6 +250,13 @@ function withDelay(delays, members, who, ms) {
             delete next[a];
     }
     return next;
+}
+
+// The addresses of a text from the command line ("A,B C"): split on commas and
+// spaces. [] for anything too long to be a list of Bluetooth addresses.
+function parseList(text) {
+    const s = typeof text === "string" && text.length <= 200 ? text.trim() : "";
+    return s ? s.split(/[\s,]+/) : [];
 }
 
 // What `togetherStatus` says (IPC): the members in order, the one the sound
