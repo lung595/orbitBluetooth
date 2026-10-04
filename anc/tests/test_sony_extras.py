@@ -1,6 +1,6 @@
-"""Sony wearing detection (table 2), against a scripted headset. The bytes
-are the layouts documented by mos9527/SonyHeadphonesClient; none of this has
-met a real headset yet."""
+"""Sony wearing detection (table 2) and conversation length, against a
+scripted headset. The bytes are the layouts documented by
+mos9527/SonyHeadphonesClient; none of this has met a real headset yet."""
 
 import os
 import sys
@@ -168,6 +168,56 @@ class Wear(unittest.TestCase):
         headset.proto.tick(10.0)
         headset.proto.tick(12.0)
         self.assertEqual(headset.sent[-1][1], T_DATA2)
+
+
+class ConversationEnds(unittest.TestCase):
+    def test_read_is_asked_with_the_chat_function(self):
+        self.assertIn((T_DATA, "fa 0c"), Headset().packets())
+        self.assertNotIn((T_DATA, "fa 0c"), Headset(codes=(0x6D,)).packets())
+
+    def test_hidden_until_the_headset_answers(self):
+        headset = Headset()
+        self.assertFalse(headset.proto.features["chatEnds"])
+        count = len(headset.packets())
+        headset.proto.set("chatEnds", "2")
+        headset.drain()
+        self.assertEqual(len(headset.packets()), count)
+        headset.reply(T_DATA, "fb 0c 00 01")
+        self.assertTrue(headset.proto.features["chatEnds"])
+        self.assertEqual(headset.proto.state["chatEnds"], 1)
+
+    def test_write_sends_back_the_sensitivity_that_was_read(self):
+        headset = Headset()
+        headset.reply(T_DATA, "fb 0c 01 01")
+        headset.proto.set("chatEnds", "3")
+        headset.drain()
+        self.assertEqual(headset.packets()[-1], (T_DATA, "fc 0c 01 03"))
+        self.assertEqual(headset.proto.state["chatEnds"], 3)
+
+    def test_notification_follows_the_buttons(self):
+        headset = Headset()
+        headset.reply(T_DATA, "fb 0c 00 01")
+        headset.reply(T_DATA, "fd 0c 02 00")
+        self.assertEqual(headset.proto.state["chatEnds"], 0)
+        headset.proto.set("chatEnds", "1")
+        headset.drain()
+        self.assertEqual(headset.packets()[-1], (T_DATA, "fc 0c 02 01"))
+
+    def test_bad_values_never_reach_the_headset(self):
+        headset = Headset()
+        headset.reply(T_DATA, "fb 0c 00 01")
+        count = len(headset.packets())
+        for value in ("4", "-1", "abc", "", "1 2", "٣"):
+            headset.proto.set("chatEnds", value)
+        headset.drain()
+        self.assertEqual(len(headset.packets()), count)
+
+    def test_bad_reports_are_ignored(self):
+        headset = Headset()
+        for payload in ("fb 0c 00 07", "fb 0c 05 01", "fb 0b 00 01", "fb 0c 00"):
+            headset.reply(T_DATA, payload)
+        self.assertFalse(headset.proto.features["chatEnds"])
+        self.assertIsNone(headset.proto.state["chatEnds"])
 
 
 if __name__ == "__main__":

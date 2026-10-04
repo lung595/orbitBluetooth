@@ -5,7 +5,7 @@ The framing lives in sony_frame.py. v1 (WH-1000XM3/XM4, WF-1000XM3...) and v2
 payload. Every data frame from the headset must be acknowledged, and we keep
 only one command in flight until the headset acknowledges it. On v2 the list
 of supported functions tells which noise-control layout the model expects.
-Wearing detection (table 2) is in sony_extras.py.
+Wearing detection and the Speak-to-Chat timing are in sony_extras.py.
 """
 
 from .base import Protocol
@@ -128,6 +128,8 @@ class Sony(SonyExtras, Protocol):
             self._on_battery(p)
         elif op in (0xF7, 0xF9):
             self._on_speak_to_chat(p)
+        elif op in (0xFB, 0xFD):
+            self.on_chat_ends(p)
         elif op == 0xC9:
             self.on_unit_log(p)
 
@@ -161,6 +163,7 @@ class Sony(SonyExtras, Protocol):
         if FN_SPEAK_TO_CHAT in codes:
             self.features["chat"] = True
             self._queue(b"\xf6\x0c")
+            self._queue(b"\xfa\x0c")  # how long a conversation lasts (extended parameter)
         self.on_functions(codes)
 
     def _probe_noise(self):

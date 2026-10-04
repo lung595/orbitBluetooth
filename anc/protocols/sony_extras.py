@@ -1,6 +1,7 @@
 """Sony v2 extras beyond noise control, mixed into the Sony protocol.
 
 - Wearing detection: the headset's proximity sensor, kept in table 2.
+- How long a Speak-to-Chat conversation lasts before it ends by itself.
 
 Packet layouts come from mos9527/SonyHeadphonesClient (MIT; no code copied).
 The wearing flow was validated on a WH-1000XM6 (firmware 27.02) by phedoreanu's
@@ -25,6 +26,8 @@ ASK_WEAR = b"\xf2\x00"            # table 2: wearing status request
 LOG_KEYS = (b"unitRemove", b"unitWear")
 
 WEAR_MAX = 0x04                   # highest status code the headset documents
+CHAT_SENSITIVITY_MAX = 0x02       # 00 automatic, 01 high, 02 low
+CHAT_ENDS_MAX = 0x03              # 00 short, 01 standard, 02 long, 03 never
 
 
 class SonyExtras:
@@ -32,6 +35,7 @@ class SonyExtras:
         self.table2 = False              # the headset speaks the second table
         self.wear = False                # wear reports were asked for
         self.wear_started = False        # log switched on during this session
+        self.chat_sensitivity = 0        # kept: the write carries both bytes
 
     # --- wearing -------------------------------------------------------------
 
@@ -62,3 +66,17 @@ class SonyExtras:
         # The reply (F3) and a notification (F5) share one layout: F? 00 <status>
         if self.wear and p[0] in (0xF3, 0xF5) and len(p) >= 3 and p[1] == 0x00 and p[2] <= WEAR_MAX:
             self.state["wearing"] = p[2]
+
+    # --- how long a conversation lasts --------------------------------------
+
+    def on_chat_ends(self, p):
+        # FB (reply) and FD (notification): <FB|FD> 0C <sensitivity> <duration>
+        if len(p) >= 4 and p[1] == 0x0C and p[2] <= CHAT_SENSITIVITY_MAX and p[3] <= CHAT_ENDS_MAX:
+            self.chat_sensitivity = p[2]
+            self.state["chatEnds"] = p[3]
+            self.features["chatEnds"] = True
+
+    def set_chat_ends(self, duration):
+        # The write replaces both bytes: the sensitivity is sent back as read
+        self._queue(bytes([0xFC, 0x0C, self.chat_sensitivity, duration]))
+        self.state["chatEnds"] = duration
