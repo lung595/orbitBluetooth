@@ -63,6 +63,8 @@ Item {
         property bool reduceMotion: false
         property int fps: 60
         property var note: null
+        // The one unfolded state every screen shares (TwoLevels)
+        property bool unfolded: false
         property string factsLine: "USB · 192 kHz · 32 bit"
         property var factsRows: [
             {
@@ -157,16 +159,27 @@ Item {
         check("an island we did not open is left alone", island.activeActivity, "volume");
         island.activeActivity = "home";
 
-        // The facts open folded, every time
+        // The facts open folded, every time. A click on the info mark flips
+        // the shared `unfolded`; the line must keep following it afterwards
         const facts = find(face, "factsLine");
         check("the facts line is there", facts !== null, true);
         face.open();
-        facts.expanded = true;
+        fakeOverlay.unfolded = true;
+        check("unfolded by a click", facts.expanded, true);
         face.close();
-        check("closed: the facts fold", facts.expanded, false);
+        check("closed: the facts fold", [fakeOverlay.unfolded, facts.expanded], [false, false]);
         face.open();
         check("opened again: still folded", facts.expanded, false);
+        fakeOverlay.unfolded = true;
+        check("and a click unfolds them again", facts.expanded, true);
         face.close();
+
+        // Unfolded elsewhere before this visit: not this visit's to fold
+        fakeOverlay.unfolded = true;
+        face.open();
+        face.close();
+        check("shown unfolded by another screen: left as it was", fakeOverlay.unfolded, true);
+        fakeOverlay.unfolded = false;
 
         print(failures ? failures + " failure(s)" : "all passed");
         Qt.exit(failures ? 1 : 0);

@@ -18,9 +18,17 @@ Item {
     required property var overlay
     property bool live: false
     // The unfolded facts are for the visit they were asked in: a pop-up
-    // (and the island sheet, which keeps this item) opens folded every time
-    onLiveChanged: if (!live)
-        facts.expanded = false
+    // (and the island sheet, which keeps this item) opens folded every time.
+    // The state is the overlay's, shared with the other screens, so a visit
+    // that began with another screen showing it unfolded leaves it alone;
+    // never write `facts.expanded`, it would cut its link to the overlay
+    property bool _startedFolded: true
+    onLiveChanged: {
+        if (live)
+            _startedFolded = !overlay.unfolded;
+        else if (_startedFolded)
+            overlay.unfolded = false;
+    }
     // Drawn lying flat, turned upright on a side (Route.popupLayout)
     property bool upright: false
     property real turn: 0
