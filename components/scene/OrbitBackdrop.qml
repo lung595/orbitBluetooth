@@ -1,23 +1,29 @@
 import QtQuick
 import qs.Common
+import "Depth.js" as Depth
 
 // The sky behind the orbit, bottom to top: the desktop's glass veil, the
 // starfield (it leans away from a dragged device, and drifts a little the way
 // the camera went when a Listen together takes the center), the black hole drifting
 // in the outer belt, and the dimming laid over them while a card is open.
+// While a Listen together has the centre the sky falls out of focus (D294):
+// darker and blurred, the blur kept as a texture (DecorDepth).
 // A click on this empty sky steps back one level (OrbitFocus.stepBack): the
 // card, then Fedora's view.
 Item {
     id: backdrop
     required property var scene
+    // 0 = sharp, 1 = full depth of field: the camera's progress, eased
+    property real depth: scene.centre.presence
     // The black hole's event horizon radius, which the drag gestures measure from
     readonly property real holeHorizon: blackHole.horizon
 
     // Desktop glass: a theme-tinted smoky veil that dissolves into the wallpaper
+    // (darker with the depth: blurring a smooth gradient would show nothing)
     Vignette {
         visible: backdrop.scene.glass
         color: Qt.tint(backdrop.scene.night.skyDeep, Theme.withAlpha(backdrop.scene.night.primary, 0.07))
-        strength: backdrop.scene.prefs.desktopBackdrop
+        strength: Depth.veilStrength(backdrop.scene.prefs.desktopBackdrop, skyDepth.shown)
     }
 
     Starfield {
@@ -27,8 +33,9 @@ Item {
         width: backdrop.scene.width + 24
         height: backdrop.scene.height + 24
         clock: backdrop.scene.clock
-        animate: backdrop.scene.motion && backdrop.scene.active
-        shootingStars: backdrop.scene.prefs.shootingStars && backdrop.scene.awake
+        // Nothing twinkles or flies behind the blurred copy: it is a still texture
+        animate: backdrop.scene.motion && backdrop.scene.active && !skyDepth.frozen
+        shootingStars: backdrop.scene.prefs.shootingStars && backdrop.scene.awake && !skyDepth.frozen
         density: backdrop.scene.prefs.starDensity
         vignette: backdrop.scene.glass
         radius: backdrop.scene.cornerRadius
@@ -52,6 +59,14 @@ Item {
         }
     }
 
+    DecorDepth {
+        id: skyDepth
+        source: stars
+        depth: backdrop.depth
+        motion: backdrop.scene.motion
+        token: [stars.tint, stars.tint2, stars.density, stars.vignette, stars.radius]
+    }
+
     BlackHole {
         id: blackHole
         scene: backdrop.scene
@@ -70,6 +85,16 @@ Item {
                 duration: 200
             }
         }
+    }
+
+    // The hole falls out of focus with the sky, except while a gesture needs it
+    // lit (hovered, a device carried to it, its list open)
+    DecorDepth {
+        source: blackHole
+        depth: backdrop.depth
+        motion: backdrop.scene.motion
+        hold: blackHole.hovered || backdrop.scene.holeFeed > 0 || backdrop.scene.hiddenOpen
+        token: [blackHole.count, backdrop.scene.glass, backdrop.scene.prefs.holeStyle, backdrop.scene.prefs.showLabels]
     }
 
     // Dims the backdrop in focus mode (elliptical on glass: no hard edge)
