@@ -7,6 +7,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Fixed
 
+- A failed pairing no longer writes the error text to the journal (it can carry a device name or address): the journal gets a fixed line with the step that failed; the text still shows on the pairing sheet.
 - **Changing the volume no longer costs the whole shell.** The levels eased with QML animations, which made every shell window (bars, wallpaper) redraw at the screen's rate while the pop-up showed; they now ease on the scope's own 60 Hz clock, and the sound picture is computed once for every screen, each screen only painting it. Measured while stepping the volume three times a second, sound playing, Dank Island on two screens: the shell used **92 %** of one core with 1.12.0, **≈ 21 %** now; DMS alone, same test, uses ≈ 10 %. The rest is the live sound picture itself, drawn 60 times a second while the pop-up shows (*Light*, 30 images per second, or *None* in *Settings → Sound* make it cheaper); at rest nothing runs, as before.
 - The keyboard-profile question of a new device could be skipped silently when its answer was written to an object that did not exist: the connection flow now keeps it on its own object, and a test covers it.
 - Saving a level or hiding a device no longer wakes every view that reads a list setting.
@@ -16,6 +17,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ### Changed
 
 - **The two volumes never share a colour.** When the theme's two accents look alike (a generated pink and salmon, for example), this PC's level takes the opposite hue (pink and mint), in the scope and in the folded line; distinct accents stay as they are.
+- **Each rule lives in one place.** A Bluetooth address and the BlueZ path built from it are checked by one pure, tested `common/Address.js` (the volume code, the keyboard-profile check and the battery bookkeeping each had their own copy), and the four copies of "plugin file → path" are DMS's own `Paths.strip`. The BlueZ adapter number is now capped at three digits everywhere, as it already was for the keyboard-profile check.
 - The code is split into feature folders (`components/scene`, `device`, `card`, `volume`, `pairing`, `noise`, `common`), the orbit's physics live in a pure, tested `Physics.js`, and one sound feed and picture serve every screen; see [CONTRIBUTING](CONTRIBUTING.md). The biggest files are cut by role: the scene (`Orbit.js`, connections, discovery, backdrop, world), the device body (tether, charge beam, arcs, label), the pairing sheet (stage, identity, button), the scope (grid, readouts) and the settings (one file per tab). Nothing changes on screen (every preview identical to 1.12.0).
 
 ## 1.12.0 - 2026-10-03
