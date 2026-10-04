@@ -78,10 +78,22 @@ Item {
         sink: levels._sink ? levels._sink.name : ""
         pcSink: levels.dev && levels.dev.pc ? levels.dev.pc.name : ""
     }
-    readonly property string factsLine: prefs ? Audiophile.line(audioFacts.facts, prefs.factsLine, audioFacts.pcFacts) : ""
-    readonly property var factsRows: prefs ? Audiophile.rows(audioFacts.facts, prefs.factsMore, audioFacts.pcFacts) : []
+    // The details are unfolded (one state for every screen that shows them)
+    property bool unfolded: false
+    AudioGraph {
+        id: audioGraph
+        readonly property var wanted: levels.prefs ? Audiophile.needs(levels.prefs.factsLine, levels.prefs.factsMore, levels.unfolded) : ({})
+        wantDump: levels.looking && !!wanted.dump
+        wantTop: levels.looking && !!wanted.top
+        sink: audioFacts.sink
+    }
+    // The output's facts with what the graph adds
+    readonly property var _facts: Audiophile.merge(audioFacts.facts, audioGraph.facts)
+    readonly property string factsLine: prefs ? Audiophile.line(_facts, prefs.factsLine, audioFacts.pcFacts) : ""
+    readonly property var factsRows: prefs ? Audiophile.rows(_facts, prefs.factsMore, audioFacts.pcFacts) : []
     function refreshFacts() {
         audioFacts.refresh();
+        audioGraph.refresh();
     }
 
     // --- Gestures ----------------------------------------------------------------

@@ -28,7 +28,7 @@ Column {
         wrapMode: Text.WordWrap
         font.pixelSize: Theme.fontSizeSmall
         color: Theme.surfaceVariantText
-        text: "Read from PipeWire when the card or the pop-up shows, never otherwise. On the line: under the device's name and in the pop-up. More info: unfolded by the info button"
+        text: "Read from PipeWire when the card or the pop-up shows, never otherwise. On the line: under the device's name and in the pop-up. More info: unfolded by the info button. Bit rate, latency and quantum ask PipeWire once more when they are wanted (on the line, or unfolded) and show only what it reports"
     }
 
     Repeater {
