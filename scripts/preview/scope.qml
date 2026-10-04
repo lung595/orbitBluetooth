@@ -44,6 +44,7 @@ Window {
         property bool reduceMotion: false
         property int fps: 60
         property var note: null
+        property bool unfolded: false
         property string factsLine: "USB · 192 kHz · 32 bit"
         property var factsRows: [
             {
