@@ -31,7 +31,8 @@ Item {
         y: above ? caption.body.height / 2 - gap - height : caption.body.height / 2 + gap
         anchors.horizontalCenter: parent.horizontalCenter
         spacing: 1
-        visible: caption.body.scene.prefs.showLabels || caption.body.hovered || caption.body.dragging
+        // A member of a Listen together group is named under the center instead
+        visible: (caption.body.scene.prefs.showLabels && caption.body.role === "") || caption.body.hovered || caption.body.dragging
         opacity: caption.body.scene.focusBody || caption.body.scene.hiddenOpen || caption.body.swallowing || caption.body.hideArmed ? 0 : 1
 
         StyledText {

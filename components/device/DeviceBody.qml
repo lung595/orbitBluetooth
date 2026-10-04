@@ -1,5 +1,6 @@
 import QtQuick
 import "../card"
+import "../centre"
 import "../scene"
 import "DeviceCatalog.js" as Catalog
 import "../card/Charge.js" as Charge
@@ -111,6 +112,12 @@ Item {
         }
     }
     property real depth: 0              // -1 (behind) .. 1 (front), for orbiting bodies
+    // Its part in a Listen together group at the centre of the scene
+    // (OrbitCentre): "source", "copy" or "". roleMix (0..1) blends the disc
+    // from its ring size to roleDiameter (px).
+    property string role: ""
+    property real roleMix: 0
+    property real roleDiameter: 0
     property real popScale: 1
     property real shakeX: 0
 
@@ -187,7 +194,8 @@ Item {
     readonly property real depthScale: 0.75 + 0.25 * depth
     // The desktop widget floats over the wallpaper: its devices are a
     // quarter smaller than in the panels, the host keeps its size
-    readonly property real baseScale: focused ? 1 : (slotMix * depthScale + (1 - slotMix) * (0.66 + 0.34 * signal)) * connectedMix * (scene.glass ? 0.75 : 1)
+    readonly property real ringScale: (slotMix * depthScale + (1 - slotMix) * (0.66 + 0.34 * signal)) * connectedMix * (scene.glass ? 0.75 : 1)
+    readonly property real baseScale: focused ? 1 : ringScale + (roleDiameter / diameter - ringScale) * roleMix
     readonly property bool hovered: mouse.containsMouse && !scene.focusBody && !scene.hiddenOpen
 
     width: diameter
@@ -338,6 +346,15 @@ Item {
             id: lockRing
             body: body
         }
+
+        // A copy's own level while the pointer is on it (OrbitCentre)
+        Loader {
+            anchors.centerIn: parent
+            active: body.role === "copy" && body.hovered
+            sourceComponent: MemberLevel {
+                body: body
+            }
+        }
     }
 
     // The tether thickens as a connection lands
@@ -369,6 +386,11 @@ Item {
 
     BodyPointer {
         id: mouse
+        body: body
+    }
+
+    // The wheel sets a group member's level (OrbitCentre)
+    BodyWheel {
         body: body
     }
 }

@@ -12,6 +12,12 @@ Item {
     function on(b) {
         if (!b || b.leaving)
             return;
+        // The listening group stepped back to give the centre to the host: a
+        // click on it takes the centre back
+        if (scene.centre.recalled && scene.centre.holds(b)) {
+            scene.centre.release();
+            return;
+        }
         scene.focusBody = b;
         scene.wake();
         scene.forceActiveFocus();

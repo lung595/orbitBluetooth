@@ -4,6 +4,7 @@ import qs.Common
 import qs.Services
 import qs.Widgets
 import "../card"
+import "../centre"
 import "../device"
 
 // The orbit itself, back to front: the two orbits, the radar ping, the
@@ -19,6 +20,7 @@ Item {
     readonly property alias tetherLayer: tetherLayerItem
 
     readonly property real dim: world.scene.focusBody || world.scene.hiddenOpen ? 0.12 : 1
+    readonly property var centre: world.scene.centre
 
     // A ring wave from the connected orbit: outward when a device connects,
     // inward when one leaves. Two waves, so a quick second edge still shows.
@@ -93,8 +95,8 @@ Item {
     // Radar ping while discovering
     Rectangle {
         id: ping
-        x: world.scene.cx - width / 2
-        y: world.scene.cy - height / 2
+        x: world.centre.host.x - width / 2
+        y: world.centre.host.y - height / 2
         width: world.scene.coreSize
         height: width
         radius: width / 2
@@ -105,8 +107,8 @@ Item {
         // One ring every 2.6 s from the effects clock: grows (OutCubic)
         // while it fades (OutQuad)
         readonly property real t: (world.scene.fxTime % 2.6) / 2.6
-        scale: 1 + 2.2 * (1 - Math.pow(1 - t, 3))
-        opacity: 0.35 * (1 - t) * (1 - t)
+        scale: (1 + 2.2 * (1 - Math.pow(1 - t, 3))) * world.centre.host.scale
+        opacity: 0.35 * (1 - t) * (1 - t) * (world.centre.hostAway ? 0.6 : 1)
     }
 
     // Connection waves (elliptical, follow the orbit's perspective)
@@ -122,6 +124,38 @@ Item {
     Item {
         id: tetherLayerItem
         anchors.fill: parent
+    }
+
+    // A Listen together at the centre (OrbitCentre): the beams under the
+    // planets, and the volume ring above the far side of the orbit
+    Loader {
+        anchors.fill: parent
+        z: 5
+        active: world.centre.shown
+        opacity: world.dim
+        sourceComponent: CentreBeams {
+            centre: world.centre
+        }
+    }
+    Loader {
+        anchors.fill: parent
+        z: 60
+        active: world.centre.shown
+        opacity: world.dim
+        sourceComponent: CentreRing {
+            centre: world.centre
+        }
+    }
+    // Above every planet: a device passing in front must not hide what the
+    // group listens on
+    Loader {
+        anchors.fill: parent
+        z: 5000
+        active: world.centre.shown
+        opacity: world.dim
+        sourceComponent: CentreLabel {
+            centre: world.centre
+        }
     }
 
     // Host core
@@ -147,13 +181,15 @@ Item {
     StyledText {
         id: hostName
         anchors.horizontalCenter: core.horizontalCenter
-        y: core.y + core.height + 4
+        // Under the host, which is smaller (and dimmer) when it sits at the back;
+        // the name keeps its size there, as at 40 % it could not be read
+        y: world.centre.host.y + core.height / 2 * world.centre.host.scale + 4
         z: 50
         text: UserInfoService.hostname || ""
         color: world.scene.night.ink(0.72)
         font.pixelSize: Math.max(9, Math.round(world.scene.coreSize * 0.14))
         font.letterSpacing: 0.6
-        opacity: world.scene.focusBody ? 0 : 1
+        opacity: world.scene.focusBody ? 0 : world.centre.hostAway ? 0.6 : 1
     }
 
     Repeater {

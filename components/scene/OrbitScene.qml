@@ -2,6 +2,7 @@ import QtQuick
 import qs.Common
 import qs.Services
 import "../common"
+import "../centre"
 
 // The planetary Bluetooth scene shared by the Control Center panel, the bar
 // popout and the desktop widget.
@@ -42,17 +43,20 @@ Item {
     readonly property real cy: height / 2
     readonly property real rx: Math.max(40, width / 2 - bodySize * 0.8)
     readonly property real ry: Math.max(30, height / 2 - bodySize * 1.25)
-    readonly property real innerNorm: 0.56     // connected orbit
+    readonly property real baseNorm: 0.56      // connected orbit
+    // It opens around a Listen together that has taken the centre (OrbitCentre)
+    readonly property real innerNorm: centreCtl.ringNorm
     // Perspective: a tilted circle is still an ellipse, just shifted. The
     // connected ring keeps its near (bottom) edge and its far (top) edge
     // reaches the host core's edge, so devices on the far side pass behind it
     readonly property real innerFrontRy: ry * innerNorm
-    readonly property real innerBackRy: Math.min(innerFrontRy, coreSize * 0.5)
+    // ...and loses its perspective offset then, as the group sits in its middle
+    readonly property real innerBackRy: Math.min(innerFrontRy, coreSize * 0.5 + (innerFrontRy - coreSize * 0.5) * centreCtl.away)
     readonly property real ringRy: (innerFrontRy + innerBackRy) / 2
     readonly property real ringCy: cy + (innerFrontRy - innerBackRy) / 2
     readonly property real outerMinNorm: 0.8  // strongest signal
     readonly property real snapNorm: 0.7      // magnet engages inside this
-    readonly property real detachNorm: 0.8   // pulling a connected device past this disconnects
+    readonly property real detachNorm: Math.max(0.8, innerNorm + 0.1)   // pulling a connected device past this disconnects
     readonly property real coreSize: Math.round(Math.min(width, height) * 0.17)
     readonly property real bodySize: Math.round(Math.max(34, Math.min(width, height) * 0.135))
 
@@ -294,35 +298,21 @@ Item {
 
     // --- Listen together (drop a device onto another, OrbitTogether) ----------------
     OrbitTogether {
-        id: together
+        id: togetherCtl
         scene: orbitRoot
     }
-    function togetherRelevant(b, o) {
-        return together.relevant(b, o);
-    }
-    function togetherReady(b, o) {
-        return together.ready(b, o);
-    }
-    function togetherHint(b, o) {
-        return together.hint(b, o);
-    }
-    function dropTogether(b, o) {
-        together.drop(b, o);
-    }
-    function isTogether(address) {
-        return together.isMember(address);
-    }
-    function togetherCount() {
-        return together.count();
-    }
-    function leaveTogether(b) {
-        together.leave(b.address);
-    }
-    function stopTogether() {
-        together.stop();
-    }
+    readonly property alias together: togetherCtl
     // The device the dragged one is over, when dropping would be about listening together
     property var togetherDrop: null
+
+    // --- The listening source takes the center (OrbitCentre) ----------------------
+    OrbitCentre {
+        id: centreCtl
+        scene: orbitRoot
+        bodies: worldItem.bodies
+        session: togetherCtl.session
+    }
+    readonly property alias centre: centreCtl
 
     // --- Hiding (the black hole) ---------------------------------------------------
     OrbitHidden {
@@ -391,6 +381,7 @@ Item {
         scene: orbitRoot
         repeater: worldItem.bodies
         card: worldItem.focusCard
+        centre: centreCtl
     }
     onDragBodyChanged: physics.kick()
     onFocusBodyChanged: physics.kick()

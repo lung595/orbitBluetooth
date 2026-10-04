@@ -18,6 +18,9 @@ Item {
 
     readonly property real dist: Math.hypot(body.px - body.scene.cx, body.py - body.scene.cy)
     readonly property real tetherAlpha: {
+        // The host is away at the back while a Listen together has the center
+        if (body.scene.centre.tetherless(body.address))
+            return 0;
         if (body.dragging && body.holding)
             return body.armed ? 0.25 : 0.7;
         // Connecting: steady here, the pulse is on the line below (a

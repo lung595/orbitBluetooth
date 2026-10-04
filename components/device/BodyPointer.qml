@@ -6,7 +6,11 @@ MouseArea {
     id: pointer
     required property var body
 
-    anchors.fill: parent
+    // At least the body, and the whole disc when it is bigger (the source of
+    // a Listen together at the centre)
+    anchors.centerIn: parent
+    width: parent.width * Math.max(1, pointer.body.baseScale)
+    height: width
     hoverEnabled: true
     preventStealing: true
     acceptedButtons: Qt.LeftButton | Qt.RightButton

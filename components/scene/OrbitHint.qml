@@ -21,7 +21,7 @@ StyledText {
         if (b && b.hideArmed)
             return "Release to hide";
         if (b && hint.scene.togetherDrop)
-            return hint.scene.togetherHint(b, hint.scene.togetherDrop);
+            return hint.scene.together.hint(b, hint.scene.togetherDrop);
         if (b) {
             if (b.phase === "connecting")
                 return b.armed ? "Release to cancel" : "Pull away to cancel";

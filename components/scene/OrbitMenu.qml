@@ -50,9 +50,9 @@ Item {
                     "checked": info?.state?.mode === m
                 });
         }
-        if (scene.isTogether(b.address)) {
+        if (scene.together.isMember(b.address)) {
             // With only two, leaving is the same as stopping
-            if (scene.togetherCount() > 2)
+            if (scene.together.count() > 2)
                 list.push({
                     "id": "leave",
                     "icon": "logout",
@@ -121,9 +121,9 @@ Item {
         else if (id === "cancel")
             scene.cancelConnect(b);
         else if (id === "leave")
-            scene.leaveTogether(b);
+            scene.together.leave(b.address);
         else if (id === "separate")
-            scene.stopTogether();
+            scene.together.stop();
         else if (id === "hide")
             scene.hideBody(b);
         else if (id === "forget")
