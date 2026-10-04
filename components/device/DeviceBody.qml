@@ -3,6 +3,8 @@ import "../card"
 import "../centre"
 import "../scene"
 import "DeviceCatalog.js" as Catalog
+import "../centre/Centre.js" as Centre
+import "../centre/Perspective.js" as Perspective
 import "../card/Charge.js" as Charge
 import "../common/Pictures.js" as Pictures
 import "../card/Endurance.js" as Endurance
@@ -190,12 +192,15 @@ Item {
 
     readonly property real diameter: scene.bodySize
     // On the connected ring, depth runs from -1 (behind the host) to 1 (in
-    // front): full size in front, half size behind, for a sense of depth
-    readonly property real depthScale: 0.75 + 0.25 * depth
+    // front): full size in front, smaller behind, for a sense of depth. In the
+    // profile view of a Listen together the size is 1 / distance, and a body
+    // of the outer belt leans the same way by how far down it is.
+    readonly property real profile: scene.centre.profile
+    readonly property real depthScale: Perspective.size(depth, profile)
     // The desktop widget floats over the wallpaper: its devices are a
     // quarter smaller than in the panels, the host keeps its size. They
     // shrink and grow with the host's system as it revolves around a group.
-    readonly property real ringScale: (slotMix * depthScale + (1 - slotMix) * (0.66 + 0.34 * signal)) * connectedMix * (scene.glass ? 0.75 : 1) * scene.centre.system.k
+    readonly property real ringScale: (slotMix * depthScale + (1 - slotMix) * (0.66 + 0.34 * signal) * Perspective.lean(depth, profile)) * connectedMix * (scene.glass ? 0.75 : 1) * scene.centre.system.k
     readonly property real baseScale: focused ? 1 : ringScale + (roleDiameter / diameter - ringScale) * roleMix
     readonly property bool hovered: mouse.containsMouse && !scene.focusBody && !scene.hiddenOpen
 
@@ -203,8 +208,9 @@ Item {
     height: diameter
     x: px - width / 2 + shakeX
     y: py - height / 2
-    // Bodies on the far side of the ring pass behind the host core (z 50)
-    z: focused ? 20000 : dragging ? 10000 : inSlot && depth < 0 ? 10 + py * 0.01 : 100 + py
+    // Bodies on the far side of the ring pass behind the host core (z 50); in
+    // the profile view everything sorts by height (Centre.bodyZ)
+    z: focused ? 20000 : dragging ? 10000 : Centre.bodyZ(body, scene.centre.grouped, scene.centre.groupZ)
     opacity: leaving ? 0 : (spawned ? 1 : 0) * ((scene.focusBody && scene.focusBody !== body) || scene.hiddenOpen ? 0.1 : 1) * (inSlot ? 1 : dormant ? 0.75 : 0.8 + 0.2 * signal)
 
     Behavior on opacity {
@@ -330,10 +336,11 @@ Item {
         id: visual
         anchors.fill: parent
         scale: body.baseScale * body.popScale * body.focusScale * body.hoverScale * body.hideMix * body.swallowScale
-        // Slightly dimmer on the far side. Changes every frame, so it lives
-        // here and not in the body's opacity (whose Behavior would restart
-        // endlessly and never finish fading in)
-        opacity: body.inSlot && !body.focused ? 0.8 + 0.2 * body.depthScale : 1
+        // Slightly dimmer on the far side (as dark as it is small in the profile
+        // view). Changes every frame, so it lives here and not in the body's
+        // opacity (whose Behavior would restart endlessly and never finish
+        // fading in)
+        opacity: body.inSlot && !body.focused ? Perspective.haze(body.depth, body.profile) : 1
 
         BodyFace {
             body: body

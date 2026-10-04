@@ -6,6 +6,7 @@ import qs.Widgets
 import "../card"
 import "../centre"
 import "../device"
+import "Physics.js" as Physics
 
 // The orbit itself, back to front: the two orbits, the radar ping, the
 // connection waves, the host core and its name, the device bodies, and the
@@ -53,7 +54,7 @@ Item {
     function bodyAt(x, y) {
         for (let i = 0; i < bodyRepeater.count; i++) {
             const b = bodyRepeater.itemAt(i);
-            if (b && !b.leaving && Math.hypot(x - b.px, y - b.py) < b.diameter * b.baseScale / 2)
+            if (b && !b.leaving && Math.hypot(x - b.px, y - b.py) < Physics.hitDiameter(b) / 2)
                 return b;
         }
         return null;
@@ -78,7 +79,7 @@ Item {
                 readonly property real a: index / 64 * Math.PI * 2
                 readonly property real r: (1 + world.scene.outerMinNorm) / 2
                 x: world.scene.cx + Math.cos(a) * world.scene.rx * r - 0.75
-                y: world.scene.cy + Math.sin(a) * world.scene.ry * r - 0.75
+                y: world.scene.cy + Math.sin(a) * world.centre.flat.ry * r - 0.75
                 width: 1.5
                 height: 1.5
                 radius: 0.75
@@ -110,9 +111,9 @@ Item {
                 fillColor: innerRing.armedIn ? Theme.withAlpha(world.scene.night.primary, 0.05) : "transparent"
                 PathAngleArc {
                     centerX: world.scene.cx
-                    centerY: world.scene.ringCy
+                    centerY: world.centre.flat.ringCy
                     radiusX: world.scene.rx * world.scene.innerNorm
-                    radiusY: world.scene.ringRy
+                    radiusY: world.centre.flat.ringRy
                     startAngle: 0
                     sweepAngle: 360
                 }
@@ -123,10 +124,12 @@ Item {
         RingWave {
             id: waveA
             scene: world.scene
+            geo: world.centre.flat
         }
         RingWave {
             id: waveB
             scene: world.scene
+            geo: world.centre.flat
         }
     }
 
@@ -155,10 +158,11 @@ Item {
     }
 
     // A Listen together at the centre (OrbitCentre): the beams under the
-    // planets, and the volume ring above the far side of the orbit
+    // planets, and the volume ring above the far side of the orbit; both sort
+    // around the group's own stacking order (a copy's is groupZ + its depth)
     Loader {
         anchors.fill: parent
-        z: 5
+        z: world.centre.groupZ - 2
         active: world.centre.shown
         opacity: world.dim
         sourceComponent: CentreBeams {
@@ -168,7 +172,7 @@ Item {
     Loader {
         id: ringLoader
         anchors.fill: parent
-        z: 60
+        z: world.centre.groupZ - 0.01
         active: world.centre.shown
         opacity: world.dim
         sourceComponent: CentreRing {

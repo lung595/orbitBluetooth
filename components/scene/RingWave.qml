@@ -7,11 +7,13 @@ import QtQuick.Shapes
 Shape {
     id: wave
     required property var scene
+    // The orbit's geometry (the scene's, or the profile view's, flatter)
+    property var geo: wave.scene
     property bool busy: anim.running
     property bool outward: true
     // Centered on the ring (not the scene), so it grows from the ring's middle
     width: parent.width
-    height: wave.scene.ringCy * 2
+    height: wave.geo.ringCy * 2
     preferredRendererType: Shape.CurveRenderer
     opacity: 0
     transformOrigin: Item.Center
@@ -27,9 +29,9 @@ Shape {
         fillColor: "transparent"
         PathAngleArc {
             centerX: wave.scene.cx
-            centerY: wave.scene.ringCy
+            centerY: wave.geo.ringCy
             radiusX: wave.scene.rx * wave.scene.innerNorm
-            radiusY: wave.scene.ringRy
+            radiusY: wave.geo.ringRy
             startAngle: 0
             sweepAngle: 360
         }

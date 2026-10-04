@@ -1,5 +1,6 @@
 import QtQuick
 import "Physics.js" as Physics
+import "../centre/Perspective.js" as Perspective
 
 // Drives the orbit scene: one step() moves every body and the black hole,
 // advances the clocks, then decides how often the next step comes.
@@ -92,7 +93,8 @@ Item {
             };
         } else {
             const slot = Physics.beltSlot(geo, outer.indexOf(b), outer.length, outerPhase, b.homeHash, Physics.beltRadius(geo, b.signal), s.clock, amp);
-            b.depth = 0;
+            // No orbit to give it a depth: the lower on the screen, the nearer
+            b.depth = Perspective.depthAt(geo, b.py);
             t = {
                 "x": slot.x,
                 "y": slot.y,
@@ -150,6 +152,13 @@ Item {
         const outer = all.filter(b => !b.inSlot && !b.leaving && !b.swallowing).concat([physics._hole]).sort((a, b) => a.homeHash - b.homeHash);
         const innerPhase = s.orbitTime * 0.11 - Math.PI / 2;
         const outerPhase = s.orbitTime * 0.018 - Math.PI / 2;
+        // The group is a planet of the host's ring too (Fedora's view): it keeps
+        // its slot, a gap in the ring, while it has the centre, so the ring does
+        // not reshuffle when it steps back
+        if (centre.grouped) {
+            inner.unshift(centre);
+            centre.place(Physics.ringSlot(geo, 0, inner.length, innerPhase));
+        }
         const amp = timeDriven ? (s.dragBody ? 7 : 3.5) : 0;
 
         let moving = !!s.dragBody || centre.travelling;

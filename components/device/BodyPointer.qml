@@ -1,4 +1,5 @@
 import QtQuick
+import "../scene/Physics.js" as Physics
 
 // A device's mouse: a short click focuses it, a drag past 5 px moves it
 // (the scene owns the drag), a right click opens its menu.
@@ -7,9 +8,10 @@ MouseArea {
     required property var body
 
     // At least the body, and the whole disc when it is bigger (the source of
-    // a Listen together at the centre)
+    // a Listen together at the centre): a planet drawn small still has a zone
+    // as large as the one a click is searched in (Physics.hitDiameter)
     anchors.centerIn: parent
-    width: parent.width * Math.max(1, pointer.body.baseScale)
+    width: Physics.hitDiameter(pointer.body)
     height: width
     hoverEnabled: true
     preventStealing: true

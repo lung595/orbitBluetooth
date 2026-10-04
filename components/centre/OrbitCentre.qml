@@ -1,5 +1,6 @@
 import QtQuick
 import "Centre.js" as Centre
+import "Perspective.js" as Perspective
 import "Sun.js" as Sun
 
 // The scene while a Listen together takes the centre (D281-D285): the source
@@ -52,8 +53,19 @@ Item {
     readonly property bool travelling: grouping !== _goalGrouping || stage !== _goalStage
 
     // --- Where things sit (Centre.js, Sun.js) ------------------------------------
+    // The scene is seen in profile (Perspective.js) as the camera arrives, in
+    // both views; `flat` is its geometry then, the scene itself with no group
+    readonly property real profile: presence
+    readonly property var flat: Perspective.flat(scene, profile)
     readonly property var sizes: Centre.sizes(scene)
-    readonly property var group: Centre.groupAt(scene, Centre.ease(stage))
+    // Fedora's view puts the group on a slot of the host's ring: the physics
+    // step lays the ring out and hands the slot over (place)
+    property var _slot: ({
+            "x": 0,
+            "y": 0,
+            "depth": 1
+        })
+    readonly property var group: Centre.groupAt(scene, Centre.ease(stage), _slot)
     readonly property real away: Centre.away(grouping, stage)
     // The sun's angle on its path (it starts at its rest spot and stays there
     // with Reduce motion) and how fast it goes, 0..1: it slows to a stop under
@@ -74,8 +86,11 @@ Item {
             "y": host.y,
             "r": scene.coreSize * 0.5 * host.scale
         })
-    // In front of the group on the near side of its path, behind it on the far side
-    readonly property real hostZ: Sun.hostZ(scene, host, grouped)
+    // The stacking order of the host and of the group (Sun.js): they sort by
+    // height among the bodies, and the group is over the host's whole system
+    // once it has the centre
+    readonly property real hostZ: Sun.hostZ(host, grouped)
+    readonly property real groupZ: Sun.groupZ(group, away)
 
     // The sky drifts a little the way the camera went: set once the voyage is
     // half done, and the starfield glides there (its own short transition)
@@ -123,11 +138,17 @@ Item {
     // sun's, with the connected ring and the belt around it. The scene itself
     // while the group is not there.
     function sunGeometry() {
-        return away > 0 ? Sun.view(scene, system) : scene;
+        return away > 0 ? Sun.view(flat, system) : flat;
     }
     // ...and the group's, for a member that is dragged out of it
     function groupGeometry() {
-        return Sun.groupView(scene, sizes, group);
+        return Sun.groupView(flat, sizes, group);
+    }
+    // The slot the group takes on the host's ring (Physics.ringSlot); of no use
+    // while the group keeps the centre, so it is not kept then
+    function place(slot) {
+        if (stage > 0)
+            _slot = slot;
     }
     // The geometry a body is dragged in: its group's, or the sun's
     function geometryOf(b) {
