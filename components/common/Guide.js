@@ -48,20 +48,28 @@ function levelNote(why) {
     return "Use up, down, +5, -5 or a level from 0 to 100";
 }
 
-// Listen together could not start, or ended, by why (Together.refusal and
-// the session): never a silent refusal (value 10)
+// Listen together could not start, a device could not join, or a member
+// left or the session ended (Together.refusal / joinRefusal and the
+// session): never a silent refusal (value 10). The multipoint section
+// explains an output that is away because the headset serves the phone.
 function togetherNote(why, name) {
     var who = name || "This device";
     var notes = {
-        "same": { "title": "Pick two different devices", "hint": "Drag one device onto another" },
-        "bad-address": { "title": "Not a device address", "hint": "Use two addresses like AA:BB:CC:DD:EE:FF" },
-        "not-connected": { "title": who + " is not connected", "hint": "Connect it first, then drag it onto the other one" },
-        "no-audio": { "title": who + " has no sound output yet", "hint": "It does not play sound, or its audio is not ready: try again in a moment" },
+        "same": { "title": "Pick different devices", "hint": "Drag one device onto another" },
+        "bad-address": { "title": "Not a device address", "hint": "Use addresses like AA:BB:CC:DD:EE:FF" },
+        "too-few": { "title": "Listening together needs two devices", "hint": "Drag one device onto another" },
+        "too-many": { "title": "Up to 4 devices listen together", "hint": "Let one leave first: right-click it, then Leave together" },
+        "already": { "title": who + " already listens together", "hint": "Drag another device onto it to add that one" },
+        "not-member": { "title": who + " is not listening together", "hint": "Only a device in the session can leave it" },
+        "no-session": { "title": "Nobody listens together yet", "hint": "Drag one connected device onto another first" },
+        "not-connected": { "title": who + " is not connected", "hint": "Connect it first, then drag it onto a device that listens" },
+        "no-audio": { "title": who + " has no sound output yet", "hint": "It does not play sound, or its audio is not ready: try again in a moment", "anchor": "works-with-multipoint-headsets" },
         "in-call": { "title": who + " is in call mode", "hint": "A headset on its call profile plays mono: switch it back to music first" },
+        "member-out": { "title": who + " disconnected", "hint": "The others keep listening together" },
         "member-left": { "title": who + " disconnected", "hint": "Listening together ended with it" },
-        "link-stopped": { "title": "Listening together stopped", "hint": "The shared output ended: drag one device onto the other again" },
+        "link-stopped": { "title": "Listening together stopped", "hint": "The copy of the sound ended: drag a device onto another to start again" },
         "none": { "title": "Nothing is shared", "hint": "Drag a connected device onto another to listen together" }
     };
     var n = notes[why] || notes["link-stopped"];
-    return { "title": n.title, "hint": n.hint, "anchor": "listen-together" };
+    return { "title": n.title, "hint": n.hint, "anchor": n.anchor || "listen-together" };
 }
