@@ -118,7 +118,7 @@ orbitBluetooth/
 │   │   ├── PairingStage.qml, PairingIdentity.qml, PairingMiddle.qml, PairingButton.qml, Light.qml  # device, name and subtitle, tiles/steps/quick actions, actions, round light
 │   │   └── OfferCard.qml        # the scene's pairing offer
 │   ├── noise/                   # noise control
-│   │   └── AncService.qml, AncPanel.qml, Anc.js
+│   │   └── AncService.qml, AncPanel.qml, Anc.js, AncSnapshot.js
 │   └── common/                  # shared by every feature
 │       ├── Prefs.qml            # settings, shared by every surface
 │       ├── Address.js                                    # address forms and BlueZ device path, one definition (pure, tested)
