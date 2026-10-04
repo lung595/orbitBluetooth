@@ -74,13 +74,48 @@ Item {
     function copyOf(decor) {
         return decor.children.find(c => "sourceComponent" in c);
     }
-    // How many textures the copy declares (the grab of the source, the kept
-    // blur: the MultiEffect's own inner ones are not looked at), and whether
-    // none of them is live
-    function neverLive(decor) {
+    // The textures a copy declares itself: the grab of the source and the kept
+    // blur (the MultiEffect's own inner ones are not looked at)
+    function texturesOf(decor) {
         const loader = copyOf(decor);
-        const own = loader && loader.item ? Array.from(loader.item.children).filter(c => "scheduleUpdate" in c) : [];
+        return loader && loader.item ? Array.from(loader.item.children).filter(c => "scheduleUpdate" in c) : [];
+    }
+    // How many textures the copy declares, and whether none of them is live
+    function neverLive(decor) {
+        const own = texturesOf(decor);
         return [own.length, own.every(t => t.live === false)];
+    }
+    // The DecorDepth of the scene that covers `source`
+    function decorOver(item, source) {
+        for (const child of item.children) {
+            if ("copied" in child && child.source === source)
+                return child;
+            const found = decorOver(child, source);
+            if (found)
+                return found;
+        }
+        return null;
+    }
+    // Counts how many times the copy's kept blur was updated (rendered) from now
+    // on. It is the last texture of the chain and the only one that is drawn:
+    // the grab before it is hidden and never reports an update
+    Component {
+        id: counter
+        Connections {
+            property int n: 0
+            function onScheduledUpdateCompleted() {
+                n++;
+            }
+        }
+    }
+    property var watchers: []
+    function watch(decor) {
+        watchers = texturesOf(decor).slice(-1).map(t => counter.createObject(h, {
+                "target": t
+            }));
+    }
+    function updates() {
+        return watchers.map(w => w.n);
     }
 
     property int failures: 0
@@ -174,10 +209,26 @@ Item {
             }
         },
         {
-            "then": 2500,
+            "then": 1500,
             "run": () => {
                 check("a group has the centre: the sky is at full depth", scene.centre.presence, 1);
                 check("and the live starfield rests behind its copy: not drawn, not twinkling", [h.stars.opacity, h.stars.animate], [0, false]);
+                // From here on every render of the copy is counted
+                h.watch(h.decorOver(scene, h.stars));
+            }
+        },
+        {
+            "then": 600,
+            "run": () => {
+                check("at rest the blur is not rendered again: the kept texture was not updated", h.updates(), [0]);
+                // Counter-proof: a retake that is asked for is seen by the counters
+                h.copyOf(h.decorOver(scene, h.stars)).item.retake();
+            }
+        },
+        {
+            "then": 400,
+            "run": () => {
+                check("a retake renders the blur once (the counter does see renders)", h.updates(), [1]);
                 route.sharing = [];
             }
         },

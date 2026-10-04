@@ -26,7 +26,10 @@ Window {
     // "-fit" sizes the window like the bar popout (grows to the open card),
     // "-cc" like the Control Center tile (same, from a smaller minimum),
     // "-silent" stops the made-up sound (the beams of a group do not pulse),
-    // "-reduce" turns Reduce motion on,
+    // "-reduce" turns Reduce motion on, "-glass" shows any shot as the desktop
+    // widget (the veil over a wallpaper), "-bench" takes no picture: once the
+    // scene has settled it counts the frames drawn over 6 s and quits
+    // (see depth-bench.sh),
     // "-sun90" puts the host's system at that angle of its path in the "together"
     // shots (90 near and in front, 270 far and behind, 0 right, 180 left),
     // "-follow" gives the headset no level of its own (no absolute volume),
@@ -42,6 +45,7 @@ Window {
     readonly property bool follow: parts.indexOf("follow") > 0
     readonly property bool silent: parts.indexOf("silent") > 0
     readonly property bool reduce: parts.indexOf("reduce") > 0
+    readonly property bool bench: parts.indexOf("bench") > 0
     readonly property var sunAngle: parts.find(p => /^sun\d+$/.test(p))
     // Speakers that listen together with the headset in the "together" shots
     readonly property int outputs: mode.startsWith("together") && mode !== "togetherback" ? Number(mode.slice(8)) - 1 : mode === "togetherback" ? 2 : 0
@@ -50,7 +54,7 @@ Window {
     readonly property bool facts: parts.indexOf("facts") > 0
     readonly property string mode: parts[0]
     readonly property string out: args[args.length - 1]
-    readonly property bool glass: mode.startsWith("desktop")
+    readonly property bool glass: mode.startsWith("desktop") || parts.indexOf("glass") > 0
     // Control Center sized shots for the black hole, menu and comet
     readonly property bool compact: ["buds", "budsdock", "hole", "holetess", "hiddencard", "hiddenempty", "connecting", "menu", "feed"].indexOf(mode) >= 0
     width: glass ? 760 : (mode === "zoom" ? 900 : compact ? 540 : 560)
@@ -240,9 +244,32 @@ Window {
             }
         }
     }
+    // Bench: the frames the window swapped, counted from the start of the window
+    readonly property int benchMs: 6000
+    property int frames: 0
+    Connections {
+        target: win
+        function onFrameSwapped() {
+            win.frames++;
+        }
+    }
+    Timer {
+        id: benchEnd
+        interval: win.benchMs
+        onTriggered: {
+            print("bench", win.mode, "frames", win.frames, "in", win.benchMs, "ms");
+            Qt.quit();
+        }
+    }
     Timer {
         id: grabTimer
         onTriggered: {
+            if (win.bench) {
+                win.frames = 0;
+                print("bench start");
+                benchEnd.start();
+                return;
+            }
             // Where the drifting black hole ended up (to crop close-ups)
             console.info("hole", scene.holeX + frame.x, scene.holeY + frame.y);
             win.contentItem.grabToImage(r => {
