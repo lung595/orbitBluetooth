@@ -74,10 +74,13 @@ Item {
     function copyOf(decor) {
         return decor.children.find(c => "sourceComponent" in c);
     }
-    // The ShaderEffectSource that keeps the blur
-    function kept(decor) {
+    // How many textures the copy declares (the grab of the source, the kept
+    // blur: the MultiEffect's own inner ones are not looked at), and whether
+    // none of them is live
+    function neverLive(decor) {
         const loader = copyOf(decor);
-        return loader && loader.item ? find(loader.item, "scheduleUpdate") : null;
+        const own = loader && loader.item ? Array.from(loader.item.children).filter(c => "scheduleUpdate" in c) : [];
+        return [own.length, own.every(t => t.live === false)];
     }
 
     property int failures: 0
@@ -104,8 +107,7 @@ Item {
             "then": 300,
             "run": () => {
                 check("a little depth: the copy exists, not frozen, the source still drawn", [depthOf.copied, depthOf.frozen, sky.opacity], [true, false, 0.8]);
-                const k = h.kept(depthOf);
-                check("the copy is a texture that is never live (rendered once, then kept)", k ? k.live : null, false);
+                check("the copy is two textures (the grab, the kept blur), neither ever live: rendered once, then kept", h.neverLive(depthOf), [2, true]);
                 check("and it follows the source's place and size", [depthOf.width, depthOf.height], [300, 200]);
                 depthOf.depth = 1;
             }
