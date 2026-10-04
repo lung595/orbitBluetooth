@@ -86,6 +86,8 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 - **Live charging**: energy beam, time to full, charge speed, session chart.
 - **Earbuds trio**: the case and both buds in their own mini orbit, each with its battery.
 - **Noise control** for 13 headphone brands (Sony, Apple, Samsung, Bose, Huawei…).
+- **Pause when you take the headset off** (Sony headsets with a wearing sensor): what plays on the headset pauses when you take it off and resumes when you put it back, only what Orbit paused, and it never starts music. It keeps one control connection open ([more](docs/GUIDE.md#pause-when-you-take-the-headset-off)).
+- **How long a conversation lasts** (Sony): *Short*, *Standard*, *Long* or *Never*, right in the headset's card ([more](docs/GUIDE.md#how-long-a-conversation-lasts)).
 - **Real device pictures** (opt-in, uses the internet): a photo of your headphones, phone or TV instead of an icon.
 - **Black hole**: drop a device you never use into it to hide it.
 - **28 device icons** matched by name, or your own pictures.
@@ -132,6 +134,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Scan duration: 20 s, 45 s, 90 s or *While open* ⚡ | 45 s |
 | Headphones | Noise control | On |
 | | Turn off conversation awareness on disconnect | On |
+| | Pause when you take the headset off (Sony with a wearing sensor; keeps a control connection open, [more](docs/GUIDE.md#pause-when-you-take-the-headset-off)) | On |
 | | Engine: *On demand* or *Always connected* ⚡ | On demand |
 | Sound | Separate PC volume (the device's level and this PC's, [more](docs/GUIDE.md#separate-pc-volume)) | On |
 | | Steps: *Smart* or *Fixed* ([more](docs/GUIDE.md#smart-volume-steps)) / Speed-up / Step | Smart / Balanced / 5 % |
@@ -157,6 +160,8 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 dms ipc call orbitBluetooth anc nc       # nc, ambient, off or adaptive (first supported headset)
 dms ipc call orbitBluetooth ancCycle     # next noise-control mode
 dms ipc call orbitBluetooth ancStatus    # current noise-control state (JSON)
+dms ipc call orbitBluetooth chatEnds standard  # how long a conversation lasts: short, standard, long or never (Sony)
+dms ipc call orbitBluetooth wearStatus   # worn or removed, and what is held paused (Sony)
 dms ipc call orbitBluetooth newDeviceDemo    # show the new-headphones pop-up with a made-up headset
 dms ipc call orbitBluetooth newDeviceStatus  # is the background scan running, or why not
 dms ipc call orbitBluetooth hidden       # list hidden devices
@@ -181,6 +186,7 @@ Bind them in your compositor, for example in niri: `Mod+N { spawn "dms" "ipc" "c
 | No devices appear while scanning | Put the device in pairing mode; turn on **Show unnamed devices** |
 | A device charges but shows no lightning | Wait for its first level increase: the estimate starts then |
 | Noise control does not appear | Headset must be paired and supported, Python 3 installed; reopen the card |
+| Music does not pause when I take the Sony headset off | `dms ipc call orbitBluetooth wearStatus` says why; the Sony app on a phone may hold the headset's control connection, see [Pause when you take the headset off](docs/GUIDE.md#pause-when-you-take-the-headset-off) |
 | A device vanished | It is in the black hole: click it, or `dms ipc call orbitBluetooth unhideAll` |
 | Settings or widgets of Orbit left after removing it while DMS was not running | Install it again, then remove it from DMS while it runs: it cleans up after itself, see [Uninstalling](docs/GUIDE.md#uninstalling) |
 | Volume keys still use smart steps after removing Orbit while DMS was not running | They still work (they fall back to DMS); give them back: `dms keybinds set niri XF86AudioRaiseVolume "spawn dms ipc call audio increment 3" --allow-when-locked`, same with `XF86AudioLowerVolume` and `decrement`, see [Volume keys](docs/GUIDE.md#volume-keys) |
@@ -193,7 +199,7 @@ Some Sony headsets do not report charging, or drop Bluetooth while charging: thi
 
 - **Safe pairing.** A new device is only trusted once Orbit has checked it is what it looks like; headphones that can also send key presses (for their buttons) are paired only if you say so. [More](docs/GUIDE.md#pairing-safety)
 - **No telemetry.** Connection times and battery history stay in memory; settings, hidden and ignored devices are stored by DMS.
-- **Noise control**: a small helper talks to your headset over a local Bluetooth socket, only while needed.
+- **Noise control**: a small helper talks to your headset over a local Bluetooth socket, only while needed. With **Pause when you take the headset off** on, that connection stays open while a Sony headset with a wearing sensor is connected; Orbit pauses and resumes your players through MPRIS on the local D-Bus, keeps nothing and sends nothing.
 - **New headphones pop-up**: by default Orbit only listens to searches you start yourself; nothing runs in the background. The optional **Background scan** (off by default) does a local scan of 8 s about once a minute, only while the screen is on, no Bluetooth audio is connected and the battery is above the threshold.
 - **Two volumes**: talk to the local sound server (PipeWire) only; the tick is a sound file shipped with Orbit, the picture of the sound is read locally with `cava`.
 - **Audio details**: read from PipeWire (`pactl list sinks`) while the card or the pop-up shows, only if a fact is chosen; kept in memory, dropped when it closes.
@@ -217,7 +223,7 @@ Details in the [user guide](docs/GUIDE.md#privacy).
 
 ## Credits
 
-Noise-control protocols were reimplemented from the public notes of Gadgetbridge, SonyHeadphonesClient, XMDeck, LibrePods, MagicPodsCore, GalaxyBudsClient, based-connect, bosectl, OpenSCQ30, OpenFreebuds, EarA-linux, earctl and cmfctl (no code copied). The new-device pop-up is inspired by the nearby-device cards of Google Fast Pair and Apple's AirPods setup (the idea only: Orbit uses plain BlueZ discovery, no vendor protocol). Device pictures come from [Wikimedia Commons](https://commons.wikimedia.org) and [Sketchfab](https://sketchfab.com) (free licenses only, each author is credited in the card): thank you to the photographers and 3D artists who share their work. Built on [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell) and [Quickshell](https://quickshell.org).
+Noise-control protocols were reimplemented from the public notes of Gadgetbridge, SonyHeadphonesClient, XMDeck, LibrePods, MagicPodsCore, GalaxyBudsClient, based-connect, bosectl, OpenSCQ30, OpenFreebuds, EarA-linux, earctl and cmfctl (no code copied). The Sony wearing sensor and the length of a conversation come from [mos9527](https://github.com/mos9527)'s MIT-licensed [SonyHeadphonesClient](https://github.com/mos9527/SonyHeadphonesClient), and the wearing sequence on the WH-1000XM6 was confirmed there by [phedoreanu](https://github.com/phedoreanu) (pull request [#63](https://github.com/mos9527/SonyHeadphonesClient/pull/63)): thank you both. The new-device pop-up is inspired by the nearby-device cards of Google Fast Pair and Apple's AirPods setup (the idea only: Orbit uses plain BlueZ discovery, no vendor protocol). Device pictures come from [Wikimedia Commons](https://commons.wikimedia.org) and [Sketchfab](https://sketchfab.com) (free licenses only, each author is credited in the card): thank you to the photographers and 3D artists who share their work. Built on [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell) and [Quickshell](https://quickshell.org).
 
 ## License
 

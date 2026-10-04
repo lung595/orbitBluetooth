@@ -3,6 +3,22 @@
 All notable changes to Orbit Bluetooth are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Added
+
+- **Pause when you take the headset off** (Sony headsets with a wearing sensor, on by default). When the headset says both sides are off, what plays on it pauses; when it is worn again, Orbit resumes only the players it paused itself and that are still paused. It never starts music, ignores a player that plays elsewhere, and treats the first reading after a connection as a reference that pauses nothing. To hear it, Orbit keeps one control connection open to such a headset while it is connected (no polling, no timer; the headset reports by itself). The matching of a player to the headset is strict (names of the MPRIS player against names of the PipeWire streams that reach the headset), so it does nothing rather than pause the wrong player. Orbit never opens an audio stream or changes the output, so multipoint is untouched. Switch: *Settings → Headphones → Pause when you take the headset off*; check it with `dms ipc call orbitBluetooth wearStatus`. Other brands are not supported yet. The packets come from the MIT-licensed SonyHeadphonesClient and have not been confirmed on a headset of Orbit's own, see [the guide](docs/GUIDE.md#pause-when-you-take-the-headset-off).
+- **How long a conversation lasts** (Sony): a *Conversation ends* row (*Short*, *Standard*, *Long*, *Never*) in the headset's card, shown once the headset has said what it is set to, and `dms ipc call orbitBluetooth chatEnds standard`. The sensitivity of Speak-to-Chat is kept. Not yet confirmed on a headset of Orbit's own, see [the guide](docs/GUIDE.md#how-long-a-conversation-lasts).
+
+### Fixed
+
+- Switching *Noise control* off now closes the headset sessions that were open (a handler listened to a property that never changes).
+- A helper that cannot start (no Python 3, a crash at once) no longer risks being started again in a loop: a session reopens by itself only after one that reached a ready headset.
+
+### Changed
+
+- Internal: the Sony framing moved to `anc/protocols/sony_frame.py`; the extras (wearing, conversation length) live in `sony_extras.py`; the pause logic is `components/wear/` (`Wear.js` pure and tested, `WearPause.qml`, `WearHeadset.qml`, `HeadsetStreams.qml`).
+
 ## 1.13.3 - 2026-10-04
 
 ### Changed

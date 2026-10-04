@@ -10,7 +10,7 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 - [The two volumes](#the-two-volumes) · [Separate PC volume](#separate-pc-volume) · [Volume pop-up](#volume-pop-up) · [Smart volume steps](#smart-volume-steps) · [Volume keys](#volume-keys) · [What really plays](#what-really-plays)
 - [Earbuds: the trio](#earbuds-the-trio)
 - [Hiding devices: the black hole](#hiding-devices-the-black-hole)
-- [Noise control](#noise-control)
+- [Noise control](#noise-control) · [Pause when you take the headset off](#pause-when-you-take-the-headset-off) · [How long a conversation lasts](#how-long-a-conversation-lasts)
 - [Charging and battery](#charging-and-battery)
 - [New headphones pop-up](#new-headphones-pop-up)
 - [Pairing safety](#pairing-safety)
@@ -249,7 +249,7 @@ Untested brands follow their protocol documentation byte for byte and are covere
 
 QML cannot open a Bluetooth socket, so a small helper (`anc/orbit_anc.py`, Python standard library only) talks to the headset. The **Engine** setting decides when it runs:
 
-- **On demand** (default): only while an Orbit view is open, or for the second it takes to apply a command. Nothing runs once the view is closed.
+- **On demand** (default): only while an Orbit view is open, or for the second it takes to apply a command. Nothing runs once the view is closed, except the one connection that [pausing when you take the headset off](#pause-when-you-take-the-headset-off) keeps for a Sony headset (turn that option off and nothing does).
 - **Always connected**: one session per connected headset, so changes made with the headset's own buttons show up live (a small idle process).
 
 Noise control only talks to **paired** headsets: opening a channel to a device that is connected but not paired would make it drop and reconnect. Some headsets cannot report every mode (the WH-1000XM6 reads "noise cancelling" and "off" the same way); Orbit then keeps the last mode it set or saw.
@@ -257,6 +257,35 @@ Noise control only talks to **paired** headsets: opening a channel to a device t
 **Conversation awareness** (the *Conversation* chip) cannot be turned off once the headset is disconnected, so a headset could stay stuck in conversation mode. When you disconnect a headset from Orbit (drag away, menu, × button), Orbit first turns conversation awareness off, then disconnects (at most 4 s of waiting). It does the same about 2.5 s after any reconnection, which covers a headset switched off, out of range or disconnected from another app. The noise-control mode (noise cancelling, ambient, off) is never changed. Switch it off with **Headphones → Turn off conversation awareness on disconnect**; Orbit then never changes it by itself.
 
 **AirPods Max (including the Max 2): noise control does not work yet.** The headset does not answer the way AirPods 3 and 4 do. Orbit asks twice, then offers off / noise cancelling / ambient anyway (commands are sent blind), but this is unverified and may do nothing. To help decode it, run the shell with `ORBIT_ANC_DEBUG=1` and open an issue with the packets.
+
+### Pause when you take the headset off
+
+**Sony headsets with a wearing sensor** (the WH-1000XM6 and the other models that tell their app whether they are on your head): take the headset off and what plays on it pauses; put it back on and Orbit resumes it. It is **on by default**; the switch is **Settings → Headphones → Pause when you take the headset off**. It needs *Noise control* (they share the headset's control connection).
+
+What it does, exactly:
+
+- It pauses a media player only when the headset says **both sides are off**. One earcup or one bud, the case, or a code Orbit does not know changes nothing.
+- It pauses only the players whose sound goes **to that headset** at that moment. A player playing on your speakers is left alone.
+- When you put the headset back on, it resumes **only the players it paused itself**, and only if they are **still paused**. Music you stopped yourself, started again by hand, or that a new player took over is not touched, and Orbit **never starts music** that was not playing.
+- The **first reading** after the connection only tells Orbit how you wear the headset. A headset that connects while it is off your head pauses nothing.
+- If the headset disconnects while Orbit holds a pause, Orbit forgets it: nothing resumes later on its own. Turning the option off does the same.
+- Orbit talks to the player through MPRIS on the local D-Bus, as the media keys do. Nothing is written to disk and nothing is sent anywhere.
+
+**What it costs.** To hear that you took the headset off, Orbit keeps **one control connection open** to the headset, the one noise control uses, while the headset is connected and only if the headset reports a wearing sensor. There is no polling and no timer: the headset reports by itself, and the small helper process sleeps between reports. A Sony headset accepts **one control connection at a time**, so while this is on, the Sony app on your phone may not be able to reach the headset's settings: turn the option off to free the connection. The sound is not involved: Orbit never opens an audio stream, never changes the output, and multipoint audio is untouched.
+
+**Which player belongs to which headset.** A player is paused only when one of its names (desktop entry, MPRIS name, title) equals one of the names of an application whose stream goes to the headset in PipeWire (application name, program, id), compared in lower case without spaces or marks. This is strict on purpose: pausing the wrong player would be worse than pausing none. If a player names itself differently from its sound, nothing happens, and an issue with the player's name is welcome.
+
+**Other brands are not supported.** AirPods, Galaxy Buds, Bose, Nothing, Huawei and the rest report wearing in their own messages, which Orbit has no verified, freely licensed description of, so it does nothing for them rather than guess. See the [roadmap](../ROADMAP.md).
+
+**Checking it.** `dms ipc call orbitBluetooth wearStatus` tells what Orbit sees: `worn`, `removed` or `unclear` with the headset's raw code and the number of players it holds paused, or in words why nothing happens (option off, Noise control off, no Sony headset connected, waiting for the headset, headset not reachable, headset without a sensor). Orbit does not retry after a failure until the headset reconnects, so after *not reachable* (another app, such as the Sony app on a phone, holds the connection) free the connection and reconnect the headset.
+
+**Not yet confirmed on a real headset.** The messages come from the MIT-licensed [SonyHeadphonesClient](https://github.com/mos9527/SonyHeadphonesClient), where a contributor confirmed them on a WH-1000XM6; Orbit reimplements them and tests them with recorded packets, but has not yet confirmed them on a headset of its own.
+
+### How long a conversation lasts
+
+On **Sony** headsets the detail card shows a **Conversation ends** row (*Short*, *Standard*, *Long*, *Never*) under the noise-control modes: how long the headset waits in silence before Speak-to-Chat ends by itself and the music comes back, about 5, 15 and 30 seconds, or never (until you end it). The row appears once the headset has said what it is set to, and it keeps the sensitivity of Speak-to-Chat as it is. No extra connection is made: it uses the noise-control session. From a terminal: `dms ipc call orbitBluetooth chatEnds standard` (`short`, `standard`, `long` or `never`).
+
+**Samsung is not implemented**: the Galaxy Buds message is only described in a GPL-3.0 project, and Orbit is MIT and copies no code, see the [roadmap](../ROADMAP.md). Like the wearing sensor, the Sony message comes from SonyHeadphonesClient (MIT) and has not yet been confirmed on a headset of Orbit's own. If the row does not show, the headset did not answer that request, and nothing is sent.
 
 ## Charging and battery
 
@@ -393,6 +422,7 @@ Grouped in tabs: **Orbit** (with Reset), **Scanning**, **Headphones** (with devi
 | | Scan duration | 45 s | 20 s, 45 s, 90 s or *While open* ⚡ |
 | Headphones | Noise control | On | Supported headphones (needs Python 3) |
 | | Turn off conversation awareness on disconnect | On | Turns *Conversation* off before Orbit disconnects a headset, and after it reconnects |
+| | Pause when you take the headset off | On | Sony headsets with a wearing sensor, see [Pause when you take the headset off](#pause-when-you-take-the-headset-off); keeps one control connection open |
 | | Engine | On demand | *Always connected* ⚡ shows headset button presses live |
 | Sound | Separate PC volume | On | The device's level and this PC's, set apart, see [Separate PC volume](#separate-pc-volume) |
 | | Steps | Smart | Smart or Fixed, see [Smart volume steps](#smart-volume-steps) |
@@ -422,7 +452,7 @@ Three buttons at the end reset custom device icons, bring back every hidden devi
 - **No telemetry. No network access, except one opt-in feature, off by default**: [Real device pictures](#real-device-pictures), which sends only the model name of paired devices to `commons.wikimedia.org` and `api.sketchfab.com`.
 - **Background scan** (the new headphones pop-up, on by default): Bluetooth discovery for 8 s about once a minute, local only, under the conditions in [New headphones pop-up](#new-headphones-pop-up). Devices you *Ignore* are stored with the plugin settings.
 - **The two volumes** talk to the local sound server (PipeWire) only; the tick is a sound file shipped with Orbit, played with `pw-play`, and the picture of the sound is read locally with `cava`.
-- **One helper process**: the noise-control helper opens a local Bluetooth socket to your headset and nothing else, only while needed. `ORBIT_ANC_DEBUG=1` prints its raw packets on stderr; nothing is logged to a file.
+- **One helper process**: the noise-control helper opens a local Bluetooth socket to your headset and nothing else, only while needed: while a card is open, or, with [Pause when you take the headset off](#pause-when-you-take-the-headset-off) on, for as long as a Sony headset with a wearing sensor is connected. That option reads and pauses your media players through MPRIS on the local D-Bus; it keeps nothing and sends nothing. `ORBIT_ANC_DEBUG=1` prints its raw packets on stderr; nothing is logged to a file.
 - **Nothing written to disk by Orbit**, except the pictures cache of that opt-in feature (`~/.cache/orbitBluetooth/pictures`): connection times and battery history live in memory for the session.
 - **Files read**: only the sysfs `uevent` of kernel batteries, once each.
 - **Settings** (choices, custom icons, hidden devices) are stored by DMS with your other plugin settings.

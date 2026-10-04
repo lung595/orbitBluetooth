@@ -38,15 +38,17 @@ Tools: `gjs` (JS tests), Python 3 (helper and its tests), `ffmpeg` (GIFs), Qt 6 
 | Desktop | `OrbitBluetoothDesktop.qml` | Desktop widget, frozen until the pointer is over it |
 | Settings | `OrbitBluetoothSettings.qml` | Settings page |
 
-`components/` has one folder per feature: `scene/`, `device/`, `card/`, `volume/`, `pairing/`, `noise/` and `common/`. A file imports its neighbours directly and another feature's folder by path (`import "../card"`).
+`components/` has one folder per feature: `scene/`, `device/`, `card/`, `volume/`, `pairing/`, `noise/`, `wear/` and `common/`. A file imports its neighbours directly and another feature's folder by path (`import "../card"`).
 
 Every surface shows the same scene, `components/scene/OrbitScene.qml`. It only holds the state the parts share and wires them; each role has its own file, and the parts reach each other through the scene's functions (`scene.hideBody(b)`, `scene.ancSend(...)`), never through one another. The drag (`OrbitDrag`), hiding in the black hole (`OrbitHidden`), focus, rename and Escape (`OrbitFocus`), noise control (`OrbitAnc`), the daemon's data and clock (`OrbitDaemonData`) and the detail card's measures (`FocusLayout`) are each a short file; they open the cards (`card/FocusCard.qml`, `card/HiddenCard.qml`, `scene/OrbitMenu.qml`). `scene/OrbitPhysics.qml` moves every device (`device/DeviceBody.qml`) in one step per frame, with the maths in `scene/Physics.js` (pure, tested). What floats above the world (`pairing/OfferCard.qml`, `scene/ScanChip.qml`, `scene/AdapterNotice.qml`, the hint and the note) is grouped by `scene/OrbitChrome.qml`.
 
-Logic that can be tested lives in **pure `.js` files** with no QML: `card/Charge.js` (charge analysis), `card/Endurance.js` (rated battery life), `card/CardStatus.js` (the detail card's wording), `scene/Physics.js` (springs, slots, clearances), `noise/Anc.js` (noise-control decisions), `noise/AncSnapshot.js` (merging a headset's reports into one snapshot), `volume/Polar.js` (the scope's geometry and sound picture), `volume/Route.js`, `volume/Steps.js`, `volume/Keys.js` and `volume/Audiophile.js` (volumes and what plays), `common/Address.js` (the shapes of a Bluetooth address and of its BlueZ path, checked before any command), `device/Earbuds.js`, `device/DeviceCatalog.js` and `device/Glyphs.js` (icons).
+Logic that can be tested lives in **pure `.js` files** with no QML: `card/Charge.js` (charge analysis), `card/Endurance.js` (rated battery life), `card/CardStatus.js` (the detail card's wording), `scene/Physics.js` (springs, slots, clearances), `noise/Anc.js` (noise-control decisions), `noise/AncSnapshot.js` (merging a headset's reports into one snapshot), `wear/Wear.js` (what a wearing status means, which players to pause and which to resume, what `wearStatus` says), `volume/Polar.js` (the scope's geometry and sound picture), `volume/Route.js`, `volume/Steps.js`, `volume/Keys.js` and `volume/Audiophile.js` (volumes and what plays), `common/Address.js` (the shapes of a Bluetooth address and of its BlueZ path, checked before any command), `device/Earbuds.js`, `device/DeviceCatalog.js` and `device/Glyphs.js` (icons).
 
 **The volume scope** (detail card, pop-up, Dank Island) runs one `cava` and computes one picture for every screen that shows it: `volume/TwoLevels.qml` holds an output's two levels, its `ScopeFeed.qml` (cava, only while someone looks) and its `ScopeModel.qml` (points, rays or waves, moved by cava's frames, fading alone, then stopped). `PolarScope.qml` keeps the geometry, eases the levels and holds the picture; `PolarArcs.qml` draws the half circles, `PolarMoons.qml` the knobs, `PolarGestures.qml` takes the drag, wheel and mute click, and `PolarVisual.qml` only paints the shared picture at its own size.
 
-**Noise control** is the only part outside QML: QML cannot open a Bluetooth socket, so `components/noise/AncService.qml` runs `anc/orbit_anc.py`, which speaks each vendor protocol (`anc/protocols/`, one module per brand) through a JSON session on stdin/stdout. `anc/sdp.py` finds the RFCOMM channel.
+**Noise control** is the only part outside QML: QML cannot open a Bluetooth socket, so `components/noise/AncService.qml` runs `anc/orbit_anc.py`, which speaks each vendor protocol (`anc/protocols/`, one module per brand) through a JSON session on stdin/stdout. `anc/sdp.py` finds the RFCOMM channel. The Sony protocol is split by role: `sony_frame.py` (framing and checksum), `sony.py` (the handshake and noise control), `sony_extras.py` (the wearing sensor and the length of a conversation, from SonyHeadphonesClient, MIT).
+
+**Pause on removal** (`components/wear/`): `AncService` keeps one session open for a Sony headset that reports a wearing sensor (only while the setting is on); `WearPause.qml` follows the headsets whose snapshot says so, and one `WearHeadset.qml` per headset reads the status, asks `HeadsetStreams.qml` which applications play on it (PipeWire) and pauses or resumes the matching MPRIS players. All decisions are in `Wear.js`.
 
 **New headphones pop-up**: `components/pairing/NewDeviceWatch.qml` (in the daemon) drives the pop-up and pairing, with `BackgroundScan.qml` (the opt-in short scan), `OfferQueue.qml` (what to offer next, snoozes; `Offer.js`, pure) and `DemoDevice.qml` (the made-up headset of the demo) and `PairingFlow.qml` (the pairing steps: pair, check, connect, time-out); `NewDeviceWindow.qml` is its layer-shell window and `PairingSheet.qml` the sheet itself (two skins, colours from `Palette.js`), which `scripts/preview/sheet.qml` renders offscreen with six test palettes, or records frame by frame. Before a new device is trusted, `ProfileCheck.qml` reads its Bluetooth profiles with `busctl` and `Guard.js` (pure, tested) decides: a non-input device that can also send key presses stays blocked until the user confirms. Never trust a device from its name alone.
 
@@ -118,7 +120,9 @@ orbitBluetooth/
 │   │   ├── PairingStage.qml, PairingIdentity.qml, PairingMiddle.qml, PairingButton.qml, Light.qml  # device, name and subtitle, tiles/steps/quick actions, actions, round light
 │   │   └── OfferCard.qml        # the scene's pairing offer
 │   ├── noise/                   # noise control
-│   │   └── AncService.qml, AncPanel.qml, Anc.js, AncSnapshot.js
+│   │   └── AncService.qml, AncPanel.qml, ChatEnds.qml, Anc.js, AncSnapshot.js
+│   ├── wear/                    # pause on removal (Sony)
+│   │   └── WearPause.qml, WearHeadset.qml, HeadsetStreams.qml, Wear.js
 │   └── common/                  # shared by every feature
 │       ├── Prefs.qml            # settings, shared by every surface
 │       ├── OrbitIpc.qml         # the `dms ipc call orbitBluetooth` commands, one call each on the owning service
@@ -137,8 +141,8 @@ orbitBluetooth/
 ├── uninstall/
 │   ├── orbit_uninstall.py       # erases what DMS keeps once Orbit is removed
 │   └── tests/                   # unittest, on fake shell files
-├── tests/qml/                   # pop-up scenario, polar scope and audio facts tests, stubs for Quickshell/DMS
-├── tests/*.test.js, lib.js, run.sh  # gjs: one file per role (noise, battery, card, device, pairing, common, volume, audiophile, scene), the shared loader, the runner
+├── tests/qml/                   # pop-up scenario, polar scope, audio facts, control sessions and pause-on-removal tests, stubs for Quickshell/DMS
+├── tests/*.test.js, lib.js, run.sh  # gjs: one file per role (noise, wear, battery, card, device, pairing, common, volume, audiophile, scene), the shared loader, the runner
 ├── shaders/                     # .frag sources, compiled .qsb, build.sh
 ├── scripts/
 │   ├── gen_sounds.py            # synthesizes sounds/*.wav
@@ -154,7 +158,7 @@ orbitBluetooth/
 (cd anc && python3 -m unittest discover -s tests -t .)   # noise-control protocols
 (cd pictures && python3 -m unittest discover -s tests -t .)   # picture lookup, without network
 (cd uninstall && python3 -m unittest discover -s tests -t .)  # uninstall sweep, on fake shell files
-sh tests/qml/run.sh                                       # new-device pop-up scenario, polar scope, audio facts (Qt 6)
+sh tests/qml/run.sh                                       # new-device pop-up scenario, polar scope, audio facts, control sessions, pause on removal (Qt 6)
 sh tests/run.sh                                          # every pure .js module, one test file per role (or gjs tests/volume.test.js for one)
 ```
 
@@ -180,7 +184,7 @@ Orbit must cost nothing while nobody looks at it. Keep these rules when changing
 - **Display-synced frames only for gestures**, and only until the motion has calmed down.
 - **Paint backgrounds once** (stars, nebulae, veil); effects only move fixed geometry.
 - **Hidden means frozen**: the desktop orbit is asleep while windows fill its screen, even with *Ambient motion* on (`Cover.js`, pure, tested, reads niri's layout from DMS's `NiriService`).
-- **Run nothing while hidden**: discovery, polling and the noise-control helper only run while a view is open (the one exception is the new-device pop-up's 8 s background scan, with its battery and audio rules); everything pauses while the session is locked or the monitors are off.
+- **Run nothing while hidden**: discovery, polling and the noise-control helper only run while a view is open (the exceptions are the new-device pop-up's 8 s background scan, with its battery and audio rules, and the one idle control connection that *Pause when you take the headset off* keeps for a Sony headset with a wearing sensor: no timer, the headset reports by itself); everything pauses while the session is locked or the monitors are off.
 - **Load on demand**: the multimedia backend only when sounds are enabled.
 - **Honor DMS Reduce motion.**
 

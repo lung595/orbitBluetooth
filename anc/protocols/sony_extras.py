@@ -6,7 +6,7 @@
 Packet layouts come from mos9527/SonyHeadphonesClient (MIT; no code copied).
 The wearing flow was validated on a WH-1000XM6 (firmware 27.02) by phedoreanu's
 pull request #63 there. Nothing here has been run against a real headset by
-Orbit yet: see the "waiting for hardware" notes in docs/GUIDE.md.
+Orbit yet: see "Not yet confirmed on a real headset" in docs/GUIDE.md.
 
 Wearing, as the XM6 does it: it never pushes a table 2 notification on its
 own, but once the operation log is switched on it writes "unitRemove" and
