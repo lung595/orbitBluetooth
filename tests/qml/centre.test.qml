@@ -317,6 +317,12 @@ Item {
         check("a drag that changes nothing writes nothing, and keeps DMS's pop-up for itself only when it does", [near(route.shared.audio.volume, 0.61), SessionData.quiet - held], [true, 2]);
         shared.step(1);
         check("a wheel notch is one step", near(route.shared.audio.volume, 0.66), true);
+        const kept = route.shared.audio.volume;
+        const asked = SessionData.quiet;
+        shared.toggleMute();
+        check("the speaker mutes the group and keeps its level", [shared.muted, route.shared.audio.muted, route.copyOne.audio.muted, route.shared.audio.volume, SessionData.quiet], [true, true, true, kept, asked + 1]);
+        shared.toggleMute();
+        check("pressed again it lets the group speak", [shared.muted, route.shared.audio.muted, route.copyOne.audio.muted], [false, false, false]);
 
         check("split: the general level is the loudest's", [split.shared, split.level], [false, 0.5]);
         split.set(0.8);
@@ -345,6 +351,8 @@ Item {
         const level = route.shared.audio.volume;
         shared.set(0.2);
         check("no group: nothing is written", [shared.ready, route.shared.audio.volume], [false, level]);
+        shared.toggleMute();
+        check("no group: the speaker mutes nothing", route.shared.audio.muted, false);
     }
 
     // A step that throws must fail the test, not leave it waiting for ever

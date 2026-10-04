@@ -62,6 +62,16 @@ Item {
             set(Steps.apply(level, dir, route.stepFor(dir, level)));
     }
 
+    // The speaker on the ring: mutes the whole group, or lets it speak again,
+    // without moving any level
+    function toggleMute() {
+        if (!ready)
+            return;
+        SessionData.suppressOSDTemporarily();
+        const to = !muted;
+        nodes.forEach(n => route.writeMuted(n, to));
+    }
+
     // A member's own level: its Bluetooth device's, null when the device
     // follows this PC and has none
     function ownNode(address) {

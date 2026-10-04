@@ -97,6 +97,8 @@ eq("master: one member alone is the general level itself", round(V.scale([0.7], 
 eq("pointer: the ring reads 0 at the top and goes clockwise", [V.fromPointer(0, 0, 0, -10, 0.5), V.fromPointer(0, 0, 10, 0, 0.3), V.fromPointer(0, 0, 0, 10, 0.5), near(V.fromPointer(0, 0, -10, 0, 0.7))], [0, 0.25, 0.5, 0.75]);
 eq("pointer: crossing the top stops at the end instead of jumping to the other", [V.fromPointer(0, 0, -1, -10, 0.1), V.fromPointer(0, 0, 1, -10, 0.9)], [0, 1]);
 eq("pointer: with no reference (a fresh press) a click just left of the top reads near the end, just right near the start", [V.fromPointer(0, 0, -1, -10, NaN), V.fromPointer(0, 0, 1, -10, NaN)].map(v => Math.round(v * 100) / 100), [0.98, 0.02]);
+eq("speaker: crossed out when muted, whatever the level", [V.icon(0.8, true), V.icon(0, true)], ["volume_off", "volume_off"]);
+eq("speaker: empty at zero, one wave under half, two from half", [V.icon(0, false), V.icon(0.3, false), V.icon(0.49, false), V.icon(0.5, false), V.icon(1, false)], ["volume_mute", "volume_down", "volume_down", "volume_up", "volume_up"]);
 
 // --- the name under the centre --------------------------------------------------
 for (const [what, scene] of [["bar popout", g], ["small scene", small]]) {

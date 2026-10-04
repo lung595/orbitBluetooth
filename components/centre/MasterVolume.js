@@ -40,3 +40,11 @@ function fromPointer(cx, cy, x, y, last) {
         return 0;
     return v;
 }
+
+// The speaker that goes with the general level: crossed out when the group is
+// muted, empty at zero, then one wave and two (Material's glyph names)
+function icon(level, muted) {
+    if (muted)
+        return "volume_off";
+    return level > 0 ? (level < 0.5 ? "volume_down" : "volume_up") : "volume_mute";
+}

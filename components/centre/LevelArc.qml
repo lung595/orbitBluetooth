@@ -2,7 +2,8 @@ import QtQuick
 import QtQuick.Shapes
 
 // A level drawn as an arc that starts at the top and runs clockwise, over a
-// faint full circle. Static art: it is redrawn only when the level changes.
+// faint full circle, with an optional round thumb at its end. Static art: it
+// is redrawn only when the level changes.
 Shape {
     id: arc
 
@@ -12,6 +13,9 @@ Shape {
     property real lineWidth: 2
     property color trackColor: "transparent"
     property color levelColor: "white"
+    // The thumb's diameter in px (0: none) and color
+    property real thumbSize: 0
+    property color thumbColor: levelColor
 
     width: radius * 2 + lineWidth * 2
     height: width
@@ -44,5 +48,19 @@ Shape {
             startAngle: -90
             sweepAngle: 359.9 * Math.min(1, arc.level)
         }
+    }
+
+    // Sits on the end of the arc, so it follows the level with no animation
+    Rectangle {
+        // Where the arc ends, in radians from the right, as the arc is drawn
+        readonly property real turn: (-90 + 359.9 * Math.min(1, arc.level)) * Math.PI / 180
+
+        visible: arc.thumbSize > 0
+        width: arc.thumbSize
+        height: width
+        radius: width / 2
+        color: arc.thumbColor
+        x: arc.width / 2 + Math.cos(turn) * arc.radius - width / 2
+        y: arc.height / 2 + Math.sin(turn) * arc.radius - height / 2
     }
 }
