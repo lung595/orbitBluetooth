@@ -149,6 +149,9 @@ Window {
 
     // How long the staged scene needs to settle before the capture (ms)
     function settleTime() {
+        // The audio details: after the made-up graph answer (4000 + 1200 ms)
+        if (facts)
+            return 6200;
         if (mode.startsWith("buds"))
             return 2600;
         if (mode === "volumefocus")
@@ -198,7 +201,21 @@ Window {
                 facts._all = State.fakeSinks;
             const line = win.findNamed(win.contentItem, "factsLine");
             if (line)
-                line.expanded = win.facts;
+                line.source.unfolded = win.facts;
+            graphTimer.start();
+        }
+    }
+    // The graph's answer, made up, once the real (read-only) commands that
+    // unfolding started have ended: they would replace it
+    Timer {
+        id: graphTimer
+        interval: 1200
+        onTriggered: {
+            const graph = win.findNamed(win.contentItem, "audioGraph");
+            if (graph) {
+                graph._dumped = State.fakeDump;
+                graph._topped = State.fakeTop;
+            }
         }
     }
     Timer {

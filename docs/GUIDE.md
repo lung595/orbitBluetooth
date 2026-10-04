@@ -191,10 +191,34 @@ Under the device's name on its card, and at the foot of the volume pop-up (cente
 - **Connection**: *Bluetooth*, *USB*, *HDMI*, *S/PDIF* (optical or coaxial) or *Analog*.
 - **Codec**: for Bluetooth, the one in use (SBC, SBC-XQ, AAC, aptX, aptX HD, aptX Adaptive, LDAC, LC3...). Wired outputs have none.
 - **Sample rate and bit depth**: what PipeWire plays. For Bluetooth the depth is the codec's (24 bit for LDAC, 16 for SBC); for a wired output it is the format PipeWire sends to the card.
-- **The info button** next to the line unfolds the details: the same facts with their names, the **channels**, and **PC to device**, a note such as *Resampled 48 kHz to 96 kHz* when this PC mixes at one rate and the device plays at another (it appears only for a device with the [separate PC volume](#separate-pc-volume)).
+- **The info button** next to the line unfolds the details: the same facts with their names, the **profile**, **bit rate**, **channels**, **latency**, **quantum**, and **PC to device**, a note such as *Resampled 48 kHz to 96 kHz* when this PC mixes at one rate and the device plays at another (it appears only for a device with the [separate PC volume](#separate-pc-volume)).
 - **Choose what shows**: **Settings → Sound → Audio details** has two switches per fact, *on the line* and *more info*. Turn every one off and Orbit reads nothing.
 
-It is read from PipeWire (`pactl list sinks`) once when the card or pop-up appears, and again when you click the info button; nothing runs while they are closed, and nothing is sent anywhere. If the line is missing, the output is not known to PipeWire yet (a headset takes a second to appear after it connects) or `pactl` is not installed (it comes with `pipewire-pulse`).
+It is read from PipeWire (`pactl list sinks`) once when the card or pop-up appears, and again when you click the info button; the graph facts (bit rate, latency, quantum) are read only while the details are unfolded, or while their *on the line* switch is on. Nothing runs while they are closed, and nothing is sent anywhere. If the line is missing, the output is not known to PipeWire yet (a headset takes a second to appear after it connects) or `pactl` is not installed (it comes with `pipewire-pulse`).
+
+### Profile
+
+The Bluetooth profile the headset is in, as BlueZ reports it: *A2DP* (stereo music, the one you want to listen to) or *HSP/HFP* (a call, with a microphone and a poor sound). Wired outputs have none. If a headset sits in *HSP/HFP* while you play music, switch it back to *A2DP* in your sound settings.
+
+### Bit rate
+
+The rate the Bluetooth codec sends, in kilobits per second, for the codecs where it is **known** and not guessed:
+
+> 990 kbps
+
+- **LDAC**: 990, 660 or 330 kbps at 48 or 96 kHz (909, 606 or 303 at 44.1 or 88.2 kHz), the quality PipeWire is set to. When it is on *Auto*, Orbit shows the range (*Adaptive, 330 to 990 kbps*), because the real rate moves with the radio and nothing on the PC tells which one you have.
+- **aptX** and **aptX HD**: always four to one, so Orbit computes it from the sample rate and channels (352 kbps for aptX at 44.1 kHz stereo, 576 for aptX HD at 48 kHz).
+- **SBC, SBC-XQ, AAC and the rest**: no line. Their rate is chosen by the headset and is not published, so Orbit shows nothing rather than a number it would have made up.
+
+### Latency
+
+The delay PipeWire adds to the Bluetooth device, as the sound server reports it (*185 ms*). It is the part the PC knows about (the codec's buffer); the headset adds its own delay that no PC can read. It matters for films: a high value means lips and voices drift apart, and most players have an audio-delay setting to fix it. Wired outputs show nothing.
+
+### Quantum
+
+The size of the audio buffer PipeWire works in, in samples and milliseconds (*1024 samples (11 ms)*). A smaller quantum answers faster and costs more power. It is read from `pw-top`, which only lists outputs that are playing **right now**: pause the sound and the line is empty.
+
+All four are read through `pw-dump` and `pw-top` (they come with PipeWire), only when you unfold the details or switch the fact on for the line, once per opening, and then Orbit lets go. If `pw-dump` or `pw-top` is not installed, only these lines go missing.
 
 ## Earbuds: the trio
 
