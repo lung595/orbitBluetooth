@@ -3,14 +3,17 @@ import "components/volume"
 
 // Test of DmsOsdOff: while active, a stand-in for DMS's settings reads
 // "volume OSD off"; when it ends, or the owner goes (plugin off), DMS's own
-// value is back. Nothing is ever written for good by the plugin (value 12,
-// D273). Run with tests/qml/run.sh.
+// value is back. While DMS saves its settings the switch is let go, so that
+// the forced value is never written to disk (P143). Nothing is ever written
+// for good by the plugin (value 12, D273). Run with tests/qml/run.sh.
 Item {
     id: h
 
     QtObject {
         id: dms
         property bool osdVolumeEnabled: true
+        // DMS's flag, raised for the instant of a save
+        property bool _selfWrite: false
     }
     DmsOsdOff {
         id: off
@@ -52,6 +55,14 @@ Item {
             "run": () => {
                 off.active = true;
                 check("active: DMS's volume OSD is off", dms.osdVolumeEnabled, false);
+            }
+        },
+        {
+            "run": () => {
+                dms._selfWrite = true;
+                check("a save in progress sees DMS's own value", dms.osdVolumeEnabled, true);
+                dms._selfWrite = false;
+                check("and the switch is back once the save is seen", dms.osdVolumeEnabled, false);
             }
         },
         {
