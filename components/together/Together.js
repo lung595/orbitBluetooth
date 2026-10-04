@@ -1,14 +1,16 @@
 .pragma library
 .import "../common/Address.js" as Address
 .import "../volume/Route.js" as Route
+.import "Member.js" as Member
 
-// Pure logic of Listen together (D254, D277): the same sound on several
-// Bluetooth outputs at once. Who may take part, which member the sound is
-// taken from, and the pw-loopback that copies it to each of the others.
-// Tested by tests/together.test.js.
+// Pure logic of Listen together (D254, D277, D298): the same sound on several
+// outputs at once, Bluetooth or wired. Who may take part, which member the
+// sound is taken from, and the pw-loopback that copies it to each of the
+// others. Tested by tests/together.test.js.
 //
 // A session is a list of 2 to MAX_MEMBERS outputs ("members", in the order
-// they joined). The sound is taken from one of them (the source) and copied
+// they joined), each one a token of Member.js: a Bluetooth address or the
+// node name of a wired (ALSA) output. A session can mix both. The sound is taken from one of them (the source) and copied
 // to every other by its own pw-loopback, run through Route.loopbackArgs so
 // that it dies with the shell. Both ends of a copy are passive and never fall
 // back to another sink: nothing is opened when nothing plays, so a member's
@@ -26,9 +28,19 @@ var MAX_DELAY_MS = 500;
 // Node names Orbit gives the two ends of a copy, followed by the member's key
 var NAME = "orbit_together_";
 
-// "AA:BB:CC:DD:EE:FF" -> the address, or "" when it is anything else
+// The longest text of a command line that can hold the members of a session
+var MAX_LIST_LENGTH = MAX_MEMBERS * (Member.MAX_LENGTH + 1);
+
+// "AA:BB:CC:DD:EE:FF" -> the address, or "" when it is anything else (a wired
+// output is not an address: see member)
 function address(text) {
     return Address.colon(typeof text === "string" && text.length <= 17 ? text : "");
+}
+
+// A member of a session, Bluetooth or wired: its token, or "" for anything
+// else. The one way every function below reads a member.
+function member(text) {
+    return Member.clean(text);
 }
 
 // A headset link made for calls (HSP/HFP) is mono and narrow: not worth sharing.
@@ -38,32 +50,41 @@ function inCall(profile) {
 }
 
 // --- Who may take part -------------------------------------------------------------
-// `known(address)` gives { connected, sink, profile } for a device Orbit sees
-// (sink is its output's node name, "" while it has none), or null. Every
-// refusal is { why, address }; why is one of "bad-address", "same",
+// `known(member)` gives { connected, sink, profile } for an output Orbit sees
+// (sink is its output's node name, "" while it has none), or null. For a wired
+// output "connected" means plugged in, and a call profile never applies.
+// Every refusal is { why, address } (address is the member's token); why is
+// one of "bad-address" (also for a name that is not a wired output's), "same",
 // "too-few", "too-many", "already", "not-connected", "no-audio", "in-call".
 
-// One device that is to take part: connected, with a Bluetooth output, not in
-// its call profile. null when it can.
+// One output that is to take part: there, with an output of its own kind (a
+// BlueZ sink for a Bluetooth device, an ALSA one for a wired output), and a
+// Bluetooth device not in its call profile. null when it can.
 function memberRefusal(who, known) {
     const d = known(who);
     if (!d || !d.connected)
         return { "why": "not-connected", "address": who };
-    if (!d.sink || !Route.isDeviceSink(d.sink))
+    if (!d.sink || !fits(who, d.sink))
         return { "why": "no-audio", "address": who };
-    if (inCall(d.profile))
+    if (!Member.isWired(who) && inCall(d.profile))
         return { "why": "in-call", "address": who };
     return null;
 }
 
-// The addresses of `list` in order, without a repeat; null when one is not
-// an address (the first refusal is then { bad-address })
+// Whether `sink` is the kind of output a member is: a BlueZ output for a
+// Bluetooth device, an ALSA one for a wired output
+function fits(who, sink) {
+    return Member.isWired(who) ? Member.isWired(sink) : Route.isDeviceSink(sink);
+}
+
+// The members of `list` in order, without a repeat; null when one is not a
+// member (the first refusal is then { bad-address })
 function clean(list) {
     if (!Array.isArray(list) || list.length > 16)
         return null;
     const out = [];
     for (const item of list) {
-        const a = address(item);
+        const a = member(item);
         if (!a)
             return null;
         out.push(a);
@@ -121,9 +142,9 @@ function joinRefusal(members, newcomers, known) {
 // already in comes first, then the newcomers in the order given
 function merge(members, first, second) {
     const out = members.slice();
-    const pair = members.indexOf(address(first)) < 0 && members.indexOf(address(second)) >= 0 ? [second, first] : [first, second];
+    const pair = members.indexOf(member(first)) < 0 && members.indexOf(member(second)) >= 0 ? [second, first] : [first, second];
     for (const item of pair) {
-        const a = address(item);
+        const a = member(item);
         if (a && out.indexOf(a) < 0)
             out.push(a);
     }
@@ -132,15 +153,16 @@ function merge(members, first, second) {
 
 // The members after `who` left
 function without(members, who) {
-    return members.filter(a => a !== address(who));
+    return members.filter(a => a !== member(who));
 }
 
 // --- Where the sound comes from ----------------------------------------------------------
-// `sound(address)` gives { sink, pc, profile }: node names ("" when none),
-// null for a device Orbit does not see. A member can be copied to when it has
-// a Bluetooth output that is not in its call profile.
-function present(s) {
-    return !!s && Route.isDeviceSink(s.sink) && !inCall(s.profile);
+// `sound(member)` gives { sink, pc, profile }: node names ("" when none),
+// null for an output Orbit does not see. A member can be copied to when it has
+// an output of its own kind (see fits), and a Bluetooth one is not in its call
+// profile.
+function present(who, s) {
+    return !!s && fits(who, s.sink) && (Member.isWired(who) || !inCall(s.profile));
 }
 
 // The member the sound is taken from: the one that is the current output
@@ -151,24 +173,26 @@ function source(members, sound, defaultSink) {
         const s = sound(who);
         return !!defaultSink && !!s && (s.sink === defaultSink || s.pc === defaultSink);
     };
-    return members.find(a => present(sound(a)) && inUse(a)) || members.find(a => present(sound(a))) || members[0] || "";
+    const there = a => present(a, sound(a));
+    return members.find(a => there(a) && inUse(a)) || members.find(there) || members[0] || "";
 }
 
 // What each copy takes and gives: { source, taps: [{ member, capture,
 // playback }] }, one tap per other member whose output is there. The capture
 // is the source's PC-level filter when it has one (its monitor is the sound
 // before this PC's level, which every member applies itself: the level is
-// shared, D254), else its sink; the playback is the member's own sink, where
-// WirePlumber puts that member's filter in front, if it has one.
+// shared, D254), else its sink (a wired source has no filter, only its sink);
+// the playback is the member's own sink, where WirePlumber puts that member's
+// filter in front, if it has one.
 function plan(members, sound, defaultSink) {
     const from = source(members, sound, defaultSink);
     const s = from ? sound(from) : null;
-    const capture = s && present(s) ? s.pc || s.sink : "";
+    const capture = s && present(from, s) ? s.pc || s.sink : "";
     const taps = [];
     if (capture)
         for (const who of members) {
             const t = sound(who);
-            if (who !== from && present(t))
+            if (who !== from && present(who, t))
                 taps.push({ "member": who, "capture": capture, "playback": t.sink });
         }
     return { "source": from, "taps": taps };
@@ -187,12 +211,19 @@ function delayArg(ms) {
     return n > 0 ? (n / 1000).toFixed(3) : "";
 }
 
-// The command of one copy, or null when a node name is not one of Orbit's or
-// BlueZ's (value 11): the capture is a device output or an Orbit PC-level
-// filter, the playback a device output.
+// A node name a copy may read from or play to: a Bluetooth output or a wired
+// one, checked as a member's sink is (value 11)
+function isOutput(name) {
+    return Route.isDeviceSink(name) || Member.isWired(name);
+}
+
+// The command of one copy, or null when a node name is not one of Orbit's,
+// BlueZ's or a valid ALSA output's (value 11): the capture is an output or an
+// Orbit PC-level filter, the playback an output, and never the same one (a
+// copy of an output to itself would feed back).
 function args(tap, delayMs) {
-    const key = tap ? Address.key(tap.member) : "";
-    if (!key || !(Route.isVirtual(tap.capture) || Route.isDeviceSink(tap.capture)) || !Route.isDeviceSink(tap.playback))
+    const key = tap ? Member.key(tap.member) : "";
+    if (!key || !(Route.isVirtual(tap.capture) || isOutput(tap.capture)) || !isOutput(tap.playback) || tap.capture === tap.playback)
         return null;
     const stream = " node.passive=true node.dont-fallback=true";
     const capture = "node.name=" + NAME + key + "_in target.object=" + tap.capture + " stream.capture.sink=true" + stream;
@@ -201,7 +232,7 @@ function args(tap, delayMs) {
 }
 
 // The copies to run: [{ key (the member), command }] for a plan and the
-// delays of the members ({ address: ms })
+// delays of the members ({ member: ms })
 function commands(p, delays) {
     const out = [];
     for (const tap of p ? p.taps : []) {
@@ -228,7 +259,7 @@ function diff(running, wanted) {
     return { "stop": stop, "start": start };
 }
 
-// The delays of `delays` ({ address: ms }) that belong to a member of
+// The delays of `delays` ({ member: ms }) that belong to a member of
 // `members`: a member that left takes its delay with it
 function prune(delays, members) {
     const next = {};
@@ -240,7 +271,7 @@ function prune(delays, members) {
 
 // The delays after `ms` was asked for `who` (a member of `members`)
 function withDelay(delays, members, who, ms) {
-    const a = address(who);
+    const a = member(who);
     const next = prune(delays, members);
     if (a && members.indexOf(a) >= 0) {
         const n = cleanDelay(ms);
@@ -252,10 +283,10 @@ function withDelay(delays, members, who, ms) {
     return next;
 }
 
-// The addresses of a text from the command line ("A,B C"): split on commas and
-// spaces. [] for anything too long to be a list of Bluetooth addresses.
+// The members of a text from the command line ("A,B C"): split on commas and
+// spaces. [] for anything too long to be a list of members.
 function parseList(text) {
-    const s = typeof text === "string" && text.length <= 200 ? text.trim() : "";
+    const s = typeof text === "string" && text.length <= MAX_LIST_LENGTH ? text.trim() : "";
     return s ? s.split(/[\s,]+/) : [];
 }
 

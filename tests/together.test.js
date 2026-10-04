@@ -136,6 +136,123 @@ eq("an injected text stays one bad item", Together.refusal(Together.parseList(XM
 eq("no session", JSON.parse(Together.status(null)), { "active": false, "members": [], "from": "", "delaysMs": {} });
 eq("a session", JSON.parse(Together.status({ "members": [XM, AV, SP1], "source": XM, "delays": { [AV]: 40 } })), { "active": true, "members": [XM, AV, SP1], "from": XM, "delaysMs": { [AV]: 40 } });
 
+// --- Wired members (D298): a session can hold wired outputs, alone or beside Bluetooth ones ------------
+// Made-up wired outputs: a USB headset, an audio interface, an unplugged one, one with no sink
+const W1 = "alsa_output.usb-Acme_Demo_Headset-00.analog-stereo", W2 = "alsa_output.usb-Acme_Studio_Interface_0000-00.HiFi__Line__sink";
+const W3 = "alsa_output.pci-0000_00_00.0.analog-stereo", WOFF = "alsa_output.usb-Acme_Unplugged-00.analog-stereo", WMUTE = "alsa_output.usb-Acme_Silent-00.analog-stereo";
+const wired = { "connected": true, "sink": "", "profile": "" };
+const wiredDevices = {
+    [W1]: { ...wired, "sink": W1 }, [W2]: { ...wired, "sink": W2 }, [W3]: { ...wired, "sink": W3 },
+    [WOFF]: { "connected": false, "sink": "", "profile": "" },
+    [WMUTE]: wired
+};
+const knownAll = a => devices[a] || wiredDevices[a] || null;
+const whyAll = list => (Together.refusal(list, knownAll) || {}).why || "";
+// What Orbit sees when one member's output is not what it should be
+const withSink = (who, sink, profile) => a => a === who ? { "connected": true, "sink": sink, "profile": profile || "" } : knownAll(a);
+const joinWhyAll = (members, newcomers) => (Together.joinRefusal(members, newcomers, knownAll) || {}).why || "";
+
+eq("two wired outputs may", whyAll([W1, W2]), "");
+eq("a wired output and a Bluetooth one may", [whyAll([W1, XM]), whyAll([XM, W1]), whyAll([XM, W1, W2, AV])], ["", "", ""]);
+eq("the cap is four, wired or not", [whyAll([W1, W2, W3, XM]), whyAll([W1, W2, W3, XM, AV])], ["", "too-many"]);
+eq("the same wired output twice", Together.refusal([W1, XM, W1], knownAll), { "why": "same", "address": W1 });
+eq("a wired output that is not plugged in", Together.refusal([XM, WOFF], knownAll), { "why": "not-connected", "address": WOFF });
+eq("a wired output Orbit does not see", whyAll([XM, "alsa_output.usb-Acme_Nowhere-00.analog-stereo"]), "not-connected");
+eq("a wired output with no sink", Together.refusal([XM, WMUTE], knownAll), { "why": "no-audio", "address": WMUTE });
+eq("a wired output whose sink is a Bluetooth one, or is not a sink name", [Together.refusal([XM, W1], withSink(W1, sinkOf(AV))).why, Together.refusal([XM, W1], withSink(W1, "alsa_output.x; y")).why], ["no-audio", "no-audio"]);
+eq("a Bluetooth device with a wired sink is no Bluetooth output", Together.refusal([XM, AV], withSink(AV, W1)), { "why": "no-audio", "address": AV });
+eq("a wired output has no call profile, whatever the profile says", Together.refusal([XM, W1], withSink(W1, W1, "headset-head-unit")), null);
+eq("a Bluetooth device in a call is still refused beside a wired one", Together.refusal([W1, CALL], knownAll), { "why": "in-call", "address": CALL });
+eq("a name that is not an address or a wired output", [whyAll([W1, "x"]), whyAll([W1, "alsa_output.x; rm -rf"]), whyAll([W1, "alsa_output.a..b"]), whyAll([W1, "alsa_output.has space"]), whyAll([W1, "alsa_output." + "a".repeat(300)]), whyAll([W1, "alsa_input.usb-x"]), whyAll([W1, "bluez_output.AA_BB_CC_DD_EE_02.1"]), whyAll([W1, "alsa_output."])], ["bad-address", "bad-address", "bad-address", "bad-address", "bad-address", "bad-address", "bad-address", "bad-address"]);
+eq("wired members: too few", whyAll([W1]), "too-few");
+eq("the injected name is never asked about", (() => { const asked = []; Together.refusal([XM, "alsa_output.x; rm -rf"], a => { asked.push(a); return knownAll(a); }); return asked; })(), []);
+
+eq("a wired output joins a session", joinWhyAll([XM, AV], [W1]), "");
+eq("a Bluetooth device joins wired members", joinWhyAll([W1, W2], [XM]), "");
+eq("a wired member is already in", Together.joinRefusal([XM, W1], [W1], knownAll), { "why": "already", "address": W1 });
+eq("the same wired newcomer twice", joinWhyAll([XM, AV], [W1, W1]), "same");
+eq("a fifth member is refused whatever it is", joinWhyAll([XM, AV, W1, W2], [W3]), "too-many");
+eq("a newcomer that is not plugged in or has no sink", [joinWhyAll([XM, AV], [WOFF]), joinWhyAll([XM, AV], [WMUTE])], ["not-connected", "no-audio"]);
+eq("a bad newcomer", joinWhyAll([XM, AV], ["alsa_output.x y"]), "bad-address");
+eq("a wired member that is unplugged does not block a join (it stays a member)", joinWhyAll([XM, WOFF], [W1]), "");
+
+eq("member helper", [Together.member(W1), Together.member(XM.toLowerCase()), Together.member("alsa_output.x; y"), Together.member(5)], [W1, XM, "", ""]);
+eq("the address helper stays Bluetooth only", [Together.address(W1), Together.address(XM)], ["", XM]);
+eq("a drop joins a wired output to a Bluetooth one, either order", [Together.merge([XM, AV], W1, AV), Together.merge([XM, AV], AV, W1), Together.merge([], W1, XM), Together.merge([XM, W1], W1, XM)], [[XM, AV, W1], [XM, AV, W1], [W1, XM], [XM, W1]]);
+eq("a bad drop adds nothing", Together.merge([XM, AV], "alsa_output.x; y", W1), [XM, AV, W1]);
+eq("a wired member leaves", [Together.without([XM, W1, AV], W1), Together.without([XM, W1], "alsa_output.x; y")], [[XM, AV], [XM, W1]]);
+
+// The sounds: XM has a PC-level filter, wired outputs never do
+const soundAll = a => devices[a] ? sound(a) : wiredDevices[a] && wiredDevices[a].sink ? { "sink": wiredDevices[a].sink, "pc": "", "profile": "" } : null;
+const pw = Together.plan([XM, W1, AV], soundAll, filter(XM));
+eq("a Bluetooth source is copied to a wired output and to a Bluetooth one", pw, {
+    "source": XM,
+    "taps": [
+        { "member": W1, "capture": filter(XM), "playback": W1 },
+        { "member": AV, "capture": filter(XM), "playback": sinkOf(AV) }
+    ]
+});
+const pwSrc = Together.plan([XM, W1, AV], soundAll, W1);
+eq("the wired default output is the source: it copies its own sink, no filter", pwSrc, {
+    "source": W1,
+    "taps": [
+        { "member": XM, "capture": W1, "playback": sinkOf(XM) },
+        { "member": AV, "capture": W1, "playback": sinkOf(AV) }
+    ]
+});
+eq("two wired outputs, the second one in use", Together.plan([W1, W2], soundAll, W2), { "source": W2, "taps": [{ "member": W1, "capture": W2, "playback": W1 }] });
+eq("none in use: the first member, wired or not", [Together.plan([W1, XM], soundAll, "alsa_output.pci-0000").source, Together.plan([XM, W1], soundAll, "").source], [W1, XM]);
+eq("an unplugged or silent wired member has no copy and stays in the session", Together.plan([XM, WOFF, WMUTE, W1], soundAll, filter(XM)).taps.map(t => t.member), [W1]);
+eq("the source's own output away: the next member with an output is the source", Together.plan([WOFF, W1, XM], soundAll, "").source, W1);
+const soundWith = (who, sink, profile) => a => a === who ? { "sink": sink, "pc": "", "profile": profile || "" } : soundAll(a);
+eq("a wired member whose sink is a Bluetooth one has no copy", Together.plan([XM, W1], soundWith(W1, sinkOf(AV)), filter(XM)).taps, []);
+eq("a Bluetooth member whose sink is a wired one has no copy", Together.plan([XM, AV], soundWith(AV, W1), filter(XM)).taps, []);
+eq("a Bluetooth member in a call has no copy beside a wired source", Together.plan([W1, CALL], soundAll, W1).taps, []);
+eq("a wired member never counts as in a call, whatever the profile says", Together.plan([XM, W1], soundWith(W1, W1, "headset-head-unit"), filter(XM)).taps.map(t => t.member), [W1]);
+
+// The commands of copies that touch a wired output
+const wcmd = Together.args(pw.taps[0], 0);
+eq("a copy to a wired output: bash, positional parameters, six items", [wcmd.slice(0, 2), wcmd[3], wcmd.length], [["bash", "-c"], "orbit", 6]);
+eq("the wired playback targets its sink, passive, never falls back", [wcmd[5].indexOf("target.object=" + W1 + " ") >= 0, /node\.passive=true node\.dont-fallback=true/.test(wcmd[5]), /state\.restore-props=false/.test(wcmd[5])], [true, true, true]);
+eq("the wired copy has node names of its own, safe in a property string", [/^node\.name=orbit_together_w_usb_acme_demo_he_[0-9a-f]{16}_in target\.object=orbit_pc_AA_BB_CC_DD_EE_01 /.test(wcmd[4]), /^node\.name=orbit_together_w_usb_acme_demo_he_[0-9a-f]{16}_out target\.object=/.test(wcmd[5])], [true, true]);
+eq("the script has no data in it", /usb|alsa|AA_BB/.test(wcmd[2]), false);
+eq("no node name has a character that splits a property string", wcmd.slice(4).every(s => !/["'{},;$`\\]/.test(s)), true);
+eq("a wired capture is accepted: a wired source", Together.args(pwSrc.taps[0], 0)[4].indexOf("target.object=" + W1 + " ") >= 0, true);
+eq("a copy between two wired outputs", Together.args({ "member": W1, "capture": W2, "playback": W1 }, 0) !== null, true);
+eq("a wired delay goes in as the third parameter", Together.args(pw.taps[0], 175)[6], "0.175");
+eq("a Bluetooth copy keeps its old key and node names", [/node\.name=orbit_together_AA_BB_CC_DD_EE_02_in /.test(Together.args(pw.taps[1], 0)[4]), /node\.name=orbit_together_AA_BB_CC_DD_EE_02_out /.test(Together.args(pw.taps[1], 0)[5])], [true, true]);
+eq("two wired outputs never share node names", Together.args({ "member": W1, "capture": W3, "playback": W1 }, 0)[4].split(" ")[0] !== Together.args({ "member": W2, "capture": W3, "playback": W2 }, 0)[4].split(" ")[0], true);
+eq("an injected or malformed name: no command", [
+    Together.args({ "member": W1, "capture": filter(XM), "playback": "alsa_output.x; rm -rf" }),
+    Together.args({ "member": W1, "capture": "alsa_output.x y", "playback": W1 }),
+    Together.args({ "member": W1, "capture": "alsa_output.a..b", "playback": W1 }),
+    Together.args({ "member": W1, "capture": filter(XM), "playback": "alsa_output." + "a".repeat(200) }),
+    Together.args({ "member": W1, "capture": filter(XM), "playback": "alsa_output.x\"y" }),
+    Together.args({ "member": W1, "capture": filter(XM), "playback": "alsa_input.usb-x" }),
+    Together.args({ "member": "alsa_output.x; rm -rf", "capture": filter(XM), "playback": W1 }),
+    Together.args({ "member": "alsa_output.", "capture": filter(XM), "playback": W1 }),
+    Together.args({ "member": W1, "capture": "--help", "playback": W1 })
+], [null, null, null, null, null, null, null, null, null]);
+eq("a copy of an output to itself would feed back: no command", [Together.args({ "member": W1, "capture": W1, "playback": W1 }), Together.args({ "member": AV, "capture": sinkOf(AV), "playback": sinkOf(AV) })], [null, null]);
+
+const wcmds = Together.commands(pw, { [W1]: 175, [AV]: 40 });
+eq("one command per copy, keyed by the wired or Bluetooth member, with its own delay", [wcmds.map(c => c.key), wcmds[0].command[6], wcmds[1].command[6]], [[W1, AV], "0.175", "0.040"]);
+const wrunning = {};
+wcmds.forEach(c => { wrunning[c.key] = c.command; });
+eq("nothing changed with a wired member: nothing to do", Together.diff(wrunning, wcmds), { "stop": [], "start": [] });
+eq("a wired newcomer starts one copy and cuts none", [Together.diff(wrunning, Together.commands(Together.plan([XM, W1, AV, W2], soundAll, filter(XM)), { [W1]: 175, [AV]: 40 })).stop, Together.diff(wrunning, Together.commands(Together.plan([XM, W1, AV, W2], soundAll, filter(XM)), { [W1]: 175, [AV]: 40 })).start.map(w => w.key)], [[], [W2]]);
+eq("a new delay restarts the wired copy only", [Together.diff(wrunning, Together.commands(pw, { [W1]: 190, [AV]: 40 })).stop, Together.diff(wrunning, Together.commands(pw, { [W1]: 190, [AV]: 40 })).start.map(w => w.key)], [[W1], [W1]]);
+eq("a wired member that leaves stops its copy only", Together.diff(wrunning, wcmds.slice(1)).stop, [W1]);
+
+eq("delays of a wired member", [Together.withDelay({}, [XM, W1], W1, 120), Together.withDelay({ [W1]: 120 }, [XM, W1], W1, 0), Together.withDelay({}, [XM, W1], W1, 9999), Together.withDelay({}, [XM, W1], W2, 90), Together.withDelay({}, [XM, W1], "alsa_output.x; y", 5)], [{ [W1]: 120 }, {}, { [W1]: 500 }, {}, {}]);
+eq("a wired member that left loses its delay", Together.prune({ [W1]: 20, [AV]: 30 }, [XM, AV]), { [AV]: 30 });
+
+eq("a list typed with wired names", [Together.parseList(W1 + "," + XM), Together.parseList(W1 + " " + W2 + "  " + XM + " " + W3)], [[W1, XM], [W1, W2, XM, W3]]);
+eq("four of the longest names still fit a list", Together.parseList(new Array(4).fill("alsa_output." + "a".repeat(148)).join(",")).length, 4);
+eq("a list too long to hold four members is nothing", Together.parseList(new Array(5).fill("alsa_output." + "a".repeat(148)).join(",")), []);
+eq("an injected wired name stays one bad item", Together.refusal(Together.parseList(W1 + "; reboot"), knownAll).why, "bad-address");
+eq("status keeps wired members as they are", JSON.parse(Together.status({ "members": [XM, W1], "source": W1, "delays": { [W1]: 40 } })), { "active": true, "members": [XM, W1], "from": W1, "delaysMs": { [W1]: 40 } });
+
 // --- Notes (value 10) -----------------------------------------------------------------
 const guide = new TextDecoder().decode(GLib.file_get_contents(root + "/docs/GUIDE.md")[1]);
 const anchors = guide.split("\n").filter(l => /^#{2,3} /.test(l)).map(l => l.replace(/^#+ /, "").toLowerCase().replace(/[^a-z0-9 -]/g, "").replace(/ /g, "-"));
