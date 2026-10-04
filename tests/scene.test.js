@@ -118,6 +118,12 @@ eq("a window without layout yet does not count", Cover.covered(spaces, [{ worksp
     const slotted = { px: 105, py: 50, inSlot: true }, slot = { x: 105, y: 50 };
     Physics.separate(g, slotted, slot, [slotted], false);
     eq("a body in its ring slot keeps it", slot, { x: 105, y: 50 });
+    // The host away at the back (a Listen together took the centre): it is the keep-out disc that moves
+    const away = { x: 20, y: 50, r: 10 };
+    const atCentre = { x: 105, y: 50 }, atHost = { x: 22, y: 50 };
+    Physics.separate(g, me, atCentre, [me], false, away);
+    Physics.separate(g, me, atHost, [me], false, away);
+    eq("the centre is free once the host is away, the host's own spot is not", [atCentre, r(atHost.x)], [{ x: 105, y: 50 }, r(away.x + away.r + g.bodySize * 0.55)]);
     const nearHole = { x: 140, y: 50 };
     Physics.separate(Object.assign({}, g, { holeX: 150, holeY: 50 }), { px: 0, py: 0 }, nearHole, [], false);
     eq("nothing settles in the black hole's reach", [r(nearHole.x), r(nearHole.y)], [127, 50]);
@@ -140,6 +146,8 @@ eq("a window without layout yet does not count", Cover.covered(spaces, [{ worksp
     eq("drop: the nearest centre wins", Physics.dropOnto(mover, [mate, mate2], 108, 50) === mate2, true);
     eq("drop: never on itself, a leaving or an unconnected body", [Physics.dropOnto(mate, [mate], 100, 50), Physics.dropOnto(mover, [Object.assign({}, mate, { leaving: true })], 100, 50), Physics.dropOnto(mover, [Object.assign({}, mate, { connected: false })], 100, 50)], [null, null, null]);
     eq("drop: an unconnected dragged body listens to nobody", Physics.dropOnto({ connected: false }, [mate], 100, 50), null);
+    eq("drop: with `anyone`, an unconnected dragged body is over the member", Physics.dropOnto({ connected: false }, [mate], 100, 50, true) === mate, true);
+    eq("drop: even with `anyone`, only a connected body can be dropped onto", Physics.dropOnto({ connected: false }, [Object.assign({}, mate, { connected: false })], 100, 50, true), null);
     eq("drop: a smaller body (far in the ring) has a smaller disc", Physics.dropOnto(mover, [Object.assign({}, mate, { baseScale: 0.5 })], 115, 50), null);
 }
 

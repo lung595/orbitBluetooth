@@ -3,7 +3,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done, root, GLib } = imports.lib;
 
-const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNote", "stuckNote", "levelNote"]);
+const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNote", "stuckNote", "copyLevelNote", "levelNote"]);
 const Address = load("Address.js", ["key", "colon", "find", "isDevicePath"]);
 
 // Address forms and BlueZ paths, in one place (Address.js)
@@ -32,6 +32,8 @@ const anchors = guide.split("\n").filter(l => /^#{2,3} /.test(l)).map(l => l.rep
     eq("note \"" + n.title + "\" links to a real section", anchors.indexOf(n.anchor) >= 0, true);
 });
 eq("a nameless device has no volume", Guide.noVolumeNote("").title, "This device has no volume");
+eq("a copy with no level of its own says why, and where to read more", [Guide.copyLevelNote("Marantz").title, anchors.indexOf(Guide.copyLevelNote("Marantz").anchor) >= 0, !!Guide.copyLevelNote("Marantz").hint], ["Marantz has no volume of its own", true, true]);
+eq("a nameless copy", Guide.copyLevelNote("").title, "This device has no volume of its own");
 eq("a nameless device stuck", Guide.stuckNote("").title, "This device is still connected");
 ["noise-control", "pairing-safety", "if-it-does-not-connect", "if-it-does-not-disconnect", "bluetooth-is-off", "the-two-volumes", "new-headphones-pop-up"].forEach(a => eq("guide has #" + a, anchors.indexOf(a) >= 0, true));
 eq("guide url", Guide.url("noise-control"), "https://github.com/lung595/orbitBluetooth/blob/main/docs/GUIDE.md#noise-control");
