@@ -1,7 +1,7 @@
 .pragma library
 .import "../common/Address.js" as Address
 
-// Pure logic of the two volumes (AudioRoute.qml), tested in tests/anc.test.js.
+// Pure logic of the two volumes (AudioRoute.qml), tested in tests/*.test.js.
 //
 // A Bluetooth audio device has two levels Orbit keeps apart:
 // - the device's own level (inside the headset or amplifier), which PipeWire

@@ -2,7 +2,7 @@
 
 // The shapes of a Bluetooth address, and of the BlueZ object path built from
 // it, in one place. Everything that reaches a command goes through here first
-// (value 11). Pure logic, tested in tests/anc.test.js.
+// (value 11). Pure logic, tested in tests/*.test.js.
 
 // "AA:BB:CC:DD:EE:FF" or "AA_BB_CC_DD_EE_FF", any case -> "AA_BB_CC_DD_EE_FF",
 // the way BlueZ object paths and PipeWire node names spell it; "" if it is

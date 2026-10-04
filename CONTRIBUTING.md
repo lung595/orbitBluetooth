@@ -127,7 +127,7 @@ orbitBluetooth/
 │   ├── orbit_uninstall.py       # erases what DMS keeps once Orbit is removed
 │   └── tests/                   # unittest, on fake shell files
 ├── tests/qml/                   # pop-up scenario and polar scope tests, stubs for Quickshell/DMS
-├── tests/anc.test.js            # gjs: every pure .js module (noise control, battery, volumes, notes…)
+├── tests/*.test.js, lib.js, run.sh  # gjs: one file per role (noise, battery, device, pairing, common, volume, scene), the shared loader, the runner
 ├── shaders/                     # .frag sources, compiled .qsb, build.sh
 ├── scripts/
 │   ├── gen_sounds.py            # synthesizes sounds/*.wav
@@ -144,7 +144,7 @@ orbitBluetooth/
 (cd pictures && python3 -m unittest discover -s tests -t .)   # picture lookup, without network
 (cd uninstall && python3 -m unittest discover -s tests -t .)  # uninstall sweep, on fake shell files
 sh tests/qml/run.sh                                       # new-device pop-up scenario and polar scope (Qt 6)
-gjs tests/anc.test.js                                     # every pure .js module: noise control, battery, physics, volumes, scope
+sh tests/run.sh                                          # every pure .js module, one test file per role (or gjs tests/volume.test.js for one)
 ```
 
 Run them all before every commit. A new headphone brand needs a module in `anc/protocols/` and tests in `anc/tests/`.
