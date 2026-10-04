@@ -27,6 +27,8 @@ Window {
     // "-cc" like the Control Center tile (same, from a smaller minimum),
     // "-silent" stops the made-up sound (the beams of a group do not pulse),
     // "-reduce" turns Reduce motion on,
+    // "-sun90" puts the host's system at that angle of its path in the "together"
+    // shots (90 near and in front, 270 far and behind, 0 right, 180 left),
     // "-follow" gives the headset no level of its own (no absolute volume),
     // "-fold" starts the card's volumes folded, as in the menus, and
     // "-unfold" shows them unfolded there, "-facts" opens the audio details
@@ -40,6 +42,7 @@ Window {
     readonly property bool follow: parts.indexOf("follow") > 0
     readonly property bool silent: parts.indexOf("silent") > 0
     readonly property bool reduce: parts.indexOf("reduce") > 0
+    readonly property var sunAngle: parts.find(p => /^sun\d+$/.test(p))
     // Speakers that listen together with the headset in the "together" shots
     readonly property int outputs: mode.startsWith("together") && mode !== "togetherback" ? Number(mode.slice(8)) - 1 : mode === "togetherback" ? 2 : 0
     readonly property bool fold: parts.indexOf("fold") > 0 || unfold
@@ -141,6 +144,8 @@ Window {
                 scene.focusOn(b);
         } else if (mode === "togetherback") {
             scene.centre.recall();
+        } else if (mode.startsWith("together") && sunAngle) {
+            scene.centre.sunPhase = Number(sunAngle.slice(3)) * Math.PI / 180;
         } else if (mode === "hiddencard" || mode === "hiddenempty") {
             scene.openHidden();
         } else if (mode === "btblocked") {

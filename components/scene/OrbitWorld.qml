@@ -196,15 +196,15 @@ Item {
     StyledText {
         id: hostName
         anchors.horizontalCenter: core.horizontalCenter
-        // Under the host, which is smaller (and dimmer) when it sits at the back;
-        // the name keeps its size there, as at 40 % it could not be read
+        // Under the host. It fades as the group takes the centre: the sun is small
+        // then, and a name half hidden behind the group reads as a glitch
         y: world.centre.host.y + core.height / 2 * world.centre.host.scale + 4
         z: world.centre.hostZ
         text: UserInfoService.hostname || ""
         color: world.scene.night.ink(0.72)
         font.pixelSize: Math.max(9, Math.round(world.scene.coreSize * 0.14))
         font.letterSpacing: 0.6
-        opacity: world.scene.focusBody ? 0 : world.centre.hostAway ? 0.6 : 1
+        opacity: world.scene.focusBody ? 0 : 1 - world.centre.away
     }
 
     Repeater {
