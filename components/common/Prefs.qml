@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Common
 import qs.Services
+import "../volume/Audiophile.js" as Audiophile
 import "../volume/Polar.js" as Polar
 import "../volume/Steps.js" as Steps
 
@@ -89,7 +90,7 @@ QtObject {
     // "compact", "medium" or "large"
     readonly property string popupSize: _get("popupSize", "medium")
     // The vectorscope's cloud: 60 frames a second ("Smooth") or 30 ("Light")
-    readonly property int scopeFps: parseInt(_get("scopeFps", "60")) === 30 ? 30 : 60
+    readonly property int scopeFps: parseInt(_get("scopeFps", "30")) === 60 ? 60 : 30
     // How the vectorscope draws the sound: "points", "rays", "waves", "none"
     readonly property string scopeStyle: Polar.styleOf(_get("scopeStyle", "points"))
 
@@ -99,6 +100,17 @@ QtObject {
     // How fast smart steps grow: "gentle", "balanced" or "fast"
     readonly property string volumeSpeed: Steps.speedOf(_get("volumeSpeed", "balanced"))
     readonly property int volumeStep: Steps.fixedStep(_get("volumeStep", 5))
+
+    // What the output is (D260): which facts show on the card's line
+    // (factCard_<key>) and in the unfolded detail (factMore_<key>)
+    function _facts(prefix, field) {
+        const chosen = {};
+        for (const info of Audiophile.INFOS)
+            chosen[info.key] = _get(prefix + info.key, info[field]);
+        return chosen;
+    }
+    readonly property var factsLine: _facts("factCard_", "card")
+    readonly property var factsMore: _facts("factMore_", "more")
 
     // The volume keys were offered once (D265): never again
     readonly property bool keysOffered: _get("keysOffered", false)

@@ -1,3 +1,6 @@
 pragma Singleton
 import QtQuick
-QtObject { property bool batteryAvailable: false }
+
+QtObject {
+    property bool batteryAvailable: false
+}

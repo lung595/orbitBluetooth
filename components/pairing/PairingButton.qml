@@ -9,17 +9,19 @@ import qs.Widgets
 Item {
     id: actions
 
-    // The sheet (PairingSheet.qml): its phase, motion and actions
+    // The sheet (PairingSheet.qml): its phase and actions
     required property var sheet
     // The sheet's colours (its `skin`)
     required property var look
+    // The sheet's time and entrance values (PairingMotion.qml)
+    required property var motion
 
     implicitHeight: links.y + links.height
 
     // Its own light under it: a glow on the night, a tinted shadow on the pearl
     Light {
         visible: !actions.sheet.busy
-        opacity: actions.sheet.stagger(5)
+        opacity: actions.motion.stagger(5)
         width: actions.width - 60
         squash: 0.2
         x: 30
@@ -31,9 +33,9 @@ Item {
     Rectangle {
         id: mainButton
         x: 16
-        opacity: actions.sheet.stagger(5)
+        opacity: actions.motion.stagger(5)
         transform: Translate {
-            y: (1 - actions.sheet.stagger(5)) * 14
+            y: (1 - actions.motion.stagger(5)) * 14
         }
         width: actions.width - 32
         height: 46
@@ -68,9 +70,9 @@ Item {
         // ends: a clip would cut it square against the rounded corners
         Item {
             anchors.fill: parent
-            visible: actions.sheet.busy && actions.sheet.moving
+            visible: actions.sheet.busy && actions.motion.moving
             Rectangle {
-                readonly property real t: (actions.sheet.clock * 0.7) % 1
+                readonly property real t: (actions.motion.clock * 0.7) % 1
                 width: 90
                 height: parent.height
                 radius: mainButton.radius
@@ -140,7 +142,7 @@ Item {
         y: mainButton.y + mainButton.height + 6
         height: 28
         spacing: 4
-        opacity: actions.sheet.stagger(6)
+        opacity: actions.motion.stagger(6)
 
         Quiet {
             visible: actions.sheet.phase === "offer" || actions.sheet.phase === "failed"

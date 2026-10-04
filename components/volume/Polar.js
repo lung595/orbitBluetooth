@@ -1,7 +1,7 @@
 .pragma library
 
 // Pure logic of the polar vectorscope (PolarScope.qml), tested in
-// tests/anc.test.js. Angles are in degrees, clockwise from the right, as
+// tests/*.test.js. Angles are in degrees, clockwise from the right, as
 // QtQuick.Shapes' PathAngleArc counts them (y points down): left is 180,
 // the top is 270, right is 360.
 //

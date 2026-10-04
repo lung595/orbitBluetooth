@@ -40,17 +40,17 @@ Tools: `gjs` (JS tests), Python 3 (helper and its tests), `ffmpeg` (GIFs), Qt 6 
 
 `components/` has one folder per feature: `scene/`, `device/`, `card/`, `volume/`, `pairing/`, `noise/` and `common/`. A file imports its neighbours directly and another feature's folder by path (`import "../card"`).
 
-Every surface shows the same scene, `components/scene/OrbitScene.qml`. It handles drag and focus and opens the cards (`card/FocusCard.qml`, `card/HiddenCard.qml`, `scene/OrbitMenu.qml`); `scene/OrbitPhysics.qml` moves every device (`device/DeviceBody.qml`) in one step per frame, with the maths in `scene/Physics.js` (pure, tested). Its chrome lives in `pairing/OfferCard.qml`, `scene/ScanChip.qml` and `scene/AdapterNotice.qml`.
+Every surface shows the same scene, `components/scene/OrbitScene.qml`. It only holds the state the parts share and wires them; each role has its own file, and the parts reach each other through the scene's functions (`scene.hideBody(b)`, `scene.ancSend(...)`), never through one another. The drag (`OrbitDrag`), hiding in the black hole (`OrbitHidden`), focus, rename and Escape (`OrbitFocus`), noise control (`OrbitAnc`), the daemon's data and clock (`OrbitDaemonData`) and the detail card's measures (`FocusLayout`) are each a short file; they open the cards (`card/FocusCard.qml`, `card/HiddenCard.qml`, `scene/OrbitMenu.qml`). `scene/OrbitPhysics.qml` moves every device (`device/DeviceBody.qml`) in one step per frame, with the maths in `scene/Physics.js` (pure, tested). What floats above the world (`pairing/OfferCard.qml`, `scene/ScanChip.qml`, `scene/AdapterNotice.qml`, the hint and the note) is grouped by `scene/OrbitChrome.qml`.
 
-Logic that can be tested lives in **pure `.js` files** with no QML: `card/Charge.js` (charge analysis), `card/Endurance.js` (rated battery life), `scene/Physics.js` (springs, slots, clearances), `noise/Anc.js` (noise-control decisions), `volume/Polar.js` (the scope's geometry and sound picture), `volume/Route.js`, `volume/Steps.js` and `volume/Keys.js` (volumes), `device/Earbuds.js`, `device/DeviceCatalog.js` and `device/Glyphs.js` (icons).
+Logic that can be tested lives in **pure `.js` files** with no QML: `card/Charge.js` (charge analysis), `card/Endurance.js` (rated battery life), `card/CardStatus.js` (the detail card's wording), `scene/Physics.js` (springs, slots, clearances), `noise/Anc.js` (noise-control decisions), `volume/Polar.js` (the scope's geometry and sound picture), `volume/Route.js`, `volume/Steps.js`, `volume/Keys.js` and `volume/Audiophile.js` (volumes and what plays), `common/Address.js` (the shapes of a Bluetooth address and of its BlueZ path, checked before any command), `device/Earbuds.js`, `device/DeviceCatalog.js` and `device/Glyphs.js` (icons).
 
-**The volume scope** (detail card, pop-up, Dank Island) runs one `cava` and computes one picture for every screen that shows it: `volume/TwoLevels.qml` holds an output's two levels, its `ScopeFeed.qml` (cava, only while someone looks) and its `ScopeModel.qml` (points, rays or waves, moved by cava's frames, fading alone, then stopped). `PolarScope.qml` draws the half circles and `PolarVisual.qml` only paints the shared picture at its own size.
+**The volume scope** (detail card, pop-up, Dank Island) runs one `cava` and computes one picture for every screen that shows it: `volume/TwoLevels.qml` holds an output's two levels, its `ScopeFeed.qml` (cava, only while someone looks) and its `ScopeModel.qml` (points, rays or waves, moved by cava's frames, fading alone, then stopped). `PolarScope.qml` keeps the geometry, eases the levels and holds the picture; `PolarArcs.qml` draws the half circles, `PolarMoons.qml` the knobs, `PolarGestures.qml` takes the drag, wheel and mute click, and `PolarVisual.qml` only paints the shared picture at its own size.
 
 **Noise control** is the only part outside QML: QML cannot open a Bluetooth socket, so `components/noise/AncService.qml` runs `anc/orbit_anc.py`, which speaks each vendor protocol (`anc/protocols/`, one module per brand) through a JSON session on stdin/stdout. `anc/sdp.py` finds the RFCOMM channel.
 
-**New headphones pop-up**: `components/pairing/NewDeviceWatch.qml` (in the daemon) runs the short background scan, picks what to offer (`Offer.js`, pure) and drives pairing; `NewDeviceWindow.qml` is its layer-shell window and `PairingSheet.qml` the sheet itself (two skins, colours from `Palette.js`), which `scripts/preview/sheet.qml` renders offscreen with six test palettes, or records frame by frame. Before a new device is trusted, `ProfileCheck.qml` reads its Bluetooth profiles with `busctl` and `Guard.js` (pure, tested) decides: a non-input device that can also send key presses stays blocked until the user confirms. Never trust a device from its name alone.
+**New headphones pop-up**: `components/pairing/NewDeviceWatch.qml` (in the daemon) drives the pop-up and pairing, with `BackgroundScan.qml` (the opt-in short scan), `OfferQueue.qml` (what to offer next, snoozes; `Offer.js`, pure) and `DemoDevice.qml` (the made-up headset of the demo); `NewDeviceWindow.qml` is its layer-shell window and `PairingSheet.qml` the sheet itself (two skins, colours from `Palette.js`), which `scripts/preview/sheet.qml` renders offscreen with six test palettes, or records frame by frame. Before a new device is trusted, `ProfileCheck.qml` reads its Bluetooth profiles with `busctl` and `Guard.js` (pure, tested) decides: a non-input device that can also send key presses stays blocked until the user confirms. Never trust a device from its name alone.
 
-**Guided, never blocked**: `components/common/Guide.js` (pure, tested) builds the guide links and the short notes (`connectNote`); `scene/OrbitNote.qml` shows them at the bottom of the sky and `common/GuideLink.qml` is the GitHub mark (drawn by `common/GitHubMark.qml`) that opens a guide section on click. A new refusal gets a note and an anchor that exists in `docs/GUIDE.md` (the tests check it). Every new Quickshell import or service used by a component needs its mock in `scripts/preview/imports/`, or the previews break.
+**Guided, never blocked**: `components/common/Guide.js` (pure, tested) builds the guide links and the short notes (`connectNote`); `scene/OrbitNote.qml` shows them at the bottom of the sky and `common/GuideLink.qml` is the GitHub mark (drawn by `common/GitHubMark.qml`) that opens a guide section on click. A new refusal gets a note and an anchor that exists in `docs/GUIDE.md` (the tests check it). Every new Quickshell import or service used by a component needs its mock in `scripts/preview/imports/`, or the previews break; the made-up devices and state of the screenshots live in `scripts/preview/mock/`.
 
 **Uninstalling leaves nothing** (value 12): `components/common/UninstallSweep.qml` (in the daemon) reads `uninstall/orbit_uninstall.py` when Orbit loads; when Orbit is unloaded and its `plugin.json` is gone, it starts that script detached, from memory (`python3 -c`), since the folder no longer exists. The script waits 4 s, checks again (an update may re-clone the folder) and only then edits the shell's JSON files, which DMS watches. Never create QML objects in `Component.onDestruction`: it crashed the shell.
 
@@ -73,42 +73,53 @@ orbitBluetooth/
 │   │   ├── OrbitScene.qml       # the scene: composition and wiring of the files below
 │   │   ├── Orbit.js, OrbitDevices.qml  # which devices the orbit shows (Orbit.js pure, tested), one model entry per body
 │   │   ├── OrbitConnections.qml, OrbitDiscovery.qml, OrbitOffer.qml  # connection flow, scan only while viewed, offer to connect
+│   │   ├── OrbitDrag.qml, OrbitHidden.qml, OrbitFocus.qml  # the drag gestures, hiding in the black hole, focus + rename + Escape
+│   │   ├── OrbitAnc.qml, OrbitDaemonData.qml, FocusLayout.qml  # noise control, what the daemon publishes + its clock, the detail card's measures
 │   │   ├── OrbitBackdrop.qml, OrbitWorld.qml, OrbitCore.qml, OrbitHint.qml  # sky, orbits and bodies, host core, drag hint
 │   │   ├── OrbitPhysics.qml, Physics.js  # one motion step for every body (Physics.js pure, tested)
 │   │   ├── Cover.js             # is the desktop hidden behind windows? (pure, tested)
-│   │   ├── ScanChip.qml, AdapterNotice.qml, OrbitNote.qml, OrbitMenu.qml  # chrome: scan chip, Bluetooth off, notes, right-click menu
+│   │   ├── OrbitChrome.qml, ScanChip.qml, AdapterNotice.qml, OrbitNote.qml  # what floats above the world: scan chip, Bluetooth off, notes
+│   │   ├── OrbitMenu.qml        # the right-click menu
 │   │   ├── BlackHole.qml, RingWave.qml   # the "Hidden" black hole (two shaders), the connected ring's wave
 │   │   └── Starfield.qml, Vignette.qml, NightColors.qml
 │   ├── device/                  # one orbiting device
-│   │   ├── DeviceBody.qml, EnergyBeam.qml, LabelGlow.qml  # body (drag, interaction), charging beam (shaders/beam.frag), label glow
+│   │   ├── DeviceBody.qml, BodyFace.qml, BodyPointer.qml, QuickDisconnect.qml  # body (state, motion), its look, its mouse, its close button
+│   │   ├── ConnectingFx.qml, LockRing.qml, EnergyBeam.qml, LabelGlow.qml  # connection comet and rings, lock ring, charging beam (shaders/beam.frag), label glow
 │   │   ├── BodyTether.qml, ChargeBeam.qml, BodyArcs.qml, BodyLabel.qml  # tether to the core, charge beam, rings (noise control, battery), caption
 │   │   ├── DeviceGlyph.qml, DeviceCatalog.js, Glyphs.js   # device icons
 │   │   └── EarbudsTrio.qml, EarbudArt.qml, Earbuds.js     # case + buds mini orbit
 │   ├── card/                    # the detail and hidden-devices cards
-│   │   ├── FocusCard.qml, PlanetControl.qml  # detail card; focused glyph: click to mute, wheel for the volume
-│   │   ├── BatteryCard.qml, StatTiles.qml    # gauge, chart and READY AT / SPEED / HEALTH tiles
-│   │   ├── Charge.js, Endurance.js           # battery analysis (pure, tested)
+│   │   ├── FocusCard.qml, PlanetControl.qml  # detail card (layout of its sections); focused glyph: click to mute, wheel for the volume
+│   │   ├── CardActions.qml, CardButton.qml, NameBox.qml  # corner buttons (back, look, connect, hide, forget), their round button, the name and its rename
+│   │   ├── VolumeSection.qml, FoldButton.qml, GlyphPicker.qml  # the two volumes (strip or scope) and the button that folds them, the glyph grid
+│   │   ├── BatteryCard.qml, CardBattery.qml, StatTiles.qml  # gauge, chart and READY AT / SPEED / HEALTH tiles; the card's own wiring of them
+│   │   ├── Charge.js, Endurance.js, CardStatus.js  # battery analysis, rated life, the card's wording (pure, tested)
 │   │   └── HiddenCard.qml, PaperColors.qml   # hidden devices; light-theme colors
 │   ├── volume/                  # the two volumes and the scope
 │   │   ├── TwoLevels.qml        # an output's two volumes, its cava and its picture (base of CardVolume, VolumeOverlay)
 │   │   ├── CardVolume.qml, Volume.js         # the detail card's two volumes and tick (Volume.js pure, tested)
 │   │   ├── VolumeOverlay.qml, VolumePopup.qml, IslandFace.qml  # volume pop-up per screen, its face inside Dank Island
+│   │   ├── AudioFacts.qml, FactsLine.qml, Audiophile.js  # what plays: `pactl` read on demand, the line with its info button, parsing (pure, tested)
 │   │   ├── VolumeStrip.qml      # menus: the two volumes folded into a thin line, unfolds on click
 │   │   ├── ScopeScreen.qml      # the dark scope screen shared by card, pop-up and island
-│   │   ├── PolarScope.qml, PolarVisual.qml, Polar.js   # half circles, moons, the painted picture (Polar.js pure, tested)
+│   │   ├── PolarScope.qml, PolarVisual.qml, Polar.js   # geometry and easing, the painted picture (Polar.js pure, tested)
+│   │   ├── PolarArcs.qml, PolarMoons.qml, PolarGestures.qml  # half circles, knobs, drag / wheel / mute
 │   │   ├── PolarGrid.qml, PolarReadouts.qml  # the scope's screen (grid), icons and numbers
 │   │   ├── ScopeFeed.qml, ScopeModel.qml     # live stereo bands from cava; the picture they move, once for every screen
 │   │   ├── AudioRoute.qml, RouteDevice.qml, Route.js   # the two levels of each output: PC filter, absolute volume, IPC
 │   │   └── VolumeKeys.qml, Keys.js, Steps.js # volume keys through `dms keybinds`, smart steps (pure, tested)
 │   ├── pairing/                 # new device pop-up and pairing offer
-│   │   ├── NewDeviceWatch.qml, Offer.js, Guard.js, ProfileCheck.qml  # background scan, what to offer, the input-device guard
-│   │   ├── NewDeviceWindow.qml, PairingSheet.qml, PairingMiddle.qml, Palette.js  # the sheet (PairingMiddle: tiles, steps, quick actions)
-│   │   ├── PairingStage.qml, PairingIdentity.qml, PairingButton.qml, Light.qml  # stage, name and subtitle, actions, round light
+│   │   ├── NewDeviceWatch.qml, BackgroundScan.qml, OfferQueue.qml, DemoDevice.qml, Offer.js, Guard.js, ProfileCheck.qml  # pop-up, background scan, what to offer, demo, the input-device guard
+│   │   ├── NewDeviceWindow.qml, PairingSheet.qml, Palette.js  # the window and the sheet (the card, its keys and its parts)
+│   │   ├── PairingSkin.qml, PictureColor.qml, PairingMotion.qml  # the two skins' colours, the picture's colour, the sheet's clock and entrance
+│   │   ├── PairingSky.qml, PairingPlanet.qml, PairingHeader.qml  # the scene behind the device, status and close button
+│   │   ├── PairingStage.qml, PairingIdentity.qml, PairingMiddle.qml, PairingButton.qml, Light.qml  # device, name and subtitle, tiles/steps/quick actions, actions, round light
 │   │   └── OfferCard.qml        # the scene's pairing offer
 │   ├── noise/                   # noise control
 │   │   └── AncService.qml, AncPanel.qml, Anc.js
 │   └── common/                  # shared by every feature
 │       ├── Prefs.qml            # settings, shared by every surface
+│       ├── Address.js                                    # address forms and BlueZ device path, one definition (pure, tested)
 │       ├── Guide.js, GuideLink.qml, GitHubMark.qml       # guide links and notes (value 10)
 │       ├── PictureService.qml, Pictures.js               # real device pictures (opt-in)
 │       └── SoundFx.qml, UninstallSweep.qml
@@ -123,12 +134,12 @@ orbitBluetooth/
 ├── uninstall/
 │   ├── orbit_uninstall.py       # erases what DMS keeps once Orbit is removed
 │   └── tests/                   # unittest, on fake shell files
-├── tests/qml/                   # pop-up scenario and polar scope tests, stubs for Quickshell/DMS
-├── tests/anc.test.js            # gjs: every pure .js module (noise control, battery, volumes, notes…)
+├── tests/qml/                   # pop-up scenario, polar scope and audio facts tests, stubs for Quickshell/DMS
+├── tests/*.test.js, lib.js, run.sh  # gjs: one file per role (noise, battery, card, device, pairing, common, volume, audiophile, scene), the shared loader, the runner
 ├── shaders/                     # .frag sources, compiled .qsb, build.sh
 ├── scripts/
 │   ├── gen_sounds.py            # synthesizes sounds/*.wav
-│   └── preview/                 # offscreen renderer with mock services
+│   └── preview/                 # offscreen renderer: shot.qml (modes), mock/ (devices, state, route, wallpaper), imports/ (mock services)
 ├── screenshots/                 # images used by the docs
 ├── sounds/
 └── docs/GUIDE.md                # user guide
@@ -140,8 +151,8 @@ orbitBluetooth/
 (cd anc && python3 -m unittest discover -s tests -t .)   # noise-control protocols
 (cd pictures && python3 -m unittest discover -s tests -t .)   # picture lookup, without network
 (cd uninstall && python3 -m unittest discover -s tests -t .)  # uninstall sweep, on fake shell files
-sh tests/qml/run.sh                                       # new-device pop-up scenario and polar scope (Qt 6)
-gjs tests/anc.test.js                                     # every pure .js module: noise control, battery, physics, volumes, scope
+sh tests/qml/run.sh                                       # new-device pop-up scenario, polar scope, audio facts (Qt 6)
+sh tests/run.sh                                          # every pure .js module, one test file per role (or gjs tests/volume.test.js for one)
 ```
 
 Run them all before every commit. A new headphone brand needs a module in `anc/protocols/` and tests in `anc/tests/`.

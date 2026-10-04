@@ -78,7 +78,7 @@ PanelWindow {
         phase: win.watch.phase
         reduceMotion: win.watch.prefs.reduceMotion
         exitToBar: win.watch.phase === "done"
-        stacked: win.watch._queue.length
+        stacked: win.watch.offers.pending.length
         // Line up with the bar: its gap to the screen edge when DMS has one
         rightGap: typeof SettingsData.dankBarSpacing === "number" ? Math.max(2, SettingsData.dankBarSpacing) : Theme.spacingXS
         topGap: Theme.spacingS

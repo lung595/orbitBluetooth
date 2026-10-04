@@ -8,6 +8,7 @@ import "components/common"
 import "components/noise"
 import "components/pairing"
 import "components/volume"
+import "components/common/Address.js" as Address
 import "components/common/Guide.js" as Guide
 import "components/noise/Anc.js" as Anc
 
@@ -52,7 +53,7 @@ Item {
 
     AncService {
         id: ancService
-        enabled: prefs.ancEnabled
+        active: prefs.ancEnabled
         engine: prefs.ancEngine
         chatOffOnDisconnect: prefs.ancChatOff
         publish: map => root._publish("anc", map)
@@ -61,7 +62,7 @@ Item {
     // Real device pictures: off by default, the only use of the network
     PictureService {
         id: pictureService
-        enabled: prefs.realPictures
+        active: prefs.realPictures
         clearToken: prefs.picturesClear
         publish: map => root._publish("pictures", map)
     }
@@ -218,7 +219,7 @@ Item {
 
         function ancStatus(): string {
             const address = ancService.primary();
-            const s = ancService.states[address];
+            const s = ancService.snapshots[address];
             if (!address)
                 return "No supported headset connected · " + Guide.url("noise-control");
             if (!s || !s.state)
@@ -273,11 +274,6 @@ Item {
         _publish("power", power);
     }
 
-    function _macFromText(text) {
-        const m = /([0-9a-f]{2}([:_-])[0-9a-f]{2}(\2[0-9a-f]{2}){4})/i.exec(text || "");
-        return m ? m[1].replace(/[_-]/g, ":").toUpperCase() : "";
-    }
-
     // UPower devices that belong to a Bluetooth peripheral. BlueZ-backed ones
     // carry the address in their native path; kernel HID batteries (game
     // controllers, Logitech, ...) expose it as HID_UNIQ in sysfs, read once.
@@ -289,7 +285,7 @@ Item {
             required property var modelData
             readonly property string nativePath: modelData?.nativePath ?? ""
             readonly property bool fromBluez: nativePath.startsWith("/org/bluez/")
-            property string address: fromBluez ? root._macFromText(nativePath) : ""
+            property string address: fromBluez ? Address.find(nativePath) : ""
 
             readonly property var info: address && !modelData.isLaptopBattery ? {
                 "state": modelData.state,
@@ -312,7 +308,7 @@ Item {
                 printErrors: false
                 onLoaded: {
                     const m = /^HID_UNIQ=(.*)$/m.exec(text());
-                    up.address = m ? root._macFromText(m[1]) : "";
+                    up.address = m ? Address.find(m[1]) : "";
                 }
             }
         }

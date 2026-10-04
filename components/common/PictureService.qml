@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell.Io
+import qs.Common
 
 // Looks up a picture of each device model, only when the user turned on
 // "Real device pictures" (off by default). It runs pictures/orbit_pictures.py,
@@ -9,7 +10,7 @@ import Quickshell.Io
 Item {
     id: root
 
-    property bool enabled: false
+    property bool active: false
     // Called with the model name -> {image, credit} map whenever it changes
     property var publish: function (map) {}
     // Changes when the user asks to empty the local cache
@@ -20,10 +21,10 @@ Item {
     property var _asked: ({})
     property string _current: ""
 
-    readonly property string _helper: decodeURIComponent(Qt.resolvedUrl("../../pictures/orbit_pictures.py").toString().replace(/^file:\/\//, ""))
+    readonly property string _helper: Paths.strip(Qt.resolvedUrl("../../pictures/orbit_pictures.py"))
 
     function request(name) {
-        if (!enabled || !name || _asked[name])
+        if (!active || !name || _asked[name])
             return;
         const asked = Object.assign({}, _asked);
         asked[name] = true;
@@ -33,7 +34,7 @@ Item {
     }
 
     function _next() {
-        if (finder.running || !_queue.length || !enabled)
+        if (finder.running || !_queue.length || !active)
             return;
         _current = _queue[0];
         _queue = _queue.slice(1);
@@ -49,7 +50,7 @@ Item {
             return;
         }
         // Turned off while a search ran: its answer is dropped
-        if (!msg.image || !enabled)
+        if (!msg.image || !active)
             return;
         const next = Object.assign({}, pictures);
         next[msg.name] = {
@@ -86,7 +87,7 @@ Item {
     // Turned off: forget what is shown and erase the cache, which would
     // otherwise keep a list of every model ever looked up
     onEnabledChanged: {
-        if (enabled)
+        if (active)
             return;
         _queue = [];
         _asked = ({});

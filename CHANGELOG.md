@@ -5,6 +5,28 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## Unreleased
 
+## 1.13.0 - 2026-10-04
+
+### Added
+
+- **What really plays.** Under a device's name on its card, and in the volume pop-up for any output, one short line says what the sound is: how it is connected (Bluetooth, USB, HDMI, S/PDIF, analog), the codec (LDAC, AAC, aptX HD, SBC...), the sample rate and the bit depth, for example *Bluetooth · LDAC · 96 kHz · 24 bit*. A small info button unfolds the rest: channels, and a note when this PC resamples on the way to the device. *Settings → Sound → Audio details* chooses, fact by fact, what shows on the line and what shows when unfolded. It is read from PipeWire (`pactl`) only while the card or the pop-up is on screen; nothing runs otherwise, and nothing leaves the PC.
+
+### Fixed
+
+- A failed pairing no longer writes the error text to the journal (it can carry a device name or address): the journal gets a fixed line with the step that failed; the text still shows on the pairing sheet.
+
+### Changed
+
+- **Lighter volume keys on a Dank Island.** While Orbit's face is up, the island follows the keys at once (no spring, no cross-fade) and DMS's full-screen click-away layer is hidden; both are given back when the keys stop. The visualizer's `cava` only starts 700 ms after the last key, so a burst of steps does not pay its start-up cost. All in memory: no setting of DMS is written.
+- *Visualizer motion* now defaults to *Light* (30 images per second); *Smooth* (60) stays one click away in *Settings → Sound*.
+- **Each rule lives in one place.** A Bluetooth address and the BlueZ path built from it are checked by one pure, tested `common/Address.js` (the volume code, the keyboard-profile check and the battery bookkeeping each had their own copy), and the four copies of "plugin file → path" are DMS's own `Paths.strip`. The BlueZ adapter number is now capped at three digits everywhere, as it already was for the keyboard-profile check.
+- **The pairing sheet is five readable parts instead of one 845-line file.** `PairingSheet.qml` keeps the card, its keys and its settings; the colours of the two skins (`PairingSkin`, `PictureColor`), the clock and entrance (`PairingMotion`), the scene (`PairingSky`, `PairingPlanet`) and the status strip (`PairingHeader`) each have their own file. Renders are identical.
+- **The volume scope is four short files instead of one 373-line file.** `PolarScope.qml` keeps the geometry, the easing and the picture; the half circles (`PolarArcs`), the knobs (`PolarMoons`) and the gestures (`PolarGestures`) each have their own. Same pictures (compared with the offscreen previews), same behaviour.
+- **The scene is a hub of 404 lines instead of 586.** `OrbitScene.qml` keeps the state the parts share and one-line forwarders; the drag (`OrbitDrag`), hiding (`OrbitHidden`), focus, rename and Escape (`OrbitFocus`), noise control (`OrbitAnc`), the daemon's data and clock (`OrbitDaemonData`), the detail card's measures (`FocusLayout`) and the floating chrome (`OrbitChrome`) each have their own file, and the black hole's body lives with the physics that moves it. Same pictures (compared with the offscreen previews), same behaviour.
+- **The remaining big files are cut by role too.** The device body (tether, charge beam, arcs, label, look, connection effects, lock ring, close button, mouse), the detail card (corner buttons, name, volumes, battery wiring, glyph picker, and its wording in a tested `CardStatus.js`), the new-device pop-up (`BackgroundScan`, `OfferQueue`, `DemoDevice`), the offscreen previews (`mock/` data) and the tests (one gjs file per role, a shared loader and a runner). Same pictures (compared with the offscreen previews), same behaviour.
+
+## 1.12.1 - 2026-10-03
+
 ### Fixed
 
 - **Changing the volume no longer costs the whole shell.** The levels eased with QML animations, which made every shell window (bars, wallpaper) redraw at the screen's rate while the pop-up showed; they now ease on the scope's own 60 Hz clock, and the sound picture is computed once for every screen, each screen only painting it. Measured while stepping the volume three times a second, sound playing, Dank Island on two screens: the shell used **92 %** of one core with 1.12.0, **≈ 21 %** now; DMS alone, same test, uses ≈ 10 %. The rest is the live sound picture itself, drawn 60 times a second while the pop-up shows (*Light*, 30 images per second, or *None* in *Settings → Sound* make it cheaper); at rest nothing runs, as before.

@@ -7,7 +7,7 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 - [Widgets](#widgets)
 - [The orbit](#the-orbit) · [If it does not connect](#if-it-does-not-connect) · [If it does not disconnect](#if-it-does-not-disconnect) · [Bluetooth is off](#bluetooth-is-off)
 - [The detail card](#the-detail-card)
-- [The two volumes](#the-two-volumes) · [Separate PC volume](#separate-pc-volume) · [Volume pop-up](#volume-pop-up) · [Smart volume steps](#smart-volume-steps) · [Volume keys](#volume-keys)
+- [The two volumes](#the-two-volumes) · [Separate PC volume](#separate-pc-volume) · [Volume pop-up](#volume-pop-up) · [Smart volume steps](#smart-volume-steps) · [Volume keys](#volume-keys) · [What really plays](#what-really-plays)
 - [Earbuds: the trio](#earbuds-the-trio)
 - [Hiding devices: the black hole](#hiding-devices-the-black-hole)
 - [Noise control](#noise-control)
@@ -138,7 +138,7 @@ When a volume changes, from a key, the command line or anywhere else, Orbit can 
 The sound inside is drawn only while the pop-up or a card shows:
 
 - **Visualizer** (**Sound → Visualizer**): *Points* (a cloud: where the sound sits, left or right), *Rays* or *Waves* (its notes, bass at the top), or *None*.
-- **Visualizer motion**: *Smooth* (60 images per second) or *Light* (30, half the work).
+- **Visualizer motion**: *Light* (30 images per second, the default) or *Smooth* (60, twice the work).
 - It needs `cava`; without it, PipeWire's own peak meter draws one band per side. With *Reduce motion*, nothing moves.
 
 ## Smart volume steps
@@ -168,6 +168,20 @@ How it works:
 - **The keys never stop working.** If Orbit is off, removed, or too old for this command, the keys fall back to DMS's own step (the one they had, 3 % by default).
 - **Undo**, **Give back to DMS** and **uninstalling Orbit** write back the exact line DMS had, only on keys still bound to Orbit.
 - **niri only**: elsewhere the line reads *Bind your keys to Orbit*. Bind them yourself, for example in Hyprland: `binde = , XF86AudioRaiseVolume, exec, dms ipc call orbitBluetooth volume up`.
+
+## What really plays
+
+Under the device's name on its card, and at the foot of the volume pop-up (centered under the screen, for **any** output: a sound card, HDMI, a Bluetooth device), one short line says what the sound is:
+
+> Bluetooth · LDAC · 96 kHz · 24 bit
+
+- **Connection**: *Bluetooth*, *USB*, *HDMI*, *S/PDIF* (optical or coaxial) or *Analog*.
+- **Codec**: for Bluetooth, the one in use (SBC, SBC-XQ, AAC, aptX, aptX HD, aptX Adaptive, LDAC, LC3...). Wired outputs have none.
+- **Sample rate and bit depth**: what PipeWire plays. For Bluetooth the depth is the codec's (24 bit for LDAC, 16 for SBC); for a wired output it is the format PipeWire sends to the card.
+- **The info button** next to the line unfolds the details: the same facts with their names, the **channels**, and **PC to device**, a note such as *Resampled 48 kHz to 96 kHz* when this PC mixes at one rate and the device plays at another (it appears only for a device with the [separate PC volume](#separate-pc-volume)).
+- **Choose what shows**: **Settings → Sound → Audio details** has two switches per fact, *on the line* and *more info*. Turn every one off and Orbit reads nothing.
+
+It is read from PipeWire (`pactl list sinks`) once when the card or pop-up appears, and again when you click the info button; nothing runs while they are closed, and nothing is sent anywhere. If the line is missing, the output is not known to PipeWire yet (a headset takes a second to appear after it connects) or `pactl` is not installed (it comes with `pipewire-pulse`).
 
 ## Earbuds: the trio
 
@@ -377,7 +391,7 @@ Grouped in tabs: **Orbit** (with Reset), **Scanning**, **Headphones** (with devi
 | | Pop-up | In place of DMS's volume OSD | Under the bar widget, right screen edge or off, see [Volume pop-up](#volume-pop-up) |
 | | Size | Medium | Compact, Medium or Large |
 | | Visualizer | Points | Points, Rays, Waves or None |
-| | Visualizer motion | Smooth | Smooth (60 images/s) or Light (30) |
+| | Visualizer motion | Light | Light (30 images/s) or Smooth (60) |
 | | Sounds | Off | Short cues on snap, connect and disconnect |
 | | Volume tick | On | A soft tick in the device at each 5 % step made on its [card](#the-two-volumes) |
 | | Volume | 60 % | Of the short cues |

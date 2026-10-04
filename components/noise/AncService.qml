@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell.Bluetooth
 import Quickshell.Io
+import qs.Common
 import "Anc.js" as Anc
 
 // Runs the Python helper (anc/orbit_anc.py) that speaks each headset's
@@ -15,7 +16,7 @@ import "Anc.js" as Anc
 Item {
     id: root
 
-    property bool enabled: true
+    property bool active: true
     property string engine: "demand"
     // Called with the address -> snapshot map whenever it changes
     property var publish: function (map) {}
@@ -28,7 +29,7 @@ Item {
     property bool chatOffOnDisconnect: true
 
     // address -> last snapshot {status, error, model, features, state, live}
-    property var states: ({})
+    property var snapshots: ({})
     // address -> number of open detail cards showing it
     property var _viewers: ({})
     // address -> Process
@@ -38,7 +39,7 @@ Item {
     // address -> true while a disconnect waits for conversation awareness to go off
     property var _leaving: ({})
 
-    readonly property string _helper: decodeURIComponent(Qt.resolvedUrl("../../anc/orbit_anc.py").toString().replace(/^file:\/\//, ""))
+    readonly property string _helper: Paths.strip(Qt.resolvedUrl("../../anc/orbit_anc.py"))
 
     function deviceFor(address) {
         const list = Bluetooth.devices.values;
@@ -57,17 +58,17 @@ Item {
     // which then drops again (seen with FreeBuds that were never paired)
     function supported(address) {
         const d = deviceFor(address);
-        return enabled && !!d && d.connected && (d.paired || d.bonded) && familyFor(d) !== "";
+        return active && !!d && d.connected && (d.paired || d.bonded) && familyFor(d) !== "";
     }
 
     function _setState(address, value) {
-        const next = Object.assign({}, states);
+        const next = Object.assign({}, snapshots);
         if (value)
             next[address] = value;
         else
             delete next[address];
-        states = next;
-        publish(states);
+        snapshots = next;
+        publish(snapshots);
     }
 
     // Keep a session only while it is wanted by the engine or a viewer
@@ -133,7 +134,7 @@ Item {
             _queue = q;
         }
         // Optimistic update so the UI answers instantly; the helper confirms
-        const cur = states[address];
+        const cur = snapshots[address];
         if (cur && cur.state) {
             const st = Object.assign({}, cur.state);
             st[key] = key === "ambient" ? parseInt(value) : (key === "voice" || key === "chat") ? value === "on" : value;
@@ -153,7 +154,7 @@ Item {
         const device = deviceFor(address);
         if (!device)
             return;
-        const known = states[address];
+        const known = snapshots[address];
         // Known not to have the feature, or known to be off: nothing to undo
         const needless = known && known.features && (!known.features.chat || (known.state && known.state.chat === false));
         if (!chatOffOnDisconnect || needless || !send(address, "chat", "off")) {
@@ -185,7 +186,7 @@ Item {
     }
 
     function cycle(address) {
-        const s = states[address];
+        const s = snapshots[address];
         const next = s && s.features ? Anc.nextMode(s.features.modes, s.state.mode) : "";
         if (next)
             return send(address, "mode", next);
@@ -237,7 +238,7 @@ Item {
         } catch (e) {
             return;
         }
-        const prev = states[address] || {};
+        const prev = snapshots[address] || {};
         const next = Object.assign({}, prev, msg, {
             "live": msg.status !== "error",
             "at": Date.now()      // freshness of battery/charging readings
@@ -270,7 +271,7 @@ Item {
             delete next[address];
             _sessions = next;
         }
-        const prev = states[address];
+        const prev = snapshots[address];
         if (prev)
             _setState(address, Object.assign({}, prev, {
                 "live": false

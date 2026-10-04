@@ -33,11 +33,6 @@ function refused(family, uuids) {
     return hasInput(uuids);
 }
 
-// D-Bus object path of a BlueZ device, the only thing passed to busctl.
-function validPath(path) {
-    return /^\/org\/bluez\/hci[0-9]{1,3}\/dev_[0-9A-F]{2}(_[0-9A-F]{2}){5}$/.test(path || "");
-}
-
 // busctl --json=short get-property … UUIDs  →  {"type":"as","data":[…]}
 function parseUuids(text) {
     try {

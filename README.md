@@ -82,6 +82,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 - **Drag to connect** with a magnet snap, elastic tether to disconnect.
 - **Two volumes**: open a connected audio device and its card shows the device's own level and this PC's as two half circles, with the sound itself moving inside. Drag or scroll each, click the planet to mute, and a soft tick plays in the device itself.
 - **Volume pop-up and smart steps**: whenever a volume changes, the same screen shows both levels in place of DMS's OSD (or inside Dank Island); 1 % per slow notch, faster when you scroll or press fast, and your volume keys can use it in one click.
+- **What really plays**: a short line under the device name and in the pop-up, for example *Bluetooth · LDAC · 96 kHz · 24 bit*, and a button that unfolds the rest.
 - **Live charging**: energy beam, time to full, charge speed, session chart.
 - **Earbuds trio**: the case and both buds in their own mini orbit, each with its battery.
 - **Noise control** for 13 headphone brands (Sony, Apple, Samsung, Bose, Huawei…).
@@ -139,6 +140,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Pop-up size: Compact, Medium or Large | Medium |
 | | Visualizer: Points, Rays, Waves or None / motion: Smooth or Light | Points / Smooth |
 | | Sounds (short cues) / their volume | Off / 60 % |
+| | Audio details: per fact (connection, codec, sample rate, bit depth, channels, resampling), on the line / when unfolded ([more](docs/GUIDE.md#what-really-plays)) | Line: all but channels and resampling; unfolded: all |
 | | Volume tick (a soft tick in the device while you change its volume) | On |
 | Desktop widget | Displays | All |
 | | Backdrop | 72 % |
@@ -193,6 +195,7 @@ Some Sony headsets do not report charging, or drop Bluetooth while charging: thi
 - **Noise control**: a small helper talks to your headset over a local Bluetooth socket, only while needed.
 - **New headphones pop-up**: by default Orbit only listens to searches you start yourself; nothing runs in the background. The optional **Background scan** (off by default) does a local scan of 8 s about once a minute, only while the screen is on, no Bluetooth audio is connected and the battery is above the threshold.
 - **Two volumes**: talk to the local sound server (PipeWire) only; the tick is a sound file shipped with Orbit, the picture of the sound is read locally with `cava`.
+- **Audio details**: read from PipeWire (`pactl list sinks`) while the card or the pop-up shows, only if a fact is chosen; kept in memory, dropped when it closes.
 - **Volume keys**: only if you click *Enable*, Orbit asks DMS (`dms keybinds`) to bind them; *Undo* and uninstalling give them back exactly. [More](docs/GUIDE.md#volume-keys)
 - **Guide links**: the GitHub mark opens the guide in your browser only when you click it; Orbit itself makes no request.
 - **Network: only one opt-in feature, off by default.** **Real device pictures** sends only the *model name* of devices you have paired, never a stranger's device nearby, never the Bluetooth address. It contacts `commons.wikimedia.org`, then `api.sketchfab.com`, and downloads the picture from `upload.wikimedia.org` or `media.sketchfab.com`. Pictures are credited in the card, kept in `~/.cache/orbitBluetooth/pictures` (readable by you only) and erased when you turn the option off or from the settings.

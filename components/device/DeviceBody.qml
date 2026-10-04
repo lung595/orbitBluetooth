@@ -1,7 +1,4 @@
 import QtQuick
-import QtQuick.Shapes
-import qs.Common
-import qs.Widgets
 import "../card"
 import "../scene"
 import "DeviceCatalog.js" as Catalog
@@ -223,10 +220,11 @@ Item {
         popAnim.restart();
     }
     function celebrate() {
-        lockAnim.restart();
+        lockRing.lock();
+        tetherPulse.restart();
     }
     function release() {
-        releaseAnim.restart();
+        lockRing.release();
     }
     function shake() {
         shakeAnim.restart();
@@ -328,279 +326,35 @@ Item {
         // endlessly and never finish fading in)
         opacity: body.inSlot && !body.focused ? 0.8 + 0.2 * body.depthScale : 1
 
-        // Halo for connected devices
-        Rectangle {
-            anchors.centerIn: parent
-            width: parent.width * 1.55
-            height: width
-            radius: width / 2
-            color: Theme.withAlpha(body.night.primary, 0.07)
-            opacity: body.connected && !body.focused ? 1 : 0
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: 500
-                }
-            }
-        }
-
-        // Soft glow behind the glyph while it floats above the focus card
-        Rectangle {
-            anchors.centerIn: parent
-            width: parent.width * 0.9
-            height: width
-            radius: width / 2
-            color: Theme.withAlpha(body.night.primary, 0.05)
-            opacity: body.focused ? 1 : 0
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: 400
-                }
-            }
-        }
-
-        Rectangle {
-            id: disc
-            anchors.fill: parent
-            radius: width / 2
-            opacity: body.focused ? 0 : 1
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: 260
-                }
-            }
-            color: body.night.whiteBodies ? (body.connected ? Qt.tint("#FFFFFF", Theme.withAlpha(Theme.primary, 0.1)) : Qt.rgba(1, 1, 1, body.dormant ? 0.35 : 0.72)) : body.connected ? Qt.tint(Qt.rgba(0.06, 0.07, 0.09, 0.92), Theme.withAlpha(body.night.primary, 0.16)) : body.scene.glass ? Qt.rgba(0.05, 0.06, 0.08, body.dormant ? 0.5 : 0.6) : Qt.rgba(1, 1, 1, body.dormant ? 0.05 : 0.085)
-            border.width: 1
-            border.color: body.armed && body.holding ? Theme.withAlpha(body.night.error, 0.8) : body.armed ? Theme.withAlpha(body.night.primary, 0.9) : body.connected ? Theme.withAlpha(body.night.primary, 0.55) : Qt.rgba(1, 1, 1, body.dormant ? 0.11 : 0.17)
-
-            Behavior on color {
-                ColorAnimation {
-                    duration: 350
-                }
-            }
-        }
-
-        DeviceGlyph {
-            anchors.centerIn: parent
-            width: parent.width * (pictureShown ? 0.92 : 0.52)
-            height: width
-            kind: body.kind
-            imageSource: body.scene.prefs.imageFor(body.device)
-            pictureSource: body.picture ? body.picture.image : ""
-            color: body.focused ? body.paper.ink : body.night.whiteBodies ? (body.connected ? body.night.bodyInk : body.night.bodyMuted) : body.connected ? Qt.lighter(body.night.primary, 1.12) : Qt.rgba(1, 1, 1, 0.86)
-            stroke: body.focused ? 1.05 : 1.5
-            Behavior on color {
-                ColorAnimation {
-                    duration: 300
-                }
-            }
-        }
-
-        BodyArcs {
-            anchors.fill: parent
+        BodyFace {
             body: body
         }
 
-        // Charging badge
-        Rectangle {
-            width: Math.round(body.diameter * 0.34)
-            height: width
-            radius: width / 2
-            x: parent.width * 0.86 - width / 2
-            y: parent.height * 0.86 - height / 2
-            color: body.night.primary
-            border.width: 2
-            border.color: Qt.rgba(0.04, 0.045, 0.06, 1)
-            visible: body.charging && !body.focused
-
-            DankIcon {
-                anchors.centerIn: parent
-                name: "bolt"
-                size: parent.width * 0.78
-                color: body.night.primaryText ?? "black"
-            }
+        ConnectingFx {
+            body: body
         }
 
-        // Connecting: a comet circles the device. Its tapered tail is static
-        // geometry (rebuilt only on resize); the effects clock turns it: a
-        // steady orbit (1.5 s per turn) plus a slow sway (±22°, 1.8 s), so it
-        // speeds up and eases off like a breath. Nothing runs outside a
-        // connection attempt.
-        Item {
-            id: comet
-            anchors.centerIn: parent
-            width: parent.width + 14
-            height: width
-            visible: body.phase === "connecting"
-            readonly property real r: width / 2 - 2.5
-            readonly property real span: 200 * Math.PI / 180   // tail length, radians
-
-            rotation: comet.visible ? (body.scene.fxTime * 240) % 360 : 0
-
-            Item {
-                id: sway
-                anchors.fill: parent
-
-                rotation: comet.visible && body.scene.motion ? -22 * Math.cos(body.scene.fxTime * Math.PI / 0.9) : 0
-
-                // Tail: a crescent that thins to nothing, brightest at the head
-                Shape {
-                    anchors.fill: parent
-                    preferredRendererType: Shape.CurveRenderer
-
-                    ShapePath {
-                        strokeWidth: -1
-                        fillGradient: ConicalGradient {
-                            centerX: comet.width / 2
-                            centerY: comet.height / 2
-                            angle: 0
-                            GradientStop {
-                                position: 0
-                                color: Theme.withAlpha(body.night.primary, 0.95)
-                            }
-                            GradientStop {
-                                position: 0.3
-                                color: Theme.withAlpha(body.night.primary, 0.4)
-                            }
-                            GradientStop {
-                                position: 0.56
-                                color: Theme.withAlpha(body.night.primary, 0)
-                            }
-                            GradientStop {
-                                position: 1
-                                color: Theme.withAlpha(body.night.primary, 0)
-                            }
-                        }
-                        PathPolyline {
-                            path: {
-                                const c = comet.width / 2, r = comet.r, n = 28;
-                                const outer = [], inner = [];
-                                for (let i = 0; i <= n; i++) {
-                                    const t = i / n;
-                                    const a = -t * comet.span;           // behind the head
-                                    const w = 2.6 * Math.pow(1 - t, 1.3) + 0.05;
-                                    outer.push(Qt.point(c + Math.cos(a) * (r + w / 2), c + Math.sin(a) * (r + w / 2)));
-                                    inner.push(Qt.point(c + Math.cos(a) * (r - w / 2), c + Math.sin(a) * (r - w / 2)));
-                                }
-                                return outer.concat(inner.reverse());
-                            }
-                        }
-                    }
-                }
-
-                // Head: a bright core in a soft glow
-                Rectangle {
-                    width: 10
-                    height: 10
-                    radius: 5
-                    x: comet.width / 2 + comet.r - width / 2
-                    y: comet.height / 2 - height / 2
-                    color: Theme.withAlpha(body.night.primary, 0.28)
-                }
-                Rectangle {
-                    width: 4.2
-                    height: 4.2
-                    radius: 2.1
-                    x: comet.width / 2 + comet.r - width / 2
-                    y: comet.height / 2 - height / 2
-                    color: Qt.lighter(body.night.primary, 1.6)
-                }
-            }
-        }
-
-        // Connecting: two soft sonar rings leave the device one after the
-        // other (half a cycle apart), so the attempt reads as a call going
-        // out. Pure functions of the effects clock: no animation of their own.
-        Repeater {
-            model: 2
-            Rectangle {
-                required property int index
-                readonly property real phase: body.phase === "connecting" ? ((body.scene.fxTime / 1.8 + index * 0.5) % 1) : 0
-                anchors.centerIn: parent
-                width: parent.width * (1.05 + 0.75 * phase)
-                height: width
-                radius: width / 2
-                color: "transparent"
-                border.width: 1.5
-                border.color: body.night.primary
-                opacity: body.phase === "connecting" ? 0.5 * Math.pow(1 - phase, 2) : 0
-                visible: opacity > 0.01
-            }
-        }
-
-        // Lock ring: collapses onto the disc when a connection lands
-        Rectangle {
+        LockRing {
             id: lockRing
-            anchors.centerIn: parent
-            width: parent.width
-            height: width
-            radius: width / 2
-            color: "transparent"
-            border.width: 1.5
-            border.color: body.night.primary
-            opacity: 0
+            body: body
         }
     }
 
-    ParallelAnimation {
-        id: lockAnim
+    // The tether thickens as a connection lands
+    SequentialAnimation {
+        id: tetherPulse
         NumberAnimation {
-            target: lockRing
-            property: "scale"
-            from: 1.9
-            to: 1
-            duration: 520
+            target: tetherRoot
+            property: "thickness"
+            to: 3.2
+            duration: 160
+        }
+        NumberAnimation {
+            target: tetherRoot
+            property: "thickness"
+            to: 1.5
+            duration: 600
             easing.type: Easing.OutCubic
-        }
-        SequentialAnimation {
-            NumberAnimation {
-                target: lockRing
-                property: "opacity"
-                from: 0
-                to: 0.9
-                duration: 180
-            }
-            NumberAnimation {
-                target: lockRing
-                property: "opacity"
-                to: 0
-                duration: 520
-                easing.type: Easing.InQuad
-            }
-        }
-        SequentialAnimation {
-            NumberAnimation {
-                target: tetherRoot
-                property: "thickness"
-                to: 3.2
-                duration: 160
-            }
-            NumberAnimation {
-                target: tetherRoot
-                property: "thickness"
-                to: 1.5
-                duration: 600
-                easing.type: Easing.OutCubic
-            }
-        }
-    }
-
-    ParallelAnimation {
-        id: releaseAnim
-        NumberAnimation {
-            target: lockRing
-            property: "scale"
-            from: 1
-            to: 2
-            duration: 560
-            easing.type: Easing.OutCubic
-        }
-        NumberAnimation {
-            target: lockRing
-            property: "opacity"
-            from: 0.8
-            to: 0
-            duration: 560
-            easing.type: Easing.OutQuad
         }
     }
 
@@ -609,83 +363,12 @@ Item {
         body: body
     }
 
-    // Quick disconnect
-    Rectangle {
-        width: Math.round(body.diameter * 0.36)
-        height: width
-        radius: width / 2
-        x: body.width * (0.5 + 0.36 * body.baseScale) - width / 2
-        y: body.height * (0.5 - 0.36 * body.baseScale) - height / 2
-        z: 2
-        color: closeArea.containsMouse ? body.night.error : Qt.rgba(0.1, 0.1, 0.12, 0.95)
-        border.width: 1
-        border.color: Qt.rgba(1, 1, 1, 0.15)
-        opacity: body.scene.prefs.quickDisconnect && body.connected && (body.hovered || closeArea.containsMouse) && !body.dragging ? 1 : 0
-        visible: opacity > 0
-        Behavior on opacity {
-            NumberAnimation {
-                duration: 160
-            }
-        }
-
-        DankIcon {
-            anchors.centerIn: parent
-            name: "close"
-            size: parent.width * 0.7
-            color: closeArea.containsMouse ? body.night.errorText ?? "white" : Qt.rgba(1, 1, 1, 0.8)
-        }
-
-        MouseArea {
-            id: closeArea
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: body.scene.startDisconnect(body)
-        }
+    QuickDisconnect {
+        body: body
     }
 
-    MouseArea {
+    BodyPointer {
         id: mouse
-        anchors.fill: parent
-        hoverEnabled: true
-        preventStealing: true
-        acceptedButtons: Qt.LeftButton | Qt.RightButton
-        enabled: !body.leaving && !body.swallowing && !body.scene.focusBody && !body.scene.hiddenOpen
-        cursorShape: body.dragging ? Qt.ClosedHandCursor : Qt.OpenHandCursor
-
-        property point pressPoint
-        property double pressTime: 0
-
-        function worldPoint(m) {
-            return mapToItem(body.scene.world, m.x, m.y);
-        }
-
-        onPressed: m => {
-            pressPoint = worldPoint(m);
-            pressTime = Date.now();
-            // Right click: the device menu (connect, noise control, hide)
-            if (m.button === Qt.RightButton)
-                body.scene.openMenu(body, mapToItem(body.scene, m.x, m.y));
-        }
-        onPositionChanged: m => {
-            if (!pressed || pressedButtons & Qt.RightButton)
-                return;
-            const p = worldPoint(m);
-            if (!body.dragging && Math.hypot(p.x - pressPoint.x, p.y - pressPoint.y) > 5)
-                body.scene.beginDrag(body, p);
-            if (body.dragging)
-                body.scene.updateDrag(p);
-        }
-        onReleased: m => {
-            if (m.button === Qt.RightButton)
-                return;
-            if (body.dragging)
-                body.scene.endDrag();
-            else if (Date.now() - pressTime < 450)
-                body.scene.focusOn(body);
-        }
-        onCanceled: if (body.dragging)
-            body.scene.endDrag()
-        onContainsMouseChanged: body.scene.wake()
+        body: body
     }
 }

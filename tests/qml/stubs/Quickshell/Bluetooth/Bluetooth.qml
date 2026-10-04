@@ -1,3 +1,7 @@
 pragma Singleton
 import QtQuick
-QtObject { property var devices: []; property var list: [] }
+
+QtObject {
+    property var devices: []
+    property var list: []
+}

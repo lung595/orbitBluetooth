@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell.Io
+import qs.Common
 import "Volume.js" as Volume
 
 // The two volumes of the device on the detail card (D250): TwoLevels for
@@ -11,6 +12,8 @@ TwoLevels {
 
     property string address: ""
     property bool live: false
+    // The card is on screen, folded volume or not (the facts line shows)
+    property bool seen: false
 
     dev: route && address ? route.find(address) : null
     // The device plays through PipeWire: there is something to show
@@ -18,6 +21,7 @@ TwoLevels {
     // The card's own picture of the sound (the pop-up has its own)
     soundNode: dev ? dev.sink : null
     listening: live && ready
+    looking: seen && ready
 
     // No level of its own: say why, with the guide's link (value 10)
     readonly property var note: ready && !deviceAudio ? {
@@ -29,7 +33,7 @@ TwoLevels {
     }
 
     // --- The tick, played in the device on each 5 % step --------------------------
-    readonly property string tickPath: decodeURIComponent(Qt.resolvedUrl("../../sounds/volume.wav").toString().replace(/^file:\/\//, ""))
+    readonly property string tickPath: Paths.strip(Qt.resolvedUrl("../../sounds/volume.wav"))
     property double _lastTick: 0
     onLevelMoved: (before, after) => {
         const sink = dev ? dev.sink : null;

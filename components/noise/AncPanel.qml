@@ -257,42 +257,6 @@ Column {
         spacing: Theme.spacingS
         visible: panel.showVoice || panel.showChat
 
-        component Chip: Rectangle {
-            id: chip
-            property string icon: ""
-            property string label: ""
-            property bool checked: false
-            signal toggled
-            width: chipRow.implicitWidth + 20
-            height: 28
-            radius: 14
-            color: checked ? Theme.withAlpha(Theme.primary, 0.22) : panel.paper.fg(0.05)
-            border.width: checked ? 1 : 0
-            border.color: Theme.withAlpha(Theme.primary, 0.5)
-            Row {
-                id: chipRow
-                anchors.centerIn: parent
-                spacing: 5
-                DankIcon {
-                    anchors.verticalCenter: parent.verticalCenter
-                    name: chip.icon
-                    size: 15
-                    color: chip.checked ? Theme.primary : panel.paper.fg(0.7)
-                }
-                StyledText {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: chip.label
-                    color: chip.checked ? panel.ink : panel.paper.fg(0.7)
-                    font.pixelSize: Theme.fontSizeSmall
-                }
-            }
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: chip.toggled()
-            }
-        }
-
         Chip {
             id: voiceChip
             visible: panel.showVoice
@@ -308,6 +272,42 @@ Column {
             label: "Conversation"
             checked: panel.st.chat === true
             onToggled: panel.scene.ancSend(panel.address, "chat", checked ? "off" : "on")
+        }
+    }
+
+    component Chip: Rectangle {
+        id: chip
+        property string icon: ""
+        property string label: ""
+        property bool checked: false
+        signal toggled
+        width: chipRow.implicitWidth + 20
+        height: 28
+        radius: 14
+        color: checked ? Theme.withAlpha(Theme.primary, 0.22) : panel.paper.fg(0.05)
+        border.width: checked ? 1 : 0
+        border.color: Theme.withAlpha(Theme.primary, 0.5)
+        Row {
+            id: chipRow
+            anchors.centerIn: parent
+            spacing: 5
+            DankIcon {
+                anchors.verticalCenter: parent.verticalCenter
+                name: chip.icon
+                size: 15
+                color: chip.checked ? Theme.primary : panel.paper.fg(0.7)
+            }
+            StyledText {
+                anchors.verticalCenter: parent.verticalCenter
+                text: chip.label
+                color: chip.checked ? panel.ink : panel.paper.fg(0.7)
+                font.pixelSize: Theme.fontSizeSmall
+            }
+        }
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: chip.toggled()
         }
     }
 }

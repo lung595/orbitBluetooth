@@ -1,6 +1,6 @@
 .pragma library
 
-// Pure logic of the volume tick (CardVolume.qml), tested in tests/anc.test.js.
+// Pure logic of the volume tick (CardVolume.qml), tested in tests/*.test.js.
 
 // One step of the tick: a soft sound plays each time the level crosses one
 var stepSize = 0.05;
