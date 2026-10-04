@@ -5,7 +5,7 @@ import QtQuick
 // headset and other made-up outputs listen together (D277), each at its own
 // level, over this PC's shared one.
 QtObject {
-    id: route
+    id: fake
     // The device the open card is on
     property var focusDevice: null
     // True: the headset has no level of its own and follows the PC volume
@@ -82,15 +82,25 @@ QtObject {
         }
     }
     readonly property var together: QtObject {
-        readonly property var members: route.sharing
+        // As the daemon's session: it tells when it ended or a member left
+        signal ended(string why, string address)
+        signal memberLeft(string address)
+        readonly property var route: fake
+        readonly property var members: fake.sharing
         readonly property bool active: members.length >= 2
-        readonly property var sharedNode: route.shared
-        readonly property var sharedNodes: [route.shared, route.copyOne]
+        // The first member is the output in use: the one whose sound is copied
+        readonly property string source: active ? members[0] : ""
+        function nameOf(address) {
+            const d = fake.known(address);
+            return d && d.device ? d.device.name : "";
+        }
+        readonly property var sharedNode: fake.shared
+        readonly property var sharedNodes: [fake.shared, fake.copyOne]
         function isMember(address) {
             return members.indexOf(address) >= 0;
         }
         function memberNode(address) {
-            return address === "02:00:00:00:10:06" ? route.headset.sink : route._others[address] || null;
+            return address === "02:00:00:00:10:06" ? fake.headset.sink : fake._others[address] || null;
         }
     }
     function known(address) {
@@ -99,6 +109,8 @@ QtObject {
         const n = String(address).slice(-1);
         return _others[address] ? {
             "address": address,
+            "absolute": 1,
+            "sink": _others[address],
             "device": {
                 "address": address,
                 "name": "Speaker " + n,
@@ -132,6 +144,9 @@ QtObject {
     }
     function mainPart(address) {
         return "device";
+    }
+    function stepFor(dir, level) {
+        return 5;
     }
     function stepNode(node, dir) {
         writeLevel(node, Math.max(0, Math.min(1, node.audio.volume + dir * 0.05)));

@@ -6,6 +6,8 @@ import QtQuick
 QtObject {
     // The current default output (a node), null for none
     property var defaultAudioSink: null
+    // Whether sound is playing (the beams of a Listen together pulse then)
+    property bool playing: true
     readonly property QtObject headset: QtObject {
         readonly property string name: "bluez_output.02_00_00_00_10_06.1"
         readonly property bool isSink: true

@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Window
+import Quickshell.Services.Pipewire
 import qs.Common
 import qs.Services
 import "../../components/scene"
@@ -12,7 +13,10 @@ import "mock/State.js" as State
 // Usage: QT_QPA_PLATFORM=offscreen qml -I imports shot.qml -- <mode> <out.png>
 // Modes: orbit, zoom, orbitfocus, volumefocus (the card with its two volumes), desktop, desktopfocus, ancfocus,
 //        buds, budsdock, hole, holetess, hiddencard, hiddenempty, connecting, menu, feed,
-//        btblocked (Turn on did nothing: note), noadapter
+//        btblocked (Turn on did nothing: note), noadapter,
+//        together2, together3, together4 (the headset and 1 to 3 speakers listen
+//        together: the source takes the center), togetherback (the host was
+//        clicked: it is back at the center and the group has stepped back)
 Window {
     id: win
     readonly property var args: Qt.application.arguments
@@ -21,6 +25,8 @@ Window {
     // hardest case for label contrast), "-none" disconnects every device,
     // "-fit" sizes the window like the bar popout (grows to the open card),
     // "-cc" like the Control Center tile (same, from a smaller minimum),
+    // "-silent" stops the made-up sound (the beams of a group do not pulse),
+    // "-reduce" turns Reduce motion on,
     // "-follow" gives the headset no level of its own (no absolute volume),
     // "-fold" starts the card's volumes folded, as in the menus, and
     // "-unfold" shows them unfolded there, "-facts" opens the audio details
@@ -32,6 +38,10 @@ Window {
     readonly property bool cc: parts.indexOf("cc") > 0
     readonly property bool fit: parts.indexOf("fit") > 0 || cc
     readonly property bool follow: parts.indexOf("follow") > 0
+    readonly property bool silent: parts.indexOf("silent") > 0
+    readonly property bool reduce: parts.indexOf("reduce") > 0
+    // Speakers that listen together with the headset in the "together" shots
+    readonly property int outputs: mode.startsWith("together") && mode !== "togetherback" ? Number(mode.slice(8)) - 1 : mode === "togetherback" ? 2 : 0
     readonly property bool fold: parts.indexOf("fold") > 0 || unfold
     readonly property bool unfold: parts.indexOf("unfold") > 0
     readonly property bool facts: parts.indexOf("facts") > 0
@@ -47,7 +57,7 @@ Window {
 
     readonly property double t: Date.now()
 
-    readonly property var devices: Devices.list(none)
+    readonly property var devices: Devices.list(none, outputs)
 
     Component.onCompleted: {
         if (light) {
@@ -69,6 +79,8 @@ Window {
                 "holeStyle": mode === "holetess" ? "tesseract" : "blackhole",
                 "desktopBackdrop": bright ? 50 : 72
             });
+        SettingsData.reduceMotion = reduce;
+        Pipewire.playing = !silent;
         BluetoothService.discovering = mode === "orbit";
         // btblocked: "Turn on" pressed, nothing changed (note shown);
         // noadapter: no adapter at all
@@ -109,6 +121,7 @@ Window {
         id: fakeRoute
         focusDevice: scene.focusBody ? scene.focusBody.device : null
         follow: win.follow
+        sharing: win.outputs > 0 ? ["02:00:00:00:10:06", "02:00:00:00:20:01", "02:00:00:00:20:02", "02:00:00:00:20:03"].slice(0, win.outputs + 1) : []
     }
 
     // The scene object a shot acts on, by its Bluetooth address
@@ -126,6 +139,8 @@ Window {
             const b = bodyOf("02:00:00:00:10:06");
             if (b)
                 scene.focusOn(b);
+        } else if (mode === "togetherback") {
+            scene.centre.recall();
         } else if (mode === "hiddencard" || mode === "hiddenempty") {
             scene.openHidden();
         } else if (mode === "btblocked") {
@@ -154,6 +169,8 @@ Window {
         if (mode === "volumefocus")
             return 1760;
         if (mode.endsWith("focus") || mode.startsWith("hidden"))
+            return 1800;
+        if (mode.startsWith("together"))
             return 1800;
         if (mode === "connecting")
             return 700;
