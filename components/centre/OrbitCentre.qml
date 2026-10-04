@@ -221,16 +221,6 @@ Item {
         scene.wake();
     }
 
-    // A popout that closes (a click outside it does that) opens again on
-    // Fedora's view, set at once: nobody sees the way there
-    readonly property bool _open: scene.active
-    on_OpenChanged: {
-        if (_open || !canRecall)
-            return;
-        recalled = true;
-        stage = _goalStage;
-    }
-
     // --- The session changes -------------------------------------------------------
     // Who is in, and which one is the source, as one text so the handler runs
     // when either changes and not each time the session updates

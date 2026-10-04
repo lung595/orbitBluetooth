@@ -11,8 +11,7 @@ import "mock/State.js" as State
 // Test of the click on the empty sky that steps back one level (D294): while
 // a Listen together has the centre, the group can step back to give it to the
 // host (canRecall, recall()) but only once; a popout that closes reopens on
-// Fedora's view at once, with nothing to see on the way (and only when a
-// group has the centre); the click's order is the card first, then Fedora's
+// the view it had (D297); the click's order is the card first, then Fedora's
 // view (OrbitFocus.stepBack); and a real click on the sky of a real scene
 // does that, and falls through to what lies below while there is nothing to
 // step back from (the backdrop's click area is enabled only then). The first
@@ -38,7 +37,7 @@ Item {
         property var prefs: ({
                 "togetherCentre": true
             })
-        // Must exist and be a bool: the centre binds it to `_open`
+        // Whether the popout is open; the centre itself does not read it
         property bool active: true
         property bool awake: true
         property bool motion: true
@@ -148,38 +147,35 @@ Item {
         check("then the group is at the back", [centreItem.stage, centreItem.travelling], [1, false]);
     }
 
-    // A popout that closes (a click outside it does that) opens again on
-    // Fedora's view, with no voyage to watch: the stage is set at once
+    // A popout that closes (a click outside it does that) opens again on the
+    // view it had: the group's if it had the centre, Fedora's if it had stepped
+    // back (D297). Closing changes nothing, so nothing is recalled and nothing
+    // moves while nobody looks.
     function closing() {
         reset();
         route.sharing = [h.headset, h.one, h.two];
         run(1);
-        check("open with a group: it has the centre", [centreItem.recalled, centreItem.stage], [false, 0]);
         stub.active = false;
-        check("closed: Fedora's view is set at once, with no voyage", [centreItem.recalled, centreItem.stage], [true, 1]);
+        check("closed on the group's view: it keeps the centre", [centreItem.recalled, centreItem.stage], [false, 0]);
         stub.active = true;
-        check("opened again: it is still on Fedora's view", [centreItem.recalled, centreItem.stage], [true, 1]);
+        check("opened again: still the group's view", [centreItem.recalled, centreItem.stage], [false, 0]);
 
-        // Nothing to step back from: closing leaves the centre as it is
-        reset();
-        stub.active = false;
-        check("closed with no group: nothing is recalled", [centreItem.recalled, centreItem.stage], [false, 0]);
-        stub.active = true;
-        // The popout opening is not a close: it recalls nothing either
-        route.sharing = [h.headset, h.one, h.two];
-        run(1);
-        check("opened with a group: the group has the centre", [centreItem.recalled, centreItem.stage], [false, 0]);
-
-        // Already on Fedora's view: closing and opening change nothing
+        // Stepped back to Fedora's view before closing: it opens on that view
         centreItem.recall();
         run(1);
         stub.active = false;
         stub.active = true;
-        check("already stepped back: closing changes nothing", [centreItem.recalled, centreItem.stage], [true, 1]);
+        check("closed on Fedora's view: it opens on Fedora's view", [centreItem.recalled, centreItem.stage], [true, 1]);
+
         // The group ends: the next one starts at the centre again
         route.sharing = [];
         run(1);
         check("the group ends: the recall is forgotten", [centreItem.recalled, centreItem.canRecall], [false, false]);
+
+        // No group: closing and opening leave the centre as it is
+        stub.active = false;
+        stub.active = true;
+        check("no group: nothing is recalled", [centreItem.recalled, centreItem.stage], [false, 0]);
     }
 
     function stepBack() {
