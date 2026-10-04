@@ -66,6 +66,24 @@ Item {
             }
         },
         {
+            // A save that changes nothing leaves DMS's flag up for good
+            "run": () => {
+                dms._selfWrite = true;
+                check("a save without a file event: the switch lets go", dms.osdVolumeEnabled, true);
+            },
+            "wait": 400
+        },
+        {
+            "run": () => {
+                check("then DMS's flag is lowered", dms._selfWrite, false);
+                check("and the switch is back", dms.osdVolumeEnabled, false);
+                dms._selfWrite = true;
+                check("the next save is seen too", dms.osdVolumeEnabled, true);
+                dms._selfWrite = false;
+                check("and the switch comes back", dms.osdVolumeEnabled, false);
+            }
+        },
+        {
             "run": () => {
                 off.active = false;
                 check("ended: DMS's setting is back", dms.osdVolumeEnabled, true);
@@ -113,6 +131,7 @@ Item {
             return;
         }
         steps[at++].run();
+        clock.interval = steps[at - 1].wait || 20;
         clock.start();
     }
     Component.onCompleted: Qt.callLater(next)
