@@ -1,4 +1,5 @@
 import QtQuick
+
 // Mirrors DMS's StyledText defaults (wrap, elide, vertical centering) so
 // previews lay text out like the real shell does
 Text {

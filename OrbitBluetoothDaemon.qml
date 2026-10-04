@@ -53,7 +53,7 @@ Item {
 
     AncService {
         id: ancService
-        enabled: prefs.ancEnabled
+        active: prefs.ancEnabled
         engine: prefs.ancEngine
         chatOffOnDisconnect: prefs.ancChatOff
         publish: map => root._publish("anc", map)
@@ -62,7 +62,7 @@ Item {
     // Real device pictures: off by default, the only use of the network
     PictureService {
         id: pictureService
-        enabled: prefs.realPictures
+        active: prefs.realPictures
         clearToken: prefs.picturesClear
         publish: map => root._publish("pictures", map)
     }
@@ -219,7 +219,7 @@ Item {
 
         function ancStatus(): string {
             const address = ancService.primary();
-            const s = ancService.states[address];
+            const s = ancService.snapshots[address];
             if (!address)
                 return "No supported headset connected · " + Guide.url("noise-control");
             if (!s || !s.state)

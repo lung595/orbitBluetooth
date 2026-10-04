@@ -26,7 +26,7 @@ Workflow:
 - Tests: `(cd anc && python3 -m unittest discover -s tests -t .)` and
   `(cd pictures && python3 -m unittest discover -s tests -t .)` and
   `sh tests/qml/run.sh` (Qt 6) and
-  `gjs tests/anc.test.js` when gjs is available.
+  `sh tests/run.sh` when gjs is available.
 - Code comments explain *why*, in English, like the surrounding code.
 - Use `Theme` tokens (spacing, radius, surface colors) for chrome. The night
   sky is the only place with fixed colors, and they live in `NightColors`.

@@ -24,12 +24,72 @@ Window {
 
     function makeDevices(budsConnected) {
         return [
-            { address: headset, name: "WH-1000XM6", connected: true, paired: true, bonded: true, blocked: false, batteryAvailable: true, battery: 0.54, icon: "audio-headphones" },
-            { address: "98:7A:14:22:C1:0E", name: "Xbox Wireless Controller", connected: true, paired: true, bonded: true, blocked: false, batteryAvailable: true, battery: 0.72, icon: "input-gaming" },
-            { address: "D4:1A:88:10:5B:77", name: "MX Master 3S", connected: false, paired: true, bonded: true, blocked: false, batteryAvailable: false, battery: 0, icon: "input-mouse" },
-            { address: buds, name: "AirPods Pro", connected: budsConnected, paired: budsConnected, bonded: budsConnected, blocked: false, batteryAvailable: budsConnected, battery: 0.86, icon: "audio-headset" },
-            { address: "F0:65:AE:31:9C:40", name: "Galaxy Buds3", connected: false, paired: false, bonded: false, blocked: false, batteryAvailable: false, battery: 0, icon: "audio-headset" },
-            { address: "3C:8D:20:54:AB:12", name: "Keychron K3", connected: false, paired: true, bonded: true, blocked: false, batteryAvailable: false, battery: 0, icon: "input-keyboard" }
+            {
+                address: headset,
+                name: "WH-1000XM6",
+                connected: true,
+                paired: true,
+                bonded: true,
+                blocked: false,
+                batteryAvailable: true,
+                battery: 0.54,
+                icon: "audio-headphones"
+            },
+            {
+                address: "98:7A:14:22:C1:0E",
+                name: "Xbox Wireless Controller",
+                connected: true,
+                paired: true,
+                bonded: true,
+                blocked: false,
+                batteryAvailable: true,
+                battery: 0.72,
+                icon: "input-gaming"
+            },
+            {
+                address: "D4:1A:88:10:5B:77",
+                name: "MX Master 3S",
+                connected: false,
+                paired: true,
+                bonded: true,
+                blocked: false,
+                batteryAvailable: false,
+                battery: 0,
+                icon: "input-mouse"
+            },
+            {
+                address: buds,
+                name: "AirPods Pro",
+                connected: budsConnected,
+                paired: budsConnected,
+                bonded: budsConnected,
+                blocked: false,
+                batteryAvailable: budsConnected,
+                battery: 0.86,
+                icon: "audio-headset"
+            },
+            {
+                address: "F0:65:AE:31:9C:40",
+                name: "Galaxy Buds3",
+                connected: false,
+                paired: false,
+                bonded: false,
+                blocked: false,
+                batteryAvailable: false,
+                battery: 0,
+                icon: "audio-headset"
+            },
+            {
+                address: "3C:8D:20:54:AB:12",
+                name: "Keychron K3",
+                connected: false,
+                paired: true,
+                bonded: true,
+                blocked: false,
+                batteryAvailable: false,
+                battery: 0,
+                icon: "input-keyboard"
+            }
         ];
     }
 
@@ -45,7 +105,10 @@ Window {
         BluetoothService.discovering = false;
         PluginService.globalVars = {
             "orbitBluetooth": {
-                "since": { [headset]: t - 42 * m, "98:7A:14:22:C1:0E": t - 95 * m },
+                "since": {
+                    [headset]: t - 42 * m,
+                    "98:7A:14:22:C1:0E": t - 95 * m
+                },
                 "batteryLog": {
                     [headset]: [[t - 34 * m, 38], [t - 24 * m, 43], [t - 14 * m, 48], [t - 4 * m, 53], [t - 1 * m, 54]],
                     "98:7A:14:22:C1:0E": [[t - 95 * m, 81], [t - 60 * m, 77], [t - 20 * m, 73], [t - 5 * m, 72]]

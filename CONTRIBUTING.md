@@ -48,9 +48,9 @@ Logic that can be tested lives in **pure `.js` files** with no QML: `card/Charge
 
 **Noise control** is the only part outside QML: QML cannot open a Bluetooth socket, so `components/noise/AncService.qml` runs `anc/orbit_anc.py`, which speaks each vendor protocol (`anc/protocols/`, one module per brand) through a JSON session on stdin/stdout. `anc/sdp.py` finds the RFCOMM channel.
 
-**New headphones pop-up**: `components/pairing/NewDeviceWatch.qml` (in the daemon) runs the short background scan, picks what to offer (`Offer.js`, pure) and drives pairing; `NewDeviceWindow.qml` is its layer-shell window and `PairingSheet.qml` the sheet itself (two skins, colours from `Palette.js`), which `scripts/preview/sheet.qml` renders offscreen with six test palettes, or records frame by frame. Before a new device is trusted, `ProfileCheck.qml` reads its Bluetooth profiles with `busctl` and `Guard.js` (pure, tested) decides: a non-input device that can also send key presses stays blocked until the user confirms. Never trust a device from its name alone.
+**New headphones pop-up**: `components/pairing/NewDeviceWatch.qml` (in the daemon) drives the pop-up and pairing, with `BackgroundScan.qml` (the opt-in short scan), `OfferQueue.qml` (what to offer next, snoozes; `Offer.js`, pure) and `DemoDevice.qml` (the made-up headset of the demo); `NewDeviceWindow.qml` is its layer-shell window and `PairingSheet.qml` the sheet itself (two skins, colours from `Palette.js`), which `scripts/preview/sheet.qml` renders offscreen with six test palettes, or records frame by frame. Before a new device is trusted, `ProfileCheck.qml` reads its Bluetooth profiles with `busctl` and `Guard.js` (pure, tested) decides: a non-input device that can also send key presses stays blocked until the user confirms. Never trust a device from its name alone.
 
-**Guided, never blocked**: `components/common/Guide.js` (pure, tested) builds the guide links and the short notes (`connectNote`); `scene/OrbitNote.qml` shows them at the bottom of the sky and `common/GuideLink.qml` is the GitHub mark (drawn by `common/GitHubMark.qml`) that opens a guide section on click. A new refusal gets a note and an anchor that exists in `docs/GUIDE.md` (the tests check it). Every new Quickshell import or service used by a component needs its mock in `scripts/preview/imports/`, or the previews break.
+**Guided, never blocked**: `components/common/Guide.js` (pure, tested) builds the guide links and the short notes (`connectNote`); `scene/OrbitNote.qml` shows them at the bottom of the sky and `common/GuideLink.qml` is the GitHub mark (drawn by `common/GitHubMark.qml`) that opens a guide section on click. A new refusal gets a note and an anchor that exists in `docs/GUIDE.md` (the tests check it). Every new Quickshell import or service used by a component needs its mock in `scripts/preview/imports/`, or the previews break; the made-up devices and state of the screenshots live in `scripts/preview/mock/`.
 
 **Uninstalling leaves nothing** (value 12): `components/common/UninstallSweep.qml` (in the daemon) reads `uninstall/orbit_uninstall.py` when Orbit loads; when Orbit is unloaded and its `plugin.json` is gone, it starts that script detached, from memory (`python3 -c`), since the folder no longer exists. The script waits 4 s, checks again (an update may re-clone the folder) and only then edits the shell's JSON files, which DMS watches. Never create QML objects in `Component.onDestruction`: it crashed the shell.
 
@@ -108,7 +108,7 @@ orbitBluetooth/
 │   │   ├── AudioRoute.qml, RouteDevice.qml, Route.js   # the two levels of each output: PC filter, absolute volume, IPC
 │   │   └── VolumeKeys.qml, Keys.js, Steps.js # volume keys through `dms keybinds`, smart steps (pure, tested)
 │   ├── pairing/                 # new device pop-up and pairing offer
-│   │   ├── NewDeviceWatch.qml, Offer.js, Guard.js, ProfileCheck.qml  # background scan, what to offer, the input-device guard
+│   │   ├── NewDeviceWatch.qml, BackgroundScan.qml, OfferQueue.qml, DemoDevice.qml, Offer.js, Guard.js, ProfileCheck.qml  # pop-up, background scan, what to offer, demo, the input-device guard
 │   │   ├── NewDeviceWindow.qml, PairingSheet.qml, Palette.js  # the window and the sheet (the card, its keys and its parts)
 │   │   ├── PairingSkin.qml, PictureColor.qml, PairingMotion.qml  # the two skins' colours, the picture's colour, the sheet's clock and entrance
 │   │   ├── PairingSky.qml, PairingPlanet.qml, PairingHeader.qml  # the scene behind the device, status and close button
@@ -134,11 +134,11 @@ orbitBluetooth/
 │   ├── orbit_uninstall.py       # erases what DMS keeps once Orbit is removed
 │   └── tests/                   # unittest, on fake shell files
 ├── tests/qml/                   # pop-up scenario and polar scope tests, stubs for Quickshell/DMS
-├── tests/anc.test.js            # gjs: every pure .js module (noise control, battery, volumes, notes…)
+├── tests/*.test.js, lib.js, run.sh  # gjs: one file per role (noise, battery, device, pairing, common, volume, scene), the shared loader, the runner
 ├── shaders/                     # .frag sources, compiled .qsb, build.sh
 ├── scripts/
 │   ├── gen_sounds.py            # synthesizes sounds/*.wav
-│   └── preview/                 # offscreen renderer with mock services
+│   └── preview/                 # offscreen renderer: shot.qml (modes), mock/ (devices, state, route, wallpaper), imports/ (mock services)
 ├── screenshots/                 # images used by the docs
 ├── sounds/
 └── docs/GUIDE.md                # user guide
@@ -151,7 +151,7 @@ orbitBluetooth/
 (cd pictures && python3 -m unittest discover -s tests -t .)   # picture lookup, without network
 (cd uninstall && python3 -m unittest discover -s tests -t .)  # uninstall sweep, on fake shell files
 sh tests/qml/run.sh                                       # new-device pop-up scenario and polar scope (Qt 6)
-gjs tests/anc.test.js                                     # every pure .js module: noise control, battery, physics, volumes, scope
+sh tests/run.sh                                          # every pure .js module, one test file per role (or gjs tests/volume.test.js for one)
 ```
 
 Run them all before every commit. A new headphone brand needs a module in `anc/protocols/` and tests in `anc/tests/`.

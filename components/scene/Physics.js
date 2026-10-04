@@ -5,7 +5,7 @@
 // scene itself: cx, cy, rx, ry, ringCy, ringRy, innerNorm, snapNorm,
 // detachNorm, outerMinNorm, bodySize, coreSize, holeX, holeY, holeHorizon); they
 // change only the body handed to spring() and the target handed to
-// separate(). Tested by tests/anc.test.js.
+// separate(). Tested by tests/*.test.js.
 
 // Critically-tuned spring step: k is the stiffness, zeta the damping ratio
 // (1 = no overshoot, used with Reduce motion)

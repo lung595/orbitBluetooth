@@ -18,7 +18,7 @@ cp -r "$root"/components "$work"/
 cp "$here"/ProfileCheck.qml "$here"/NewDeviceWindow.qml "$work"/components/pairing/
 cp "$here"/Device.qml "$here"/*.test.qml "$work"/
 # Quickshell's device list is a model with .values; the stub keeps a plain list
-sed -i 's/Bluetooth\.devices\.values/Bluetooth.list/g' "$work"/components/pairing/NewDeviceWatch.qml
+sed -i 's/Bluetooth\.devices\.values/Bluetooth.list/g' "$work"/components/pairing/*.qml
 export QT_QPA_PLATFORM=offscreen
 # Print to the terminal, not to journald, including print() lines
 export QT_FORCE_STDERR_LOGGING=1 QT_LOGGING_RULES='qml.debug=true;js.debug=true'

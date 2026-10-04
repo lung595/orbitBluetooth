@@ -45,9 +45,21 @@ Shape {
         }
         startX: 0
         startY: 0
-        PathLine { x: glow.width; y: 0 }
-        PathLine { x: glow.width; y: glow.height }
-        PathLine { x: 0; y: glow.height }
-        PathLine { x: 0; y: 0 }
+        PathLine {
+            x: glow.width
+            y: 0
+        }
+        PathLine {
+            x: glow.width
+            y: glow.height
+        }
+        PathLine {
+            x: 0
+            y: glow.height
+        }
+        PathLine {
+            x: 0
+            y: 0
+        }
     }
 }

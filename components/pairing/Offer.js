@@ -1,7 +1,7 @@
 .pragma library
 
 // Decisions behind the "new device" pop-up, kept free of QML so they can be
-// tested (tests/anc.test.js). NewDeviceWatch.qml feeds them the live state.
+// tested (tests/*.test.js). NewDeviceWatch.qml feeds them the live state.
 
 // Why the background scan must not run right now, or "" when it may.
 // ctx: {enabled, btOn, asleep, busy, audioConnected, onBattery, level, minLevel}
