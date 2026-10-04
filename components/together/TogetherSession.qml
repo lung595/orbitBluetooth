@@ -201,7 +201,10 @@ Item {
         const d = route.known(a);
         return !d || !d.connected;
     }).join(",")
-    on_GoneChanged: {
+    // Leaving changes `members`, which `_gone` reads: it is done once this
+    // update is over, not inside it
+    on_GoneChanged: Qt.callLater(_leaveGone)
+    function _leaveGone() {
         if (_gone)
             _leave(_gone.split(","), "member-left");
     }
@@ -212,23 +215,29 @@ Item {
         const d = route.known(address);
         return d ? (route.deviceNode(d) || d.sink) : null;
     }
-    // The level this PC sends to the members, one per member: each member's
-    // PC-level filter, and the source's own PC level when it has no filter.
-    // The copy is taken before the PC level, so every member applies it
-    // itself and they must all hold the same one: writing one writes them
-    // all (AudioRoute.levelNodes).
-    readonly property var sharedNodes: active ? members.map(a => {
-        const d = route.known(a);
-        return d ? (d.pc || (a === source ? route.pcNode(d) : null)) : null;
-    }).filter(n => !!n && !!n.audio) : []
-    // The one the face shows: the source's
+    // The level the face shows: this PC's level on the source
     readonly property var sharedNode: {
         const d = source ? route.known(source) : null;
         return d ? (route.pcNode(d) || d.sink) : null;
     }
+    // The copy is taken from the source's PC-level filter, before its level,
+    // so each member applies the level itself through its own filter and they
+    // must all hold the same one: writing one writes them all
+    // (AudioRoute.levelNodes). A source without that filter is copied after
+    // its output level (it is the PC level there), so nothing is shared: each
+    // member then plays that sound at its own level.
+    readonly property var sharedNodes: {
+        const d = active && source ? route.known(source) : null;
+        if (!d || !d.pc)
+            return [];
+        return members.map(a => {
+            const m = route.known(a);
+            return m ? m.pc : null;
+        }).filter(n => !!n && !!n.audio);
+    }
     // Newcomers start at the level the others share, and unmuted as they are
     function _align(who) {
-        const from = sharedNode;
+        const from = sharedNodes.length ? sharedNode : null;
         if (!from || !from.audio)
             return;
         for (const a of who) {
