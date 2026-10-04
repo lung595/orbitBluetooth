@@ -4,8 +4,9 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const C = load("Centre.js", ["PERIOD", "MAX_SHIFT", "GROUP_SIZE", "TILT", "clamp01", "lerp", "ease", "approach", "grow", "backSpot", "sizes", "labelOffset", "groupAt", "away", "phaseAt", "copySlot", "depthSize", "parallax", "copiesOf", "roleOf", "label", "pulse"]);
+const C = load("Centre.js", ["PERIOD", "MAX_SHIFT", "GROUP_SIZE", "TILT", "clamp01", "ease", "approach", "grow", "sizes", "labelOffset", "groupAt", "away", "phaseAt", "copySlot", "depthSize", "parallax", "copiesOf", "roleOf", "label", "pulse"]);
 const V = load("MasterVolume.js");
+const P = load("Perspective.js", ["FLAT", "size"]);
 
 const near = (v, d) => Math.round(v * 1000) / 1000;
 const round = list => list.map(near);
@@ -29,8 +30,13 @@ eq("grow: a planet that has no size yet appears at its goal", C.grow(0, 32, 65, 
 eq("away: the host is at the back once the group has the centre", [C.away(0, 0), C.away(1, 0), C.away(1, 1), C.away(0.5, 0)], [0, 1, 0, 0.5]);
 
 // --- where things sit -----------------------------------------------------------
-eq("back spot: up on the left, inside the scene", [C.backSpot(g).x < g.cx, C.backSpot(g).y < g.cy, C.backSpot(g).x > 0, C.backSpot(g).y > 0], [true, true, true, true]);
-eq("group: at the centre, then stepped back to the back spot, smaller", [C.groupAt(g, 0), C.groupAt(g, 1)], [{ x: g.cx, y: g.cy, scale: 1 }, { x: C.backSpot(g).x, y: C.backSpot(g).y, scale: C.GROUP_SIZE }]);
+// The group's slot on the host's ring: the far side, a little to the left
+const slot = { x: g.cx - 60, y: g.cy - 20, depth: -0.8 };
+eq("tilt: one value for every orbit, the profile view's (15 degrees)", C.TILT, P.FLAT);
+eq("group: at the centre and in front, then stepped back onto its slot, smaller", [C.groupAt(g, 0, slot), C.groupAt(g, 1, slot)], [{ x: g.cx, y: g.cy, scale: 1, depth: 1 }, { x: slot.x, y: slot.y, scale: C.GROUP_SIZE * P.size(slot.depth, 1), depth: slot.depth }]);
+eq("group: half way is half way, on the line between the two", [C.groupAt(g, 0.5, slot).x, C.groupAt(g, 0.5, slot).y, near(C.groupAt(g, 0.5, slot).depth)], [g.cx - 30, g.cy - 10, near((1 - 0.8) / 2)]);
+eq("group: on the ring it is as big as a body is at that depth, nearest biggest", [1, 0.5, 0, -0.5, -1].map(depth => C.groupAt(g, 1, { x: 0, y: 0, depth }).scale).every((v, i, all) => i === 0 || v < all[i - 1]), true);
+eq("group: nearest on the ring it is GROUP_SIZE of its size in the middle", C.groupAt(g, 1, { x: 0, y: 0, depth: 1 }).scale, C.GROUP_SIZE);
 
 const s = C.sizes(g);
 eq("sizes: the source is exactly as big as the host's core, a copy smaller than a ring planet", [s.source, s.copy < g.bodySize, s.copy >= 12], [g.coreSize, true, true]);
@@ -40,7 +46,7 @@ const t = C.sizes(small);
 eq("sizes: on a small scene the copies shrink and the orbit still fits", [t.copy < s.copy, t.copy >= 12, t.radius <= small.rx * 0.9], [true, true, true]);
 
 // --- the copies' orbit ----------------------------------------------------------
-const centre = C.groupAt(g, 0);
+const centre = C.groupAt(g, 0, slot);
 const R = s.radius;
 const slots = n => Array.from({ length: n }, (_, i) => C.copySlot(R, centre, i, n, 0.3));
 for (const n of [1, 2, 3]) {
@@ -56,7 +62,7 @@ eq("orbit: the near side has a positive depth, the far side a negative one", [C.
 eq("orbit: a turn takes 25 s (the user-facing pace, written out so a change is deliberate)", C.PERIOD, 25);
 eq("orbit: one turn takes 25 s and comes back to the start", [near(C.phaseAt(C.PERIOD) - C.phaseAt(0)), near(C.phaseAt(C.PERIOD / 4) - C.phaseAt(0))], [near(2 * Math.PI), near(Math.PI / 2)]);
 eq("orbit: with the clock stopped the angles stay put", [C.copySlot(R, centre, 1, 3, C.phaseAt(5)), C.copySlot(R, centre, 1, 3, C.phaseAt(5))].every((p, _, a) => JSON.stringify(p) === JSON.stringify(a[0])), true);
-const back = C.groupAt(g, 1);
+const back = C.groupAt(g, 1, slot);
 eq("orbit: a group that stepped back has a smaller orbit around its new centre", [Math.hypot(C.copySlot(R, back, 0, 2, 0).x - back.x, 0) < R, C.copySlot(R, back, 0, 2, 0).x > back.x], [true, true]);
 eq("orbit: far side is a little smaller, never tiny", [C.depthSize(1), C.depthSize(0), C.depthSize(-1) >= 0.7], [1, 0.85, true]);
 

@@ -1,26 +1,24 @@
 .pragma library
+.import "Perspective.js" as Perspective
 
 // Where things sit when a Listen together takes the centre of the scene
 // (D281-D285): the source in the middle, its copies gravitating around it,
 // and the host (the computer) revolving around the group as a sun (Sun.js).
-// Pure functions of the scene's geometry `g` (cx, cy, rx, ry, coreSize,
-// bodySize); the QML only reads them. Tested by tests/centre.test.js.
+// Everything is seen in profile (Perspective.js, D294). Pure functions of the
+// scene's geometry `g` (cx, cy, rx, ry, coreSize, bodySize); the QML only
+// reads them. Tested by tests/centre.test.js.
 
-var PERIOD = 25;        // seconds for one turn of the copies
-var VOYAGE = 0.8;       // seconds the camera takes to follow the source to the centre
-var FADE = 0.25;        // the same with Reduce motion: a short fade, no travel
-var RECALL = 0.5;       // seconds the host takes to come back and the group to step back
-var GROUP_SIZE = 0.5;   // the group's size when it steps back
-var TILT = 0.55;        // orbit height over width: the flat view of the scene's own rings
-var MAX_SHIFT = 12;     // px the sky may drift: the margin around the starfield
-var PARALLAX = 0.08;    // how far the sky follows the camera, far stars barely move
+var PERIOD = 25;                    // seconds for one turn of the copies
+var VOYAGE = 0.8;                   // seconds the camera takes to follow the source to the centre
+var FADE = 0.25;                    // the same with Reduce motion: a short fade, no travel
+var RECALL = 0.5;                   // seconds the host takes to come back and the group to step back
+var GROUP_SIZE = 0.7;               // the group's size on its ring slot at the nearest point, of its size in the middle
+var TILT = Perspective.FLAT;        // orbit height over width: the profile view's, one value for every orbit
+var MAX_SHIFT = 12;                 // px the sky may drift: the margin around the starfield
+var PARALLAX = 0.08;                // how far the sky follows the camera, far stars barely move
 
 function clamp01(v) {
     return Math.max(0, Math.min(1, v));
-}
-
-function lerp(a, b, t) {
-    return a + (b - a) * t;
 }
 
 // Smooth start and end for a 0..1 progress
@@ -47,12 +45,6 @@ function grow(value, goal, ref, dt, seconds) {
     return ref * approach(value / ref, goal / ref, dt, seconds);
 }
 
-// Where the group steps back to when the host is recalled: up on the left,
-// behind the rings
-function backSpot(g) {
-    return { "x": g.cx - g.rx * 0.62, "y": g.cy - g.ry * 0.62 };
-}
-
 // Sizes in px: the source planet, the volume ring around it, a copy, and the
 // distance from the source to a copy. The source is as big as the host's core
 // (the same planet, now at the centre); the ring sits just outside what it
@@ -74,10 +66,17 @@ function labelOffset(s) {
     return Math.max(s.ring, s.radius * TILT + s.copy / 2) + 8;
 }
 
-// The group (source and copies): centred, or stepped back (stage 0..1, eased)
-function groupAt(g, stage) {
-    const b = backSpot(g);
-    return { "x": lerp(g.cx, b.x, stage), "y": lerp(g.cy, b.y, stage), "scale": lerp(1, GROUP_SIZE, stage) };
+// The group (source and copies): centred and in front, or stepped back (stage
+// 0..1, eased) onto its slot on the host's ring like one more planet, as big
+// as a body is at that depth: it passes in front of the host, then behind it.
+// `slot` is { x, y, depth } as Physics.ringSlot gives it.
+function groupAt(g, stage, slot) {
+    return {
+        "x": Perspective.lerp(g.cx, slot.x, stage),
+        "y": Perspective.lerp(g.cy, slot.y, stage),
+        "scale": Perspective.lerp(1, GROUP_SIZE * Perspective.size(slot.depth, 1), stage),
+        "depth": Perspective.lerp(1, slot.depth, stage)
+    };
 }
 
 // How far the host has left the centre for its path around the group (0..1):

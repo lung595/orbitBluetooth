@@ -4,9 +4,10 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const S = load("Sun.js", ["PERIOD", "SPAN", "SIZE", "DEPTH", "REST", "STOP", "system", "advance", "view", "groupView", "hostZ"]);
-const C = load("Centre.js", ["TILT", "sizes", "groupAt", "lerp"]);
+const S = load("Sun.js", ["PERIOD", "SPAN", "SIZE", "REST", "STOP", "DROP", "system", "advance", "view", "groupView", "drop", "hostZ"]);
+const C = load("Centre.js", ["TILT", "sizes", "groupAt"]);
 const P = load("Physics.js", ["norm", "ringSlot", "beltSlot", "dragArm", "separate"]);
+const V = load("Perspective.js", ["MID", "size"]);
 
 const near = v => Math.round(v * 1000) / 1000;
 
@@ -32,7 +33,8 @@ eq("sun: with the group not there, the system is the scene as it always was", ((
 const full = phase => S.system(g, phase, 1);
 eq("sun: the path is a tilted ellipse around the group's centre", phases.map(p => near(Math.hypot((full(p).x - g.cx) / (g.rx * S.SPAN), (full(p).y - g.cy) / (g.rx * S.SPAN * C.TILT)))), Array(phases.length).fill(1));
 eq("sun: it starts up on the left, on the far side", [full(S.REST).x < g.cx, full(S.REST).y < g.cy, full(S.REST).depth < 0], [true, true, true]);
-eq("sun: at the bottom of the path it is nearest and biggest, at the top furthest and smallest", [near(full(Math.PI / 2).k), near(full(-Math.PI / 2).k), near(full(0).k)], [near(S.SIZE * (1 + S.DEPTH)), near(S.SIZE * (1 - S.DEPTH)), near(S.SIZE)]);
+eq("sun: at the bottom of the path it is nearest and biggest, at the top furthest and smallest", [near(full(Math.PI / 2).k), near(full(-Math.PI / 2).k), near(full(0).k)], [near(S.SIZE / V.MID), near(S.SIZE * V.size(-1, 1) / V.MID), near(S.SIZE)]);
+eq("sun: its size is the profile view's, 1 / distance, all the way round", phases.map(p => near(full(p).k / S.SIZE * V.MID)), phases.map(p => near(V.size(Math.sin(p), 1))));
 eq("sun: nearer is bigger and lower on the screen, all the way round", phases.every(p => (full(p).k > S.SIZE) === (full(p).y > g.cy + 1e-9) || Math.abs(full(p).k - S.SIZE) < 1e-9), true);
 eq("sun: half way to the centre when the group is half there", [near(S.system(g, 0, 0.5).x - g.cx), near(S.system(g, 0, 0.5).k)], [near(g.rx * S.SPAN / 2), near((1 + S.SIZE) / 2)]);
 
@@ -76,17 +78,23 @@ eq("view: a copy that is a plain object, safe to adjust", [S.view(g, home) !== g
 
 // --- the group's own geometry, for the members dragged out of it -----------------
 const sz = C.sizes(g);
-const grp = S.groupView(g, sz, C.groupAt(g, 0));
+// The group's slot on the host's ring: far side, a little to the right
+const slot = P.ringSlot(g, 1, 4, 0.4);
+const grp = S.groupView(g, sz, C.groupAt(g, 0, slot));
 const where = (dx, dy) => P.dragArm(grp, true, g.cx + dx, g.cy + dy).armed;
 eq("group: centred on the view, the ring is the copies' orbit", [grp.cx, grp.cy, grp.ringCy, near(grp.rx * grp.innerNorm), near(grp.ringRy)], [g.cx, g.cy, g.cy, near(sz.radius), near(sz.radius * C.TILT)]);
 eq("group: a member is still held inside the orbit and at its edge, let go one body beyond", [where(0, 0), where(sz.radius + sz.copy / 2, 0), where(sz.radius + sz.copy / 2 + g.bodySize * 1.1, 0)], [false, false, true]);
-const back = C.groupAt(g, 1);
+const back = C.groupAt(g, 1, slot);
 const gb = S.groupView(g, sz, back);
 eq("group: stepped back it is smaller and elsewhere, and so is where a member is let go", [gb.cx === back.x, gb.cy === back.y, near(gb.rx), near(gb.rx * gb.innerNorm), near(gb.rx * gb.detachNorm)], [true, true, near(g.rx * back.scale), near(sz.radius * back.scale), near((sz.radius + sz.copy / 2 + g.bodySize) * back.scale)]);
 
 // --- the host's stacking order ---------------------------------------------------
-eq("z: at rest the host keeps its usual place", S.hostZ(g, { y: g.cy }, false), 50);
-eq("z: in front of the group on the near side, behind it on the far side", [S.hostZ(g, { y: g.cy + 30 }, true) > 100 + g.cy, S.hostZ(g, { y: g.cy - 30 }, true) < 50], [true, true]);
-eq("z: on the near side it sorts with the bodies (100 + y)", S.hostZ(g, { y: g.cy + 30 }, true), 100 + g.cy + 30);
+eq("z: at rest the host keeps its usual place", S.hostZ({ y: g.cy }, false, 0), 50);
+eq("z: in the profile view the host sorts with the bodies (100 + y): its ring's far side is behind it, the near side in front", [S.hostZ({ y: g.cy }, true, 0), 100 + (g.cy - 20) < S.hostZ({ y: g.cy }, true, 0), 100 + (g.cy + 20) > S.hostZ({ y: g.cy }, true, 0)], [100 + g.cy, true, true]);
+eq("z: half way through the recall the host is still in front", [S.drop(0), S.drop(0.5), S.drop(0.51), S.drop(1)], [0, 0, S.DROP, S.DROP]);
+// The group's lowest body is a copy on the near side of its orbit
+const lowest = 100 + g.cy - sz.radius * C.TILT - sz.copy;
+eq("z: in the group's view the whole system is behind the group, all the way round the sun's path", phases.every(p => S.hostZ(full(p), true, 1) < lowest), true);
+eq("z: so is the nearest body of that system (z = 100 + y less the drop)", 100 + g.cy + g.ry - S.drop(1) < lowest, true);
 
 done();
