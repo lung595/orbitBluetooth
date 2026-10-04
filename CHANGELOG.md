@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## Unreleased
 
+## 1.13.1 - 2026-10-04
+
 ### Changed
 
 - **The Dank Island keeps its own spring.** Orbit no longer forces the island to follow the volume keys without its motion (1.13.0 did, in memory): it grows out of its pill and folds back with DMS's own spring and fades, as your DMS settings decide (*Settings → Dank Island → Reduce Motion*, or the global *Reduce Motion* and animation speed). Only DMS's full-screen click-away layer is still hidden while the face is up. The motion costs shell time: one volume step up then one down, measured with music playing, went from 54 % of a core at its busiest second (3.4 % of the machine, 2.4 core-seconds over 16 s) to 186–197 % (about 12 %, 8 core-seconds). Turn *Reduce Motion* on in DMS to get the light behaviour back.
