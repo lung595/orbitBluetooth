@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell.Io
 import qs.Services
+import "../common/Address.js" as Address
 import "Guard.js" as Guard
 import "../common/Guide.js" as Guide
 
@@ -22,7 +23,7 @@ Item {
     // user, then call allow() or deny()) or "refused" (already forgotten)
     function check(device, family, done) {
         const path = device ? device.dbusPath : "";
-        if (!Guard.validPath(path)) {
+        if (!Address.isDevicePath(path)) {
             _refuse(device, done);
             return;
         }

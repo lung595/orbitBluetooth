@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell.Bluetooth
 import Quickshell.Io
+import qs.Common
 import "Anc.js" as Anc
 
 // Runs the Python helper (anc/orbit_anc.py) that speaks each headset's
@@ -38,7 +39,7 @@ Item {
     // address -> true while a disconnect waits for conversation awareness to go off
     property var _leaving: ({})
 
-    readonly property string _helper: decodeURIComponent(Qt.resolvedUrl("../../anc/orbit_anc.py").toString().replace(/^file:\/\//, ""))
+    readonly property string _helper: Paths.strip(Qt.resolvedUrl("../../anc/orbit_anc.py"))
 
     function deviceFor(address) {
         const list = Bluetooth.devices.values;

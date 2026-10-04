@@ -11,11 +11,16 @@ function pathOf(file) {
     return root + "/components/" + folder + "/" + file;
 }
 
-// QML ".pragma library" files are plain JS once the pragma is removed
+// QML ".pragma library" files are plain JS once the pragma is removed. One
+// that imports another (`.import "x/Name.js" as Name`) gets it as a constant
+// holding every function the other declares.
 function load(file, names) {
     const [, bytes] = GLib.file_get_contents(pathOf(file));
-    const src = new TextDecoder().decode(bytes).replace(".pragma library", "");
-    return new Function(src + "; return { " + names.join(", ") + " };")();
+    const src = new TextDecoder().decode(bytes)
+        .replace(".pragma library", "")
+        .replace(/^\.import "(?:[^"]*\/)?([^"\/]+\.js)" as (\w+)$/gm, (_, dep, name) => "const " + name + " = load(" + JSON.stringify(dep) + ");");
+    const declared = [...src.matchAll(/^function (\w+)/gm)].map(m => m[1]);
+    return new Function("load", src + "; return { " + (names || declared).join(", ") + " };")(load);
 }
 
 const Anc = load("Anc.js", ["family", "nextMode", "ordered"]);
@@ -27,14 +32,15 @@ const Pictures = load("Pictures.js", ["queryFor", "creditText"]);
 const Catalog = load("DeviceCatalog.js", ["deviceName", "modelName", "resolve"]);
 const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNote", "stuckNote", "levelNote"]);
 const Volume = load("Volume.js", ["clamp", "step", "validSink"]);
-const Guard = load("Guard.js", ["offerFamily", "hasInput", "refused", "validPath", "parseUuids"]);
+const Address = load("Address.js", ["key", "colon", "find", "isDevicePath"]);
+const Guard = load("Guard.js", ["offerFamily", "hasInput", "refused", "parseUuids"]);
 const Cover = load("Cover.js", ["covered"]);
 const Orbit = load("Orbit.js", ["pick", "plan", "changes"]);
 const Physics = load("Physics.js", ["spring", "norm", "ringSlot", "beltSlot", "beltRadius", "dragTarget", "dragArm", "separate", "moving"]);
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "arc", "end", "point", "angleOf", "valueAt", "zone", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
 const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded", "note"]);
-const Route = load("Route.js", ["addressKey", "virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "filterArgs", "muteTarget", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "shownLevels"]);
+const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "filterArgs", "muteTarget", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "shownLevels"]);
 
 let count = 0, failures = 0;
 function eq(what, got, expected) {
@@ -182,13 +188,22 @@ eq("refuse: unknown family with HID", Guard.refused("", [HID]), true);
 eq("allow: real headset", Guard.refused("audio", [A2DP]), false);
 eq("allow: real keyboard", Guard.refused("keyboard", [HID]), false);
 eq("allow: real mouse", Guard.refused("pointer", [HOG]), false);
-eq("path ok", Guard.validPath("/org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF"), true);
-eq("path: injection", Guard.validPath("/org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF; rm"), false);
-eq("path: option", Guard.validPath("--help"), false);
-eq("path: empty", Guard.validPath(undefined), false);
 eq("uuids parsed", Guard.parseUuids('{"type":"as","data":["0000110B-x"]}'), ["0000110b-x"]);
 eq("uuids: garbage", Guard.parseUuids("nope"), null);
 eq("uuids: wrong type", Guard.parseUuids('{"type":"s","data":"x"}'), null);
+
+// Address forms and BlueZ paths, in one place (Address.js)
+eq("address key: either form, any case", [Address.key("aa:bb:cc:dd:ee:01"), Address.key("AA_BB_CC_DD_EE_01")], ["AA_BB_CC_DD_EE_01", "AA_BB_CC_DD_EE_01"]);
+eq("address key: not an address", [Address.key("AA:BB"), Address.key("AA:BB:CC:DD:EE:0G"), Address.key("x; rm -rf"), Address.key(null), Address.key(undefined)], ["", "", "", "", ""]);
+eq("address with colons", [Address.colon("aa_bb_cc_dd_ee_01"), Address.colon("nope")], ["AA:BB:CC:DD:EE:01", ""]);
+eq("address found in a BlueZ path", Address.find("/org/bluez/hci0/dev_AA_BB_CC_DD_EE_01"), "AA:BB:CC:DD:EE:01");
+eq("address found in a HID_UNIQ value, either separator", [Address.find("aa:bb:cc:dd:ee:01"), Address.find("aa-bb-cc-dd-ee-01")], ["AA:BB:CC:DD:EE:01", "AA:BB:CC:DD:EE:01"]);
+eq("no address in the text, or mixed separators", [Address.find("BAT0"), Address.find(""), Address.find(undefined), Address.find("aa:bb-cc_dd:ee-01")], ["", "", "", ""]);
+eq("path ok", Address.isDevicePath("/org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF"), true);
+eq("path: injection", Address.isDevicePath("/org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF; rm"), false);
+eq("path: option", Address.isDevicePath("--help"), false);
+eq("path: empty", Address.isDevicePath(undefined), false);
+eq("path: adapter number capped at three digits", [Address.isDevicePath("/org/bluez/hci999/dev_AA_BB_CC_DD_EE_FF"), Address.isDevicePath("/org/bluez/hci1000/dev_AA_BB_CC_DD_EE_FF")], [true, false]);
 
 // Guide links (value 10): every anchor used must exist in docs/GUIDE.md
 const GLibG = imports.gi.GLib;
@@ -251,6 +266,7 @@ eq("name back to address", Route.addressOfVirtual("orbit_pc_AA_BB_CC_DD_EE_01"),
 eq("other sinks are not Orbit's", [Route.isVirtual("bluez_output.AA_BB_CC_DD_EE_01.1"), Route.addressOfVirtual("orbit_pc_nope")], [false, ""]);
 eq("device sink recognised", [Route.isDeviceSink("bluez_output.AA_BB_CC_DD_EE_01.1"), Route.isDeviceSink("bluez_output.AA_BB_CC_DD_EE_01"), Route.isDeviceSink("alsa_output.usb-Card")], [true, true, false]);
 eq("device sink address", Route.addressOfSink("bluez_output.aa_bb_cc_dd_ee_01.1"), MAC);
+eq("a sink name never takes colons", [Route.isDeviceSink("bluez_output.AA:BB:CC:DD:EE:01.1"), Route.addressOfSink("alsa_output.usb-Card")], [false, ""]);
 const pwNodes = [
     { name: "alsa_output.usb-Card", isSink: true, isStream: false },
     { name: "bluez_output.AA_BB_CC_DD_EE_01.1", isSink: true, isStream: false },

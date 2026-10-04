@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell.Io
+import qs.Common
 
 // Looks up a picture of each device model, only when the user turned on
 // "Real device pictures" (off by default). It runs pictures/orbit_pictures.py,
@@ -20,7 +21,7 @@ Item {
     property var _asked: ({})
     property string _current: ""
 
-    readonly property string _helper: decodeURIComponent(Qt.resolvedUrl("../../pictures/orbit_pictures.py").toString().replace(/^file:\/\//, ""))
+    readonly property string _helper: Paths.strip(Qt.resolvedUrl("../../pictures/orbit_pictures.py"))
 
     function request(name) {
         if (!enabled || !name || _asked[name])

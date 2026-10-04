@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell.Io
+import qs.Common
 import "Volume.js" as Volume
 
 // The two volumes of the device on the detail card (D250): TwoLevels for
@@ -29,7 +30,7 @@ TwoLevels {
     }
 
     // --- The tick, played in the device on each 5 % step --------------------------
-    readonly property string tickPath: decodeURIComponent(Qt.resolvedUrl("../../sounds/volume.wav").toString().replace(/^file:\/\//, ""))
+    readonly property string tickPath: Paths.strip(Qt.resolvedUrl("../../sounds/volume.wav"))
     property double _lastTick: 0
     onLevelMoved: (before, after) => {
         const sink = dev ? dev.sink : null;

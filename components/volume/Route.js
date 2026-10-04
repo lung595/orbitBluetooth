@@ -1,4 +1,5 @@
 .pragma library
+.import "../common/Address.js" as Address
 
 // Pure logic of the two volumes (AudioRoute.qml), tested in tests/anc.test.js.
 //
@@ -13,14 +14,8 @@
 
 var PREFIX = "orbit_pc_";
 
-// "AA:BB:CC:DD:EE:FF" -> "AA_BB_CC_DD_EE_FF", or "" if it is not an address
-function addressKey(address) {
-    const key = String(address || "").replace(/:/g, "_").toUpperCase();
-    return /^([0-9A-F]{2}_){5}[0-9A-F]{2}$/.test(key) ? key : "";
-}
-
 function virtualName(address) {
-    const key = addressKey(address);
+    const key = Address.key(address);
     return key ? PREFIX + key : "";
 }
 
@@ -30,31 +25,32 @@ function isVirtual(name) {
 
 // "orbit_pc_AA_BB_CC_DD_EE_FF" -> "AA:BB:CC:DD:EE:FF"
 function addressOfVirtual(name) {
-    if (!isVirtual(name))
-        return "";
-    const key = name.slice(PREFIX.length);
-    return addressKey(key) ? key.replace(/_/g, ":") : "";
+    return isVirtual(name) ? Address.colon(name.slice(PREFIX.length)) : "";
 }
 
-// A Bluetooth device's own output sink: bluez_output.AA_BB_CC_DD_EE_FF.1
+// A Bluetooth device's own output sink is named bluez_output.AA_BB_CC_DD_EE_FF.1:
+// its address in key form ("AA_BB_CC_DD_EE_FF"), or "" for any other sink
+function sinkKey(name) {
+    const m = /^bluez_output\.([^.:]+)(\.[0-9]+)?$/.exec(typeof name === "string" ? name : "");
+    return m ? Address.key(m[1]) : "";
+}
+
 function isDeviceSink(name) {
-    return typeof name === "string" && /^bluez_output\.([0-9A-Fa-f]{2}_){5}[0-9A-Fa-f]{2}(\.[0-9]+)?$/.test(name);
+    return sinkKey(name) !== "";
 }
 
 function addressOfSink(name) {
-    if (!isDeviceSink(name))
-        return "";
-    return name.split(".")[1].toUpperCase().replace(/_/g, ":");
+    return Address.colon(sinkKey(name));
 }
 
 // The device's sink among PipeWire's nodes (never Orbit's virtual one)
 function deviceSink(nodes, address) {
-    const key = addressKey(address);
+    const key = Address.key(address);
     if (!key || !nodes)
         return null;
     for (let i = 0; i < nodes.length; i++) {
         const n = nodes[i];
-        if (n && n.isSink && !n.isStream && isDeviceSink(n.name) && addressOfSink(n.name).replace(/:/g, "_") === key)
+        if (n && n.isSink && !n.isStream && sinkKey(n.name) === key)
             return n;
     }
     return null;
@@ -137,7 +133,7 @@ function ipcLevel(arg, current) {
 // `busctl tree --list org.bluez` lists object paths; the transport is
 // "<device path>/sepN/fdM".
 function transportPath(tree, devicePath) {
-    if (!/^\/org\/bluez\/hci[0-9]+\/dev_([0-9A-F]{2}_){5}[0-9A-F]{2}$/.test(String(devicePath || "")))
+    if (!Address.isDevicePath(devicePath))
         return "";
     const lines = String(tree || "").split("\n");
     for (let i = 0; i < lines.length; i++) {
