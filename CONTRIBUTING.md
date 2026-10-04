@@ -102,8 +102,10 @@ orbitBluetooth/
 │   │   └── VolumeKeys.qml, Keys.js, Steps.js # volume keys through `dms keybinds`, smart steps (pure, tested)
 │   ├── pairing/                 # new device pop-up and pairing offer
 │   │   ├── NewDeviceWatch.qml, Offer.js, Guard.js, ProfileCheck.qml  # background scan, what to offer, the input-device guard
-│   │   ├── NewDeviceWindow.qml, PairingSheet.qml, PairingMiddle.qml, Palette.js  # the sheet (PairingMiddle: tiles, steps, quick actions)
-│   │   ├── PairingStage.qml, PairingIdentity.qml, PairingButton.qml, Light.qml  # stage, name and subtitle, actions, round light
+│   │   ├── NewDeviceWindow.qml, PairingSheet.qml, Palette.js  # the window and the sheet (the card, its keys and its parts)
+│   │   ├── PairingSkin.qml, PictureColor.qml, PairingMotion.qml  # the two skins' colours, the picture's colour, the sheet's clock and entrance
+│   │   ├── PairingSky.qml, PairingPlanet.qml, PairingHeader.qml  # the scene behind the device, status and close button
+│   │   ├── PairingStage.qml, PairingIdentity.qml, PairingMiddle.qml, PairingButton.qml, Light.qml  # device, name and subtitle, tiles/steps/quick actions, actions, round light
 │   │   └── OfferCard.qml        # the scene's pairing offer
 │   ├── noise/                   # noise control
 │   │   └── AncService.qml, AncPanel.qml, Anc.js
