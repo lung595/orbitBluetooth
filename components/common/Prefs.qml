@@ -90,7 +90,7 @@ QtObject {
     // "compact", "medium" or "large"
     readonly property string popupSize: _get("popupSize", "medium")
     // The vectorscope's cloud: 60 frames a second ("Smooth") or 30 ("Light")
-    readonly property int scopeFps: parseInt(_get("scopeFps", "60")) === 30 ? 30 : 60
+    readonly property int scopeFps: parseInt(_get("scopeFps", "30")) === 60 ? 60 : 30
     // How the vectorscope draws the sound: "points", "rays", "waves", "none"
     readonly property string scopeStyle: Polar.styleOf(_get("scopeStyle", "points"))
 

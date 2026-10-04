@@ -185,7 +185,7 @@ Column {
     SelectionSetting {
         settingKey: "scopeFps"
         label: "Visualizer motion"
-        description: "While the pop-up or a card shows, nothing otherwise. \"Light\" draws half as often"
+        description: "While the pop-up or a card shows, nothing otherwise. \"Smooth\" draws twice as often"
         options: [
             {
                 label: "Smooth",
@@ -196,6 +196,6 @@ Column {
                 value: "30"
             }
         ]
-        defaultValue: "60"
+        defaultValue: "30"
     }
 }

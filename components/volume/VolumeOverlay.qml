@@ -81,9 +81,19 @@ TwoLevels {
     function poke() {
         if (mode === "off" || Date.now() < _calmUntil)
             return;
+        _settled = false;
+        settle.restart();
         // After DMS's own OSD has shown for the same change: showing last
         // makes OSDManager hide DMS's (one OSD per screen)
         Qt.callLater(_showAll);
+    }
+    // Starting cava costs about as much as the whole burst of keys (a fixed
+    // 0.4 s of CPU, measured, P142): its picture waits until the keys stop
+    property bool _settled: true
+    Timer {
+        id: settle
+        interval: 700
+        onTriggered: root._settled = true
     }
     function _showAll() {
         _offerKeys();
@@ -270,5 +280,5 @@ TwoLevels {
 
     // One cava for every screen's pop-up, only while one shows
     soundNode: dev ? dev.sink : Pipewire.defaultAudioSink
-    listening: anyShown
+    listening: anyShown && _settled
 }

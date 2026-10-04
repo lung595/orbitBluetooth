@@ -38,7 +38,7 @@ Item {
     readonly property string deviceName: dev ? Catalog.deviceName(dev.device) : ""
 
     readonly property string style: prefs ? prefs.scopeStyle : "points"
-    readonly property int fps: prefs ? prefs.scopeFps : 60
+    readonly property int fps: prefs ? prefs.scopeFps : 30
     readonly property bool reduceMotion: prefs ? prefs.reduceMotion : false
 
     // A gesture moved a level (CardVolume plays its tick on it)
