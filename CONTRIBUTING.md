@@ -44,7 +44,7 @@ Every surface shows the same scene, `components/scene/OrbitScene.qml`. It handle
 
 Logic that can be tested lives in **pure `.js` files** with no QML: `card/Charge.js` (charge analysis), `card/Endurance.js` (rated battery life), `scene/Physics.js` (springs, slots, clearances), `noise/Anc.js` (noise-control decisions), `volume/Polar.js` (the scope's geometry and sound picture), `volume/Route.js`, `volume/Steps.js` and `volume/Keys.js` (volumes), `common/Address.js` (the shapes of a Bluetooth address and of its BlueZ path, checked before any command), `device/Earbuds.js`, `device/DeviceCatalog.js` and `device/Glyphs.js` (icons).
 
-**The volume scope** (detail card, pop-up, Dank Island) runs one `cava` and computes one picture for every screen that shows it: `volume/TwoLevels.qml` holds an output's two levels, its `ScopeFeed.qml` (cava, only while someone looks) and its `ScopeModel.qml` (points, rays or waves, moved by cava's frames, fading alone, then stopped). `PolarScope.qml` draws the half circles and `PolarVisual.qml` only paints the shared picture at its own size.
+**The volume scope** (detail card, pop-up, Dank Island) runs one `cava` and computes one picture for every screen that shows it: `volume/TwoLevels.qml` holds an output's two levels, its `ScopeFeed.qml` (cava, only while someone looks) and its `ScopeModel.qml` (points, rays or waves, moved by cava's frames, fading alone, then stopped). `PolarScope.qml` keeps the geometry, eases the levels and holds the picture; `PolarArcs.qml` draws the half circles, `PolarMoons.qml` the knobs, `PolarGestures.qml` takes the drag, wheel and mute click, and `PolarVisual.qml` only paints the shared picture at its own size.
 
 **Noise control** is the only part outside QML: QML cannot open a Bluetooth socket, so `components/noise/AncService.qml` runs `anc/orbit_anc.py`, which speaks each vendor protocol (`anc/protocols/`, one module per brand) through a JSON session on stdin/stdout. `anc/sdp.py` finds the RFCOMM channel.
 
@@ -95,7 +95,8 @@ orbitBluetooth/
 │   │   ├── VolumeOverlay.qml, VolumePopup.qml, IslandFace.qml  # volume pop-up per screen, its face inside Dank Island
 │   │   ├── VolumeStrip.qml      # menus: the two volumes folded into a thin line, unfolds on click
 │   │   ├── ScopeScreen.qml      # the dark scope screen shared by card, pop-up and island
-│   │   ├── PolarScope.qml, PolarVisual.qml, Polar.js   # half circles, moons, the painted picture (Polar.js pure, tested)
+│   │   ├── PolarScope.qml, PolarVisual.qml, Polar.js   # geometry and easing, the painted picture (Polar.js pure, tested)
+│   │   ├── PolarArcs.qml, PolarMoons.qml, PolarGestures.qml  # half circles, knobs, drag / wheel / mute
 │   │   ├── PolarGrid.qml, PolarReadouts.qml  # the scope's screen (grid), icons and numbers
 │   │   ├── ScopeFeed.qml, ScopeModel.qml     # live stereo bands from cava; the picture they move, once for every screen
 │   │   ├── AudioRoute.qml, RouteDevice.qml, Route.js   # the two levels of each output: PC filter, absolute volume, IPC

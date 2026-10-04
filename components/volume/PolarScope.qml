@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Shapes
 import qs.Common
 import "Polar.js" as Polar
 
@@ -12,8 +11,9 @@ import "Polar.js" as Polar
 // angle is left/right, its distance how loud.
 // The sound is a ScopeModel (computed once for every screen) painted by
 // PolarVisual, over an optional Ozone-like grid (PolarGrid); the icons and
-// numbers are PolarReadouts. This file draws the arcs and moons, eases the
-// levels and takes the gestures. The levels ease on one
+// numbers are PolarReadouts; the arcs are PolarArcs, the moons PolarMoons and
+// the gestures PolarGestures. This file keeps the geometry, eases the
+// levels and holds the picture. The levels ease on one
 // Timer that runs only while they move: a QML animation would redraw the
 // whole shell (rule 23). Reduce motion: no picture, levels jump.
 Item {
@@ -92,26 +92,6 @@ Item {
         onTriggered: scope.talking = ""
     }
 
-    // --- Arcs -------------------------------------------------------------------
-    component Arc: ShapePath {
-        id: arcPath
-        property real radius: 0
-        property real start: 180
-        property real sweep: 180
-        fillColor: "transparent"
-        capStyle: ShapePath.RoundCap
-        startX: scope.cx + Math.cos(start * Math.PI / 180) * radius
-        startY: scope.cy + Math.sin(start * Math.PI / 180) * radius
-        PathAngleArc {
-            centerX: scope.cx
-            centerY: scope.cy
-            radiusX: arcPath.radius
-            radiusY: arcPath.radius
-            startAngle: arcPath.start
-            sweepAngle: arcPath.sweep
-        }
-    }
-
     // --- Grid and picture ---------------------------------------------------------
     PolarGrid {
         anchors.fill: parent
@@ -141,47 +121,8 @@ Item {
         color: scope.trackColor
     }
 
-    Shape {
-        anchors.fill: parent
-        preferredRendererType: Shape.CurveRenderer
-
-        // Tracks: where each level can go
-        Arc {
-            radius: scope.outer
-            strokeWidth: 1
-            strokeColor: scope.hasDevice ? scope.trackColor : "transparent"
-        }
-        Arc {
-            radius: scope.inner
-            strokeWidth: 1
-            strokeColor: scope.trackColor
-        }
-        // Glow under each lit arc
-        Arc {
-            radius: scope.outer
-            sweep: Polar.arc("outer", scope._dev).sweep
-            strokeWidth: scope.stroke * 4
-            strokeColor: scope.hasDevice && scope._dev > 0.001 ? Theme.withAlpha(scope.deviceMuted ? scope.mutedColor : scope.deviceColor, 0.07) : "transparent"
-        }
-        Arc {
-            radius: scope.inner
-            sweep: Polar.arc("inner", scope._pc).sweep
-            strokeWidth: scope.stroke * 4
-            strokeColor: scope._pc > 0.001 ? Theme.withAlpha(scope.pcMuted ? scope.mutedColor : scope.pcColor, 0.07) : "transparent"
-        }
-        // The levels
-        Arc {
-            radius: scope.outer
-            sweep: Polar.arc("outer", scope._dev).sweep
-            strokeWidth: scope.stroke
-            strokeColor: scope.hasDevice && scope._dev > 0.001 ? (scope.deviceMuted ? Theme.withAlpha(scope.mutedColor, 0.6) : scope.deviceColor) : "transparent"
-        }
-        Arc {
-            radius: scope.inner
-            sweep: Polar.arc("inner", scope._pc).sweep
-            strokeWidth: scope.stroke
-            strokeColor: scope._pc > 0.001 ? (scope.pcMuted ? Theme.withAlpha(scope.mutedColor, 0.6) : scope.pcColor) : "transparent"
-        }
+    PolarArcs {
+        scope: scope
     }
 
     // Shown levels: follow the real ones on a short ease, straight while
@@ -261,38 +202,9 @@ Item {
     onLiveChanged: if (!live)
         _follow()
 
-    // --- Moons, then the readouts (PolarReadouts) ----------------------------------
-    component Moon: Rectangle {
-        property real radiusAt: 0
-        property real deg: 180
-        property color tint: "white"
-        property bool hollow: false
-        property bool big: false
-        readonly property real knob: big ? 11 : 8
-        width: knob
-        height: knob
-        radius: knob / 2
-        x: scope.cx + Math.cos(deg * Math.PI / 180) * radiusAt - knob / 2
-        y: scope.cy + Math.sin(deg * Math.PI / 180) * radiusAt - knob / 2
-        color: hollow ? scope.hollowColor : scope.inkColor
-        border.width: 1.5
-        border.color: tint
-    }
-
-    Moon {
-        visible: scope.hasDevice
-        radiusAt: scope.outer
-        deg: Polar.end("outer", scope._dev)
-        tint: scope.deviceMuted ? scope.mutedColor : scope.deviceColor
-        hollow: scope.deviceMuted
-        big: scope.dragging === "device" || pointer.hover === "device"
-    }
-    Moon {
-        radiusAt: scope.inner
-        deg: Polar.end("inner", scope._pc)
-        tint: scope.pcMuted ? scope.mutedColor : scope.pcColor
-        hollow: scope.pcMuted
-        big: scope.dragging === "pc" || pointer.hover === "pc"
+    // --- Moons, readouts, then the gestures ---------------------------------------
+    PolarMoons {
+        scope: scope
     }
 
     PolarReadouts {
@@ -301,73 +213,9 @@ Item {
     }
 
     // --- Gestures -------------------------------------------------------------------
-    // Drag along an arc, or scroll over it: 5 % steps
     property alias pointer: pointer
-    MouseArea {
+    PolarGestures {
         id: pointer
-        anchors.fill: parent
-        enabled: scope.interactive
-        hoverEnabled: true
-        preventStealing: true
-        property string hover: ""
-        cursorShape: hover || scope.dragging ? Qt.PointingHandCursor : Qt.ArrowCursor
-        function partAt(m) {
-            const z = Polar.zone(m.x - scope.cx, m.y - scope.cy, scope.outer, scope.inner, Math.max(12, scope.stroke * 3), false);
-            return z === "outer" ? (scope.hasDevice ? "device" : "") : z === "inner" ? "pc" : "";
-        }
-        function valueAt(part, m) {
-            return Polar.valueAt(part === "device" ? "outer" : "inner", m.x - scope.cx, m.y - scope.cy);
-        }
-        onPositionChanged: m => {
-            hover = partAt(m);
-            if (scope.dragging)
-                scope.moved(scope.dragging, valueAt(scope.dragging, m));
-        }
-        onExited: hover = ""
-        // The icons at the feet of the half circles mute or unmute their level
-        function iconAt(m) {
-            const near = (x, y) => Math.abs(m.x - x) <= scope.iconSize && Math.abs(m.y - y) <= scope.iconSize;
-            const footY = scope.cy + 6 + scope.iconSize / 2;
-            if (scope.hasDevice && near(scope.cx - scope.outer, footY))
-                return "device";
-            return near(scope.cx - scope.inner, footY) ? "pc" : "";
-        }
-        onPressed: m => {
-            const part = partAt(m);
-            if (!part) {
-                const icon = iconAt(m);
-                if (icon)
-                    scope.muteClicked(icon);
-                else
-                    m.accepted = false;
-                return;
-            }
-            scope.dragging = part;
-            scope.talk(part);
-            scope.moved(part, valueAt(part, m));
-        }
-        onReleased: {
-            if (scope.dragging)
-                scope.talk(scope.dragging);
-            scope.dragging = "";
-        }
-        onCanceled: scope.dragging = ""
-        property real acc: 0
-        onWheel: w => {
-            const part = hover || (scope.hasDevice ? "device" : "pc");
-            acc += w.angleDelta.y;
-            const steps = Math.trunc(acc / 120);
-            if (steps === 0)
-                return;
-            acc -= steps * 120;
-            scope.talk(part);
-            if (scope.smartWheel) {
-                for (let k = 0; k < Math.abs(steps); k++)
-                    scope.stepped(part, steps > 0 ? 1 : -1);
-                return;
-            }
-            const now = part === "device" ? scope.deviceLevel : scope.pcLevel;
-            scope.moved(part, Polar.clamp01(Math.round(now * 20 + steps) / 20));
-        }
+        scope: scope
     }
 }
