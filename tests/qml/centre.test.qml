@@ -298,6 +298,16 @@ Item {
         check("no group: nothing is written", [shared.ready, route.shared.audio.volume], [false, level]);
     }
 
+    // A step that throws must fail the test, not leave it waiting for ever
+    Timer {
+        interval: 20000
+        running: true
+        onTriggered: {
+            print("FAIL timed out: a step threw");
+            Qt.exit(1);
+        }
+    }
+
     Component.onCompleted: {
         forming();
         places();
