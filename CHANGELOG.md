@@ -13,9 +13,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - **Multipoint headsets keep working.** A member whose output is handed to your phone stays a member (no message, no flapping), plays again when it returns, and is dropped only on a real Bluetooth disconnection or when you take it out. Orbit opens no stream, silence or keep-alive toward any output. [Guide](docs/GUIDE.md#works-with-multipoint-headsets)
 - **`dms ipc call orbitBluetooth`**: `together "<address> <address>..."` (one quoted argument, spaces or commas, 2 to 4 connected audio devices), `togetherAdd <address>`, `togetherRemove <address>`, `togetherDelay <address> <ms>` (hold one output back, 0 to 500 ms, this session only), `togetherStatus` (JSON) and `separate`. Every argument is validated and capped, and a refusal says why.
 - A short note, with the GitHub mark linking to the guide, says why a device cannot join (not connected, no sound output yet, on its call profile, the same device twice, a fifth device, nobody listening yet).
+- **The listening source takes the center.** While a group listens, the source (the output you hear) glides to the middle of the orbit in under a second and the other outputs orbit it, one turn in about 25 s, equally spaced. This computer shrinks to about 40 % and rests, dimmed, at the back; the stars drift a little the way the camera went; the group's name (*XM6 + Marantz*) sits under the center. Soft beams join the source to each output and a small pulse travels along them only while sound plays. Click this computer to bring it back to the middle (the group steps back), click the group to take the center again. The other connected devices keep a ring that opens wider around the group. It works in the Control Center, the bar pop-out and the desktop widget, and can be turned off in **Orbit → The listening source takes the center**. [Guide](docs/GUIDE.md#the-source-at-the-center)
+- **A general volume around the center planet.** A ring around the source sets the group's level: drag it or scroll over it or over the planet. With separate PC volume it is this PC's level; otherwise every output's own level is scaled by the same ratio, so the gaps stay (50 % to 80 % takes 40 % to 64 % and 30 % to 48 %), and nobody passes 100 %. Scroll over one output to set its own level; one with none says so in a short note with a link to the guide. [Guide](docs/GUIDE.md#the-volume-at-the-center)
+- Dropping a connected audio device on the center planet joins the group, and dropping one that is not connected says to connect it first.
+
+### Changed
+
+- With *Reduce motion* the group is put in place at once: nothing orbits, nothing pulses and the scene's loop never starts. While the session is locked, the screen is off or windows cover the widget, nothing runs either (no trip, no beams, no question to PipeWire about sound).
+- The wheel code is shared: `NotchWheel` serves the card's planet, the volume strip, the center's ring and the devices of the group.
 
 ### Known limits
 
+- The center's CPU cost has not been measured yet, only designed to be zero at rest (no timer of its own, the scene's loop stops when nobody sees it).
+- The pulse along the beams reads PipeWire's link state, a best effort: it can pulse in silence or stay still while sound plays. Nothing else depends on it.
+- A device that passes under the group's name in a crowded scene can still hide part of the text.
+- The source's own level is not on the ring, and there is no `dms ipc call` for the general volume yet.
 - No synchronisation is promised: Bluetooth codecs have different delays and Orbit cannot measure them. `togetherDelay` holds one output back by hand; the output the sound is taken from never waits.
 - If the output you hear has no Orbit filter in front of it (a device without absolute volume), the copies take its sound after its volume: nothing is shared and each output plays at its own level.
 - Checked with a simulated PipeWire server and simulated devices only; real hardware (a multipoint headset handing over to a phone, an AV receiver) still has to be tried.
