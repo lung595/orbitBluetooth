@@ -8,6 +8,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ### Changed
 
 - Code only, nothing changes on screen: the hit test that tells which device is under a point moved from `OrbitScene` (404 → 393 lines) to `OrbitWorld`, which owns the devices.
+- The daemon's `dms ipc call orbitBluetooth` commands moved into `components/common/OrbitIpc.qml`. No behaviour change.
 
 ### Fixed
 
