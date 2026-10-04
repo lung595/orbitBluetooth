@@ -6,7 +6,9 @@ import qs.Common
 // hold it on its own spring, with its own glass and shape. The island's
 // slider underneath is hidden while Orbit shows, and comes back when this
 // face goes (plugin off): nothing of DMS is written (value 12, D259).
-// Collapsed, the sheet is invisible and so is this: nothing runs.
+// Collapsed, the sheet is invisible and so is this: nothing runs. While it
+// is up, the island follows the volume keys at once, without its spring
+// (IslandSnap): a burst of steps then costs next to nothing.
 Item {
     id: face
 
@@ -36,6 +38,21 @@ Item {
     readonly property bool ours: _sheetOf === "volume"
     visible: ours
 
+    // --- The island's motion ------------------------------------------------------
+    // DMS's DankIslandSurface, found by its motion settings so that a
+    // renamed item does not matter; null if a DMS update moves them
+    readonly property var surface: _islandAbove(parent)
+    function _islandAbove(item) {
+        while (item && !(item.reducedMotion !== undefined && item.springStiffness !== undefined))
+            item = item.parent;
+        return item;
+    }
+    // Kept from the first open until the island has folded back
+    IslandSnap {
+        id: snap
+        surface: face.surface
+    }
+
     // --- Open and close ----------------------------------------------------------
     // The island grows into its volume sheet, unless the user has opened
     // something else in it on purpose
@@ -43,11 +60,16 @@ Item {
         const c = controller;
         if (c.inputSuspended || (c.expanded && c.activeActivity !== "volume"))
             return false;
-        if (!c.requestSystemActivity("volume"))
-            return false;
-        c.expanded = true;
-        hide.restart();
-        return true;
+        snap.hold();
+        const ok = c.requestSystemActivity("volume");
+        if (ok) {
+            c.expanded = true;
+            hide.restart();
+        }
+        // The island never showed us: let go of its motion
+        if (!shown)
+            snap.release();
+        return ok;
     }
     // A level set from the face itself: it stays, the clock restarts
     function keep() {
@@ -73,8 +95,12 @@ Item {
         }
     }
     onShownChanged: {
-        if (!shown)
+        if (shown) {
+            snap.hold();
+        } else {
             hide.stop();
+            snap.release();
+        }
         overlay.islandShown(face, shown);
     }
 
