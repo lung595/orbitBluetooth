@@ -98,18 +98,22 @@ Item {
             h.mpd = player("mpd", "", "org.mpris.MediaPlayer2.mpd");
             h.mpd.playbackState = MprisPlaybackState.Paused;
             Mpris.players.values = [h.spotify, h.firefox, h.mpd];
-            check("nothing is followed before a headset reports a sensor", [wear._addresses, status()], [[], {
-                        "state": "waiting"
-                    }]);
+            check("nothing is followed before a headset reports a sensor", [wear._addresses, status()], [[],
+                {
+                    "state": "waiting"
+                }
+            ]);
             h.report(0);
         }, () => {
             check("a headset with a sensor is followed", wear._addresses, [h.addr]);
             h.streams(["Spotify"]);
-            check("the first reading says worn, and does nothing", [status(), h.spotify.pauses], [{
-                        "state": "worn",
-                        "code": 0,
-                        "holding": 0
-                    }, 0]);
+            check("the first reading says worn, and does nothing", [status(), h.spotify.pauses], [
+                {
+                    "state": "worn",
+                    "code": 0,
+                    "holding": 0
+                },
+                0]);
             h.report(4);
         }, () => {
             check("both removed: the player on the headset pauses", [h.spotify.pauses, h.spotify.isPlaying], [1, false]);
@@ -160,19 +164,55 @@ Item {
             check("paused once more", [h.spotify2.pauses, status().holding], [1, 1]);
             anc.snapshots = {};
         }, () => {
-            check("the headset leaves in the middle of a pause: forgotten", [wear._addresses, wear._headsets, status().state], [[], {}, "waiting"]);
+            check("the headset leaves in the middle of a pause: forgotten", [wear._addresses, wear._headsets, status().state], [[],
+                {},
+                "waiting"]);
             h.report(0);
         }, () => {
             check("back, its first reading is a reference: no resuming", [h.spotify2.plays, status().holding], [0, 0]);
             wear.active = false;
         }, () => {
-            check("option off: nothing followed", [wear._addresses, status()], [[], {
-                        "state": "off"
-                    }]);
+            check("option off: nothing followed", [wear._addresses, status()], [[],
+                {
+                    "state": "off"
+                }
+            ]);
             h.report(4);
             wear.active = true;
         }, () => {
             check("option on with the headset already off: no pause", [h.spotify2.pauses, status().state], [1, "removed"]);
+            h.report(0);
+        }, () => {
+            h.spotify2.playbackState = MprisPlaybackState.Playing;
+            h.streams(["Spotify"]);
+            h.report(4);
+        }, () => {
+            check("removed: paused and held", [h.spotify2.pauses, status().holding], [2, 1]);
+            h.spotify2.playbackState = MprisPlaybackState.Playing;
+        }, () => {
+            check("played by hand: no longer held", status().holding, 0);
+            h.spotify2.playbackState = MprisPlaybackState.Paused;
+            h.report(0);
+        }, () => {
+            check("paused again by hand: the headset coming back does not resume it", [h.spotify2.plays, h.spotify2.isPlaying], [0, false]);
+            h.spotify2.playbackState = MprisPlaybackState.Playing;
+            h.streams(["Spotify"]);
+            h.report(4);
+        }, () => {
+            check("a second headset follows: the first keeps what it holds", status().holding, 1);
+            anc.snapshots = Object.assign({}, anc.snapshots, {
+                "02:00:00:00:10:07": {
+                    "status": "ready",
+                    "features": {
+                        "wear": true
+                    },
+                    "state": {
+                        "wearing": 0
+                    }
+                }
+            });
+        }, () => {
+            check("both are followed, the first was not rebuilt", [wear._addresses.length, status().holding], [2, 1]);
         }]
     property int i: 0
     // A step that throws is a failure, not a test that never ends

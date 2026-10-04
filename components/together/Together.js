@@ -177,14 +177,14 @@ function plan(members, sound, defaultSink) {
 // --- The copies ---------------------------------------------------------------------------
 // A delay (ms) for a copy, 0..500, "" for none. Only a copy can wait, so it
 // is the way to line up outputs of different latency (Bluetooth codecs).
-function delayArg(ms) {
-    const n = Math.round(Number(ms));
-    return n > 0 ? (Math.min(MAX_DELAY_MS, n) / 1000).toFixed(3) : "";
-}
-
 function cleanDelay(ms) {
     const n = Math.round(Number(ms));
     return n > 0 ? Math.min(MAX_DELAY_MS, n) : 0;
+}
+
+function delayArg(ms) {
+    const n = cleanDelay(ms);
+    return n > 0 ? (n / 1000).toFixed(3) : "";
 }
 
 // The command of one copy, or null when a node name is not one of Orbit's or

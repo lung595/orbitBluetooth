@@ -13,16 +13,28 @@ Item {
     // The setting (not `enabled`: that is Item's own)
     property bool active: true
 
-    // Addresses followed, replaced only when the set changes: a new list
-    // would rebuild every WearHeadset and lose what it holds
+    // Addresses followed; the model below follows it one headset at a time, a
+    // new list would rebuild every WearHeadset and lose what it holds
     property var _addresses: []
     // address -> WearHeadset, for the status command
     property var _headsets: ({})
 
+    ListModel {
+        id: followed
+    }
+
     function _refresh() {
         const next = Wear.followed(active, ancService.snapshots);
-        if (next.join() !== _addresses.join())
-            _addresses = next;
+        if (next.join() === _addresses.join())
+            return;
+        const change = Wear.changes(_addresses, next);
+        for (let i = followed.count - 1; i >= 0; i--)
+            if (change.removed.indexOf(followed.get(i).address) >= 0)
+                followed.remove(i);
+        change.added.forEach(address => followed.append({
+                "address": address
+            }));
+        _addresses = next;
     }
     onActiveChanged: _refresh()
     Component.onCompleted: _refresh()
@@ -35,12 +47,10 @@ Item {
     }
 
     Instantiator {
-        model: root._addresses
+        model: followed
 
         delegate: WearHeadset {
-            required property string modelData
-            address: modelData
-            wearing: root.ancService.snapshots[modelData]?.state?.wearing ?? null
+            wearing: root.ancService.snapshots[address]?.state?.wearing ?? null
         }
 
         onObjectAdded: (index, object) => {

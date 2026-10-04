@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQml
 import Quickshell.Bluetooth
@@ -42,6 +43,7 @@ Item {
             levels: root.prefs ? root.prefs.pcLevels : ({})
             saveLevel: (address, level) => root._saveLevel(address, level)
             onChanged: root._refresh()
+            onFilterReady: root.together.realign(address)
         }
 
         onObjectAdded: (index, object) => {
@@ -130,22 +132,13 @@ Item {
         return dev.absolute === 1 ? null : dev.sink;
     }
 
-    // The nodes a level written to `node` must reach: when it is one of the
-    // PC levels of a Listen together session, all of them (the members share
-    // one level, D254); else just itself
-    function levelNodes(node) {
-        const shared = together.sharedNodes;
-        return shared.indexOf(node) >= 0 ? shared : [node];
-    }
+    // A level or a mute written to a node reaches every member's copy when
+    // it is the PC level of a Listen together session (Route.levelNodes)
     function writeLevel(node, level) {
-        for (const n of levelNodes(node)) {
-            n.audio.muted = false;
-            n.audio.volume = level;
-        }
+        Route.writeLevel(together.sharedNodes, node, level);
     }
     function writeMuted(node, muted) {
-        for (const n of levelNodes(node))
-            n.audio.muted = muted;
+        Route.writeMuted(together.sharedNodes, node, muted);
     }
 
     // Sets a level from `dms ipc call orbitBluetooth deviceVolume|pcVolume`;

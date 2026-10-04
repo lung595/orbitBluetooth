@@ -2,6 +2,7 @@ import QtQuick
 import qs.Common
 import "Members.js" as Members
 import "Polar.js" as Polar
+import "../together/Together.js" as Together
 
 // The volumes as a polar vectorscope (D250): the outer half circle is the
 // device's own level (Theme.primary), the inner one this PC's level
@@ -74,8 +75,8 @@ Item {
     // together, else the device's own, else none. Delegates count them
     // (outputs.length) and read their own by index (output(i)), which
     // answers for an index that is just gone
-    readonly property var outputs: split ? members.slice(0, Polar.MAX_MEMBERS).map((m, i) => ({
-                "part": Polar.partOf(i, Math.min(members.length, Polar.MAX_MEMBERS)),
+    readonly property var outputs: split ? members.slice(0, Together.MAX_MEMBERS).map((m, i) => ({
+                "part": Polar.partOf(i, Math.min(members.length, Together.MAX_MEMBERS)),
                 "level": m.level,
                 "muted": m.muted,
                 "icon": m.icon,

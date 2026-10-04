@@ -275,6 +275,21 @@ Item {
         check("the face shows the source's", session.sharedNode.name, "orbit_pc_" + key(a));
         session.join(d, a);
         check("a member without a filter has none to share", session.sharedNodes.length, 3);
+        // Its filter comes up later (it was away, or slow): shared level and mute, not its own saved one
+        patch(d, {
+            "pc": {
+                "name": "orbit_pc_" + key(d),
+                "audio": {
+                    "volume": 1,
+                    "muted": false
+                }
+            }
+        });
+        route.devices[a].pc.audio.muted = true;
+        session.realign(d);
+        check("a filter that came up late follows the shared level and mute", [route.devices[d].pc.audio.volume, route.devices[d].pc.audio.muted], [0.7, true]);
+        session.realign(e);
+        check("a device that is not a member is left alone", route.devices[e].pc, null);
         session.end("ended", "");
 
         // A source without a filter is copied after its level: nothing is shared
@@ -283,6 +298,18 @@ Item {
         session.start([a, b]);
         check("a source without a filter: nothing is shared", [session.sharedNodes.length, route.devices[b].pc.audio.volume], [0, 0.2]);
         check("its copy is taken from its output", copies(), ["02<-01"]);
+        // The source's own filter comes up: the others follow it
+        patch(a, {
+            "pc": {
+                "name": "orbit_pc_" + key(a),
+                "audio": {
+                    "volume": 0.9,
+                    "muted": false
+                }
+            }
+        });
+        session.realign(a);
+        check("the source's filter came up: the others follow", route.devices[b].pc.audio.volume, 0.9);
         session.end("ended", "");
     }
 }

@@ -94,7 +94,16 @@ held[1].canPlay = true;
 eq("resumable: a player that left", Wear.resumable(held, [held[0]], PAUSED), []);
 eq("resumable: a new instance is not the same", Wear.resumable(held, [Object.assign({}, held[1])], PAUSED), []);
 eq("resumable: nothing held", Wear.resumable([], held, PAUSED), []);
+held[0].playbackState = PAUSED;
+eq("stillPaused: those whose state is Paused", Wear.stillPaused(held, PAUSED), held);
+eq("stillPaused: none held", Wear.stillPaused(null, PAUSED), []);
 eq("resumable: no lists", Wear.resumable(null, null, PAUSED), []);
+
+// What changes between two followed sets: the headsets that stay are untouched
+eq("changes: one added", Wear.changes(["A"], ["A", "B"]), { removed: [], added: ["B"] });
+eq("changes: one removed", Wear.changes(["A", "B"], ["B"]), { removed: ["A"], added: [] });
+eq("changes: nothing", Wear.changes(["A"], ["A"]), { removed: [], added: [] });
+eq("changes: from nothing", Wear.changes(null, ["A"]), { removed: [], added: ["A"] });
 
 // What the status command tells
 eq("report: off", Wear.report(false, "sony", ready(true)), { state: "off" });

@@ -193,8 +193,10 @@ Scope {
                 return ipc._say(Guide.togetherNote("no-session", ""));
             if (!session.isMember(Together.address(address)))
                 return ipc._say(Guide.togetherNote("not-member", session.nameOf(Together.address(address))));
+            if (Together.address(address) === session.source)
+                return ipc._say(Guide.togetherNote("source", session.nameOf(session.source)));
             if (!/^[0-9]{1,3}$/.test(String(ms || "").trim()) || parseInt(ms, 10) > Together.MAX_DELAY_MS)
-                return "Use: togetherDelay <address> 0..500 (milliseconds) · " + Guide.url("listen-together");
+                return "Use: togetherDelay <address> 0.." + Together.MAX_DELAY_MS + " (milliseconds) · " + Guide.url("listen-together");
             session.setDelay(address, parseInt(ms, 10));
             return "OK";
         }

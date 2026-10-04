@@ -13,13 +13,13 @@ function pathOf(file) {
 
 // QML ".pragma library" files are plain JS once the pragma is removed. One
 // that imports another (`.import "x/Name.js" as Name`) gets it as a constant
-// holding every function the other declares.
+// holding every function and top-level `var` the other declares.
 function load(file, names) {
     const [, bytes] = GLib.file_get_contents(pathOf(file));
     const src = new TextDecoder().decode(bytes)
         .replace(".pragma library", "")
         .replace(/^\.import "(?:[^"]*\/)?([^"\/]+\.js)" as (\w+)$/gm, (_, dep, name) => "const " + name + " = load(" + JSON.stringify(dep) + ");");
-    const declared = [...src.matchAll(/^function (\w+)/gm)].map(m => m[1]);
+    const declared = [...src.matchAll(/^(?:function|var) (\w+)/gm)].map(m => m[1]);
     return new Function("load", src + "; return { " + (names || declared).join(", ") + " };")(load);
 }
 

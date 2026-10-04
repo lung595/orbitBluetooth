@@ -114,12 +114,15 @@ Item {
     }
 
     // Once the virtual sink is ready: this PC's saved level for this device
+    // (a Listen together session then puts it at the shared level, see filterReady)
     readonly property bool pcReady: !!pc && !!pc.audio && pc.ready
+    signal filterReady
     onPcReadyChanged: {
         if (!pcReady)
             return;
         const saved = levels[address];
         pc.audio.volume = typeof saved === "number" ? Math.max(0, Math.min(1, saved)) : 1;
+        filterReady();
     }
 
     // Remember this PC's level for this device, a moment after it settles

@@ -8,7 +8,7 @@ const Volume = load("Volume.js", ["clamp", "step", "validSink"]);
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "slices", "sliceAt", "partOf", "indexOf", "arc", "end", "point", "angleOf", "valueAt", "zone", "wheelPart", "iconSpot", "legendSpot", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
 const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded", "note"]);
-const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "loopbackArgs", "filterArgs", "muteTarget", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "popupScreen", "shownLevels"]);
+const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "loopbackArgs", "filterArgs", "muteTarget", "levelNodes", "writeLevel", "writeMuted", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "popupScreen", "shownLevels"]);
 
 // --- Volume tick (Volume.js) ------------------------------------------------------
 eq("same step: no tick", Volume.step(0.61) === Volume.step(0.62), true);
@@ -47,6 +47,20 @@ eq("smart filter: targets the device, nothing remembered", [/filter\.smart\.targ
 eq("smart filter: quotes stripped from the name", /description="Buds Pro \(Orbit\)"/.test(filter[4]), true);
 eq("bad master or address: no command", [Route.filterArgs(MAC, "x y", "B"), Route.filterArgs("nope", "bluez_output.AA_BB_CC_DD_EE_01.1", "B")], [null, null]);
 eq("mute: one device mutes this PC, two mute the device", [Route.muteTarget(1), Route.muteTarget(2), Route.muteTarget(0)], ["pc", "device", "pc"]);
+// A level written on the shared PC half reaches every member's copy (D254), nothing else
+const node = (volume, muted) => ({ "audio": { "volume": volume, "muted": !!muted } });
+const sharedA = node(0.85), sharedB = node(0.85, true), sharedC = node(0.4), own = node(0.3, true);
+const shared = [sharedA, sharedB, sharedC];
+eq("a shared node reaches all the shared ones", Route.levelNodes(shared, sharedB), shared);
+eq("another node reaches only itself", Route.levelNodes(shared, own), [own]);
+eq("with nothing shared, only itself", Route.levelNodes([], own), [own]);
+Route.writeLevel(shared, sharedC, 0.5);
+eq("a level written is on every copy, unmuted", shared.map(n => [n.audio.volume, n.audio.muted]), [[0.5, false], [0.5, false], [0.5, false]]);
+eq("and the node outside is left alone", [own.audio.volume, own.audio.muted], [0.3, true]);
+Route.writeMuted(shared, sharedA, true);
+eq("a mute is on every copy", shared.map(n => n.audio.muted), [true, true, true]);
+Route.writeLevel(shared, own, 0.9);
+eq("a level on its own node unmutes only it", [own.audio.volume, own.audio.muted, sharedA.audio.volume, sharedA.audio.muted], [0.9, false, 0.5, true]);
 eq("ipc up/down in 5 % steps", [Route.ipcLevel("up", 0.5), Route.ipcLevel("down", 0.5), Route.ipcLevel("UP", 0.52)], [0.55, 0.45, 0.55]);
 eq("ipc capped at the ends", [Route.ipcLevel("up", 1), Route.ipcLevel("down", 0), Route.ipcLevel("+20", 0.9), Route.ipcLevel("-20", 0.1)], [1, 0, 1, 0]);
 eq("ipc absolute and relative", [Route.ipcLevel("40", 0.9), Route.ipcLevel("40%", 0), Route.ipcLevel("+5", 0.4), Route.ipcLevel("-10", 0.4)], [0.4, 0.4, 0.45, 0.3]);

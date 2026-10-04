@@ -5,6 +5,7 @@ const { load, eq, done, root, GLib } = imports.lib;
 
 const Together = load("Together.js");
 const Guide = load("Guide.js", ["url", "togetherNote"]);
+const Polar = load("Polar.js", ["slices", "indexOf"]);
 
 // Made-up devices: a headset, a receiver, two speakers, a fifth output, a keyboard
 // with no sound, a call-mode headset and one that is not connected
@@ -138,7 +139,7 @@ eq("a session", JSON.parse(Together.status({ "members": [XM, AV, SP1], "source":
 // --- Notes (value 10) -----------------------------------------------------------------
 const guide = new TextDecoder().decode(GLib.file_get_contents(root + "/docs/GUIDE.md")[1]);
 const anchors = guide.split("\n").filter(l => /^#{2,3} /.test(l)).map(l => l.replace(/^#+ /, "").toLowerCase().replace(/[^a-z0-9 -]/g, "").replace(/ /g, "-"));
-const reasons = ["same", "bad-address", "not-connected", "no-audio", "in-call", "too-few", "too-many", "outside", "already", "not-member", "no-session", "member-out", "member-left", "link-stopped", "none", "unknown"];
+const reasons = ["same", "bad-address", "not-connected", "no-audio", "in-call", "too-few", "too-many", "outside", "already", "not-member", "source", "no-session", "member-out", "member-left", "link-stopped", "none", "unknown"];
 reasons.forEach(w => {
     const n = Guide.togetherNote(w, "WH-1000XM6");
     eq("note " + w + " says what and what to do", !!(n.title && n.hint), true);
@@ -149,6 +150,12 @@ eq("every reason has a note of its own", reasons.filter(w => w !== "unknown" && 
 eq("the multipoint note exists in the guide", anchors.indexOf("works-with-multipoint-headsets") >= 0, true);
 eq("a name goes in the title", Guide.togetherNote("not-connected", "WH-1000XM6").title, "WH-1000XM6 is not connected");
 eq("the cap note says how many and what to do", [/4/.test(Guide.togetherNote("too-many", "").title), /Leave together/.test(Guide.togetherNote("too-many", "").hint)], [true, true]);
+eq("the cap note quotes the cap", Guide.togetherNote("too-many", "").title.includes(String(Together.MAX_MEMBERS)), true);
+// One cap for the session, the arcs of the volume wheel and the part names of the IPC
+const last = Together.MAX_MEMBERS - 1;
+eq("the wheel has an arc for every member and no more", [Polar.slices(Together.MAX_MEMBERS).length, Polar.slices(Together.MAX_MEMBERS + 3).length], [Together.MAX_MEMBERS, Together.MAX_MEMBERS]);
+eq("the last member has a part, the next one has none", [Polar.indexOf("m" + last), Polar.indexOf("m" + Together.MAX_MEMBERS)], [last, -1]);
+eq("a delay is cleaned once for every caller", [Together.delayArg(9999), Together.delayArg(-5), Together.delayArg(40)], [(Together.MAX_DELAY_MS / 1000).toFixed(3), "", "0.040"]);
 eq("guide url", Guide.url("listen-together"), "https://github.com/lung595/orbitBluetooth/blob/main/docs/GUIDE.md#listen-together");
 
 done();

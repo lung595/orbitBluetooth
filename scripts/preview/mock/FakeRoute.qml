@@ -106,19 +106,16 @@ QtObject {
             }
         } : null;
     }
-    // The nodes a level written to `node` reaches: the shared PC half is on
-    // every member's copy
-    function levelNodes(node) {
-        return node === shared ? together.sharedNodes : [node];
-    }
+    // The same rules as the real route's (Route.levelNodes, tested in
+    // tests/volume.test.js): the shared PC half is on every member's copy
     function writeLevel(node, level) {
-        levelNodes(node).forEach(n => {
+        (node === shared ? together.sharedNodes : [node]).forEach(n => {
             n.audio.volume = level;
             n.audio.muted = false;
         });
     }
     function writeMuted(node, muted) {
-        levelNodes(node).forEach(n => n.audio.muted = muted);
+        (node === shared ? together.sharedNodes : [node]).forEach(n => n.audio.muted = muted);
     }
 
     function find(address) {

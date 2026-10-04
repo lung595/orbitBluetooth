@@ -115,6 +115,26 @@ function muteTarget(audioDevices) {
     return audioDevices > 1 ? "device" : "pc";
 }
 
+// The nodes a level written to `node` must reach: when it is one of the
+// `shared` PC-level nodes of a Listen together session, all of them (the
+// members share one level, D254); else just itself
+function levelNodes(shared, node) {
+    return shared.indexOf(node) >= 0 ? shared : [node];
+}
+
+// A level written like a slider does: on every node it must reach, unmuted
+function writeLevel(shared, node, level) {
+    for (const n of levelNodes(shared, node)) {
+        n.audio.muted = false;
+        n.audio.volume = level;
+    }
+}
+
+function writeMuted(shared, node, muted) {
+    for (const n of levelNodes(shared, node))
+        n.audio.muted = muted;
+}
+
 // The level asked by `dms ipc call orbitBluetooth deviceVolume|pcVolume <arg>`:
 // "up", "down", "+10", "-5", "40" or "40%". Steps of 5 %, capped to 0..1.
 // Returns -1 for anything else (value 11: checked and capped).

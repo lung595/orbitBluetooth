@@ -154,7 +154,9 @@ Item {
             h.headsets.a.lingers = true;
             h.end(h.a, 0);
             check("once confirmed it disconnects", h.headsets.a.disconnects, 1);
-            check("and the session is not reopened", [h.session(h.a), svc._leaving], [null, {}]);
+            check("and the session is not reopened", [h.session(h.a), svc._leaving], [null,
+                {}
+            ]);
             h.headsets.a.connected = false;
         }, () => {
             svc.chatOffOnDisconnect = false;
@@ -173,6 +175,19 @@ Item {
             check("Noise control off: the wearing session closes too", h.session(h.a).stdinEnabled, false);
             h.end(h.a, 0);
             check("and none is left", [h.session(h.a), h.session(h.b)], [null, null]);
+            svc.active = true;
+        }, () => {
+            h.say(h.a, h.ready(true));
+            h.headsets.a.connected = false;
+            h.say(h.a, {
+                "status": "error",
+                "error": "link lost"
+            });
+            check("a late line after the disconnection leaves no state behind", svc.snapshots[h.a], undefined);
+            h.end(h.a, 1);
+            h.headsets.a.connected = true;
+            h.settle();
+            check("and the headset gets its session back when it returns", h.session(h.a) !== null, true);
         }]
     property int i: 0
     // A step that throws is a failure, not a test that never ends

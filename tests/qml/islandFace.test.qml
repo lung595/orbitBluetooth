@@ -64,7 +64,13 @@ Item {
         property int fps: 60
         property var note: null
         // The one unfolded state every screen shares (TwoLevels)
-        property bool unfolded: false
+        property alias unfolded: visit.unfolded
+        property UnfoldedVisit visit: UnfoldedVisit {
+            id: visit
+        }
+        function scopeShown(on) {
+            visit.screenShown(on);
+        }
         property string factsLine: "USB · 192 kHz · 32 bit"
         property var factsRows: [
             {
@@ -104,6 +110,12 @@ Item {
             overlay: fakeOverlay
             controller: island
             host: fakeHost
+        }
+    }
+    Component {
+        id: screenMaker
+        ScopeScreen {
+            overlay: fakeOverlay
         }
     }
     property var face: null
@@ -180,6 +192,20 @@ Item {
         face.close();
         check("shown unfolded by another screen: left as it was", fakeOverlay.unfolded, true);
         fakeOverlay.unfolded = false;
+
+        // Two screens at once (every output's pop-up): the first to leave
+        // does not fold what the other still shows
+        const first = screenMaker.createObject(sheet);
+        const second = screenMaker.createObject(sheet);
+        first.live = true;
+        second.live = true;
+        fakeOverlay.unfolded = true;
+        first.live = false;
+        check("another screen still shows them: they stay unfolded", fakeOverlay.unfolded, true);
+        second.live = false;
+        check("the last one leaves: they fold", fakeOverlay.unfolded, false);
+        first.destroy();
+        second.destroy();
 
         print(failures ? failures + " failure(s)" : "all passed");
         Qt.exit(failures ? 1 : 0);

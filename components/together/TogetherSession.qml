@@ -223,7 +223,7 @@ Item {
     // The copy is taken from the source's PC-level filter, before its level,
     // so each member applies the level itself through its own filter and they
     // must all hold the same one: writing one writes them all
-    // (AudioRoute.levelNodes). A source without that filter is copied after
+    // (Route.levelNodes). A source without that filter is copied after
     // its output level (it is the PC level there), so nothing is shared: each
     // member then plays that sound at its own level.
     readonly property var sharedNodes: {
@@ -247,6 +247,14 @@ Item {
                 d.pc.audio.muted = from.audio.muted;
             }
         }
+    }
+
+    // A member's PC filter came up after it joined (it was away, or slower
+    // than the others): it takes the shared level and mute like a newcomer.
+    // The source's own filter coming up is the reference the others follow.
+    function realign(address) {
+        if (isMember(address))
+            _align(address === source ? members : [address]);
     }
 
     // Exists only during a session

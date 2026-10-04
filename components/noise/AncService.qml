@@ -244,6 +244,11 @@ Item {
 
     function _onLine(proc, line) {
         const address = proc.address;
+        // A line from a headset that just left (its error, typically) must
+        // not bring back the state its disconnection cleared: an error
+        // snapshot would keep every session closed after it reconnects
+        if (!deviceFor(address)?.connected)
+            return;
         const next = Snapshot.merge(snapshots[address], line, (_queue[address] || []).length > 0, Date.now());
         if (!next)
             return;

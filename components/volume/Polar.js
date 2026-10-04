@@ -1,4 +1,5 @@
 .pragma library
+.import "../together/Together.js" as Together
 
 // Pure logic of the polar vectorscope (PolarScope.qml), tested in
 // tests/*.test.js. Angles are in degrees, clockwise from the right, as
@@ -15,9 +16,8 @@
 var LEFT = 180;
 var TOP = 270;
 var RIGHT = 360;
-// The most outputs that can listen together, and the space left between two
-// neighbouring arcs of the outer half (in degrees, half on each side)
-var MAX_MEMBERS = 4;
+// The space left between two neighbouring arcs of the outer half (in
+// degrees, half on each side)
 var GAP = 4;
 
 function clamp01(v) {
@@ -26,14 +26,14 @@ function clamp01(v) {
 
 // --- The arcs of the outer half circle ------------------------------------------
 
-// `count` equal arcs of the half circle (1: the device's own, 2..4: the
-// outputs listening together), each trimmed by half the gap where it meets
+// `count` equal arcs of the half circle (1: the device's own, 2 up to the
+// together cap: the outputs listening together), each trimmed by half the gap where it meets
 // a neighbour. `reverse` tells where it lights from: the right end when the
 // arc lies right of the top, the left end otherwise, so every arc grows
 // toward the top; the middle one of an odd count, which has no side, lights
 // from the left, like the single arc.
 function slices(count) {
-    const n = Math.max(1, Math.min(MAX_MEMBERS, count | 0));
+    const n = Math.max(1, Math.min(Together.MAX_MEMBERS, count | 0));
     const width = 180 / n;
     const out = [];
     for (let i = 0; i < n; i++) {
@@ -49,7 +49,7 @@ function slices(count) {
 
 // Which of the `count` arcs an angle belongs to (gaps and ends included)
 function sliceAt(deg, count) {
-    const n = Math.max(1, Math.min(MAX_MEMBERS, count | 0));
+    const n = Math.max(1, Math.min(Together.MAX_MEMBERS, count | 0));
     return Math.max(0, Math.min(n - 1, Math.floor((deg - LEFT) / (180 / n))));
 }
 
@@ -62,8 +62,8 @@ function partOf(index, count) {
 function indexOf(part) {
     if (part === "device")
         return 0;
-    const m = /^m([0-3])$/.exec(String(part));
-    return m ? Number(m[1]) : -1;
+    const m = /^m([0-9])$/.exec(String(part));
+    return m && Number(m[1]) < Together.MAX_MEMBERS ? Number(m[1]) : -1;
 }
 
 // Where an arc starts and how far it goes at a level (0..1)

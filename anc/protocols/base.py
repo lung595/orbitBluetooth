@@ -114,6 +114,8 @@ class Protocol:
     # No real frame comes near this; a device sending endless bytes without
     # a frame end must not make the helper grow without limit (P117)
     MAX_BUFFER = 64 * 1024
+    # Features a headset announces after "ready": their settings can arrive first
+    LATE_FEATURES = ("chat", "chatEnds")
 
     def receive(self, data):
         self.buffer += data
@@ -132,6 +134,13 @@ class Protocol:
 
     def set(self, key, value):
         """Dispatches a textual "set <key> <value>" command."""
+        if key in self.LATE_FEATURES:
+            if not self.features[key]:
+                # Asked before the headset announced it: kept, applied by
+                # flush_deferred (answering OK and dropping it would be silent)
+                self.deferred[key] = value
+                return
+            self.deferred.pop(key, None)
         if key == "mode" and value in self.features["modes"]:
             self.set_mode(value)
         elif key == "ambient" and self.features["ambientMax"]:
@@ -139,19 +148,17 @@ class Protocol:
         elif key == "voice" and self.features["voice"]:
             self.set_voice(value in ("1", "true", "on"))
         elif key == "chat":
-            if self.features["chat"]:
-                self.deferred.pop("chat", None)
-                self.set_chat(value in ("1", "true", "on"))
-            else:
-                self.deferred["chat"] = value
-        elif key == "chatEnds" and self.features["chatEnds"] and value in ("0", "1", "2", "3"):
+            self.set_chat(value in ("1", "true", "on"))
+        elif key == "chatEnds" and value in ("0", "1", "2", "3"):
             self.set_chat_ends(int(value))
         elif key == "wear" and self.features["wear"]:
             self.set_wear(value in ("1", "true", "on"))
 
     def flush_deferred(self):
-        if self.ready and self.deferred.get("chat") is not None and self.features["chat"]:
-            self.set("chat", self.deferred.pop("chat"))
+        if not self.ready:
+            return
+        for key in [k for k in self.deferred if self.features[k]]:
+            self.set(key, self.deferred.pop(key))
 
     def set_battery(self, part, level, charging=False):
         if 0 <= level <= 100:

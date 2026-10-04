@@ -121,7 +121,13 @@ Item {
         pcSink: levels.dev && levels.dev.pc ? levels.dev.pc.name : ""
     }
     // The details are unfolded (one state for every screen that shows them)
-    property bool unfolded: false
+    property alias unfolded: visit.unfolded
+    UnfoldedVisit {
+        id: visit
+    }
+    function scopeShown(on) {
+        visit.screenShown(on);
+    }
     AudioGraph {
         id: audioGraph
         readonly property var wanted: levels.prefs ? Audiophile.needs(levels.prefs.factsLine, levels.prefs.factsMore, levels.unfolded) : ({})
@@ -140,7 +146,7 @@ Item {
 
     // --- Gestures ----------------------------------------------------------------
     // The node of a part. Writing goes through the route, so a level of the
-    // shared PC half reaches every member's copy (AudioRoute.levelNodes).
+    // shared PC half reaches every member's copy (Route.levelNodes).
     // DMS's own OSD would answer a level we set: keep it quiet a moment, as
     // DMS's slider does
     function _node(part) {

@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell.Services.Mpris
 import "Wear.js" as Wear
@@ -44,6 +45,26 @@ Item {
         const playing = Wear.pausable(Mpris.players.values, apps);
         playing.forEach(player => player.pause());
         held = playing;
+    }
+
+    // Once a held player leaves "Paused" somebody took it over: it is let go,
+    // so playing then pausing it by hand is not undone when the headset comes
+    // back. Only the held players are watched, so nothing exists at rest.
+    Instantiator {
+        model: root.held
+
+        delegate: Connections {
+            required property var modelData
+            target: modelData
+            // Later: the handler's own delegate goes away with the new list
+            function onPlaybackStateChanged() {
+                Qt.callLater(root._release);
+            }
+        }
+    }
+
+    function _release() {
+        held = Wear.stillPaused(held, MprisPlaybackState.Paused);
     }
 
     function _resume() {

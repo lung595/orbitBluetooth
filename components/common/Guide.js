@@ -1,4 +1,5 @@
 .pragma library
+.import "../together/Together.js" as Together
 
 // Links into docs/GUIDE.md, opened in the browser on click only: Orbit
 // itself never goes online for them (values 5 and 10)
@@ -58,7 +59,7 @@ function togetherNote(why, name) {
         "same": { "title": "Pick different devices", "hint": "Drag one device onto another" },
         "bad-address": { "title": "Not a device address", "hint": "Use addresses like AA:BB:CC:DD:EE:FF" },
         "too-few": { "title": "Listening together needs two devices", "hint": "Drag one device onto another" },
-        "too-many": { "title": "Up to 4 devices listen together", "hint": "Let one leave first: right-click it, then Leave together" },
+        "too-many": { "title": "Up to " + Together.MAX_MEMBERS + " devices listen together", "hint": "Let one leave first: right-click it, then Leave together" },
         "outside": { "title": "Drop it onto a device that listens together", "hint": "Only one group listens together: drag it onto a member, or stop the group first" },
         "already": { "title": who + " already listens together", "hint": "Drag another device onto it to add that one" },
         "not-member": { "title": who + " is not listening together", "hint": "Only a device in the session can leave it" },
@@ -66,6 +67,7 @@ function togetherNote(why, name) {
         "not-connected": { "title": who + " is not connected", "hint": "Connect it first, then drag it onto a device that listens" },
         "no-audio": { "title": who + " has no sound output yet", "hint": "It does not play sound, or its audio is not ready: try again in a moment", "anchor": "works-with-multipoint-headsets" },
         "in-call": { "title": who + " is in call mode", "hint": "A headset on its call profile plays mono: switch it back to music first" },
+        "source": { "title": who + " is where the sound comes from", "hint": "Only the other outputs can be held back: make another one the output you hear, or hold the early one back", "anchor": "limits" },
         "member-out": { "title": who + " disconnected", "hint": "The others keep listening together" },
         "member-left": { "title": who + " disconnected", "hint": "Listening together ended with it" },
         "link-stopped": { "title": "Listening together stopped", "hint": "The copy of the sound ended: drag a device onto another to start again" },

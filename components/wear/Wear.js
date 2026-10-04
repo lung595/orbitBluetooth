@@ -64,6 +64,19 @@ function followed(enabled, snapshots) {
     }).sort();
 }
 
+// What to add and to remove to go from one followed set to the next, so a
+// headset that stays is never rebuilt (it would lose the players it holds)
+function changes(previous, next) {
+    return {
+        "removed": (previous || []).filter(function (a) {
+            return next.indexOf(a) < 0;
+        }),
+        "added": next.filter(function (a) {
+            return (previous || []).indexOf(a) < 0;
+        })
+    };
+}
+
 // --- Which players play on the headset ----------------------------------
 
 // Letters and digits only, lower case: "Google Chrome", "google-chrome" and
@@ -120,13 +133,21 @@ function pausable(players, apps) {
     });
 }
 
-// Of the players Orbit paused, those that may start again: still there (the
-// very same object, not a new instance under the same name), still paused
-// (anyone who played, stopped or changed it meanwhile is left alone) and able
-// to play. `live` is the current list, `paused` the host's "Paused" value.
-function resumable(held, live, paused) {
+// The held players that are still paused. A player whose state left "Paused"
+// was played, stopped or changed by someone: it is no longer Orbit's to resume,
+// even if it is paused again afterwards. `paused` is the host's "Paused" value.
+function stillPaused(held, paused) {
     return (held || []).filter(function (p) {
-        return (live || []).indexOf(p) >= 0 && p.playbackState === paused && p.canPlay;
+        return p.playbackState === paused;
+    });
+}
+
+// Of the players Orbit paused, those that may start again: still there (the
+// very same object, not a new instance under the same name), still paused and
+// able to play. `live` is the current list.
+function resumable(held, live, paused) {
+    return stillPaused(held, paused).filter(function (p) {
+        return (live || []).indexOf(p) >= 0 && p.canPlay;
     });
 }
 

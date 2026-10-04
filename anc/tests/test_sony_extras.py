@@ -186,6 +186,19 @@ class ConversationEnds(unittest.TestCase):
         self.assertTrue(headset.proto.features["chatEnds"])
         self.assertEqual(headset.proto.state["chatEnds"], 1)
 
+    def test_asked_early_it_waits_for_the_headset_then_goes_out(self):
+        headset = Headset()
+        headset.proto.set("chatEnds", "2")
+        headset.drain()
+        self.assertEqual(headset.proto.deferred, {"chatEnds": "2"})
+        headset.reply(T_DATA, "fb 0c 00 01")
+        headset.proto.mark_ready()
+        headset.proto.flush_deferred()
+        headset.drain()
+        self.assertEqual(headset.packets()[-1], (T_DATA, "fc 0c 00 02"))
+        self.assertEqual(headset.proto.state["chatEnds"], 2)
+        self.assertEqual(headset.proto.deferred, {})
+
     def test_write_sends_back_the_sensitivity_that_was_read(self):
         headset = Headset()
         headset.reply(T_DATA, "fb 0c 01 01")
