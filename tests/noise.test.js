@@ -50,6 +50,12 @@ eq("withSetting: mode", Snap.withSetting(prev, "mode", "off").state.mode, "off")
 eq("withSetting: ambient int", Snap.withSetting(prev, "ambient", "12").state.ambient, 12);
 eq("withSetting: chat bool", Snap.withSetting(prev, "chat", "off").state.chat, false);
 eq("withSetting: keeps old", prev.state.mode, "nc");
+eq("withSetting: how long a conversation lasts is a number", Snap.withSetting(prev, "chatEnds", "2").state.chatEnds, 2);
+eq("withSetting: a bad number is not echoed", Snap.withSetting(prev, "ambient", "loud"), null);
+eq("withSetting: a key with no state of its own is not echoed", Snap.withSetting(prev, "wear", "on"), null);
+eq("merge: pending keeps the conversation length", Snap.merge({ state: { chatEnds: 1 } }, line({ state: { chatEnds: 3 } }), true, 1).state.chatEnds, 1);
+eq("merge: pending takes a setting the old state never had", Snap.merge({ state: { mode: "nc" } }, line({ state: { mode: "off", chatEnds: 2 } }), true, 1).state, { mode: "nc", chatEnds: 2 });
+eq("merge: the wearing reading is never held back", Snap.merge({ state: { wearing: 0 } }, line({ state: { wearing: 4 } }), true, 1).state.wearing, 4);
 
 // Copy-on-write map updates
 const map = { a: 1 };
