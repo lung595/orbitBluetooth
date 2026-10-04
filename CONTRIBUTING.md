@@ -40,7 +40,7 @@ Tools: `gjs` (JS tests), Python 3 (helper and its tests), `ffmpeg` (GIFs), Qt 6 
 
 `components/` has one folder per feature: `scene/`, `device/`, `card/`, `volume/`, `pairing/`, `noise/` and `common/`. A file imports its neighbours directly and another feature's folder by path (`import "../card"`).
 
-Every surface shows the same scene, `components/scene/OrbitScene.qml`. It handles drag and focus and opens the cards (`card/FocusCard.qml`, `card/HiddenCard.qml`, `scene/OrbitMenu.qml`); `scene/OrbitPhysics.qml` moves every device (`device/DeviceBody.qml`) in one step per frame, with the maths in `scene/Physics.js` (pure, tested). Its chrome lives in `pairing/OfferCard.qml`, `scene/ScanChip.qml` and `scene/AdapterNotice.qml`.
+Every surface shows the same scene, `components/scene/OrbitScene.qml`. It only holds the state the parts share and wires them; each role has its own file, and the parts reach each other through the scene's functions (`scene.hideBody(b)`, `scene.ancSend(...)`), never through one another. The drag (`OrbitDrag`), hiding in the black hole (`OrbitHidden`), focus, rename and Escape (`OrbitFocus`), noise control (`OrbitAnc`), the daemon's data and clock (`OrbitDaemonData`) and the detail card's measures (`FocusLayout`) are each a short file; they open the cards (`card/FocusCard.qml`, `card/HiddenCard.qml`, `scene/OrbitMenu.qml`). `scene/OrbitPhysics.qml` moves every device (`device/DeviceBody.qml`) in one step per frame, with the maths in `scene/Physics.js` (pure, tested). What floats above the world (`pairing/OfferCard.qml`, `scene/ScanChip.qml`, `scene/AdapterNotice.qml`, the hint and the note) is grouped by `scene/OrbitChrome.qml`.
 
 Logic that can be tested lives in **pure `.js` files** with no QML: `card/Charge.js` (charge analysis), `card/Endurance.js` (rated battery life), `scene/Physics.js` (springs, slots, clearances), `noise/Anc.js` (noise-control decisions), `volume/Polar.js` (the scope's geometry and sound picture), `volume/Route.js`, `volume/Steps.js` and `volume/Keys.js` (volumes), `common/Address.js` (the shapes of a Bluetooth address and of its BlueZ path, checked before any command), `device/Earbuds.js`, `device/DeviceCatalog.js` and `device/Glyphs.js` (icons).
 
@@ -73,10 +73,13 @@ orbitBluetooth/
 │   │   ├── OrbitScene.qml       # the scene: composition and wiring of the files below
 │   │   ├── Orbit.js, OrbitDevices.qml  # which devices the orbit shows (Orbit.js pure, tested), one model entry per body
 │   │   ├── OrbitConnections.qml, OrbitDiscovery.qml, OrbitOffer.qml  # connection flow, scan only while viewed, offer to connect
+│   │   ├── OrbitDrag.qml, OrbitHidden.qml, OrbitFocus.qml  # the drag gestures, hiding in the black hole, focus + rename + Escape
+│   │   ├── OrbitAnc.qml, OrbitDaemonData.qml, FocusLayout.qml  # noise control, what the daemon publishes + its clock, the detail card's measures
 │   │   ├── OrbitBackdrop.qml, OrbitWorld.qml, OrbitCore.qml, OrbitHint.qml  # sky, orbits and bodies, host core, drag hint
 │   │   ├── OrbitPhysics.qml, Physics.js  # one motion step for every body (Physics.js pure, tested)
 │   │   ├── Cover.js             # is the desktop hidden behind windows? (pure, tested)
-│   │   ├── ScanChip.qml, AdapterNotice.qml, OrbitNote.qml, OrbitMenu.qml  # chrome: scan chip, Bluetooth off, notes, right-click menu
+│   │   ├── OrbitChrome.qml, ScanChip.qml, AdapterNotice.qml, OrbitNote.qml  # what floats above the world: scan chip, Bluetooth off, notes
+│   │   ├── OrbitMenu.qml        # the right-click menu
 │   │   ├── BlackHole.qml, RingWave.qml   # the "Hidden" black hole (two shaders), the connected ring's wave
 │   │   └── Starfield.qml, Vignette.qml, NightColors.qml
 │   ├── device/                  # one orbiting device

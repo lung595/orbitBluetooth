@@ -19,7 +19,7 @@ Item {
         id: scene
         property var notes: []
         property var played: []
-        readonly property var _ancService: null
+        readonly property var ancService: null
         readonly property var sounds: ({
                 "play": name => scene.played = scene.played.concat([name])
             })

@@ -24,6 +24,16 @@ Item {
     property real _calmFor: 0
     property bool _fxFast: false
     property bool _ambientOnly: false
+    // The black hole moves with the same spring as the bodies; homeHash
+    // orders it among the devices of the outer belt
+    readonly property var _hole: ({
+            "px": 0,
+            "py": 0,
+            "vx": 0,
+            "vy": 0,
+            "spawned": false,
+            "homeHash": 0.62
+        })
 
     function kick() {
         _lively = true;
@@ -126,7 +136,7 @@ Item {
 
         // Slot assignment: connected ring and outer field, both address-sorted for stability
         const inner = all.filter(b => b.inSlot && !b.leaving).sort((a, b) => a.address < b.address ? -1 : 1);
-        const outer = all.filter(b => !b.inSlot && !b.leaving && !b.swallowing).concat([s._hole]).sort((a, b) => a.homeHash - b.homeHash);
+        const outer = all.filter(b => !b.inSlot && !b.leaving && !b.swallowing).concat([physics._hole]).sort((a, b) => a.homeHash - b.homeHash);
         const innerPhase = s.orbitTime * 0.11 - Math.PI / 2;
         const outerPhase = s.orbitTime * 0.018 - Math.PI / 2;
         const amp = timeDriven ? (s.dragBody ? 7 : 3.5) : 0;
@@ -144,7 +154,7 @@ Item {
         }
 
         // The black hole: an outer-belt slot, floating like the others
-        const h = s._hole;
+        const h = physics._hole;
         const slot = Physics.beltSlot(s, outer.indexOf(h), outer.length, outerPhase, h.homeHash, Physics.beltRadius(s, 0.2), s.clock, amp);
         if (!h.spawned) {
             h.px = slot.x;
