@@ -3,6 +3,12 @@
 All notable changes to Orbit Bluetooth are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Changed
+
+- The pairing steps of the new-device pop-up (pair, key-press check, connect, time-out, demo script) moved out of `NewDeviceWatch.qml` into `PairingFlow.qml`. No behaviour change.
+
 ## 1.13.2 - 2026-10-04
 
 ### Changed
