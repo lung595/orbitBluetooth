@@ -265,6 +265,9 @@ reasons.forEach(w => {
 });
 eq("every reason has a note of its own", reasons.filter(w => w !== "unknown" && w !== "link-stopped").every(w => Guide.togetherNote(w, "x").title !== Guide.togetherNote("unknown", "x").title), true);
 eq("the multipoint note exists in the guide", anchors.indexOf("works-with-multipoint-headsets") >= 0, true);
+// A device is Bluetooth or wired (D298): the refusals say so, and a wired one is told to plug in
+eq("the bad-device note names both kinds", [/Bluetooth/.test(Guide.togetherNote("bad-address", "").title), /wired/.test(Guide.togetherNote("bad-address", "").title), /alsa_output/.test(Guide.togetherNote("bad-address", "").hint)], [true, true, true]);
+eq("the not-connected hint covers a wired output", /plug/.test(Guide.togetherNote("not-connected", "x").hint), true);
 eq("a name goes in the title", Guide.togetherNote("not-connected", "WH-1000XM6").title, "WH-1000XM6 is not connected");
 eq("the cap note says how many and what to do", [/4/.test(Guide.togetherNote("too-many", "").title), /Leave together/.test(Guide.togetherNote("too-many", "").hint)], [true, true]);
 eq("the cap note quotes the cap", Guide.togetherNote("too-many", "").title.includes(String(Together.MAX_MEMBERS)), true);

@@ -14,8 +14,9 @@ import "../noise/Anc.js" as Anc
 //   deviceVolume | pcVolume up | down | +5 | -5 | 40
 //   volume up | down   (smart steps, D264)   volumeKeys on | off | status
 //   hidden | unhideAll      newDeviceDemo | newDeviceStatus
-//   together <addresses, 2 to 4> | togetherAdd <address> | togetherRemove <address>
-//   separate | togetherStatus | togetherDelay <address> <ms>
+//   together <devices, 2 to 4> | togetherAdd <device> | togetherRemove <device>
+//   separate | togetherStatus | togetherDelay <device> <ms>
+//   (a device is a Bluetooth address or a wired output's node name)
 Scope {
     id: ipc
 
@@ -156,23 +157,26 @@ Scope {
             return "OK";
         }
 
-        // Plays the same sound on 2 to 4 connected Bluetooth outputs (Listen
-        // together). One argument: the addresses, separated by commas or spaces
+        // Plays the same sound on 2 to 4 connected outputs, Bluetooth or wired
+        // (Listen together). One argument: the devices, separated by commas or
+        // spaces: Bluetooth addresses, or the node names of wired outputs
+        // ("alsa_output.…"). Anything else is refused by Together.refusal.
         function together(members: string): string {
             const session = ipc.route.together;
             return ipc._answer(session, session.start(Together.parseList(members)));
         }
 
-        // Adds one connected output to the session
-        function togetherAdd(address: string): string {
+        // Adds one connected output (a Bluetooth address or a wired output's
+        // node name) to the session
+        function togetherAdd(device: string): string {
             const session = ipc.route.together;
-            return ipc._answer(session, session.add([address]));
+            return ipc._answer(session, session.add([device]));
         }
 
         // Takes one output out of the session; it ends if fewer than two remain
-        function togetherRemove(address: string): string {
+        function togetherRemove(device: string): string {
             const session = ipc.route.together;
-            return ipc._answer(session, session.remove(address));
+            return ipc._answer(session, session.remove(device));
         }
 
         // Ends Listen together; every output goes back to itself
@@ -185,19 +189,21 @@ Scope {
             return Together.status(ipc.route.together.active ? ipc.route.together : null);
         }
 
-        // Delays what one member plays by 0..500 ms for this session only
-        // (nothing is saved); the output the sound is taken from never waits
-        function togetherDelay(address: string, ms: string): string {
+        // Delays what one member plays by 0..1000 ms for this session only
+        // (nothing is saved), on top of the wait Orbit works out for a wired
+        // output; the output the sound is taken from has no delay of its own
+        function togetherDelay(device: string, ms: string): string {
             const session = ipc.route.together;
+            const who = Together.member(device);
             if (!session.active)
                 return ipc._say(Guide.togetherNote("no-session", ""));
-            if (!session.isMember(Together.address(address)))
-                return ipc._say(Guide.togetherNote("not-member", session.nameOf(Together.address(address))));
-            if (Together.address(address) === session.source)
+            if (!session.isMember(who))
+                return ipc._say(Guide.togetherNote("not-member", session.nameOf(who)));
+            if (who === session.source)
                 return ipc._say(Guide.togetherNote("source", session.nameOf(session.source)));
-            if (!/^[0-9]{1,3}$/.test(String(ms || "").trim()) || parseInt(ms, 10) > Together.MAX_DELAY_MS)
-                return "Use: togetherDelay <address> 0.." + Together.MAX_DELAY_MS + " (milliseconds) · " + Guide.url("listen-together");
-            session.setDelay(address, parseInt(ms, 10));
+            if (!/^[0-9]{1,4}$/.test(String(ms || "").trim()) || parseInt(ms, 10) > Together.MAX_DELAY_MS)
+                return "Use: togetherDelay <device> 0.." + Together.MAX_DELAY_MS + " (milliseconds) · " + Guide.url("listen-together");
+            session.setDelay(who, parseInt(ms, 10));
             return "OK";
         }
 

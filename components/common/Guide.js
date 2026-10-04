@@ -70,7 +70,7 @@ function togetherNote(why, name) {
     var who = name || "This device";
     var notes = {
         "same": { "title": "Pick different devices", "hint": "Drag one device onto another" },
-        "bad-address": { "title": "Not a device address", "hint": "Use addresses like AA:BB:CC:DD:EE:FF" },
+        "bad-address": { "title": "Not a Bluetooth or wired output", "hint": "Use an address like AA:BB:CC:DD:EE:FF, or the name of a wired output (alsa_output.…)" },
         "too-few": { "title": "Listening together needs two devices", "hint": "Drag one device onto another" },
         "too-many": { "title": "Up to " + Together.MAX_MEMBERS + " devices listen together", "hint": "Let one leave first: right-click it, then Leave together" },
         "outside": { "title": "Drop it onto a device that listens together", "hint": "Only one group listens together: drag it onto a member, or stop the group first" },
@@ -78,10 +78,10 @@ function togetherNote(why, name) {
         "in-group": { "title": who + " listens together", "hint": "Pull it out of the group first (right-click, Leave together), then hide it", "anchor": "hiding-devices-the-black-hole" },
         "not-member": { "title": who + " is not listening together", "hint": "Only a device in the session can leave it" },
         "no-session": { "title": "Nobody listens together yet", "hint": "Drag one connected device onto another first" },
-        "not-connected": { "title": who + " is not connected", "hint": "Connect it first, then drag it onto a device that listens" },
+        "not-connected": { "title": who + " is not connected", "hint": "Connect it (or plug it in, for a wired output) first, then drag it onto a device that listens" },
         "no-audio": { "title": who + " has no sound output yet", "hint": "It does not play sound, or its audio is not ready: try again in a moment", "anchor": "works-with-multipoint-headsets" },
         "in-call": { "title": who + " is in call mode", "hint": "A headset on its call profile plays mono: switch it back to music first" },
-        "source": { "title": who + " is where the sound comes from", "hint": "Only the other outputs can be held back: make another one the output you hear, or hold the early one back", "anchor": "limits" },
+        "source": { "title": who + " is where the sound comes from", "hint": "Only the other outputs can be held back by hand: make another one the output you hear, or hold the early one back", "anchor": "limits" },
         "member-out": { "title": who + " disconnected", "hint": "The others keep listening together" },
         "member-left": { "title": who + " disconnected", "hint": "Listening together ended with it" },
         "link-stopped": { "title": "Listening together stopped", "hint": "The copy of the sound ended: drag a device onto another to start again" },
