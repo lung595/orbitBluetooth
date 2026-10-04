@@ -31,6 +31,17 @@ Item {
         scene.wake();
     }
 
+    // A click on the empty sky steps back one level: the detail card or the
+    // hidden list that is open, then Fedora's view while a group has the centre
+    function stepBack() {
+        if (scene.focusBody || scene.hiddenOpen) {
+            clear();
+            scene.closeHidden();
+            return;
+        }
+        scene.centre.recall();
+    }
+
     // The new name is the BlueZ alias: shown everywhere on the system, kept
     // by BlueZ itself (Orbit stores nothing). An empty name gives the device
     // its own name back.

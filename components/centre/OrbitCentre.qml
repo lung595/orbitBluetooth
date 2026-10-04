@@ -34,6 +34,8 @@ Item {
     property real grouping: 0
     property real stage: 0
     property bool recalled: false
+    // The group has the centre and Fedora's view is not the one shown
+    readonly property bool canRecall: wanted && !recalled
     // The beams' clock: runs only while sound plays (CentreWatch says so)
     readonly property bool playing: watch.item ? watch.item.playing : false
     property real beamTime: 0
@@ -207,7 +209,7 @@ Item {
     // The host comes back to the centre and the group steps back, and the
     // other way round
     function recall() {
-        if (!wanted || recalled)
+        if (!canRecall)
             return;
         recalled = true;
         scene.wake();
@@ -217,6 +219,16 @@ Item {
             return;
         recalled = false;
         scene.wake();
+    }
+
+    // A popout that closes (a click outside it does that) opens again on
+    // Fedora's view, set at once: nobody sees the way there
+    readonly property bool _open: scene.active
+    on_OpenChanged: {
+        if (_open || !canRecall)
+            return;
+        recalled = true;
+        stage = _goalStage;
     }
 
     // --- The session changes -------------------------------------------------------

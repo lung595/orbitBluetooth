@@ -32,6 +32,7 @@ Item {
         property var prefs: ({
                 "togetherCentre": true
             })
+        property bool active: true
         property bool awake: true
         property bool motion: true
         property real orbitTime: 0

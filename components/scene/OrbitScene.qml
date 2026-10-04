@@ -368,6 +368,11 @@ Item {
     function clearFocus() {
         focusCtl.clear();
     }
+    // Something to step back from: a card, the hidden list, or the group's view
+    readonly property bool canStepBack: !!focusBody || hiddenOpen || centre.canRecall
+    function stepBack() {
+        focusCtl.stepBack();
+    }
     function rename(b, text) {
         focusCtl.rename(b, text);
     }

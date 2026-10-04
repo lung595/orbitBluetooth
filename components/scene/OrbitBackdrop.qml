@@ -5,7 +5,8 @@ import qs.Common
 // starfield (it leans away from a dragged device, and drifts a little the way
 // the camera went when a Listen together takes the center), the black hole drifting
 // in the outer belt, and the dimming laid over them while a card is open.
-// A click on this empty sky closes that card.
+// A click on this empty sky steps back one level (OrbitFocus.stepBack): the
+// card, then Fedora's view.
 Item {
     id: backdrop
     required property var scene
@@ -95,13 +96,10 @@ Item {
         }
     }
 
-    // Click on empty space leaves focus mode
+    // Click on empty space steps back one level
     MouseArea {
         anchors.fill: parent
-        enabled: !!backdrop.scene.focusBody || backdrop.scene.hiddenOpen
-        onClicked: {
-            backdrop.scene.clearFocus();
-            backdrop.scene.closeHidden();
-        }
+        enabled: backdrop.scene.canStepBack
+        onClicked: backdrop.scene.stepBack()
     }
 }
