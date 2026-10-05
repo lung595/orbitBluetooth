@@ -80,7 +80,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 
 - **New headphones? Orbit notices.** Put them in pairing mode and a pairing sheet unfolds from the bar: the headset falls into orbit and floats above a planet, *Connect* pairs it on the spot, shows its battery and its noise-control modes. Deep space in a dark theme, stratosphere in a light one, with any DMS palette. Works with Orbit closed.
 - **Drag to connect** with a magnet snap, elastic tether to disconnect.
-- **Two volumes**: open a connected audio device and its card shows the device's own level and this PC's as two half circles, with the sound itself moving inside. Drag or scroll each, click the planet to mute, and a soft tick plays in the device itself.
+- **Two volumes**: open a connected audio device and its card shows the device's own level and this PC's as two half circles, with the sound itself moving inside. Drag or scroll each, click the planet to mute, and a soft tick plays in the device whose level you change (in every output when it is the group's).
 - **Volume pop-up and smart steps**: whenever a volume changes, the same screen shows both levels inside Dank Island (or in place of DMS's OSD, which is switched off); 1 % per slow notch, faster when you scroll or press fast, and your volume keys can use it in one click.
 - **Listen together**: drag one connected audio device onto another (halos and a thread of light show where it can go) and both play the same sound; drag a third (up to four) onto any of them. The volumes' half circle splits into one arc per output, and **the source takes the center of the view** while the others circle it, with a gauge around it for the group's volume and its members' icons under it, and this computer circles the group like a sun. It comes apart by itself when one disconnects, and ends with the shell.
 - **Group volume gauge**: a 270-degree arc around the source with drag, click-to-jump, wheel, mute and a floating percentage ([more](docs/GUIDE.md#the-volume-at-the-center)).
@@ -108,7 +108,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 | Drag a device inside the inner ring | Pair and connect |
 | Drag a connected device outward | Disconnect (a device of a listening group only leaves the group) |
 | Click a device | Open its detail card |
-| Scroll over a half circle, its icon or its percentage, or drag a moon | That level: the device's or this PC's, with smart steps; a soft tick plays in the device every 5 % ([more](docs/GUIDE.md#the-two-volumes)) |
+| Scroll over a half circle, its icon or its percentage, or drag a moon | That level: the device's or this PC's, with smart steps; a soft tick plays in that device every 5 % ([more](docs/GUIDE.md#the-two-volumes)) |
 | Click the planet of an open audio device | Mute or unmute |
 | Drag a connected audio device onto another (or onto any device already in the group) | Listen together: the same sound on both, up to 4 outputs ([more](docs/GUIDE.md#listen-together)) |
 | Tap the group's icons, or click a member of the group | The volume radar: that level big in the middle, the others around it, with *Disconnect*, *Remove from group*, *Hide*, *Details* ([more](docs/GUIDE.md#the-volume-radar)) |
@@ -166,7 +166,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Visualizer: Points, Rays, Waves or None / motion: Smooth or Light | Points / Smooth |
 | | Sounds (short cues) / their volume | Off / 60 % |
 | | Audio details: per fact (connection, profile, codec, bit rate, sample rate, bit depth, channels, latency, quantum, resampling), on the line / when unfolded ([more](docs/GUIDE.md#what-really-plays)) | Line: connection, codec, sample rate, bit depth; unfolded: all |
-| | Volume tick (a soft tick in the device while you change its volume) | On |
+| | Volume tick (a soft tick in the output whose volume you change, in every output for the group's) | On |
 | Desktop widget | Displays | All |
 | | Backdrop | 72 % |
 | | Ambient motion ⚡ | Off |

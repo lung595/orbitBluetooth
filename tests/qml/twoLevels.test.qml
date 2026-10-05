@@ -37,14 +37,6 @@ Item {
     function near(a, b) {
         return Math.abs(a - b) < 1e-9;
     }
-    property var moved: null
-    Connections {
-        target: levels
-        function onLevelMoved(before, after) {
-            h.moved = [before, after];
-        }
-    }
-
     readonly property string headset: "02:00:00:00:10:06"
     readonly property string one: "02:00:00:00:20:01"
     readonly property string two: "02:00:00:00:20:02"
@@ -77,7 +69,6 @@ Item {
         levels.setLevel("m1", 0.5);
         check("a member's level is written", route.otherOne.audio.volume, 0.5);
         check("DMS's own pop-up is kept quiet", SessionData.quiet, quiet + 1);
-        check("the move is told with before and after", h.moved, [0.3, 0.5]);
         levels.setLevel("m2", 2);
         check("a level is kept in range", route.otherTwo.audio.volume, 1);
         levels.setLevel("pc", 0.4);

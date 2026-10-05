@@ -148,10 +148,25 @@ Item {
         return dev.absolute === 1 ? null : dev.sink;
     }
 
+    // The tick that lets you hear where a level is, in the outputs it reached
+    VolumeTick {
+        id: tick
+        prefs: root.prefs
+    }
+
     // A level or a mute written to a node reaches every member's copy when
-    // it is the PC level of a Listen together session (Route.levelNodes)
+    // it is the PC level of a Listen together session (Route.levelNodes). The
+    // tick follows: in that node's output alone, or in every member's when it
+    // is the group's level.
     function writeLevel(node, level) {
+        const before = node.audio.volume;
         Route.writeLevel(together.sharedNodes, node, level);
+        tick.play(Route.levelNodes(together.sharedNodes, node), before, level);
+    }
+    // The tick of a level written without writeLevel (the group's general level
+    // when members keep their own levels)
+    function tickNodes(nodes, before, after) {
+        tick.play(nodes, before, after);
     }
     function writeMuted(node, muted) {
         Route.writeMuted(together.sharedNodes, node, muted);

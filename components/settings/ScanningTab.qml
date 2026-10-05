@@ -83,7 +83,7 @@ Column {
     ToggleSetting {
         settingKey: "volumeTick"
         label: "Volume tick"
-        description: "A soft tick in the device on each 5 % step made on its card, so you hear the level where it plays"
+        description: "A soft tick on each 5 % step, so you hear the level where it plays: in the output whose level you change, and in every output when it is the group's"
         defaultValue: true
     }
 

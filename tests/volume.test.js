@@ -4,7 +4,7 @@ imports.searchPath.unshift(imports.system.programPath ? imports.system.programPa
 const { load, eq, done } = imports.lib;
 
 const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNote", "stuckNote", "levelNote"]);
-const Volume = load("Volume.js", ["clamp", "step", "validSink"]);
+const Volume = load("Volume.js", ["clamp", "step", "validSink", "crosses", "tickSinks", "MAX_TICKS"]);
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "slices", "sliceAt", "partOf", "indexOf", "arc", "end", "point", "angleOf", "valueAt", "zone", "wheelPart", "iconSpot", "legendSpot", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
 const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded", "note"]);
@@ -17,6 +17,13 @@ eq("levels are clamped", [Volume.clamp(-1), Volume.clamp(2), Volume.clamp("x")],
 eq("node name ok for pw-play", Volume.validSink("bluez_output.02_00_00_00_10_06.1"), true);
 eq("no shell characters", Volume.validSink("x; rm -rf ~"), false);
 eq("no option smuggling", Volume.validSink("--target=x y"), false);
+// Where the tick plays: the output whose level moved, or every member's for the group's
+eq("inside one step: no tick, across a step: a tick", [Volume.crosses(0.61, 0.62), Volume.crosses(0.62, 0.68)], [false, true]);
+eq("one output: its own sink only", Volume.tickSinks(["bluez_output.AA_BB_CC_DD_EE_01.1"]), ["bluez_output.AA_BB_CC_DD_EE_01.1"]);
+eq("the group: every member's sink, each once", Volume.tickSinks(["a.1", "b.2", "a.1", "c.3"]), ["a.1", "b.2", "c.3"]);
+eq("never more than four outputs at once", [Volume.MAX_TICKS, Volume.tickSinks(["a", "b", "c", "d", "e", "f"])], [4, ["a", "b", "c", "d"]]);
+eq("a name that is not plain is dropped, the others stay", Volume.tickSinks(["x; rm -rf ~", "--target=y z", "ok.1", "", null, undefined, 7]), ["ok.1"]);
+eq("nothing to tick in", [Volume.tickSinks(null), Volume.tickSinks([])], [[], []]);
 
 // Two volumes (D249, D255): this PC's level lives on a virtual sink in front of
 // the device. Made-up address and names.

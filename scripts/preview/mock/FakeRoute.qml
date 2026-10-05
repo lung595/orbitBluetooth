@@ -257,6 +257,17 @@ QtObject {
     function writeMuted(node, muted) {
         (node === shared ? together.sharedNodes : [node]).forEach(n => n.audio.muted = muted);
     }
+    // What the real route's tickNodes was asked to play (a level written without writeLevel)
+    property var ticked: []
+    function tickNodes(nodes, before, after) {
+        ticked = ticked.concat([
+            {
+                "nodes": nodes.map(n => n.name),
+                "before": before,
+                "after": after
+            }
+        ]);
+    }
 
     function find(address) {
         return address === "02:00:00:00:10:06" ? headset : null;
