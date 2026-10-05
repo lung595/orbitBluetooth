@@ -343,6 +343,18 @@ When something is wrong, a short note says it in these words and links here:
 
 **Not yet tried on real hardware**: wired outputs in a group are checked with made-up outputs and a simulated sound server only. A USB interface, an HDMI screen and the jack are still to be tried.
 
+### The volume radar
+
+Tap the group's icons (the row of discs under it), or click one of its members (a Bluetooth device or a wired output): a radar opens over the sky. The level you asked for is the **big dial** in the middle: the group's (the one shared level, the same as the ring's) or the member's own. Every other level stays around it as a **small dial**: tap one to make it the big one. On any dial, drag its ring to set the level, turn the wheel to step it, or press the speaker in its opening to mute it.
+
+Under the big dial, the actions that go with it:
+
+- a Bluetooth member: *Disconnect*, *Remove from group*, *Hide* and *Details* (its detail card);
+- a wired member: *Disconnect* (it leaves the group and stays plugged in) and *Hide*;
+- the group: *Add a device…* and *Stop group*.
+
+A member whose device keeps no level of its own says so instead of staying silent (see [The volume at the center](#the-volume-at-the-center)). <kbd>Esc</kbd>, the ✕ or a tap beside the dials closes the radar. It is made only while it is open: at rest nothing of it exists.
+
 ### Wired outputs in the group
 
 An output that is not Bluetooth (a USB interface, a screen on HDMI, the computer's headphone jack) can listen together too. Inside the group it is easy to tell from a Bluetooth device: it is a **rounded square**, not a round planet.

@@ -67,6 +67,12 @@ Item {
         property bool hiddenOpen: false
         property bool renaming: false
         property bool menuOpen: false
+        // The volume radar, never open on this stand-in
+        readonly property var radar: QtObject {
+            property bool open: false
+            function close() {
+            }
+        }
         property int hiddenClosed: 0
         property var centre: centreItem
         function wake() {
@@ -269,7 +275,8 @@ Item {
             "run": () => {
                 // A card over the group's view: the click closes it first
                 scene.centre.release();
-                scene.focusOn(scene.centre.bodyOf(h.headset));
+                // The detail card of a group member is the radar's Details, a plain click opens the radar
+                scene.focusOn(scene.centre.bodyOf(h.headset), true);
                 check("a card is open over the group", [!!scene.focusBody, scene.centre.recalled], [true, false]);
                 h.clickSky();
                 check("a click on the sky closes the card, and Fedora's view stays away", [scene.focusBody, scene.centre.recalled, h.fellThrough], [null, false, 2]);
