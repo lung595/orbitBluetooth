@@ -97,6 +97,7 @@ Item {
     readonly property real holeHorizon: backdrop.holeHorizon
     property bool hiddenOpen: false
     property real holeFeed: 0      // 0..1, how close the dragged device is
+    property bool holeEye: false   // a device is carried to it from the group chooser
     property real holeSpin: 0      // tesseract phase (0 = the classic cube-in-cube), advanced by step()
     // address -> {x, y}: where a device reappears (spat out of the hole)
     property var spawnFrom: ({})
@@ -335,6 +336,15 @@ Item {
     }
     function finishHide(b) {
         hidden.finish(b);
+    }
+    function hideById(id, name) {
+        hidden.hideById(id, name);
+    }
+    function carryToHole(point) {
+        return hidden.carry(point);
+    }
+    function dropFromHole() {
+        hidden.uncarry();
     }
     function unhide(address) {
         hidden.unhide(address);

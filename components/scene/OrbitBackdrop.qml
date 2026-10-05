@@ -77,6 +77,7 @@ Item {
         y: backdrop.scene.holeY - height / 2
         count: backdrop.scene.hiddenCount
         feed: backdrop.scene.holeFeed
+        eye: backdrop.scene.holeEye
         spin: backdrop.scene.holeSpin
         // Brief brightening of the ring after swallowing a shooting star
         flash: Math.max(0, 1 - (backdrop.scene.fxTime - backdrop.scene.holeFlashAt) / 0.6) * 0.8

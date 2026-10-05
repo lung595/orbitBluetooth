@@ -3,9 +3,11 @@ import qs.Common
 import qs.Widgets
 import "../device"
 import "../device/DeviceCatalog.js" as Catalog
+import "../together/Member.js" as Member
 
-// What the black hole holds: the hidden devices, each with a "Show" button
-// that spits it back into the orbit. Empty, it explains what the hole is for.
+// What the black hole holds: the hidden devices (Bluetooth ones and wired
+// outputs, hidden from the group chooser), each with a "Show" button that spits
+// it back into the orbit. Empty, it explains what the hole is for.
 Item {
     id: card
     readonly property PaperColors paper: PaperColors {}
@@ -142,6 +144,8 @@ Item {
                     required property string modelData
                     readonly property var device: card.deviceOf(modelData)
                     readonly property bool connected: device?.connected ?? false
+                    // A wired output has no Bluetooth device behind it
+                    readonly property bool wired: Member.isWired(modelData)
 
                     width: content.width
                     height: 44
@@ -154,8 +158,17 @@ Item {
                         hoverEnabled: true
                     }
 
+                    DankIcon {
+                        visible: row.wired
+                        x: 13
+                        anchors.verticalCenter: parent.verticalCenter
+                        name: "cable"
+                        size: 20
+                        color: card.paper.fg(0.75)
+                    }
                     DeviceGlyph {
                         id: glyph
+                        visible: !row.wired
                         x: 12
                         anchors.verticalCenter: parent.verticalCenter
                         width: 22
@@ -178,7 +191,7 @@ Item {
                             font.pixelSize: Theme.fontSizeSmall + 1
                         }
                         StyledText {
-                            text: row.connected ? "Connected" : row.device ? "Nearby" : "Out of range"
+                            text: row.wired ? "Wired output" : row.connected ? "Connected" : row.device ? "Nearby" : "Out of range"
                             color: row.connected ? Theme.withAlpha(Theme.primary, 0.85) : card.muted
                             font.pixelSize: Theme.fontSizeSmall - 1
                         }
