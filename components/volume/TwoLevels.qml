@@ -6,6 +6,8 @@ import "Members.js" as Members
 import "Polar.js" as Polar
 import "Route.js" as Route
 import "../device/DeviceCatalog.js" as Catalog
+import "../together/Member.js" as Member
+import "../together/Wired.js" as Wired
 
 // The volumes of one output (D249) and the picture of its sound, as
 // ScopeScreen reads them: the device's own level and this PC's, with what
@@ -52,17 +54,20 @@ Item {
         return d ? Route.iconFor(Catalog.resolve(d.device, prefs ? prefs.glyphOverrides : ({}))) : "speaker";
     }
     // The outputs listening together, left to right ([] when there are fewer
-    // than two): { part, address, level, muted, icon, label }
+    // than two): { part, address, level, muted, icon, label }. A wired output
+    // is drawn by the kind of its connection (usb, hdmi, analog), never by a
+    // Bluetooth picture, and named as the session names it.
     readonly property var members: memberAddresses.map((a, i) => {
         const audio = _audioOf(_memberNodes[i]);
         const d = route.known(a);
+        const wired = Member.isWired(a);
         return {
             "part": Polar.partOf(i, memberAddresses.length),
             "address": a,
             "level": audio ? Math.min(1, audio.volume) : 0,
             "muted": audio ? audio.muted : false,
-            "icon": _iconOf(d),
-            "label": d ? Catalog.deviceName(d.device) : ""
+            "icon": wired ? Wired.iconOf(Wired.kindOfNode(_memberNodes[i])) : _iconOf(d),
+            "label": wired ? together.nameOf(a) : d ? Catalog.deviceName(d.device) : ""
         };
     })
 
