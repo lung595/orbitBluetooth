@@ -137,6 +137,13 @@ Item {
         const device = deviceFor(address);
         if (!device)
             return;
+        const proc = _sessions[address];
+        if (proc) {
+            _sessions = Snapshot.put(_sessions, address, null);
+            proc.stdinEnabled = false;
+            proc.running = false;
+            _destroyProc(proc);
+        }
         const known = snapshots[address];
         // Known not to have the feature, or known to be off: nothing to undo
         const needless = known && known.features && (!known.features.chat || (known.state && known.state.chat === false));
@@ -216,6 +223,16 @@ Item {
             _setState(address, next);
     }
 
+    function _destroyProc(proc) {
+        if (!proc || proc.destroyed)
+            return;
+        proc.destroyed = true;
+        Qt.callLater(() => {
+            if (proc)
+                proc.destroy();
+        });
+    }
+
     function _onExit(proc) {
         const address = proc.address;
         if (_sessions[address] === proc)
@@ -225,7 +242,7 @@ Item {
             _setState(address, Object.assign({}, prev, {
                 "live": false
             }));
-        proc.destroy();
+        _destroyProc(proc);
         _finishLeaving(address);
         const queued = _queue[address] || [];
         _queue = Snapshot.put(_queue, address, null);
@@ -249,6 +266,7 @@ Item {
         Process {
             id: proc
             property string address: ""
+            property bool destroyed: false
             running: true
             stdinEnabled: true
             stdout: SplitParser {

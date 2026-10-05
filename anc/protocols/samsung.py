@@ -23,11 +23,14 @@ UUIDS = ["2e73a4ad-332d-41fc-90e2-16bef06523f2",   # Buds2 and later
          "00001102-0000-1000-8000-00805f9b34fd"]   # Galaxy Buds (2019)
 
 STATUS, EXTENDED_STATUS = 0x60, 0x61
+ACKNOWLEDGEMENT = 0x42
+SET_ANC_WITH_ONE_EARBUD = 0x6F
 NOISE_UPDATE, NOISE_CONTROLS = 0x77, 0x78
 DETECT_CONVERSATIONS = 0x7A
 AMBIENT_ON, AMBIENT_UPDATE = 0x80, 0x81
 AMBIENT_VOLUME = 0x84
 MANAGER_INFO = 0x88
+LOCK_TOUCHPAD, TOUCH_UPDATE = 0x90, 0x91
 ANC_ON, ANC_UPDATE = 0x98, 0x9B
 
 MODE_TO_BYTE = {"off": 0, "nc": 1, "ambient": 2}
@@ -62,6 +65,7 @@ class Samsung(Protocol):
             self.features["ambientMax"] = 4 if self.legacy else 3 if re.search(r"Buds Pro\b", name) else 2
         # Conversation detection: Buds Pro, Buds2 Pro, Buds3 Pro
         self.features["chat"] = bool(re.search(r"Buds[23]? ?Pro", name))
+        self.features["touch"] = True
 
     def encode(self, ident, payload=b""):
         body = bytes([ident]) + bytes(payload)
@@ -108,6 +112,11 @@ class Samsung(Protocol):
             self.state["mode"] = "ambient" if p[0] else "off"
         elif ident == ANC_UPDATE and p:
             self.state["mode"] = "nc" if p[0] else "off"
+        elif ident == ACKNOWLEDGEMENT and p:
+            if p[0] == LOCK_TOUCHPAD and len(p) > 1:
+                self.state["touch"] = bool(p[1])
+        elif ident == TOUCH_UPDATE and p:
+            self.state["touch"] = not bool(p[0])
 
     def _on_extended(self, p):
         if len(p) < 6:
@@ -116,13 +125,21 @@ class Samsung(Protocol):
         if self.gen == "legacy" and len(p) > 9:
             self.state["mode"] = "ambient" if p[7] else "off"
             self.state["ambient"] = p[9]
+            if len(p) > 12:
+                self.state["touch"] = not bool(p[12])
         elif self.gen == "plus" and len(p) > 9:
             self.state["mode"] = "ambient" if p[8] else "off"
             self.state["ambient"] = p[9]
+            if len(p) > 12:
+                self.state["touch"] = not bool(p[12])
         elif self.gen == "live" and len(p) > 12:
             self.state["mode"] = "nc" if p[12] else "off"
+            if len(p) > 10:
+                self.state["touch"] = not bool(p[10])
         elif len(p) > 12:
             self.state["mode"] = BYTE_TO_MODE.get(p[12])
+            if len(p) > 10:
+                self.state["touch"] = (p[10] & 0x80) == 0x80
             if len(p) > 23:
                 self.state["ambient"] = min(p[23], self.features["ambientMax"])
             if self.features["chat"] and len(p) > 26:
@@ -131,6 +148,8 @@ class Samsung(Protocol):
             # Introduce ourselves like the official app does (client "other")
             self.greeted = True
             self.send(self.encode(MANAGER_INFO, b"\x01\x02\x22"))
+            if self.gen == "modern":
+                self.send(self.encode(SET_ANC_WITH_ONE_EARBUD, b"\x01"))
         self.mark_ready()
 
     def _on_status(self, p):
@@ -155,6 +174,8 @@ class Samsung(Protocol):
         elif self.gen == "live":
             self.send(self.encode(ANC_ON, bytes([mode == "nc"])))
         else:
+            if mode in ("nc", "ambient"):
+                self.send(self.encode(SET_ANC_WITH_ONE_EARBUD, b"\x01"))
             self.send(self.encode(NOISE_CONTROLS, bytes([MODE_TO_BYTE[mode]])))
         self.state["mode"] = mode
 
@@ -165,6 +186,14 @@ class Samsung(Protocol):
     def set_chat(self, enabled):
         self.send(self.encode(DETECT_CONVERSATIONS, bytes([enabled])))
         self.state["chat"] = enabled
+
+    def set_touch(self, enabled):
+        if self.gen in ("legacy", "plus"):
+            self.send(self.encode(LOCK_TOUCHPAD, bytes([not enabled])))
+        else:
+            val = b"\x01" if enabled else b"\x00"
+            self.send(self.encode(LOCK_TOUCHPAD, val * 7))
+        self.state["touch"] = enabled
 
     def refresh(self):
         pass   # state is pushed; a reconnect gets a fresh 0x61
