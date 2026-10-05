@@ -35,6 +35,14 @@ QtObject {
     // joined ([] for none). The headset's own is its sink; the others' are
     // made up here, with levels of their own
     property var sharing: []
+    // What the group chooser asks of the made-up machine: the wired outputs
+    // plugged in (node names), the connected devices that have no sound output
+    // yet, the ones on their call profile, and a refusal that start and add
+    // answer instead of doing it (null: they do it)
+    property var wired: []
+    readonly property var silent: ["00:11:22:33:44:55", "98:7A:14:22:C1:0E"]
+    property var inCall: []
+    property var refusal: null
     component Level: QtObject {
         property real volume: 0.5
         property bool muted: false
@@ -132,6 +140,26 @@ QtObject {
                 "why": "not-connected",
                 "address": a
             };
+        }
+        // The group chooser: why an output cannot take part, null when it can
+        function memberCheck(who) {
+            if (fake.wired.indexOf(who) >= 0)
+                return null;
+            const why = fake.silent.indexOf(who) >= 0 ? "no-audio" : !fake.known(who) ? "not-connected" : fake.inCall.indexOf(who) >= 0 ? "in-call" : "";
+            return why ? {
+                "why": why,
+                "address": who
+            } : null;
+        }
+        function start(list) {
+            if (!fake.refusal)
+                fake.sharing = list;
+            return fake.refusal;
+        }
+        function add(list) {
+            if (!fake.refusal)
+                fake.sharing = fake.sharing.concat(list);
+            return fake.refusal;
         }
     }
     function known(address) {

@@ -1,15 +1,19 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import qs.Common
 import qs.Widgets
 import "../card"
 import "../noise/Anc.js" as Anc
+import "../together/Choice.js" as Choice
 
 // Right-click menu of an orbiting device: connect/disconnect, the headset's
-// noise-control modes when it has them, "Leave together" and "Stop together"
-// for a device that listens together with others, "Hide" (into the black hole) and
-// "Forget" (unpair), which asks for a second click.
+// noise-control modes when it has them, "Create a group…" (or "Add to the
+// group…") for a device that can play sound, "Leave together" and "Stop
+// together" for a device that listens together with others, "Hide" (into the
+// black hole) and "Forget" (unpair), which asks for a second click.
 // It lives inside the scene (no extra window) and closes on any choice,
-// a click elsewhere or Escape.
+// a click elsewhere or Escape. "Create a group…" does not close it: the
+// group chooser takes the place of the entries until a group is made.
 Item {
     id: menu
     readonly property PaperColors paper: PaperColors {}
@@ -19,6 +23,8 @@ Item {
     readonly property bool open: !!body
     // "Forget" was clicked once: the next click on it unpairs
     property bool confirmForget: false
+    // The group chooser is open in place of the entries
+    property bool choosing: false
 
     readonly property var entries: {
         const b = body;
@@ -50,6 +56,12 @@ Item {
                     "checked": info?.state?.mode === m
                 });
         }
+        if (scene.together.canGroup(b))
+            list.push({
+                "id": "group",
+                "icon": "group_add",
+                "label": Choice.labels(scene.together.members()).entry
+            });
         if (scene.together.isMember(b.address)) {
             // With only two, leaving is the same as stopping
             if (scene.together.count() > 2)
@@ -81,11 +93,12 @@ Item {
 
     // The Listen together entries sit together, under one hairline
     function isTogetherEntry(id) {
-        return id === "leave" || id === "separate";
+        return id === "group" || id === "leave" || id === "separate";
     }
 
     function popup(b, point) {
         confirmForget = false;
+        choosing = false;
         body = b;
         // Keep the menu inside the scene
         panel.x = Math.max(8, Math.min(point.x, scene.width - panel.width - 8));
@@ -101,6 +114,10 @@ Item {
         if (_watching)
             scene.ancWatch(_watching, false);
         _watching = "";
+        if (choosing) {
+            choosing = false;
+            scene.forceActiveFocus();   // the chooser had the keyboard
+        }
         body = null;
     }
 
@@ -108,6 +125,11 @@ Item {
         // Forgetting unpairs: the first click only arms it
         if (id === "forget" && !confirmForget) {
             confirmForget = true;
+            return;
+        }
+        // A group is made on its own page: the menu stays until it is done
+        if (id === "group") {
+            choosing = true;
             return;
         }
         const b = body;
@@ -144,6 +166,7 @@ Item {
 
     Rectangle {
         id: panel
+        visible: !menu.choosing
         width: 168
         height: menu.entries.length * 32 + 10   // known before layout, for placement
         radius: 14
@@ -222,6 +245,22 @@ Item {
                     }
                 }
             }
+        }
+    }
+
+    // The group chooser, built when "Create a group…" is chosen and gone with it
+    Loader {
+        active: menu.choosing
+        sourceComponent: GroupChooser {
+            scene: menu.scene
+            paper: menu.paper
+            address: menu.body?.address ?? ""
+            origin: Qt.point(panel.x, panel.y)
+            onConfirmed: list => {
+                menu.close();
+                menu.scene.together.groupFrom(list);
+            }
+            onRefused: (why, who) => menu.scene.together.refuse(why, who)
         }
     }
 }

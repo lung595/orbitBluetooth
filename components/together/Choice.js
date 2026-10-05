@@ -55,7 +55,7 @@ function labels(members) {
         "entry": "Create a group…",
         "title": "Create a group",
         "action": "Listen together",
-        "empty": "Nothing to listen with: connect another Bluetooth output or plug in a wired one"
+        "empty": "No other output yet: connect a Bluetooth one or plug in a wired one"
     };
 }
 
