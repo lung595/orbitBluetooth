@@ -1,10 +1,10 @@
 // Listen together at the centre of the scene: the copies' orbit, the host and the group stepping
-// back, the sky's parallax, the label, and the general volume that keeps the gaps (D281-D285).
+// back, the sky's parallax, the icons under the group, and the general volume that keeps the gaps (D281-D285).
 // Run from the plugin root: gjs tests/centre.test.js (or every file: sh tests/run.sh)
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const C = load("Centre.js", ["PERIOD", "MAX_SHIFT", "GROUP_SIZE", "TILT", "clamp01", "ease", "approach", "grow", "sizes", "labelOffset", "groupAt", "bodyZ", "away", "phaseAt", "copySlot", "depthSize", "parallax", "copiesOf", "roleOf", "label", "pulse"]);
+const C = load("Centre.js", ["PERIOD", "MAX_SHIFT", "GROUP_SIZE", "TILT", "clamp01", "ease", "approach", "grow", "sizes", "glyphsOffset", "glyphDisc", "glyphSpacing", "GLYPH_MIN", "groupAt", "bodyZ", "away", "phaseAt", "copySlot", "depthSize", "parallax", "copiesOf", "roleOf", "pulse"]);
 const V = load("MasterVolume.js");
 const P = load("Perspective.js", ["FLAT", "size"]);
 
@@ -85,12 +85,6 @@ eq("roles: the source, the copies, and everyone else", [C.roleOf(members, "B", "
 eq("copies: everyone but the source, in the order they joined", C.copiesOf(members, "B"), ["A", "C"]);
 eq("copies: a new source changes who orbits, not the order", [C.copiesOf(members, "A"), C.copiesOf(members, "C")], [["B", "C"], ["A", "B"]]);
 
-// --- the name under the centre --------------------------------------------------
-eq("label: two members read 'XM6 + Marantz'", C.label(["XM6", "Marantz"]), "XM6 + Marantz");
-eq("label: three short names are all there", C.label(["XM6", "Marantz", "Kitchen"]), "XM6 + Marantz + Kitchen");
-eq("label: many or long names become +N", [C.label(["WH-1000XM6", "Marantz AV Receiver", "Kitchen speaker"]), C.label(["A", "B", "C", "D"]) === "A + B + C + D", C.label(["WH-1000XM6", "Marantz AV Receiver", "Kitchen speaker", "Bedroom"])], ["WH-1000XM6 + Marantz AV Receiver +1", true, "WH-1000XM6 + Marantz AV Receiver +2"]);
-eq("label: a nameless member is left out", C.label(["XM6", "", "Marantz"]), "XM6 + Marantz");
-
 // --- the pulse along a beam -----------------------------------------------------
 eq("pulse: starts and ends dark, brightest half way", [C.pulse(0, 0, 2).alpha, near(C.pulse(2, 0, 2).alpha), C.pulse(0.5, 0, 2).at], [0, 0, 0.25]);
 eq("pulse: the beams do not beat together", C.pulse(0, 0, 3).at !== C.pulse(0, 1, 3).at, true);
@@ -114,10 +108,15 @@ eq("pointer: with no reference (a fresh press) a click just left of the top read
 eq("speaker: crossed out when muted, whatever the level", [V.icon(0.8, true), V.icon(0, true)], ["volume_off", "volume_off"]);
 eq("speaker: empty at zero, one wave under half, two from half", [V.icon(0, false), V.icon(0.3, false), V.icon(0.49, false), V.icon(0.5, false), V.icon(1, false)], ["volume_mute", "volume_down", "volume_down", "volume_up", "volume_up"]);
 
-// --- the name under the centre --------------------------------------------------
+// --- the icons under the centre -------------------------------------------------
 for (const [what, scene] of [["bar popout", g], ["small scene", small]]) {
     const z = C.sizes(scene);
-    eq("label offset (" + what + "): under the ring and under the copies' lowest point", [C.labelOffset(z) > z.ring, C.labelOffset(z) > z.radius * C.TILT + z.copy / 2], [true, true]);
+    eq("icons offset (" + what + "): under the ring and under the copies' lowest point", [C.glyphsOffset(z, false) > z.ring, C.glyphsOffset(z, false) > z.radius * C.TILT + z.copy / 2], [true, true]);
+    eq("icons offset (" + what + "): over the group they clear the speaker that crowns the ring too", [C.glyphsOffset(z, true) >= z.ring + z.chip / 2 + 6, C.glyphsOffset(z, true) > C.glyphsOffset(z, false)], [true, true]);
+    eq("sizes (" + what + "): the speaker's chip is its glyph and a margin", [z.chip, z.chipIcon], [Math.max(10, Math.round(z.source * 0.22)) + 8, Math.max(10, Math.round(z.source * 0.22))]);
 }
+eq("icons: a disc is a third of the core in the middle, as the bar pill's is of its icon", [C.glyphDisc(65, 1), C.glyphDisc(75, 1)], [22, 26]);
+eq("icons: on the host's ring the discs follow the group's size, down to a size a glyph can be read at", [C.glyphDisc(65, 0.7), C.glyphDisc(65, 0.3), C.glyphDisc(34, 0.1)], [15, C.GLYPH_MIN, C.GLYPH_MIN]);
+eq("icons: they overlap by a fifth of a disc, the bar pill's 4 px at 22 px", [C.glyphSpacing(22), C.glyphSpacing(15) < 0, C.glyphSpacing(15) > -15 / 2], [-4, true, true]);
 
 done();

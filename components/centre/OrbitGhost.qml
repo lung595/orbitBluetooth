@@ -70,8 +70,6 @@ Item {
     readonly property string key: proposal ? proposal.key : ""
     // Proposed, and not turned down
     readonly property bool offered: key !== "" && !!session && !session.isDeclined(key)
-    // The name under it, "XM6 + Scarlett": the output in use first
-    readonly property string label: proposal ? Centre.label(proposal.members.map(a => scene.together.nameOf(a))) : ""
 
     // --- How present it is -----------------------------------------------------------------------
     property real presence: 0

@@ -279,7 +279,6 @@ Item {
         plug(h.headset, "Pulse BT");
         check("a Bluetooth device is connected: the ghost is offered", ghost.offered, true);
         check("the output in use comes first", ghost.proposal.members, [h.dongle, h.headset]);
-        check("its name says who it would put together", ghost.label, "Dongle Stereo + Pulse BT");
         check("the key is the set: the same whatever the order", ghost.key, [h.headset, h.dongle].join(","));
         check("a wired output is read from PipeWire's names, not from a command", runnerOf(ghost).running, false);
 
@@ -394,7 +393,7 @@ Item {
         check("the sound goes to Bluetooth: the plugged outputs are asked for, once", [reader.running, reader.command], [true, ["pactl", "--format=json", "list", "sinks"]]);
         check("(nothing is proposed until they are known)", ghost.offered, false);
         finish(ghost, 0, listing([h.dongle]));
-        check("a wired output is plugged in: the ghost is offered, the output in use first", [ghost.offered, ghost.proposal.members, ghost.label], [true, [h.headset, h.dongle], "Pulse BT + Dongle Stereo"]);
+        check("a wired output is plugged in: the ghost is offered, the output in use first", [ghost.offered, ghost.proposal.members], [true, [h.headset, h.dongle]]);
         check("it is the same set as the other way round", ghost.key, [h.headset, h.dongle].join(","));
         check("nothing runs between two changes", reader.running, false);
         h.pipewire(null, [studioNode]);

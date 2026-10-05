@@ -79,48 +79,24 @@ Item {
         }
     }
 
-    // The names it would put together, the output in use first. Under it, or above
-    // it on the far side of the ring (as a device's: the core is behind it there),
-    // and never cut off by the scene's edge.
-    Item {
-        id: caption
-        readonly property bool above: view.ghost.py < view.scene.centre.host.y
-        width: names.width
-        height: names.height
+    // Who it would put together, in icons, the output in use first (the names and
+    // what a click does are said once the pointer is on it). Under the planet, or
+    // above it on the far side of the ring (as a device's: the core is behind it
+    // there), and never cut off by the scene's edge.
+    GroupGlyphs {
+        id: glyphs
+        readonly property bool far: view.ghost.py < view.scene.centre.host.y
+        scene: view.scene
+        session: view.ghost.session
+        members: view.ghost.proposal ? view.ghost.proposal.members : []
+        // As big as the planet is
+        disc: Centre.glyphDisc(view.scene.coreSize, view.ghost.diameter / view.scene.coreSize)
+        named: view.hovered
+        note: "Listen together"
+        above: far
         x: Math.max(8, Math.min(view.scene.width - width - 8, view.ghost.px - width / 2))
-        y: above ? view.ghost.py - view.edge - 5 - height : view.ghost.py + view.edge + 5
+        y: far ? view.ghost.py - view.edge - 5 - height : view.ghost.py + view.edge + 5
         opacity: view.ghost.presence * (view.hovered ? 1 : 0.85)
-
-        LabelGlow {
-            x: names.x + names.width / 2 - width / 2
-            y: names.y + names.height / 2 - height / 2
-            spanX: names.width + 30
-            spanY: names.height + 14
-            color: view.night.primary
-            strength: 0.14
-        }
-        Column {
-            id: names
-            spacing: 1
-            StyledText {
-                anchors.horizontalCenter: parent.horizontalCenter
-                width: Math.min(implicitWidth, view.scene.width * 0.6)
-                horizontalAlignment: Text.AlignHCenter
-                elide: Text.ElideRight
-                text: view.ghost.label
-                color: view.night.ink(0.82)
-                font.pixelSize: Math.max(9, Math.round(view.scene.bodySize * 0.2))
-                font.weight: Font.Medium
-            }
-            // What a click does, said once the pointer is on it
-            StyledText {
-                anchors.horizontalCenter: parent.horizontalCenter
-                visible: view.hovered
-                text: "Listen together"
-                color: Theme.withAlpha(view.night.primary, 0.9)
-                font.pixelSize: Math.max(8, Math.round(view.scene.bodySize * 0.17))
-            }
-        }
     }
 
     // A click makes it a group, a right click turns it down. The zone is the
