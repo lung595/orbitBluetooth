@@ -9,12 +9,14 @@ import "mock/State.js" as State
 import "mock/Devices.js" as Devices
 
 // Test of the copies' orbit in a Listen together group (D349): it is 40 % wider
-// than a tight ring, the copies sit on it, and a light dashed ellipse draws the
-// path they follow: its far half behind the source, its near half in front of
-// it and under every copy, carried and scaled with the group, and created only
-// while there is a group. The copies' dashed outline at the horizon is checked
-// here too (half way between whole and an outline). The orbit rests (Reduce
-// motion) at the times chosen. Run with tests/qml/run.sh.
+// than a tight ring while the group has the centre and a tight ring once the
+// group has stepped back onto the host's ring (and wide again when it returns),
+// the copies sit on it, and a light dashed ellipse draws the path they follow:
+// its far half behind the source, its near half in front of it and under every
+// copy, carried and scaled with the group, and created only while there is a
+// group. The copies' dashed outline at the horizon is checked here too (half
+// way between whole and an outline). The orbit rests (Reduce motion) at the
+// times chosen. Run with tests/qml/run.sh.
 Item {
     id: h
     width: 520
@@ -51,6 +53,16 @@ Item {
         return scene.world.wiredMembers.list().find(b => b.address === address) ?? null;
     }
     readonly property bool landed: scene.centre.grouping === 1 && !scene.centre.travelling
+    // Every width the trajectory takes while the group steps back: it is laid
+    // out again with the orbit, so none may be missed or jump
+    property var widths: []
+    Connections {
+        target: scene.world.farOrbit.item?.ellipse ?? null
+        ignoreUnknownSignals: true
+        function onWidthChanged() {
+            h.widths.push(target.width);
+        }
+    }
 
     readonly property var steps: [
         {
@@ -79,6 +91,7 @@ Item {
                 const R = z.radius;
                 check("the orbit is 40 % wider than a tight ring (the ring, a gap, half a copy)", [Centre.ORBIT_SPREAD, near(R, Centre.ORBIT_SPREAD * (z.ring + 12 + z.copy / 2), 0.001)], [1.4, true]);
                 check("a copy sits on that orbit: on the horizon it is a radius from the source, level with it", [near(copy.px - src.px, R), near(copy.py, src.py)], [true, true]);
+                check("while the group has the centre the copies orbit at 1.4 times the tight radius, from the source", [Centre.spreadAt(c.stage), near(copy.px - src.px, Centre.ORBIT_SPREAD * Centre.sizes(scene, 1).radius)], [Centre.ORBIT_SPREAD, true]);
                 check("the wired copy is on the other side of it, as far", [near(src.px - w.px, R), near(w.py, src.py)], [true, true]);
                 check("the orbit fits the scene: the farthest copy is inside its width", [copy.px + z.copy / 2 < scene.width, w.px - z.copy / 2 > 0], [true, true]);
                 check("on the horizon a copy is half way between whole and its outline", [near(copy.solid, 0.5, 0.001), near(w.solid, 0.5, 0.001), near(copy.outline.item.opacity, 0.5, 0.001), near(w.outline.item.opacity, 0.5, 0.001)], [true, true, true, true]);
@@ -116,7 +129,42 @@ Item {
             "run": () => {
                 const c = scene.centre, e = scene.world.farOrbit.item.ellipse;
                 check("stepped back, the group is smaller and the trajectory follows it: its centre and its scale", [c.group.scale < 1, near(e.x + e.width / 2, c.group.x), near(e.y + e.height / 2, c.group.y), near(e.scale, c.group.scale, 0.001)], [true, true, true, true]);
+                // The copies back on the horizon, to measure the orbit there
+                scene.orbitTime = 3.125;
+                scene.wake();
+            }
+        },
+        {
+            "then": 500,
+            "run": () => {
+                const c = scene.centre, z = c.sizes, src = c.bodyOf(h.headset), copy = c.bodyOf(h.one), w = wired(h.dac), e = scene.world.farOrbit.item.ellipse;
+                const tight = Centre.sizes(scene, 1).radius, k = c.group.scale;
+                check("stepped back, the orbit is the tight ring again, not the wide one", [Centre.spreadAt(c.stage), near(z.radius, tight, 0.001)], [1, true]);
+                check("the copies hug the source as they did before: a tight radius at the group's size, each side", [near(copy.px - src.px, tight * k), near(src.px - w.px, tight * k), near(copy.py, src.py)], [true, true, true]);
+                check("the trajectory is that tight ring: its width, once scaled with the group", [near(e.width * e.scale, 2 * (tight + 1) * k)], [true]);
+                check("no copy overlaps the volume ring: the nearest edge of a copy is clear of it", [copy.px - src.px - copy.diameter * copy.baseScale / 2 >= z.ring * k - 0.5, src.px - w.px - w.diameter * w.baseScale / 2 >= z.ring * k - 0.5], [true, true]);
+                // It left the wide orbit by a smooth way: it only narrowed, from the wide width to the tight one
+                const wide = 2 * (Centre.ORBIT_SPREAD * tight + 1), seen = h.widths, range = wide - 2 * (tight + 1);
+                check("the trajectory went through the sizes in between, narrowing, none missed (no step over a third of the way)", [seen.length > 4, seen.every((v, i) => i === 0 || v <= seen[i - 1]), near(seen[0], wide, 12), near(seen[seen.length - 1], 2 * (tight + 1), 0.001), seen.every((v, i) => i === 0 || seen[i - 1] - v < range / 3)], [true, true, true, true, true]);
+                h.widths = [];
                 c.release();
+            }
+        },
+        {
+            "then": 300,
+            "until": () => scene.centre.stage === 0 && !scene.centre.travelling,
+            "run": () => {
+                scene.orbitTime = 3.125;
+                scene.wake();
+            }
+        },
+        {
+            "then": 500,
+            "run": () => {
+                const c = scene.centre, z = c.sizes, src = c.bodyOf(h.headset), copy = c.bodyOf(h.one), w = wired(h.dac), e = scene.world.farOrbit.item.ellipse;
+                const tight = Centre.sizes(scene, 1).radius;
+                check("released, the group has the centre back and the copies orbit wide again: 1.4 times the tight radius, each side", [Centre.spreadAt(c.stage), near(copy.px - src.px, Centre.ORBIT_SPREAD * tight), near(src.px - w.px, Centre.ORBIT_SPREAD * tight)], [Centre.ORBIT_SPREAD, true, true]);
+                check("the trajectory is wide again with them, at the group's full size", [near(e.width, 2 * (Centre.ORBIT_SPREAD * tight + 1)), near(e.scale, 1, 0.001)], [true, true]);
                 route.sharing = [];
             }
         },
