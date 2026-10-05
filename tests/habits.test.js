@@ -36,26 +36,27 @@ for (let i = 0; i < 3; i++)
 eq("each use adds one and moves the day", Object.values(many), [{ "n": 3, "d": DAY + 2 }]);
 for (let i = 0; i < Habits.MAX_USES + 20; i++)
     many = used(many, [A, B], DAY);
-eq("the count stops at its cap", Object.values(many)[0].n, Habits.MAX_USES);
+eq("the count stops at its cap of 999", [Habits.MAX_USES, Object.values(many)[0].n], [999, 999]);
 const sets = n => Array.from({ "length": n }, (_, i) => [A, "AA:BB:CC:DD:FF:" + ("0" + i).slice(-2).toUpperCase()]);
 let bounded = {};
 for (const pair of sets(Habits.MAX_SETS + 5))
     bounded = used(bounded, pair, DAY);
-eq("at most eight groups are kept", Object.keys(bounded).length, Habits.MAX_SETS);
+eq("at most eight groups are kept", [Habits.MAX_SETS, Object.keys(bounded).length], [8, 8]);
 let full = {};
 for (const pair of sets(Habits.MAX_SETS))
     full = used(used(full, pair, DAY), pair, DAY);
 const strong = Habits.keyOf(sets(1)[0]);
 full = used(full, [B, C], DAY);
-eq("the new group makes room by dropping one of the lowest score, never itself", [Object.keys(full).length, !!full[Habits.keyOf([B, C])]], [Habits.MAX_SETS, true]);
+eq("the new group makes room by dropping one of the lowest score, never itself", [Object.keys(full).length, !!full[Habits.keyOf([B, C])]], [8, true]);
 const old = used(used({}, [A, B], DAY - 200), [A, B], DAY - 200);
 let crowd = Object.assign({}, old);
 for (const pair of sets(Habits.MAX_SETS - 1))
     crowd = used(crowd, pair, DAY);
 crowd = used(crowd, [C, W2], DAY);
-eq("the lowest score goes: an old, rarely used group before the recent ones", [!!crowd[Habits.keyOf([A, B])], Object.keys(crowd).length], [false, Habits.MAX_SETS]);
+eq("the lowest score goes: an old, rarely used group before the recent ones", [!!crowd[Habits.keyOf([A, B])], Object.keys(crowd).length], [false, 8]);
 
 // --- The fading --------------------------------------------------------------------------------------------------------------
+eq("a minute is what makes a use", [Habits.MIN_USE_MS, Habits.HALF_LIFE_DAYS], [60000, 30]);
 eq("a use is worth half as much after 30 days", [Habits.score({ "n": 4, "d": DAY }, DAY), Habits.score({ "n": 4, "d": DAY }, DAY + 30), Habits.score({ "n": 4, "d": DAY }, DAY + 60)], [4, 2, 1]);
 eq("a day in the future is no bonus", Habits.score({ "n": 4, "d": DAY + 5 }, DAY), 4);
 const rank = habits => Habits.ranked(habits, DAY).map(s => s.key);
@@ -81,7 +82,7 @@ const good = Habits.keyOf([A, B]);
 const hostile = { [good]: { "n": 2, "d": DAY }, "x": { "n": 1, "d": 1 }, "aaaaaaaa": { "n": 1, "d": 1 }, "bbbbbbbb,aaaaaaaa": { "n": 1, "d": 1 }, "AAAAAAAA,BBBBBBBB": { "n": 1, "d": 1 }, "aaaaaaaa,bbbbbbbb,cccccccc,dddddddd,eeeeeeee": { "n": 1, "d": 1 } };
 eq("keys that are not sorted hashes are dropped", Object.keys(Habits.sets(hostile)), [good]);
 eq("so are figures that are not whole, positive numbers", Object.keys(Habits.sets({ [good]: { "n": "2", "d": 1 }, "aaaaaaaa,bbbbbbbb": { "n": 0, "d": 1 }, "aaaaaaaa,cccccccc": { "n": 1, "d": -1 }, "aaaaaaaa,dddddddd": null, "bbbbbbbb,cccccccc": { "n": 1.5, "d": 1 } })), []);
-eq("a count past the cap is brought back to it", Habits.sets({ [good]: { "n": 99999, "d": 1 } })[good].n, Habits.MAX_USES);
+eq("a count past the cap is brought back to it", Habits.sets({ [good]: { "n": 99999, "d": 1 } })[good].n, 999);
 eq("something that is not a memory is an empty one", [null, undefined, "x", 7, []].map(h => Habits.count(h)), [0, 0, 0, 0, 0]);
 eq("recording over junk keeps only what is valid", Object.keys(used(hostile, [C, D], DAY)).sort(), [good, Habits.keyOf([C, D])].sort());
 
