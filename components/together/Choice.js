@@ -1,4 +1,5 @@
 .pragma library
+.import "../common/Hidden.js" as Hidden
 .import "../device/DeviceCatalog.js" as Catalog
 .import "Member.js" as Member
 .import "Together.js" as Together
@@ -11,6 +12,10 @@
 // devices that are connected and can take part. An output that is there but
 // cannot be ticked is shown with the reason, and clicking it explains (never a
 // silent refusal, value 10); one that is not there at all is not offered.
+// A device the user hid (the black hole, or the eye of a row) is left out of
+// those two sections and listed in a third one, "Hidden", from where it is
+// brought back; the store is Hidden.js's. A member of the running group is
+// never left out: it cannot be hidden while it plays.
 // Everything that reaches a command later is a member token (Member.js).
 // Tested by tests/choice.test.js.
 
@@ -19,6 +24,10 @@ var SECTIONS = [
     { "id": "wired", "title": "Wired" },
     { "id": "bluetooth", "title": "Bluetooth" }
 ];
+
+// The section of what was hidden: drawn only while something is, and folded
+// until the user opens it
+var HIDDEN = { "id": "hidden", "title": "Hidden" };
 
 // A wired output is drawn by how it is connected (Wired.kindOf)
 var WIRED_ICONS = { "usb": "usb", "hdmi": "settings_input_hdmi", "analog": "speaker", "other": "cable" };
@@ -89,15 +98,22 @@ function _verdict(refusal, audio) {
     return refusal.why === "in-call" || (refusal.why === "no-audio" && audio) ? refusal.why : null;
 }
 
-// Everything the chooser may show, sorted: [{ section, id, label, icon, why }].
+// Everything the chooser may show, sorted: [{ section, id, label, icon, why }],
+// and what the hidden outputs that are there look like (`known`, by id).
 // `input.refusal(who)` is the session's memberCheck: null when `who` can take part.
-function _offered(input) {
+function _offered(input, members) {
     const refusal = typeof input.refusal === "function" ? input.refusal : () => null;
     const out = [];
     const seen = {};
+    const known = {};
     const offer = (section, id, label, icon, audio) => {
         if (!id || seen[id])
             return;
+        if (members.indexOf(id) < 0 && Hidden.isHidden(input.hidden, id)) {
+            seen[id] = true;
+            known[id] = { "label": Wired.labelOf(label), "icon": icon };
+            return;
+        }
         const why = _verdict(refusal(id), audio);
         if (why === null)
             return;
@@ -114,16 +130,31 @@ function _offered(input) {
         const icon = Object.prototype.hasOwnProperty.call(BLUETOOTH_ICONS, b.kind) ? BLUETOOTH_ICONS[b.kind] : FALLBACK_ICON;
         offer("bluetooth", id, b.name || id, icon, Catalog.families[b.kind] === "audio");
     }
-    return out.sort(_byLabel);
+    return { "list": out.sort(_byLabel), "known": known };
 }
 
-// What the chooser shows. `input`: { wired, bluetooth, members, chosen, refusal }
+// The rows of the hidden section: everything in the store but the members of the
+// group, with the picture and name of the output when it is there now
+function _hiddenRows(store, members, known) {
+    return Hidden.entries(store).filter(e => members.indexOf(e.id) < 0).map(e => {
+        const seen = known[e.id];
+        const fallback = Member.isWired(e.id) ? WIRED_ICONS.other : FALLBACK_ICON;
+        return {
+            "section": HIDDEN.id, "id": e.id, "label": seen ? seen.label : Wired.labelOf(e.name || e.id), "icon": seen ? seen.icon : fallback,
+            "ticked": false, "locked": false, "why": "hidden", "caption": ""
+        };
+    }).sort(_byLabel);
+}
+
+// What the chooser shows. `input`: { wired, bluetooth, members, chosen, refusal, hidden, showHidden }
 //  - wired: the plugged outputs (WiredWatch.outputs);
 //  - bluetooth: the devices on screen, [{ address, name, kind }];
 //  - members: the session's members ([] for none), shown ticked and locked;
 //  - chosen: what is ticked, in the order it was;
-//  - refusal: who => null | { why, address }, the session's memberCheck.
-// Gives { sections: [{ id, title, rows }], chosen, enough }. A row is
+//  - refusal: who => null | { why, address }, the session's memberCheck;
+//  - hidden: the store of hidden devices (Hidden.js);
+//  - showHidden: whether the hidden section is open (folded, it has no rows).
+// Gives { sections: [{ id, title, rows, count }], chosen, enough }. A row is
 // { id, label, icon, ticked, locked, why, caption }: `why` is "" when a click
 // ticks it, else the reason it cannot be (and the caption that says it).
 // `chosen` is what is really ticked: only outputs that can be, at most as many
@@ -133,7 +164,8 @@ function build(input) {
     const given = input && typeof input === "object" ? input : {};
     const members = _members(given.members);
     const room = Math.max(0, Together.MAX_MEMBERS - members.length);
-    const offered = _offered(given);
+    const seen = _offered(given, members);
+    const offered = seen.list;
     const free = offered.filter(o => !o.why && members.indexOf(o.id) < 0);
     const ticks = Array.isArray(given.chosen) ? given.chosen : [];
     const chosen = ticks.filter((id, i) => ticks.indexOf(id) === i && free.some(o => o.id === id)).slice(0, room);
@@ -146,8 +178,13 @@ function build(input) {
             "ticked": ticked, "locked": locked, "why": why, "caption": CAPTIONS[why] || ""
         };
     });
+    const away = _hiddenRows(given.hidden, members, seen.known);
+    const sections = SECTIONS.map(s => ({ "id": s.id, "title": s.title, "rows": rows.filter(r => r.section === s.id) })).filter(s => s.rows.length);
+    // The hidden section keeps its heading when folded: it says how many there are
+    if (away.length)
+        sections.push({ "id": HIDDEN.id, "title": HIDDEN.title, "rows": given.showHidden === true ? away : [], "count": away.length });
     return {
-        "sections": SECTIONS.map(s => ({ "id": s.id, "title": s.title, "rows": rows.filter(r => r.section === s.id) })).filter(s => s.rows.length),
+        "sections": sections.map(s => Object.assign({ "count": s.rows.length }, s)),
         "chosen": chosen,
         "enough": free.length >= (members.length ? 1 : 2)
     };
@@ -172,4 +209,15 @@ function outcome(members, chosen) {
         "list": list,
         "why": list.length >= (adding ? 1 : 2) ? "" : "pick-more"
     };
+}
+
+// Why `id` cannot be hidden now, in the words of Guide.togetherNote: "in-group"
+// while it plays in the group (it would go on playing out of sight),
+// "hidden-full" when the store is full, "bad-address" for something that is no
+// output; "" when it can
+function hideWhy(members, store, id) {
+    if (_members(members).indexOf(id) >= 0)
+        return "in-group";
+    const why = Hidden.refusal(store, id);
+    return why === "full" ? "hidden-full" : why === "bad-id" ? "bad-address" : "";
 }

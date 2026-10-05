@@ -63,6 +63,13 @@ function depthAt(g, y) {
     return Math.max(-1, Math.min(1, (y - g.cy) / Math.max(1, g.ry)));
 }
 
+// The same factor for a body that floats at screen height `y` (the black hole):
+// its depth from where it is, then how much bigger or smaller it looks. `g` is
+// the geometry it lives in (the flat one, see `flat`).
+function leanAt(g, y, profile) {
+    return lean(depthAt(g, y), profile);
+}
+
 // The scene's geometry as the profile view sees it: the orbits flattened to
 // FLAT and the connected ring centred on the host (from level, the ring's near
 // and far edges are the same distance from its middle). `g` itself, not a

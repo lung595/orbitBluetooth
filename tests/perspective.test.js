@@ -4,7 +4,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const P = load("Perspective.js", ["PITCH", "FLAT", "REACH", "MID", "FIELDS", "lerp", "copy", "distance", "size", "haze", "lean", "depthAt", "flat"]);
+const P = load("Perspective.js", ["PITCH", "FLAT", "REACH", "MID", "FIELDS", "lerp", "copy", "distance", "size", "haze", "lean", "leanAt", "depthAt", "flat"]);
 
 const near = v => Math.round(v * 1000) / 1000;
 
@@ -40,6 +40,13 @@ eq("lean: half way in is half way between", near(P.lean(1, 0.5)), near((1 + 1 / 
 eq("depthAt: on the middle line it is 0, at the bottom of the belt 1, at the top -1", [P.depthAt(g, g.cy), P.depthAt(g, g.cy + g.ry), P.depthAt(g, g.cy - g.ry)], [0, 1, -1]);
 eq("depthAt: lower on the screen is nearer, and it stays in -1..1 off the belt", [P.depthAt(g, g.cy + g.ry / 2), P.depthAt(g, g.cy + g.ry * 5), P.depthAt(g, g.cy - g.ry * 5)], [0.5, 1, -1]);
 eq("depthAt: a flat belt reads the same way", P.depthAt({ cy: 100, ry: 0 }, 100.5), 0.5);
+
+// --- the black hole floats in the belt: its size follows its height --------------------
+eq("leanAt: the scene's own view leaves the hole as it is, at any height", [g.cy - g.ry, g.cy, g.cy + g.ry, g.cy + g.ry * 4].map(y => P.leanAt(g, y, 0)), [1, 1, 1, 1]);
+eq("leanAt: in the profile view it is the lean of its depth: smaller far up the belt, bigger low on it", [g.cy - g.ry, g.cy, g.cy + g.ry].map(y => near(P.leanAt(g, y, 1))), [near(0.6 / P.MID), 1, near(1 / P.MID)]);
+eq("leanAt: it reads the flat geometry the same way as depthAt then lean", [-1, -0.3, 0, 0.7, 1].map(d => near(P.leanAt(g, g.cy + d * g.ry, 0.6)) === near(P.lean(d, 0.6))), Array(5).fill(true));
+eq("leanAt: the hole's horizon follows it, rounded to a pixel like the nominal one", [g.cy - g.ry, g.cy + g.ry].map(y => Math.round(g.holeHorizon * P.leanAt(g, y, 1))), [8, 13]);
+eq("leanAt: lower on the screen is bigger, never past the nearest body's share", [-1, -0.5, 0, 0.5, 1].map(d => P.leanAt(g, g.cy + d * g.ry, 1)).every((v, i, all) => i === 0 || v > all[i - 1]), true);
 
 // --- the geometry of the view -----------------------------------------------------
 eq("flat: not in the profile view, it is the scene itself", P.flat(g, 0) === g, true);
