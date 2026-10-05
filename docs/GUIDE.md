@@ -8,11 +8,11 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 - [The orbit](#the-orbit) · [If it does not connect](#if-it-does-not-connect) · [If it does not disconnect](#if-it-does-not-disconnect) · [Bluetooth is off](#bluetooth-is-off)
 - [The detail card](#the-detail-card)
 - [The two volumes](#the-two-volumes) · [Separate PC volume](#separate-pc-volume) · [Volume pop-up](#volume-pop-up) · [Smart volume steps](#smart-volume-steps) · [Volume keys](#volume-keys) · [What really plays](#what-really-plays)
-- [Listen together](#listen-together) · [Create a group from the menu](#create-a-group-from-the-menu) · [Suggested groups](#suggested-groups) · [The source at the center](#the-source-at-the-center) · [The volume at the center](#the-volume-at-the-center) · [Wired outputs](#wired-outputs) · [Wired outputs in the group](#wired-outputs-in-the-group) · [Wired delay](#wired-delay) · [What it costs](#what-it-costs) · [Limits](#limits) · [Works with multipoint headsets](#works-with-multipoint-headsets) · [Two outputs, one radio](#two-outputs-one-radio)
+- [Listen together](#listen-together) · [Create a group from the menu](#create-a-group-from-the-menu) · [Suggested groups](#suggested-groups) · [Learn my groups](#learn-my-groups) · [Forget what Orbit learned](#forget-what-orbit-learned) · [The source at the center](#the-source-at-the-center) · [Group icons](#group-icons) · [The volume at the center](#the-volume-at-the-center) · [Wired outputs](#wired-outputs) · [Wired outputs in the group](#wired-outputs-in-the-group) · [Pull a wired output out of the group](#pull-a-wired-output-out-of-the-group) · [Wired delay](#wired-delay) · [What it costs](#what-it-costs) · [Limits](#limits) · [Works with multipoint headsets](#works-with-multipoint-headsets) · [Two outputs, one radio](#two-outputs-one-radio)
 - [Earbuds: the trio](#earbuds-the-trio)
 - [Hiding devices: the black hole](#hiding-devices-the-black-hole)
 - [Noise control](#noise-control) · [Pause when you take the headset off](#pause-when-you-take-the-headset-off) · [How long a conversation lasts](#how-long-a-conversation-lasts)
-- [Charging and battery](#charging-and-battery)
+- [Charging and battery](#charging-and-battery) · [Battery arc colours](#battery-arc-colours)
 - [New headphones pop-up](#new-headphones-pop-up)
 - [Pairing safety](#pairing-safety)
 - [Real device pictures](#real-device-pictures)
@@ -229,7 +229,7 @@ The same sound on **two, three or four** outputs at once, Bluetooth or [wired](#
 
 - **Start**: in the orbit, **drag one connected audio device onto another** (or [create a group from the menu](#create-a-group-from-the-menu), or click a [suggested group](#suggested-groups)). As soon as you carry it, a soft halo breathes around each device it could join and a thread of light runs toward the nearest, brighter as they come closer, so you can see it can be done. The zone that takes the drop is **twice the target's radius** around its center (60 px at least), so a small planet far in the ring is as easy to hit as a big one. While it is over that zone, the thread is whole and the hint under the orbit reads *Release to listen together*; let go and both play the same sound. Pulled away from the ring, the invitation fades (that is the gesture to disconnect). With *Reduce motion* the halos and the light dots stand still. The dragged device springs back to its place, so you can see nothing moved.
 - **Add one more**: drag another connected device onto **any** device that already listens together. Up to **4** outputs; at the fourth, a short note says so and links here.
-- **One leaves**: right-click a device that listens together and choose **Leave together**; the others keep playing. Dragging it outward, away from the group, does the same without disconnecting it (the hint reads *Release to leave the group*). Turning it off ends its part too. With **three or more** the entry is **Leave together** next to **Stop together**; with two, leaving would end the session, so only **Stop together** is shown.
+- **One leaves**: right-click a device that listens together and choose **Leave together**; the others keep playing. Dragging it outward, away from the group, does the same without disconnecting it (the hint reads *Release to leave the group*); a wired member can be dragged out too, see [Pull a wired output out of the group](#pull-a-wired-output-out-of-the-group). Turning it off ends its part too. With **three or more** the entry is **Leave together** next to **Stop together**; with two, leaving would end the session, so only **Stop together** is shown.
 - **Stop it all**: **Stop together** in the right-click menu of any member, or `dms ipc call orbitBluetooth separate`. A session also ends **by itself** when fewer than two outputs remain, and when the shell ends (a crash included).
 - **On the command line** (one argument per call, so the list is quoted): `dms ipc call orbitBluetooth together "AA:BB:CC:DD:EE:01 AA:BB:CC:DD:EE:02 AA:BB:CC:DD:EE:03"` (spaces or commas), then `togetherAdd <address>`, `togetherRemove <address>`, `togetherStatus` (who listens together, as JSON), `togetherDelay <address> <ms>` (see [Limits](#limits)) and `separate`. Only connected audio devices are accepted, and a refusal says why.
 - **What you see**: while a session runs, the [two volumes](#the-two-volumes) of the card and of the pop-up change shape. The outer half circle shows the **outputs' own levels**, the inner half circle stays below, shared: **this PC's level**, what the PC sends to all of them. Without a session, the screen looks as before.
@@ -261,31 +261,47 @@ A row you cannot tick stays in the list, faint, with the reason at its end. Clic
 
 Pressing the button with fewer than two outputs ticked (or nothing to add) says *Tick another output*. Nothing is refused in silence, and the list stays open so that you can change what is ticked.
 
-Keys: **↑ / ↓** move along the rows, **Space** ticks or unticks, **Enter** is the button, **Escape** closes. With *Reduce motion* on, the list simply appears. If the list is longer than the room it has (a small tile), it scrolls, and a thin mark on its right edge shows where you are.
+Keys: **↑ / ↓** move along the rows, **Space** ticks or unticks, **Enter** is the button, **Escape** closes, **H** hides the output under the cursor (or brings it back from the *Hidden* section), **Right** and **Left** open and fold that section (see [Hiding devices](#hiding-devices-the-black-hole)). With *Reduce motion* on, the list simply appears. If the list is longer than the room it has (a small tile), it scrolls, and a thin mark on its right edge shows where you are.
 
 - **If the wired section is missing**, plug the cable in first and open the list again: it is read when it opens, not while it is open.
-- **What it reads**: the wired outputs, once, with PipeWire's own tool (`pactl --format=json list sinks`, a fixed command), only while the list is open. Nothing is stored and nothing is sent. Only the devices on the sky are offered, not one hidden in the black hole.
+- **What it reads**: the wired outputs, once, with PipeWire's own tool (`pactl --format=json list sinks`, a fixed command), only while the list is open. Nothing is stored and nothing is sent. Only the devices on the sky are offered in the lists: one you hid waits in the *Hidden* section at the bottom, folded until you open it.
 - **Not yet tried on real hardware**: the checks used made-up outputs, so the real click-through and the real Escape are still to be seen.
 
 ### Suggested groups
 
-When two kinds of outputs are available at once (your sound goes to a **wired output**, a jack, USB or HDMI audio, and at least one **Bluetooth audio device** is connected, or the sound goes to a **Bluetooth device** and at least one **wired output** is plugged in), Orbit shows a **ghost planet** on this computer's ring: a dotted, translucent disc as big as the real group would be, with the names it would put together under it (*Studio speakers + XM6*).
+When two kinds of outputs are available at once (your sound goes to a **wired output**, a jack, USB or HDMI audio, and at least one **Bluetooth audio device** is connected, or the sound goes to a **Bluetooth device** and at least one **wired output** is plugged in; or all the outputs of a group you often listen to are there, whatever their kind), Orbit shows a **ghost planet** on this computer's ring: a dotted, translucent disc as big as the real group would be, with the icons of the outputs it would put together under it (hover them to read the names, see [Group icons](#group-icons)).
 
-- **What it contains.** The output in use first, then the devices of the other kind, up to four in all. It is exactly what a click will start: the session's own rules decide who can be in, so the ghost never promises a group that cannot be made.
+- **What it contains.** The group you listen to most, when all its members are there: Orbit learns it from your Listen together sessions (see [Learn my groups](#learn-my-groups)); a learned group can hold any outputs, two Bluetooth ones for example. With nothing learned yet, or when none of the learned groups is complete, a **pair**: the output in use and its most used partner among the outputs of the other kind (else the first one). It never offers the whole lot: build a bigger group from the group menu. It is exactly what a click will start: the session's own rules decide who can be in, so the ghost never promises a group that cannot be made. Outputs you hid in the black hole are never in it. If you turn a learned group down, the next best one is suggested, and when no other learned group is complete the pair is suggested instead.
 - **Start it.** Click the ghost. It turns into the real group and takes the center. If the group cannot start after all, a short note says why, with a link to this guide.
 - **Turn it down.** Right-click the ghost, or click the small **✕** next to it. The same set of devices is not suggested again until the shell restarts; another set (a device that comes or goes) is a new suggestion. Ending a group yourself counts as turning the same suggestion down.
 - **Changed your mind?** [Create a group from the menu](#create-a-group-from-the-menu), or dragging a device onto another, always works; restarting the shell forgets every refusal.
-- **When you do not see it.** A group is already running (the ghost never shows during one); a headset is in call mode (it cannot share the sound); the device that would join is not connected any more; **The listening source takes the center** is off; or you are looking at the group's own view (the ghost lives in this computer's view, see [The source at the center](#the-source-at-the-center)).
+- **When you do not see it.** A group is already running (the ghost never shows during one); a headset is in call mode (it cannot share the sound); the output in use, or the device that would join, is one you hid in the black hole, or is not connected any more; **The listening source takes the center** is off; or you are looking at the group's own view (the ghost lives in this computer's view, see [The source at the center](#the-source-at-the-center)).
 - **Reduce motion.** The ghost is simply there or not, with no fade, and the ring stands still, so the ghost rests at the top of the ring, partly behind this computer's core; it still answers clicks.
-- **What it costs.** No timer and no animation of its own: it rides the scene's one loop, which stops when nobody looks. The plugged outputs are read (with `pactl`) only while the ghost can appear and the sound goes to Bluetooth, and again when the output in use or the connected devices change, and whenever the orbit opens. The refusals are kept **in memory only**, until the shell ends; nothing is written to disk and nothing is sent. Not measured in the real shell yet.
+- **What it costs.** No timer and no animation of its own: it rides the scene's one loop, which stops when nobody looks. The plugged outputs are read (with `pactl`) only while the ghost can appear and the sound goes to Bluetooth, or goes to a wired output while a learned group holds an output Orbit does not know yet, and again when the output in use or the connected devices change, and whenever the orbit opens. The refusals are kept **in memory only**, until the shell ends; the only thing kept on disk is what Orbit learned, see [Learn my groups](#learn-my-groups). Nothing is sent. Not measured in the real shell yet.
+
+### Learn my groups
+
+**Settings, Orbit tab, *Learn my groups*** (on by default). Orbit learns which outputs you listen to together, so that the [suggested group](#suggested-groups) is the one you use and not every output at once.
+
+- **What counts as a use.** A group counts once its members stayed the same for a minute of a session. Making a group and taking a member out seconds later teaches nothing about the first group: the group you end up with is the one that is learned. Orbit looks at the time only when the members change or the session ends, so nothing runs at rest.
+- **Which group is suggested.** Among the learned groups whose members are all there (connected, plugged in, not hidden, able to start), the one with the best score: its uses, halved for every 30 days since the last one, so an old habit gives way to a recent one. If you turn it down, the next best is suggested.
+- **What is kept.** For each group: the outputs as short hashes (8 hexadecimal digits each, nothing readable: no name, no Bluetooth address, no node name), how many times it was used (at most 999) and the day of its last use. At most 8 groups; the lowest score makes room for a new one. It sits in Orbit's own settings on this computer and never leaves it. A short hash hides the name but is not a cryptographic secret: someone who has your settings file and a list of device addresses could test which of them it holds.
+- **Off.** Nothing is recorded, a pair is suggested, and what was learned is erased at once.
+- **Uninstalling** Orbit erases it with the rest of its settings.
+- **Not measured in the real shell yet.** The logic only runs when the orbit opens and when a group changes or ends. A session that lasts until the shell restarts (or crashes) is not counted, since the time is only read at a change or at the end.
+
+### Forget what Orbit learned
+
+**Settings, Orbit tab, *Forget what Orbit learned*.** Erases every learned group at once (the button shows how many are remembered, and only when there are some). The suggestion goes back to a pair until you listen together again. The same erasing is done when you switch [Learn my groups](#learn-my-groups) off.
 
 ### The source at the center
 
 While a group listens, the **source** (the output you hear, the first one of the group) takes the middle of the orbit and the other outputs orbit around it. Turn it off in **Settings → Orbit → The listening source takes the center**; without it the scene looks as before.
 
-- **What you see**: the camera follows the group to the middle in under a second. The scene is then seen almost edge-on (about 15° above the plane of the orbits), and **everything is as big as its distance says**: what is near is big, what is far is small, so you can tell where each thing is. The source grows in the middle, **as big as this computer's core is when it is the main one**; the other outputs orbit it, one turn in about 25 s, equally spaced on a flat ring, bigger and brighter on the near side, smaller and darker on the far side. This computer becomes the **sun** of the scene and revolves around the group, one turn in 60 s, and the group always stays in front of it. Its ring of connected devices and the belt of the other devices go with it, so everything that is not in the group keeps orbiting this computer, wherever it is. The stars glide a little the way the camera went. A soft beam joins the source to each copy, and a small pulse travels along it **only while sound plays**. The group's name sits under the center: *XM6 + Marantz* (with more outputs, the names that fit, then *+1*).
+- **What you see**: the camera follows the group to the middle in under a second. The scene is then seen almost edge-on (about 15° above the plane of the orbits), and **everything is as big as its distance says**: what is near is big, what is far is small, so you can tell where each thing is. The source grows in the middle, **as big as this computer's core is when it is the main one**; the other outputs orbit it, one turn in about 25 s, equally spaced on a flat ring, bigger and brighter on the near side, smaller and darker on the far side. This computer becomes the **sun** of the scene and revolves around the group, one turn in 60 s, and the group always stays in front of it. Its ring of connected devices and the belt of the other devices go with it, so everything that is not in the group keeps orbiting this computer, wherever it is. The stars glide a little the way the camera went. A soft beam joins the source to each copy, and a small pulse travels along it **only while sound plays**. The group is said by its members' icons under the center, never by a name, see [Group icons](#group-icons).
+- **A copy passing behind the source**: the copies turn around the source, and the far half of the turn goes behind it. A copy there is drawn **over** the source, see-through (about 58 % opaque, the source shows through it) and whole again on the near side, so you can see it and **click it, or turn the wheel on it, without waiting for it to come round**. Wired members do the same. The beams and cables stay under all of them.
 - **Two views, one click apart**: in **this computer's view** it is big in the middle and its devices orbit it on a flat ring; the group is **one planet of that ring**, smaller (about 70 % of its size in the middle), passing in front of and behind this computer. In **the group's view** the group is in front, big and sharp, this computer is far behind it, small, dark and blurred, and the other devices orbit it, tiny. Click the group (or any device of the group) for the group's view and click this computer for its own. **A click in the empty sky of the Orbit window steps one view back**: it closes an open card first, otherwise it returns to this computer's view, which then stays. A window that closes and opens again during a group reopens on the last view you used.
-- **Depth**: while a group has the center, what is far is darker and blurrier, the stars and the veil most of all, so the near things stand out. The blur is made once and kept, not redone every frame, so it costs nothing between two changes of view. Your real wallpaper is not blurred: that depends on your compositor.
+- **Depth**: while a group has the center the sky falls out of focus: what is far is darker and blurrier, the stars and the veil most of all, and a soft glow of your accent color lies behind the group, so the sky never averages to flat black. This computer's system (its orbits and the other devices) falls far behind the group, as if the group stood on a planet and the rest were far away; click this computer and everything is sharp again. The blur is made once and kept, not redone every frame, so it costs nothing between two changes of view. Your real wallpaper is not blurred (that depends on your compositor): on the desktop widget a frosted veil of the sky's color lies between this computer's system and the group instead, and this computer's orbits fade to half. The glow and the veil are drawn once and never animated.
 - **Names around the sun** fade while a group has the center, so they do not crowd it; point at a device or drag it and its name shows.
 - **Dragging** a device stops the sun in a moment, so you aim at something that holds still; it sets off again when you let go.
 - **Bring this computer back**: click it. It returns to the middle and the group steps back, smaller, to its place on the ring. Click any device of the group to bring the group back to the center. A click on a device of the group at the center opens its card, as before.
@@ -297,17 +313,22 @@ While a group listens, the **source** (the output you hear, the first one of the
 - **Everywhere**: the same scene in the Control Center, the bar pop-out and the desktop widget.
 - **Whether sound plays** is read from PipeWire's own events (an active link into the source's output) and only while someone sees the group move. It is a best effort and only drives the pulse: if the beams pulse in silence, or stay still while sound plays, nothing else is affected.
 
+### Group icons
+
+Under a Listen together group, Orbit shows no name: one small round disc per device, the source first, the copies after, each with the icon that device has in the orbit. Hover the discs to read the full names. In this computer's view (click this computer), the group steps back onto this computer's ring and its icons follow it, above it when it is on the far side of the ring. The suggested group (dotted ghost planet) shows the same icons; hover it to read the names and what a click does.
+
 ### The volume at the center
 
-A ring around the center planet is the **general volume** of the group.
+The gauge around the source is the volume of the whole group. It is an open arc with its gap at the bottom: it starts at the speaker (bottom left), runs clockwise over the top and ends at the bottom right. Marks every 10 % light up as the level passes them.
 
-- **Read it**: the ring starts at a **speaker** at the top, which says what the ring is: the volume. The speaker follows the level (off, low, high) and is crossed out when the group is muted. A round **thumb** marks where the level ends. The percentage (or *Muted*) is written above the speaker while the pointer is on the ring and for a moment after **every** change, whoever makes it (a drag, the wheel, a volume key); at rest nothing is shown and nothing runs.
-- **Mute it**: press the speaker. The whole group is muted, and a second press brings it back at the level it had (the same mute as the card's, on every output of the group).
-- **Set it**: drag along the ring (it fills clockwise from the top) or scroll over the ring or over the planet. One notch is one smart step, and the level lands on whole percents. DMS's own volume pop-up waits while you do.
-- **What it moves**: with Orbit's [separate PC volume](#separate-pc-volume) the ring is this PC's level, which reaches every output together. Without it, the ring scales every output's **own** level by the same ratio, so the gaps stay: from 50 % to 80 %, an output at 40 % goes to 64 % and one at 30 % to 48 %. The ring shows the loudest output, and nobody goes past 100 %: the loudest one stops the ring there, so the gaps are kept. At 0 % everyone is silent, so there are no gaps left; turning it up again brings them all to the same level.
-- **One output's own level**: scroll over a copy. Its own level moves, and a thin arc around it shows it while the pointer is on it. The source's own level is on its [card](#the-two-volumes), and the ring leaves it alone.
-- **A copy without a level of its own** (a device that follows this PC's level) says so in a short note, *… has no volume of its own*, with a link to this section: turn the ring instead.
-- Nothing is saved: Orbit sets the same levels the card sets, and only while you act.
+- **Drag** anywhere along the arc's band, or **click the track** to jump there. Crossing the gap at the bottom keeps the level at the end you came from; a click in the gap picks the nearer end. The level never wraps from 100 % to 0 %.
+- **Wheel** over the gauge or over the planet moves the group's level by one smart step.
+- **The speaker** at the start of the arc mutes the group and lets it speak again, without moving any level. Muted, the arc turns grey and the speaker is crossed out.
+- **The percentage** shows in a small chip beside the thumb while the pointer is on the gauge and for a moment after every change, whoever made it (a drag, the wheel, a volume key). At rest nothing is shown and nothing runs.
+- **What it moves**: with Orbit's [separate PC volume](#separate-pc-volume) the gauge is this PC's level, which reaches every output together. Without it, the gauge scales every output's **own** level by the same ratio, so the gaps stay: from 50 % to 80 %, an output at 40 % goes to 64 % and one at 30 % to 48 %. It shows the loudest output, and nobody goes past 100 %: the loudest one stops it there, so the gaps are kept. At 0 % everyone is silent, so there are no gaps left; turning it up again brings them all to the same level.
+- **One output's own level**: scroll over a copy. Its own level moves, and a thin arc around it shows it while the pointer is on it. The source's own level is on its [card](#the-two-volumes), and the gauge leaves it alone.
+- **A copy without a level of its own** (a device that follows this PC's level) says so in a short note, *… has no volume of its own*, with a link to this section: turn the gauge instead.
+- Nothing is saved: Orbit sets the same levels the card sets, and only while you act. DMS's own volume pop-up waits while you do.
 
 ### Wired outputs
 
@@ -330,12 +351,16 @@ An output that is not Bluetooth (a USB interface, a screen on HDMI, the computer
 - **The cable**: a thin straight cable joins each wired output to the **source**, because the source is where the sound is taken from. It hangs a little slack for the first 0.4 s after the output joins, then tightens, once; a small pulse runs along it only while sound plays. With *Reduce motion* the cable is taut at once and nothing pulses.
 - **A wired source**: when the output you hear is a wired one, it takes the center as a big rounded square, as big as this computer's core is when it is the main one. It has no cable (the others' beams start from it).
 - **Place and turn**: the squares sit on the same tilted ring as Bluetooth copies, one turn in about 25 s, bigger on the near side, and they sort with the planets: one passing in front hides one behind.
-- **Leave**: right-click the square. **Leave together** takes this output out (the others keep playing; with two outputs only **Stop together** is shown). A wired output has no *Connect*, *Disconnect* or *Forget*, and **Hide** only explains that an output of a group stays in it. A square cannot be dragged out of the group: use the menu.
+- **Leave**: right-click the square. **Leave together** takes this output out (the others keep playing; with two outputs only **Stop together** is shown). A wired output has no *Connect*, *Disconnect* or *Forget*, and **Hide** only explains that an output of a group stays in it. A square can be dragged out of the group like a Bluetooth planet, see [Pull a wired output out of the group](#pull-a-wired-output-out-of-the-group).
 - **Add one more**: drop a connected device on a square like on any member of the group. A device that is not connected gets the usual short note.
 - **Volume**: scroll over a square for **its own level** (a thin arc around it shows it while the pointer is on it); scroll over a wired **source** for the group's general level, as for any source. An output that has no level of its own says so in a short note linking to [the volume at the center](#the-volume-at-the-center).
 - **What it costs**: nothing at rest. A square is placed from the group's own turn (no spring, no timer), so the scene still settles; the only animations are a short pop when it appears and the cable's single 0.4 s tightening, and with *Reduce motion* neither plays.
 - **Limits**: the squares jump into place when the group changes (no glide) and vanish without a fade when an output leaves; planets of the outer belt that pass behind the group are not pushed away from them.
 - **Not yet tried on real hardware**: the squares and the cable are checked offscreen with made-up outputs, not yet with a real pointer, a real wheel and real devices.
+
+### Pull a wired output out of the group
+
+A wired member (USB, HDMI, jack) is drawn as a rounded square. Drag it out of the group: the hint says "Release to leave the group", and it leaves when you let go; the others keep listening together as long as two remain. A click on it opens its menu (Leave together, Stop together).
 
 ### Wired delay
 
@@ -349,7 +374,7 @@ A wired output answers in a few milliseconds, a Bluetooth one a good deal later.
 
 ### What it costs
 
-Nothing while no session runs. During one, Orbit runs **one small sound process per output beyond the first** (two outputs: one, four outputs: three). Each is **passive**, so with no sound playing it holds nothing open and every output can fall asleep as before. They belong to the shell: they disappear when the shell ends, even after a crash, and nothing is written to disk or to your sound setup. A session saves nothing: the only thing kept is each output's PC level, which Orbit already remembers per device.
+Nothing while no session runs. During one, Orbit runs **one small sound process per output beyond the first** (two outputs: one, four outputs: three). Each is **passive**, so with no sound playing it holds nothing open and every output can fall asleep as before. They belong to the shell: they disappear when the shell ends, even after a crash, and nothing is written to disk or to your sound setup. A session saves nothing: the only things kept are each output's PC level, which Orbit already remembers per device, and, with [Learn my groups](#learn-my-groups) on, the short hashes of the groups you listened to.
 
 The center has no timer of its own: the trip, the orbit, the sun's revolution and the beams ride the scene's one loop, which stops by itself when nobody sees the scene (with Reduce motion it only runs for the 0.25 s fade, then stops). The sun's revolution is moved by that loop, not by a QML animation, and the whole system is drawn through one transformed item. Measured on the offscreen preview scene (not on the real shell), a group costs about 2.3 % of one core before the sun and about 2.5 to 2.8 % with it, and 0.1 % with Reduce motion; the cost inside the shell has **not been measured yet**, and neither has the GPU cost of the depth blur.
 
@@ -359,12 +384,12 @@ Wired outputs add nothing at rest. The plugged outputs are read with `pactl` onl
 
 - **Four outputs at most**, and each must be a **connected Bluetooth audio device** with a sound output, or a **wired output** that is plugged in. Orbit tells you why when one cannot take part (not connected or not plugged in, no sound output yet, a headset on its call profile, the same device twice, a fifth device) and links here.
 - **Wired outputs are not yet tried on real hardware** (a USB interface, an HDMI screen, the jack): they are checked with made-up outputs and a simulated sound server. The filter that holds a wired output back when it is the one you hear is not confirmed there either, and a USB output that reports no latency counts as 0 ms (see [Wired delay](#wired-delay)).
-- **Next to a Bluetooth source that has Orbit's PC filters**, the ring around the center and its speaker (the group's general volume) do not move a wired output: a muted group can still play through it. Scroll over the wired square for its own level.
+- **Next to a Bluetooth source that has Orbit's PC filters**, the gauge around the center and its speaker (the group's general volume) do not move a wired output: a muted group can still play through it. Scroll over the wired square for its own level.
 - **The outputs may not be in sync.** Bluetooth codecs have different delays (a headset on AAC against a receiver on SBC), and Orbit cannot measure them, so it promises no synchronisation. If you hear an echo, the output that is early is the one to hold back: `dms ipc call orbitBluetooth togetherDelay AA:BB:CC:DD:EE:02 120` (0 to 1000 ms) makes **that member** wait; each member has its own value, and you try one until it sounds as one. Only a copy can wait: the output the sound is taken from never does, so if it is the late one, make another member the output you hear. A change restarts that copy for a moment and lasts for this session only (nothing is saved).
 - **A video's picture is not delayed** either: with a large delay, lips drift from the sound.
 - **The level is shared through Orbit's own filters.** If the output you hear has **no** such filter (a device without absolute volume), the copies take its sound after its volume, so nothing can be shared: each output plays at its own level, and the copies follow the level of the source. Orbit prefers that to applying a level twice.
 - **Call profile**: a headset whose microphone is in use drops to a narrow call mode; Orbit does not take it in until it is back on its music profile. A member that falls into a call keeps its place and plays again when the call ends.
-- **At the center, the ring sets the group's level, not the source device's**: the source's own level stays on its card, and there is no `dms ipc call` for the general level yet.
+- **At the center, the gauge sets the group's level, not the source device's**: the source's own level stays on its card, and there is no `dms ipc call` for the general level yet.
 - **Dropping a device that is not connected** on the group says to connect it first; Orbit does not connect it for you here.
 - **Dragging a member outward** is the gesture that disconnects any other device, but a member only leaves the group: it stays connected and plays on its own again. To disconnect it, use its menu or the × button.
 - **If one output goes away** (a headset handed over to your phone, an output that fell asleep), it stays a member and picks the sound up again when it returns, without a message. A member leaves only on a real Bluetooth disconnection, when you take it out, or, for a wired output, when it is unplugged (a note says so, see [Wired outputs](#wired-outputs)).
@@ -403,6 +428,10 @@ The drawings are chosen by name (stem or pebble buds; tall, wide or pebble case;
 
 A small black hole drifts in the outer field. Drag a device you never use into it (or right-click it and pick **Hide**): it disappears from the orbit and the bar, but **stays connected**. Click the black hole to list what it holds and **Show** to bring a device back. A device that [listens together](#listen-together) cannot be hidden while it is in the group: it would go on playing out of sight, so a short note says to pull it out first (right-click, **Leave together**).
 
+**From the group chooser.** In **Create a group…** every row shows an eye when you point at it or move the keyboard cursor onto it (press `H` for the same): the output leaves the Wired / Bluetooth lists and waits in a *Hidden* section at the bottom, folded until you open it (click its heading, or press Right; Left folds it). The eye of a hidden row brings it back. You can also drag a row onto the black hole: a small chip with the output's picture and an eye badge follows the pointer, the hole lights up and shows an eye, and letting go over it hides the output. A wired output is hidden the same way as a Bluetooth device and counts in the hole's *Hidden · N*. An output that plays in the running group cannot be hidden (it would keep playing out of sight): Orbit says so under the orbit; pull it out of the group first (right-click, **Leave together**).
+
+Hidden outputs stay connected or plugged in; hiding only removes them from the lists and the orbit. The list keeps at most 64 of them; past that a short note asks you to bring one back first.
+
 | Hidden devices | Right-click menu |
 | --- | --- |
 | ![Hidden devices listed by the black hole](../screenshots/hidden.png) | ![Right-click menu of a headset](../screenshots/menu.png) |
@@ -412,7 +441,7 @@ Two looks, in **Look → Black hole**:
 - **Black hole** (default): a realistic one in the spirit of *Interstellar*, with an accretion disk and a photon ring, tinted by your theme.
 - **Three-dimensional shadow of a four-dimensional bubble**: a wireframe tesseract (a nod to *Adventure Time*).
 
-It bends the starfield like a gravitational lens, except on the desktop widget, whose sky is see-through.
+It bends the starfield like a gravitational lens, except on the desktop widget, whose sky is see-through. While a group has the center it shrinks with distance like every other body: in the group's view and in this computer's view it is as big as a body at the same height of the belt; the scene's own view is unchanged.
 
 ## Noise control
 
@@ -485,7 +514,7 @@ On **Sony** headsets the detail card shows a **Conversation ends** row (*Short*,
 
 ## Charging and battery
 
-A charging device gets a lightning badge, a breathing battery arc and a beam of energy from your machine, drawn as magnetic field lines. Under its name you read the level and the time to full, for example `54% · 2h08`.
+A charging device gets a lightning badge, a breathing battery arc and a beam of energy from your machine, drawn as magnetic field lines. Under its name you read the level and the time to full, for example `54% · 2h08`. The arc around a connected device is colored by its level, see [Battery arc colours](#battery-arc-colours).
 
 | Charging in orbit | Charging details |
 | --- | --- |
@@ -508,6 +537,19 @@ When not charging, the readout shows the time left and the tiles switch to **EMP
 
 1. **Reported by the device.** Headsets with noise control report their charging state through the helper. Devices with a kernel battery driver (game controllers, Logitech peripherals…) publish it through UPower, matched to their Bluetooth address via `HID_UNIQ` in sysfs.
 2. **Estimated from level changes.** Otherwise charging is inferred from a rising level, accounting for the usual slowdown past 80 %. Estimates are shown with `≈`, appear after a few minutes and refine over time.
+
+### Battery arc colours
+
+The arc around a connected device's disc tells the level at a glance, and never takes the color of the group's [volume gauge](#the-volume-at-the-center) (your theme's primary):
+
+| Arc | Meaning |
+| --- | --- |
+| Green | 40 % and up |
+| Amber | 16 to 39 % |
+| Red | 15 % and down |
+| Blue-violet, breathing | Charging, whatever the level |
+
+The charging color is your theme's *info* blue; when your theme's primary is that same blue (a theme generated from a blue wallpaper often is), it is the theme's *tertiary* accent instead, so it is never mistaken for the volume gauge. In the stock Blue and Cyan themes no color of the theme tells itself apart from the primary. The card's gauge keeps its own smooth red-to-aqua ramp, red for as long as the arc is.
 
 ## New headphones pop-up
 
@@ -610,6 +652,8 @@ Grouped in tabs: **Orbit** (with Reset), **Scanning**, **Headphones** (with devi
 | | Quick disconnect button | Off | An × on connected devices, on hover |
 | | Center device | Automatic | Icon of this machine (laptop or desktop is detected) |
 | | The listening source takes the center | On | While Listen together plays, the source sits in the middle and the other outputs orbit it, see [The source at the center](#the-source-at-the-center) |
+| | Learn my groups | On | Remember which outputs you listen to together, as short hashes, to suggest your usual group, see [Learn my groups](#learn-my-groups) |
+| | Forget what Orbit learned | | Erases the learned groups at once (shown with how many are remembered), see [Forget what Orbit learned](#forget-what-orbit-learned) |
 | Scanning | Scan automatically | On | Start discovery when a view opens; otherwise click the center |
 | | Offer new devices | On | A card with *Connect* inside the Orbit view; the pop-up has its own switch |
 | | Pop-up for new headphones | On | A pop-up under the bar for new headphones any search finds, see [New headphones pop-up](#new-headphones-pop-up); it only listens |
@@ -650,12 +694,14 @@ Three buttons at the end reset custom device icons, bring back every hidden devi
 
 - **No telemetry. No network access, except one opt-in feature, off by default**: [Real device pictures](#real-device-pictures), which sends only the model name of paired devices to `commons.wikimedia.org` and `api.sketchfab.com`.
 - **Background scan** (the new headphones pop-up, on by default): Bluetooth discovery for 8 s about once a minute, local only, under the conditions in [New headphones pop-up](#new-headphones-pop-up). Devices you *Ignore* are stored with the plugin settings.
-- **Listen together** runs one small local sound process per output beyond the first, only while a session lasts, and talks to the local sound server (PipeWire) only. It saves nothing: no session, no list of devices, no address on disk, and nothing in the journal. [More](#listen-together)
+- **Listen together** runs one small local sound process per output beyond the first, only while a session lasts, and talks to the local sound server (PipeWire) only. It saves no session, no list of devices, no address and nothing in the journal; the only thing kept, with **Learn my groups** on (default), is described next. [More](#listen-together)
+- **Learned groups**: with **Learn my groups** on (default), Orbit keeps in its own settings, for at most 8 groups, only short hashes of the outputs you listened to together (no name, no address), how many times and the day of the last time. It never leaves your computer, **Forget what Orbit learned** or switching the option off erases it at once, and uninstalling Orbit erases it with the rest. [More](#learn-my-groups)
+- **Hidden devices**: the list of what you hid in the black hole, Bluetooth devices and wired outputs (an address or a node name and the name it had, at most 64), is kept in Orbit's own settings; **Show** or the buttons of the settings empty it. [More](#hiding-devices-the-black-hole)
 - **The two volumes** talk to the local sound server (PipeWire) only; the tick is a sound file shipped with Orbit, played with `pw-play`, and the picture of the sound is read locally with `cava`.
 - **One helper process**: the noise-control helper opens a local Bluetooth socket to your headset and nothing else, only while needed: while a card is open, or, with [Pause when you take the headset off](#pause-when-you-take-the-headset-off) on, for as long as a Sony headset with a wearing sensor is connected. That option reads and pauses your media players through MPRIS on the local D-Bus; it keeps nothing and sends nothing. `ORBIT_ANC_DEBUG=1` prints its raw packets on stderr; nothing is logged to a file.
 - **Nothing written to disk by Orbit**, except the pictures cache of that opt-in feature (`~/.cache/orbitBluetooth/pictures`): connection times and battery history live in memory for the session.
 - **Files read**: only the sysfs `uevent` of kernel batteries, once each.
-- **Settings** (choices, custom icons, hidden devices) are stored by DMS with your other plugin settings.
+- **Settings** (choices, custom icons, hidden devices, learned groups) are stored by DMS with your other plugin settings.
 - **Device names** you set are stored by BlueZ, like any Bluetooth alias.
 
 ### Uninstalling
