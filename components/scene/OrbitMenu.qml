@@ -3,14 +3,16 @@ import QtQuick
 import qs.Common
 import qs.Widgets
 import "../card"
-import "../noise/Anc.js" as Anc
 import "../together/Choice.js" as Choice
+import "MenuEntries.js" as Entries
 
 // Right-click menu of an orbiting device: connect/disconnect, the headset's
 // noise-control modes when it has them, "Create a group…" (or "Add to the
-// group…") for a device that can play sound, "Leave together" and "Stop
-// together" for a device that listens together with others, "Hide" (into the
-// black hole) and "Forget" (unpair), which asks for a second click.
+// group…") for a device outside the group that can play sound, "Remove from
+// group" for a member (a wired one reads "Disconnect": it leaves and stays
+// plugged in), "Hide" (into the black hole) and "Forget" (unpair), which asks
+// for a second click. Which entries, in which order, is MenuEntries.js; adding
+// a device to the group and stopping it are the group's, not a member's.
 // It lives inside the scene (no extra window) and closes on any choice,
 // a click elsewhere or Escape. "Create a group…" does not close it: the
 // group chooser takes the place of the entries until a group is made.
@@ -30,70 +32,20 @@ Item {
         const b = body;
         if (!b)
             return [];
-        const list = [];
-        if (b.device)
-            list.push(b.phase === "connecting" ? {
-                "id": "cancel",
-                "icon": "close",
-                "label": "Cancel"
-            } : b.connected ? {
-                "id": "disconnect",
-                "icon": "link_off",
-                "label": "Disconnect"
-            } : {
-                "id": "connect",
-                "icon": "link",
-                "label": "Connect"
-            });
-        if (b.ancCapable) {
-            const info = scene.ancFor(b.address);
-            const modes = Anc.ordered(info?.features?.modes);
-            for (const m of modes)
-                list.push({
-                    "id": "anc:" + m,
-                    "icon": Anc.ICONS[m],
-                    "label": Anc.SHORT[m],
-                    "checked": info?.state?.mode === m
-                });
-        }
-        if (scene.together.canGroup(b))
-            list.push({
-                "id": "group",
-                "icon": "group_add",
-                "label": Choice.labels(scene.together.members(), scene.together.isMember(b.address)).entry
-            });
-        if (scene.together.isMember(b.address)) {
-            // With only two, leaving is the same as stopping
-            if (scene.together.count() > 2)
-                list.push({
-                    "id": "leave",
-                    "icon": "logout",
-                    "label": "Leave together"
-                });
-            list.push({
-                "id": "separate",
-                "icon": "call_split",
-                "label": "Stop together"
-            });
-        }
-        list.push({
-            "id": "hide",
-            "icon": "visibility_off",
-            "label": "Hide"
+        const info = b.ancCapable ? scene.ancFor(b.address) : null;
+        const member = scene.together.isMember(b.address);
+        return Entries.list({
+            "device": !!b.device,
+            "wired": !!b.wired,
+            "phase": b.phase,
+            "connected": b.connected,
+            "modes": info?.features?.modes,
+            "mode": info?.state?.mode ?? "",
+            "member": member,
+            "groupEntry": scene.together.canGroup(b) ? Choice.labels(scene.together.members(), member).entry : "",
+            "paired": !!(b.device && b.paired),
+            "confirmForget": confirmForget
         });
-        if (b.device && b.paired)
-            list.push({
-                "id": "forget",
-                "icon": confirmForget ? "delete_forever" : "delete",
-                "label": confirmForget ? "Click to forget" : "Forget",
-                "danger": true
-            });
-        return list;
-    }
-
-    // The Listen together entries sit together, under one hairline
-    function isTogetherEntry(id) {
-        return id === "group" || id === "leave" || id === "separate";
     }
 
     function popup(b, point) {
@@ -107,6 +59,13 @@ Item {
             scene.ancWatch(b.address, true);   // fetch the current mode
         _watching = b.ancCapable ? b.address : "";
         scene.forceActiveFocus();
+    }
+
+    // The group chooser on its own, for the group's radar ("Add a device…"): the
+    // page "Create a group…" opens, without the entries before it
+    function addDevices(b, point) {
+        popup(b, point);
+        choosing = true;
     }
 
     property string _watching: ""
@@ -144,8 +103,6 @@ Item {
             scene.cancelConnect(b);
         else if (id === "leave")
             scene.together.leave(b.address);
-        else if (id === "separate")
-            scene.together.stop();
         else if (id === "hide")
             scene.hideBody(b);
         else if (id === "forget")
@@ -195,16 +152,15 @@ Item {
 
                 Rectangle {
                     required property var modelData
-                    required property int index
                     readonly property bool danger: modelData.danger ?? false
                     width: col.width
                     height: 32
                     radius: 10
                     color: danger && menu.confirmForget ? Theme.withAlpha(Theme.error, 0.16) : itemArea.containsMouse ? menu.paper.fg(0.08) : "transparent"
 
-                    // A hairline before the Listen together entries or "Hide" (once) and before the first mode
+                    // A hairline before the entries that start a section (MenuEntries.ruled)
                     Rectangle {
-                        visible: index > 0 && ((menu.isTogetherEntry(modelData.id) && !menu.isTogetherEntry(menu.entries[index - 1].id)) || (modelData.id === "hide" && !menu.isTogetherEntry(menu.entries[index - 1].id)) || (modelData.id.startsWith("anc:") && !menu.entries[index - 1].id.startsWith("anc:")))
+                        visible: modelData.rule
                         x: 8
                         width: parent.width - 16
                         height: 1

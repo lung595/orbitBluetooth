@@ -102,7 +102,7 @@ Item {
             "then": 100,
             "run": () => {
                 check("the group of four: the headset is the source", [scene.centre.source, scene.centre.wired.count], [h.headset, 3]);
-                // The source leaves by the menu's "Leave together"
+                // The source leaves by the menu's "Remove from group"
                 scene.together.leave(h.headset);
             }
         },

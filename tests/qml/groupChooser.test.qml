@@ -188,7 +188,8 @@ Item {
                 check("it reads Create a group…", h.menu().entries.find(e => e.id === "group"), {
                     "id": "group",
                     "icon": "group_add",
-                    "label": "Create a group…"
+                    "label": "Create a group…",
+                    "rule": true
                 });
                 h.menu().close();
                 check("so is a speaker", h.entriesOf(h.one).indexOf("group") >= 0, true);
@@ -293,12 +294,14 @@ Item {
             }
         },
         {
-            // The menu of a member: it is in the group already, so it adds another device
+            // A member: it is in the group already, so its menu has no group entry, and the page that adds another device is the radar's
             "then": 100,
             "run": () => {
                 scene.openMenu(h.body(h.one), Qt.point(60, 60));
-                check("a member's menu does not say it adds that member to the group", h.menu().entries.find(e => e.id === "group").label, "Add a device…");
-                h.menu().choose("group");
+                check("a member's menu leaves it or hides it, it does not make or add to a group", [h.menu().entries.map(e => e.label), h.menu().entries.some(e => e.id === "group" || e.id === "separate")], [["Disconnect", "Remove from group", "Hide", "Forget"], false]);
+                h.menu().close();
+                h.menu().addDevices(h.body(h.one), Qt.point(60, 60));
+                check("the group's radar adds a device by the same page: the chooser, the menu's entries out of the way", [h.menu().choosing, !!h.chooser(), scene.menuOpen], [true, true, true]);
                 h.read(h.listing);
                 const c = h.chooser();
                 check("its chooser still says the group is added to, and starts with nothing ticked", [c.words.title, c.words.action, h.ticks(c)], ["Add to the group", "Add", []]);
