@@ -68,6 +68,10 @@ Column {
         settings: tab.settings
     }
 
+    HabitsRow {
+        settings: tab.settings
+    }
+
     // --- Reset -------------------------------------------------------------------
     Section {
         text: "Reset"
