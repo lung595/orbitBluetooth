@@ -46,6 +46,8 @@ Item {
     readonly property real baseScale: 1
     readonly property alias pointer: mouse
     readonly property bool hovered: mouse.containsMouse && !scene.focusBody && !scene.hiddenOpen
+    // The most a copy shows of itself: behind the source it is drawn over it, so it lets it show through
+    readonly property real seeThrough: Centre.seeThrough(role, depth, 1)
 
     // It grows into its place and fades in when it joins or takes another role: a
     // brief transition, once, none with Reduce motion
@@ -91,7 +93,7 @@ Item {
     height: diameter
     x: px - width / 2
     y: py - height / 2
-    // Among the group's planets: the source at the group's own order, a copy by its depth
+    // Among the group's planets: the source at the group's own order, a copy over it, by its depth
     z: Centre.bodyZ(body, centre.grouped, centre.groupZ)
     opacity: centre.presence * scene.world.dim
 
@@ -99,8 +101,9 @@ Item {
         id: visual
         anchors.fill: parent
         scale: (0.7 + 0.3 * body.arrive) * body.popScale * body.hoverScale
-        // Darker on the far side of the orbit, as small as it is dark
-        opacity: body.arrive * Perspective.haze(body.depth, body.centre.profile)
+        // Darker on the far side of the orbit, as small as it is dark; a copy
+        // behind the source lets it show through (never more than that)
+        opacity: body.arrive * Math.min(Perspective.haze(body.depth, body.centre.profile), body.seeThrough)
 
         Rectangle {
             anchors.centerIn: parent

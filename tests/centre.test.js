@@ -4,7 +4,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const C = load("Centre.js", ["PERIOD", "MAX_SHIFT", "GROUP_SIZE", "TILT", "clamp01", "ease", "approach", "grow", "sizes", "labelOffset", "groupAt", "bodyZ", "away", "phaseAt", "copySlot", "depthSize", "parallax", "copiesOf", "roleOf", "label", "pulse"]);
+const C = load("Centre.js", ["PERIOD", "MAX_SHIFT", "GROUP_SIZE", "TILT", "clamp01", "ease", "approach", "grow", "sizes", "labelOffset", "groupAt", "bodyZ", "seeThrough", "COPY_LIFT", "SEE_THROUGH", "away", "phaseAt", "copySlot", "depthSize", "parallax", "copiesOf", "roleOf", "label", "pulse"]);
 const V = load("MasterVolume.js");
 const P = load("Perspective.js", ["FLAT", "size"]);
 
@@ -71,7 +71,10 @@ const body = (o) => Object.assign({ py: 200, depth: 0, inSlot: false, role: "" }
 eq("z: out of a group the far half of the ring passes behind the core, the rest sorts by height", [C.bodyZ(body({ inSlot: true, depth: -0.5 }), false, 0), C.bodyZ(body({ inSlot: true, depth: 0.5 }), false, 0), C.bodyZ(body({}), false, 0)], [10 + 2, 300, 300]);
 eq("z: in a group everything sorts by height, the far half of the ring included, so the host (100 + y) sorts with it", [C.bodyZ(body({ inSlot: true, depth: -0.5, py: 150 }), true, 0), C.bodyZ(body({ inSlot: true, depth: -0.5, py: 250 }), true, 0)], [250, 350]);
 eq("z: a member is where the group is, its source in the middle", [C.bodyZ(body({ role: "source", depth: 1, py: 10 }), true, 1300), C.bodyZ(body({ role: "source", depth: 1, py: 999 }), false, 1300)], [1300, 1300]);
-eq("z: its far copies behind the source, the near ones in front, whatever their height", [-1, -0.4, 0.4, 1].map(depth => C.bodyZ(body({ role: "copy", depth, py: 5 }), true, 1300)), [1299, 1299.6, 1300.4, 1301]);
+eq("z: its copies over the source, near over far, whatever their height", [-1, -0.4, 0.4, 1].map(depth => C.bodyZ(body({ role: "copy", depth, py: 5 }), true, 1300)), [1300.25, 1300.4, 1300.6, 1300.75]);
+eq("z: even the farthest copy is over the source, and none rises a whole level (nothing outside the group sorts between them)", [C.bodyZ(body({ role: "copy", depth: -1 }), true, 1300) > C.bodyZ(body({ role: "source" }), true, 1300), C.bodyZ(body({ role: "copy", depth: 1 }), true, 1300) < 1301], [true, true]);
+eq("see through: a copy behind the source lets it show, whole on the near side, the source and a stranger always whole", [-1, -0.5, 0, 0.5, 1].map(d => near(C.seeThrough("copy", d, 1))).concat([C.seeThrough("source", -1, 1), C.seeThrough("", -1, 1)]), [0.58, 0.58, 0.58, 0.79, 1, 1, 1]);
+eq("see through: it only takes hold as the device takes its place in the group", [0, 0.5, 1].map(mix => near(C.seeThrough("copy", -1, mix))), [1, 0.79, 0.58]);
 eq("z: a body outside the group is behind it when the group is lifted over the system, and sorts with it otherwise", [C.bodyZ(body({ py: 400 }), true, 100 + 190 + 1000) < 100 + 190 + 1000, C.bodyZ(body({ py: 400 }), true, 100 + 190 + 40) > 100 + 190 + 40], [true, true]);
 
 // --- the sky behind the camera --------------------------------------------------
