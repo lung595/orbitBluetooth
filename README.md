@@ -108,7 +108,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 | Drag a connected audio device onto another (or onto any device already in the group) | Listen together: the same sound on both, up to 4 outputs ([more](docs/GUIDE.md#listen-together)) |
 | Scroll over the ring around the center planet, or over the planet | The group's general volume, the gaps between outputs kept ([more](docs/GUIDE.md#the-volume-at-the-center)) |
 | Scroll over an output orbiting the center | That output's own volume |
-| Click this computer (the sun around the group) | It takes the center back; click the group to bring it back ([more](docs/GUIDE.md#the-source-at-the-center)) |
+| Click this computer (the sun around the group), or the group | This computer's view, or the group's view; a click in the empty sky steps one view back ([more](docs/GUIDE.md#the-source-at-the-center)) |
 | Right-click a device | Menu: connect, noise-control modes, leave or stop listening together, hide, forget |
 | Forget a device (unpair) | Right-click → **Forget**, click again to confirm; or the 🗑 button of its detail card |
 | Drag a device into the black hole | Hide it (it stays connected) |
