@@ -25,9 +25,10 @@ Item {
     readonly property real band: 12
     readonly property real lineWidth: 5
     // The speaker at the arc's start and the chip behind it, which hides the
-    // end of the track under it
-    readonly property real iconSize: Math.max(10, Math.round(centre.scene.coreSize * 0.22))
-    readonly property real chipSize: iconSize + 8
+    // end of the track under it: Centre.sizes's, which the icons under the
+    // group clear in turn
+    readonly property real iconSize: centre.sizes.chipIcon
+    readonly property real chipSize: centre.sizes.chip
     readonly property string glyph: Master.icon(volume.level, volume.muted)
     // The thumb waits until the arc has left the speaker
     readonly property real thumbSize: Gauge.length(volume.level, radius) > chipSize ? lineWidth * 2.4 : 0

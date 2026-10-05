@@ -47,7 +47,9 @@ Item {
             })
         readonly property var sizes: ({
                 "ring": 60,
-                "source": 40
+                "source": 40,
+                "chipIcon": 17,
+                "chip": 25
             })
         property var group: ({
                 "x": 200,

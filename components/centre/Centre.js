@@ -18,6 +18,9 @@ var MAX_SHIFT = 12;                 // px the sky may drift: the margin around t
 var PARALLAX = 0.08;                // how far the sky follows the camera, far stars barely move
 var COPY_LIFT = 0.5;                // a copy's order over the source's at the middle of its orbit: under 1, so that nothing outside the group sorts between them
 var SEE_THROUGH = 0.58;             // how much of itself a copy keeps while it is behind the source
+var GLYPH_DISC = 0.34;              // a member's disc in the row of icons under the group, of the host's core size
+var GLYPH_OVERLAP = 0.18;           // how much of a disc the next one covers: the bar pill's 4 px on its 22 px discs
+var GLYPH_MIN = 14;                 // px: the smallest disc, so a glyph can still be read when the group steps back
 
 function clamp01(v) {
     return Math.max(0, Math.min(1, v));
@@ -58,14 +61,31 @@ function sizes(g) {
     const gap = ring - source / 2 + 12;
     const room = g.rx * 0.9;
     const copy = Math.max(12, Math.min(g.bodySize * 0.85, source * 0.5, 2 * (room - source / 2 - gap)));
-    return { "source": source, "ring": ring, "copy": copy, "radius": source / 2 + gap + copy / 2 };
+    // The speaker that crowns the volume ring and the chip behind it: CentreRing
+    // draws them at this size
+    const chipIcon = Math.max(10, Math.round(source * 0.22));
+    return { "source": source, "ring": ring, "copy": copy, "radius": source / 2 + gap + copy / 2, "chipIcon": chipIcon, "chip": chipIcon + 8 };
 }
 
-// How far under the group's centre (px, at full size) the name goes: below
-// the ring and below the lowest point of the copies' orbit, so a copy passing
-// in front never covers it
-function labelOffset(s) {
-    return Math.max(s.ring, s.radius * TILT + s.copy / 2) + 8;
+// How far from the group's centre (px, at full size) the icons of its members
+// start: past the ring and past the extreme point of the copies' orbit, so a
+// copy passing in front never covers them. Over the group (`above`) the speaker
+// that crowns the ring sticks out of it, and the icons clear it too.
+function glyphsOffset(s, above) {
+    const ring = s.ring + (above ? s.chip / 2 : 0);
+    return Math.max(ring, s.radius * TILT + s.copy / 2) + 6;
+}
+
+// A member's disc (px) in that row: a share of the host's core, as big as the
+// group is (`scale`: 1 in the middle, smaller on the host's ring), but never so
+// small that its glyph cannot be read
+function glyphDisc(coreSize, scale) {
+    return Math.max(GLYPH_MIN, Math.round(coreSize * GLYPH_DISC * scale));
+}
+
+// The gap between two discs (px, negative: they overlap), as the bar pill's
+function glyphSpacing(disc) {
+    return -Math.round(disc * GLYPH_OVERLAP);
 }
 
 // The group (source and copies): centred and in front, or stepped back (stage
@@ -166,16 +186,6 @@ function roleOf(members, source, address) {
     if (members.indexOf(address) < 0)
         return "";
     return address === source ? "source" : "copy";
-}
-
-// The name under the centre: "XM6 + Marantz", the first two and "+N" for the
-// rest when they would not fit
-function label(names) {
-    const all = names.filter(n => !!n);
-    const full = all.join(" + ");
-    if (all.length <= 2 || full.length <= 26)
-        return full;
-    return all.slice(0, 2).join(" + ") + " +" + (all.length - 2);
 }
 
 // A pulse travelling along the beam to copy i of n at `time`: how far along

@@ -281,7 +281,6 @@ Item {
         plug(h.headset, "Pulse BT");
         check("a Bluetooth device is connected: the ghost is offered", ghost.offered, true);
         check("the output in use comes first", ghost.proposal.members, [h.dongle, h.headset]);
-        check("its name says who it would put together", ghost.label, "Dongle Stereo + Pulse BT");
         check("the key is the set: the same whatever the order", ghost.key, [h.headset, h.dongle].join(","));
         check("a wired output is read from PipeWire's names, not from a command", runnerOf(ghost).running, false);
 
@@ -421,7 +420,7 @@ Item {
         check("the sound goes to Bluetooth: the plugged outputs are asked for, once", [reader.running, reader.command], [true, ["pactl", "--format=json", "list", "sinks"]]);
         check("(nothing is proposed until they are known)", ghost.offered, false);
         finish(ghost, 0, listing([h.dongle]));
-        check("a wired output is plugged in: the ghost is offered, the output in use first", [ghost.offered, ghost.proposal.members, ghost.label], [true, [h.headset, h.dongle], "Pulse BT + Dongle Stereo"]);
+        check("a wired output is plugged in: the ghost is offered, the output in use first", [ghost.offered, ghost.proposal.members], [true, [h.headset, h.dongle]]);
         check("it is the same set as the other way round", ghost.key, [h.headset, h.dongle].join(","));
         check("nothing runs between two changes", reader.running, false);
         h.pipewire(null, [studioNode]);
@@ -483,6 +482,14 @@ Item {
         id: mouse
         name: "ghostGroup"
         when: false
+    }
+
+    // How many texts are drawn in the subtree (a name would be one)
+    function texts(item) {
+        let n = "text" in item && item.visible ? 1 : 0;
+        for (const child of item.children)
+            n += texts(child);
+        return n;
     }
 
     // The connected ring's neighbours: how many, and the gaps between them (rad), seen
@@ -586,6 +593,15 @@ Item {
                 const c = h.view().cross;
                 check("the cross is clear of the planet's centre (far away the planet is hardly bigger than the cross)", c.contains(c.mapFromItem(scene, g.px, g.py)), false);
                 check("a card or the hidden list open: it does not answer", [h.view().live, (scene.hiddenOpen = true, h.view().live), (scene.hiddenOpen = false, h.view().live)], [true, false, true]);
+                // Who it would put together is said in icons, never in words: one disc per member, the
+                // output in use first, clear of the planet; the names and the click's meaning come with the pointer
+                const icons = h.view().children.find(c => "glyphOf" in c);
+                const at = icons.mapToItem(scene, 0, 0);
+                const dx = Math.max(at.x - g.px, 0, g.px - (at.x + icons.width)), dy = Math.max(at.y - g.py, 0, g.py - (at.y + icons.height));
+                check("its icons: one disc per member in order, no name, clear of the planet", [icons.shown, h.texts(icons), Math.hypot(dx, dy) > g.diameter / 2], [[h.dongle, h.headset], 0, true]);
+                icons.named = true;
+                check("the pointer on it: the names, one line each, and what a click does", [h.texts(icons), icons.note], [3, "Listen together"]);
+                icons.named = false;
             }
         },
         {
