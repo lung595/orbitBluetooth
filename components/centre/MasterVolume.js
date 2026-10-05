@@ -1,4 +1,5 @@
 .pragma library
+.import "Gauge.js" as Gauge
 
 // The general volume of a Listen together (D284): one master that moves every
 // member and keeps the gaps between them (general 50 % to 80 %: a member at
@@ -28,17 +29,18 @@ function scale(levels, from, to) {
     return levels.map(v => Math.max(0, Math.min(1, v * target / from)));
 }
 
-// Where a pointer at (x, y) sets the ring around the centre (0 at the top,
-// clockwise, 0..1), moved the short way from `last` so that crossing the top
-// does not jump from one end to the other
+// Where a pointer at (x, y) sets the gauge around (cx, cy): 0 at its start
+// (bottom left), 1 at its end (bottom right), the level held at both ends and
+// never wrapping. In the gap at the bottom it takes the end the pointer is
+// nearer to on a fresh press (`last` empty), and the end it came from while it
+// is held (`last` the level it read before), so crossing the gap does not jump.
 function fromPointer(cx, cy, x, y, last) {
-    let v = (Math.atan2(y - cy, x - cx) + Math.PI / 2) / (Math.PI * 2);
-    v = v - Math.floor(v);
-    if (last > 0.75 && v < 0.25)
-        return 1;
-    if (last < 0.25 && v > 0.75)
-        return 0;
-    return v;
+    const t = Gauge.turn(cx, cy, x, y);
+    if (t <= Gauge.SWEEP)
+        return t / Gauge.SWEEP;
+    if (last >= 0)
+        return last >= 0.5 ? 1 : 0;
+    return t - Gauge.SWEEP < (360 - Gauge.SWEEP) / 2 ? 1 : 0;
 }
 
 // The speaker that goes with the general level: crossed out when the group is
