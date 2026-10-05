@@ -19,6 +19,8 @@ Item {
     required property var scene
     required property ListModel model   // one entry per device body
     readonly property alias bodies: bodyRepeater
+    readonly property alias wiredMembers: wiredRepeater
+    readonly property alias beams: beamsLoader
     readonly property alias focusCard: focusCardItem
     readonly property alias tetherLayer: tetherLayerItem
     readonly property alias invitation: inviteLoader
@@ -38,7 +40,8 @@ Item {
         core.pulse();
     }
 
-    // Every device body, as a plain array
+    // Every body a device can be dropped on, as a plain array: the devices,
+    // then the wired outputs listening together
     function bodyList() {
         const all = [];
         for (let i = 0; i < bodyRepeater.count; i++) {
@@ -46,10 +49,10 @@ Item {
             if (b)
                 all.push(b);
         }
-        return all;
+        return all.concat(wiredRepeater.list());
     }
 
-    // A device drawn under this scene point, if any (devices passing behind
+    // A body drawn under this scene point, if any (devices passing behind
     // the core still get their clicks)
     function bodyAt(x, y) {
         for (let i = 0; i < bodyRepeater.count; i++) {
@@ -57,7 +60,7 @@ Item {
             if (b && !b.leaving && Math.hypot(x - b.px, y - b.py) < Physics.hitDiameter(b) / 2)
                 return b;
         }
-        return null;
+        return wiredRepeater.at(x, y);
     }
 
     // The host's orbits and the waves thrown from them, drawn once in the
@@ -161,6 +164,7 @@ Item {
     // planets, and the volume ring above the far side of the orbit; both sort
     // around the group's own stacking order (a copy's is groupZ + its depth)
     Loader {
+        id: beamsLoader
         anchors.fill: parent
         z: world.centre.groupZ - 2
         active: world.centre.shown
@@ -244,6 +248,12 @@ Item {
         delegate: DeviceBody {
             scene: world.scene
         }
+    }
+
+    // The group's wired members, drawn among the planets they listen with
+    WiredMembers {
+        id: wiredRepeater
+        scene: world.scene
     }
 
     // Black hole contents, slides up like the focus card

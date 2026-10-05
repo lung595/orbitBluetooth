@@ -1,7 +1,9 @@
 import QtQuick
+import "../together/Member.js" as Member
 import "Centre.js" as Centre
 import "Perspective.js" as Perspective
 import "Sun.js" as Sun
+import "WiredSign.js" as Sign
 
 // The scene while a Listen together takes the centre (D281-D285): the source
 // planet in the middle with its copies orbiting it, and the host revolving
@@ -29,6 +31,13 @@ Item {
     property var members: []
     property string source: ""
     readonly property var copies: Centre.copiesOf(members, source)
+    // One row per wired member of the group, for the wired discs and cables
+    // (WiredMembers, CentreBeams): a model and not an array, so a row that stays
+    // keeps its disc and its cable when another output comes or goes
+    readonly property alias wired: wiredRows
+    ListModel {
+        id: wiredRows
+    }
     // How far the camera has followed the source to the centre, and how far
     // the group has stepped back to give the centre to the host (a click on
     // the host): both 0..1 and driven by advance()
@@ -155,35 +164,41 @@ Item {
         return holds(b) ? groupGeometry() : sunGeometry();
     }
 
-    // Where a member of the group wants to be (null for anyone else), and its
-    // role there. A held member writes its own depth and disc size, which
-    // grows to its role at the pace of the voyage (a new source does not pop).
+    // Where a member of the group sits right now, whatever kind it is (Bluetooth
+    // or wired): { x, y, depth, size } by Centre.place
+    function spotOf(address) {
+        return Centre.place(sizes, group, Centre.roleOf(members, source, address), copies.indexOf(address), copies.length, Centre.phaseAt(scene.orbitTime));
+    }
+    // Where a member is drawn: its body's centre, or its spot for a wired
+    // member (it has no body to carry it there). null when it is not drawn.
+    function pointOf(address) {
+        const b = bodyOf(address);
+        if (b)
+            return {
+                "x": b.px,
+                "y": b.py
+            };
+        return Member.isWired(address) && members.indexOf(address) >= 0 ? spotOf(address) : null;
+    }
+
+    // Where a Bluetooth member of the group wants to be (null for anyone else),
+    // and its role there. A held member writes its own depth and disc size,
+    // which grows to its role at the pace of the voyage (a new source does not
+    // pop).
     function target(b, dt) {
         b.role = Centre.roleOf(isMember(b.address) ? members : [], source, b.address);
         if (!holds(b))
             return null;
-        const sz = sizes, c = group;
+        const spot = spotOf(b.address);
         const snap = !scene.motion;
-        const grow = goal => snap ? goal : Centre.grow(b.roleDiameter, goal, sz.source * c.scale, dt, Centre.VOYAGE);
-        if (b.role === "source") {
-            b.depth = 1;
-            b.roleDiameter = grow(sz.source * c.scale);
-            return {
-                "x": c.x,
-                "y": c.y,
-                "k": 55,
-                "zeta": 0.85,
-                "snap": snap
-            };
-        }
-        const slot = Centre.copySlot(sz.radius, c, copies.indexOf(b.address), copies.length, Centre.phaseAt(scene.orbitTime));
-        b.depth = slot.depth;
-        b.roleDiameter = grow(sz.copy * c.scale * Centre.depthSize(slot.depth));
+        const isSource = b.role === "source";
+        b.depth = spot.depth;
+        b.roleDiameter = snap ? spot.size : Centre.grow(b.roleDiameter, spot.size, sizes.source * group.scale, dt, Centre.VOYAGE);
         return {
-            "x": slot.x,
-            "y": slot.y,
-            "k": 45,
-            "zeta": 0.75,
+            "x": spot.x,
+            "y": spot.y,
+            "k": isSource ? 55 : 45,
+            "zeta": isSource ? 0.85 : 0.75,
             "snap": snap
         };
     }
@@ -221,6 +236,7 @@ Item {
         if (members.length > 0) {
             members = [];
             source = "";
+            _syncWired();
         }
         // Whether the session emptied its list before it ended or not
         sunPhase = Sun.REST;
@@ -270,6 +286,19 @@ Item {
             _origin = _positionOf(src);
         members = next;
         source = src;
+        _syncWired();
+    }
+    // Brings the rows of the wired members to the group's, leaving alone a row
+    // that stays
+    function _syncWired() {
+        const rows = [];
+        for (let i = 0; i < wiredRows.count; i++)
+            rows.push(wiredRows.get(i).address);
+        const change = Sign.reconcile(rows, members);
+        change.remove.forEach(i => wiredRows.remove(i));
+        change.add.forEach(address => wiredRows.append({
+                "address": address
+            }));
     }
     // The body of a device, null when there is none
     function bodyOf(address) {
