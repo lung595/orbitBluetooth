@@ -194,15 +194,41 @@ QtObject {
                 "address": who
             } : null;
         }
+        // The ghost group (OrbitGhost), as the real session answers it: a list can start
+        // when each member is an output the route knows or a wired one (by its node name)
+        function check(list) {
+            const unknown = list.find(a => !/^alsa_output\./.test(a) && fake.wired.indexOf(a) < 0 && !fake.known(a));
+            if (list.length < 2)
+                return {
+                    "why": "too-few",
+                    "address": ""
+                };
+            return unknown ? {
+                "why": "not-connected",
+                "address": unknown
+            } : null;
+        }
+        // A test can force a refusal; otherwise the session's own check decides
         function start(list) {
-            if (!fake.refusal)
-                fake.sharing = list;
-            return fake.refusal;
+            const r = fake.refusal || check(list);
+            if (!r)
+                fake.sharing = list.slice();
+            return r;
         }
         function add(list) {
             if (!fake.refusal)
                 fake.sharing = fake.sharing.concat(list);
             return fake.refusal;
+        }
+        // The groups the user turned down, by key (kept as long as the route)
+        property var declined: ({})
+        function decline(key) {
+            declined = Object.assign({}, declined, {
+                [key]: true
+            });
+        }
+        function isDeclined(key) {
+            return declined[key] === true;
         }
     }
     function known(address) {
@@ -255,5 +281,12 @@ QtObject {
     }
     function toggleMute(address) {
         return "pc";
+    }
+    // The Bluetooth devices that play sound, and the one in use (AudioRoute's
+    // audioDevices() and current), for a test to set: none at first
+    property var audio: []
+    property var current: null
+    function audioDevices() {
+        return audio;
     }
 }

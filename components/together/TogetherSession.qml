@@ -4,6 +4,7 @@ import QtQml
 import Quickshell.Services.Pipewire
 import "../common/Text.js" as Text
 import "Delay.js" as Delay
+import "Ghost.js" as Ghost
 import "Member.js" as Member
 import "Together.js" as Together
 import "Wired.js" as Wired
@@ -208,6 +209,9 @@ Item {
     function end(why, address) {
         if (!active)
             return false;
+        // A group the user ended is not proposed again at once (the ghost group)
+        if (!why || why === "ended")
+            decline(Ghost.key(members));
         members = [];
         delays = {};
         ended(why || "ended", address || "");
@@ -371,5 +375,18 @@ Item {
             copies: session._copies
             onLost: session.end("link-stopped", "")
         }
+    }
+
+    // --- The groups the user turned down ----------------------------------------------------
+    // The ghost group (OrbitGhost) proposes a group until it is refused or ended. The
+    // refusals are kept here, by the group's key (Ghost.key), because this session
+    // is the daemon's and outlives every view: they last until the shell ends, only in
+    // memory, nothing is written (value 5)
+    property var declined: ({})
+    function decline(key) {
+        declined = Ghost.withDeclined(declined, key);
+    }
+    function isDeclined(key) {
+        return Ghost.isDeclined(declined, key);
     }
 }

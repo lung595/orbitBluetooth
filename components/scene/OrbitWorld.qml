@@ -25,6 +25,7 @@ Item {
     readonly property alias tetherLayer: tetherLayerItem
     readonly property alias invitation: inviteLoader
     readonly property alias ring: ringLoader
+    readonly property alias ghostView: ghostLoader
 
     readonly property real dim: world.scene.focusBody || world.scene.hiddenOpen ? 0.12 : 1
     readonly property var centre: world.scene.centre
@@ -192,6 +193,19 @@ Item {
         opacity: world.dim
         sourceComponent: CentreLabel {
             centre: world.centre
+        }
+    }
+
+    // The group the scene proposes (OrbitGhost): a dotted planet on the host's ring,
+    // only while there is a proposal. It sorts among the planets as a device does.
+    Loader {
+        id: ghostLoader
+        anchors.fill: parent
+        z: world.scene.ghost.stack
+        active: world.scene.ghost.shown
+        opacity: world.dim
+        sourceComponent: GhostGroup {
+            ghost: world.scene.ghost
         }
     }
 
