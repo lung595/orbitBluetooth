@@ -44,9 +44,13 @@ Column {
 
     Item {
         width: parent.width
-        height: toggle.height
+        // As tall as the text, which wraps onto several lines, and never less
+        // than the switch: a height taken from the switch alone let the
+        // description spill over its neighbours
+        height: Math.max(toggle.height, texts.implicitHeight)
 
         Column {
+            id: texts
             width: parent.width - toggle.width - links.width - Theme.spacingM * 2
             anchors.verticalCenter: parent.verticalCenter
             spacing: Theme.spacingXS
