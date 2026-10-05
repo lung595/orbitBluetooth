@@ -6,7 +6,9 @@ import QtQuick
 // pause-on-removal streams).
 QtObject {
     property var node: null
-    property var linkGroups: Pipewire.playing ? [{
+    property var linkGroups: Pipewire.playing ? [
+        {
             "state": PwLinkState.Active
-        }] : []
+        }
+    ] : []
 }
