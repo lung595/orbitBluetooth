@@ -85,7 +85,10 @@ function togetherNote(why, name) {
         "member-out": { "title": who + " disconnected", "hint": "The others keep listening together" },
         "member-left": { "title": who + " disconnected", "hint": "Listening together ended with it" },
         "link-stopped": { "title": "Listening together stopped", "hint": "The copy of the sound ended: drag a device onto another to start again" },
-        "none": { "title": "Nothing is shared", "hint": "Drag a connected device onto another to listen together" }
+        "none": { "title": "Nothing is shared", "hint": "Drag a connected device onto another to listen together" },
+        // The group chooser (GroupChooser): too little ticked, or no room left in the group
+        "pick-more": { "title": "Tick another output", "hint": "Tick the outputs that should play together, then press the button" },
+        "full": { "title": "The group is full", "hint": "Up to " + Together.MAX_MEMBERS + " devices listen together: untick one, or let a member leave" }
     };
     var n = notes[why] || notes["link-stopped"];
     return { "title": n.title, "hint": n.hint, "anchor": n.anchor || "listen-together" };
