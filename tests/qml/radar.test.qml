@@ -55,6 +55,19 @@ Item {
         }
         return null;
     }
+    // A note of the radar's own layer is on screen, above the radar's view
+    function noteOver() {
+        const notes = [];
+        const walk = item => {
+            for (const child of item.children) {
+                if ("info" in child && "scene" in child && child.visible && child.z >= 20000 && child.parent !== scene)
+                    notes.push(child);
+                walk(child);
+            }
+        };
+        walk(h.radar);
+        return notes.length === 1 && !!notes[0].info;
+    }
     function near(a, b) {
         return Math.abs(a - b) < 0.011;
     }
@@ -89,6 +102,14 @@ Item {
                 check("the group's actions", [Radar.chips("group").map(c => c.id)], [["add", "stop"]]);
                 h.radar.close();
                 check("closed: gone again", [h.radar.open, h.view(scene)], [false, null]);
+                h.radar.show("");
+                scene.explain({
+                    "title": "A note",
+                    "hint": "Said over the veil",
+                    "anchor": ""
+                });
+                check("a guided note is drawn over the open radar, above its veil", h.noteOver(), true);
+                h.radar.close();
                 scene.focusOn(scene.centre.bodyOf(h.one));
             }
         },

@@ -174,4 +174,13 @@ Item {
             radar: orbit
         }
     }
+    // The sky's guided note lies under the veil: it is shown again over it, so a
+    // dial that cannot do what was asked never answers with silence (value 10)
+    Loader {
+        anchors.fill: parent
+        active: orbit.open
+        sourceComponent: OrbitNote {
+            scene: orbit.scene
+        }
+    }
 }
