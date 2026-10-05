@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQml
 import Quickshell.Services.Pipewire
+import "../common/Text.js" as Text
 import "Delay.js" as Delay
 import "Member.js" as Member
 import "Together.js" as Together
@@ -45,14 +46,24 @@ Item {
     signal memberLeft(string address)
 
     // The name the user sees, for a note: a device's name, or a wired
-    // output's description (cleaned, and never written to a log)
+    // output's description, as one clean line (Text.line) and never written to
+    // a log. A wired output that was unplugged is gone from PipeWire, yet the
+    // note that says so still names it: its name is kept while it is a member.
     function nameOf(who) {
         if (Member.isWired(who)) {
             const n = route.wiredSink(who);
-            return n ? Wired.labelOf(n.nickname || n.description) : "";
+            return n ? Wired.labelOf(n.nickname || n.description) : _wiredNames[who] || "";
         }
         const d = route.known(who);
-        return d ? d.name : "";
+        return d ? Text.line(d.name) : "";
+    }
+    property var _wiredNames: ({})
+    function _keepNames() {
+        const kept = {};
+        for (const who of members)
+            if (Member.isWired(who))
+                kept[who] = nameOf(who);
+        _wiredNames = kept;
     }
     function isMember(who) {
         return members.indexOf(who) >= 0;
@@ -141,10 +152,12 @@ Item {
         members = list;
         delays = {};
         _align(list);
+        _keepNames();
     }
     function _admit(newcomers) {
         members = members.concat(newcomers);
         _align(newcomers);
+        _keepNames();
     }
 
     // The drop of `a` onto `b` in the orbit: why it cannot be done, or null
@@ -193,6 +206,8 @@ Item {
         members = [];
         delays = {};
         ended(why || "ended", address || "");
+        // Only now: what hears `ended` may still ask for the name
+        _wiredNames = ({});
         return true;
     }
     function _leave(gone, why) {
@@ -205,6 +220,7 @@ Item {
         delays = Together.prune(delays, next);
         if (why === "member-left")
             gone.forEach(a => memberLeft(a));
+        _keepNames();
     }
 
     // A member's copy waits this long more, 0..1000 ms (a restart of that copy, no more)

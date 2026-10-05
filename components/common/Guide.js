@@ -1,5 +1,6 @@
 .pragma library
 .import "../together/Together.js" as Together
+.import "../together/Member.js" as Member
 
 // Links into docs/GUIDE.md, opened in the browser on click only: Orbit
 // itself never goes online for them (values 5 and 10)
@@ -62,11 +63,32 @@ function levelNote(why) {
     return "Use up, down, +5, -5 or a level from 0 to 100";
 }
 
+// The notes of Listen together that read differently for a wired output
+// (D298): it is plugged in and unplugged, never connected, and the wait that
+// lines it up is Orbit's to work out, the user only nudges it. null for a
+// reason that reads the same for both kinds.
+function wiredNote(why, name) {
+    var who = name || "This output";
+    var notes = {
+        "not-connected": { "title": who + " is not plugged in", "hint": "Plug it in and let it show in the sound settings, then add it again", "anchor": "wired-outputs" },
+        "member-out": { "title": who + " was unplugged", "hint": "The others keep listening together", "anchor": "wired-outputs" },
+        "member-left": { "title": who + " was unplugged", "hint": "Listening together ended with it", "anchor": "wired-outputs" },
+        "source": { "title": who + " is where the sound comes from", "hint": "Orbit sets its wait; nudge it with Wired delay in the settings", "anchor": "wired-delay" }
+    };
+    return notes[why] || null;
+}
+
 // Listen together could not start, a device could not join, or a member
 // left or the session ended (Together.refusal / joinRefusal and the
 // session): never a silent refusal (value 10). The multipoint section
 // explains an output that is away because the headset serves the phone.
-function togetherNote(why, name) {
+// `member` is the output the note is about when there is one (a Bluetooth
+// address or a wired output's node name, Member.js): a wired one is told in
+// its own words.
+function togetherNote(why, name, member) {
+    var wired = Member.isWired(member) ? wiredNote(why, name) : null;
+    if (wired)
+        return wired;
     var who = name || "This device";
     var notes = {
         "same": { "title": "Pick different devices", "hint": "Drag one device onto another" },

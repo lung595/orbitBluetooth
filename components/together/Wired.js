@@ -1,4 +1,5 @@
 .pragma library
+.import "../common/Text.js" as Text
 
 // Which wired outputs are plugged in right now (D298), read from
 // `pactl --format=json list sinks`: the headset on a USB cable, an audio
@@ -15,18 +16,11 @@
 var MAX_TEXT = 200000;
 // A half circle only holds so many arcs, and a list longer than this is noise
 var MAX_OUTPUTS = 16;
-// A label that fits a card without being cut by the interface
-var MAX_LABEL = 40;
 var FALLBACK_LABEL = "Wired output";
 
 // The sink's node name becomes a command argument later: the shape is checked
 // here, once, so every consumer can trust it
 var SINK_NAME = /^alsa_output\.[A-Za-z0-9_.+\-]{1,150}$/;
-
-// Control characters, plus the invisible ones that could reorder or hide text
-// (zero width, bidi overrides, byte order mark). Written as ranges: the engine
-// behind QML does not take \p{...} on every Qt version.
-var UNSEEN = /[\u0000-\u001f\u007f-\u009f​-‏‪-‮⁠-⁤⁦-⁩﻿]/g;
 
 // The exact command, as an argument list: never a shell string
 function command() {
@@ -36,10 +30,7 @@ function command() {
 // A sink's description (written by the driver, or by whoever plugged the
 // device) as a short line the card can show
 function labelOf(description) {
-    const text = typeof description === "string" ? description : "";
-    const line = text.replace(UNSEEN, " ").replace(/\s+/g, " ").trim();
-    // Cut by characters, not by UTF-16 units, so an emoji is never split in two
-    return Array.from(line).slice(0, MAX_LABEL).join("").trim() || FALLBACK_LABEL;
+    return Text.line(description) || FALLBACK_LABEL;
 }
 
 // A property read as a short lower case word ("usb", "headset"), "" otherwise

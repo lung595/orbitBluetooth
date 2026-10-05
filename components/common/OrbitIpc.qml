@@ -33,7 +33,7 @@ Scope {
     }
     // "OK", or the note of a refusal ({ why, address }) of the session
     function _answer(session, refusal) {
-        return refusal ? _say(Guide.togetherNote(refusal.why, session.nameOf(refusal.address))) : "OK";
+        return refusal ? _say(Guide.togetherNote(refusal.why, session.nameOf(refusal.address), refusal.address)) : "OK";
     }
 
     IpcHandler {
@@ -198,9 +198,9 @@ Scope {
             if (!session.active)
                 return ipc._say(Guide.togetherNote("no-session", ""));
             if (!session.isMember(who))
-                return ipc._say(Guide.togetherNote("not-member", session.nameOf(who)));
+                return ipc._say(Guide.togetherNote("not-member", session.nameOf(who), who));
             if (who === session.source)
-                return ipc._say(Guide.togetherNote("source", session.nameOf(session.source)));
+                return ipc._say(Guide.togetherNote("source", session.nameOf(who), who));
             if (!/^[0-9]{1,4}$/.test(String(ms || "").trim()) || parseInt(ms, 10) > Together.MAX_DELAY_MS)
                 return "Use: togetherDelay <device> 0.." + Together.MAX_DELAY_MS + " (milliseconds) · " + Guide.url("listen-together");
             session.setDelay(who, parseInt(ms, 10));
