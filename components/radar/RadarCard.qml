@@ -6,11 +6,14 @@ import "../card"
 // The radar's glass card, like the detail card's: a frosted surface, the hero's
 // name and what it is in the header, a way back to the group's level when the
 // hero is a member, and a way out that can always be seen. It only draws, and
-// says which button was pressed.
+// says which button was pressed. It fills the scene exactly (same rounded
+// rectangle, so the host's frame around it is the one around the sky).
 Item {
     id: card
 
     required property PaperColors paper
+    // The scene's own corner radius, so the card's edge is the scene's edge
+    property real radius: 0
     property string title: ""
     property string subtitle: ""
     // Whether the way back to the group's level is offered
@@ -21,7 +24,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        radius: Math.round(width * 0.05)
+        radius: card.radius
         color: card.paper.fill(0.95)
         border.width: 1
         border.color: card.paper.fg(0.07)
@@ -36,14 +39,14 @@ Item {
         visible: card.canGoBack
         paper: card.paper
         icon: "arrow_back"
-        x: Theme.spacingM
-        y: Theme.spacingM
+        x: Theme.spacingL
+        y: Theme.spacingL
         onClicked: card.back()
     }
     Column {
         x: card.canGoBack ? backButton.x + backButton.width + Theme.spacingS : Theme.spacingL
-        y: Theme.spacingM
-        width: parent.width - x - closeButton.width - Theme.spacingL
+        y: Theme.spacingL
+        width: parent.width - x - closeButton.width - Theme.spacingL - Theme.spacingS
         spacing: 1
         StyledText {
             width: parent.width
@@ -65,8 +68,8 @@ Item {
         id: closeButton
         paper: card.paper
         icon: "close"
-        x: parent.width - width - Theme.spacingM
-        y: Theme.spacingM
+        x: parent.width - width - Theme.spacingL
+        y: Theme.spacingL
         onClicked: card.closed()
     }
 }

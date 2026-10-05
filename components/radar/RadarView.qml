@@ -4,9 +4,10 @@ import "../volume"
 import "Radar.js" as Radar
 import "RadarMotion.js" as Motion
 
-// The volume radar, drawn: a soft scrim over the sky, a glass card like the detail
-// card's, the hero's big dial in the middle with its actions under it, and the other
-// levels as small dials around it, each a tap from being the hero. What it shows and
+// The volume radar, drawn: a glass card like the detail card's that fills the scene
+// exactly (so the host's frame around it is the one around the sky), the hero's big
+// dial in the middle with its name and actions under it, and the other levels as
+// small dials around it, each a tap from being the hero. What it shows and
 // does is the state's (OrbitRadar); this places the dials, passes the gestures on and
 // owns the motion: one clock that runs only while something moves (the entrance, a
 // hero swap, a level gliding, the mute ring) and never with Reduce motion.
@@ -23,12 +24,14 @@ Item {
     readonly property real margin: 12
     readonly property real headerHeight: 58
     readonly property real chipsHeight: 30
+    // The hero's name, written just under its dial
+    readonly property real nameHeight: 24
     readonly property real side: Math.max(160, Math.min(width - margin * 2, height - margin * 2 - headerHeight) * 0.92)
     readonly property var places: Radar.layout(radar.look, radar.ids.length - 1, side)
     // The hero, the small dials above it and the actions under it are centred as one
     // block, under the header
     readonly property real above: Math.max(places.hero.r, ...places.satellites.map(s => s.r - s.y))
-    readonly property real below: places.hero.r + chipsHeight + 20
+    readonly property real below: places.hero.r + nameHeight + chipsHeight + 20
     readonly property real cx: width / 2
     readonly property real cy: margin + headerHeight + (height - margin * 2 - headerHeight + above - below) / 2
 
@@ -174,29 +177,15 @@ Item {
         bases: [view.night.primary, view.night.secondary, view.night.tertiary]
     }
 
-    // A tap beside the card closes it, as Escape does
-    Rectangle {
-        anchors.fill: parent
-        radius: view.radar.scene.cornerRadius
-        color: view.night.smoke(0.55)
-        opacity: view.cardIn
-        MouseArea {
-            anchors.fill: parent
-            onClicked: view.radar.close()
-        }
-    }
-
     RadarCard {
-        x: view.margin
-        y: view.margin
-        width: view.width - view.margin * 2
-        height: view.height - view.margin * 2
+        width: view.width
+        height: view.height
+        radius: view.radar.scene.cornerRadius
         paper: view.paper
         title: view.infoOf(view.radar.heroId).name
         subtitle: Radar.subtitle(view.radar.kindOf(view.radar.heroId), view.radar.members.length)
         canGoBack: view.radar.heroId !== "group"
         opacity: view.cardIn
-        scale: 0.96 + 0.04 * view.cardIn
         onBack: view.radar.show("")
         onClosed: view.radar.close()
     }
@@ -230,7 +219,7 @@ Item {
         id: chips
         width: Math.min(view.width - view.margin * 2 - 24, chips.natural)
         x: view.cx - width / 2
-        y: view.cy + view.places.hero.r + 14
+        y: view.cy + view.places.hero.r + view.nameHeight + 14
         paper: view.paper
         opacity: view.cardIn
         model: Radar.chips(view.radar.kindOf(view.radar.heroId))

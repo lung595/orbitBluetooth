@@ -358,7 +358,7 @@ Under the big dial, the actions that go with it, as glass pills (the destructive
 - a wired member: *Disconnect* (it leaves the group and stays plugged in) and *Hide*;
 - the group: *Add a device…* and *Stop group*.
 
-A member whose device keeps no level of its own says so instead of staying silent (see [The volume at the center](#the-volume-at-the-center)). <kbd>Esc</kbd>, the ✕ or a tap beside the card closes the radar, at once.
+A member whose device keeps no level of its own says so instead of staying silent (see [The volume at the center](#the-volume-at-the-center)). <kbd>Esc</kbd> or the ✕ closes the radar, at once. The card fills the orbit edge to edge, so the frame around it is the orbit's own, and the big dial's name is written just under it.
 
 **What moves**: when it opens, the card fades and grows in, the big dial's arc sweeps up to its level and the small dials pop in one after the other. Tap a small dial and the dials glide to their new places: the one you tapped grows into the middle while the old big one shrinks into its place. A level glides to its new value instead of jumping, so a drag feels smooth (the number always shows the real value). Muting sends a ring out of the speaker.
 

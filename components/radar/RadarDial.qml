@@ -172,18 +172,18 @@ Item {
         }
     }
 
-    // The name of a small dial, under it (the hero's is the card's title)
+    // The name of a dial, just under it: small on a small dial, larger on the hero
     StyledText {
-        visible: !dial.hero
-        y: dial.height + 2
+        y: dial.height + (dial.hero ? 6 : 2)
         anchors.horizontalCenter: parent.horizontalCenter
         width: Math.max(72, dial.radius * 3)
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.NoWrap
         elide: Text.ElideRight
         text: dial.info.name
-        color: dial.paper.fg(dial.hovered ? 0.9 : 0.62)
-        font.pixelSize: 11
+        color: dial.paper.fg(dial.hero || dial.hovered ? 0.9 : 0.62)
+        font.pixelSize: dial.hero ? 14 : 11
+        font.weight: dial.hero ? Font.Medium : Font.Normal
     }
 
     MouseArea {
