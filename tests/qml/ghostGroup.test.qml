@@ -7,6 +7,7 @@ import "components/centre"
 import "components/scene"
 import "components/scene/Physics.js" as Physics
 import "components/together"
+import "components/together/Habits.js" as Habits
 import "mock"
 import "mock/Devices.js" as Devices
 import "mock/State.js" as State
@@ -17,8 +18,9 @@ import "mock/State.js" as State
 // own over a real TogetherSession: what it proposes (and what it leaves out,
 // each with its counter-proof), that a refusal is remembered by the set until
 // the shell ends, never during a session, never when the engine would refuse,
-// what a click does and says, the fade, and that a closed orbit reads and runs
-// nothing. The second part runs the whole scene with real mouse events: the
+// what a click does and says, the fade, that a learned group (D299) is proposed
+// whole while the pair is what is proposed without one, that a hidden output is
+// left out, and that a closed orbit reads and runs nothing. The second part runs the whole scene with real mouse events: the
 // ghost takes a slot on the ring like the group would, the loop still settles
 // with Reduce motion, a click or a cross answers, and the group takes over. The
 // scene runs on its real timers, so each step waits a moment. Run with
@@ -321,7 +323,32 @@ Item {
         check("Reduce motion: it goes at once, no fade", [ghost.presence, ghost.shown], [0, false]);
         solo.motion = true;
         plug(h.one, "Pulse Two");
-        check("a different set is a different proposal: refused is not forgotten for it", [ghost.offered, ghost.proposal.members], [true, [h.dongle, h.headset, h.one]]);
+        check("counter-proof: a third output changes nothing without a memory: still the pair that was turned down", [ghost.offered, ghost.proposal.members], [false, [h.dongle, h.headset]]);
+        const learned = Habits.record({}, [h.dongle, h.headset, h.one], Date.now());
+        solo.prefs = {
+            "togetherCentre": true,
+            "learnHabits": true,
+            "togetherHabits": learned
+        };
+        check("a learned group is a different set: refused is not forgotten for it, and it is proposed whole", [ghost.offered, ghost.proposal.members], [true, [h.dongle, h.headset, h.one]]);
+        solo.prefs = {
+            "togetherCentre": true,
+            "learnHabits": false,
+            "togetherHabits": learned
+        };
+        check("counter-proof: learning is off, the memory is not used: the pair again", [ghost.offered, ghost.proposal.members], [false, [h.dongle, h.headset]]);
+        solo.prefs = {
+            "togetherCentre": true,
+            "learnHabits": true,
+            "togetherHabits": learned,
+            "hiddenDevices": {
+                [h.one]: "Pulse Two"
+            }
+        };
+        check("a hidden output is left out of the learned group: the pair", [ghost.offered, ghost.proposal.members], [false, [h.dongle, h.headset]]);
+        solo.prefs = {
+            "togetherCentre": true
+        };
         unplug(h.one);
 
         // A refusal
@@ -400,7 +427,16 @@ Item {
         h.pipewire(null, [studioNode]);
         check("a wired output appears among PipeWire's nodes: the list is read again", reader.running, true);
         finish(ghost, 0, listing([h.dongle, h.studio]));
-        check("up to four members, the output in use first, the others in a fixed order", ghost.proposal.members, [h.headset, h.dongle, h.studio]);
+        check("a pair only: the output in use and the first of them", ghost.proposal.members, [h.headset, h.dongle]);
+        solo.prefs = {
+            "togetherCentre": true,
+            "learnHabits": true,
+            "togetherHabits": Habits.record({}, [h.headset, h.dongle, h.studio], Date.now())
+        };
+        check("a learned group is proposed whole, the output in use first", ghost.proposal.members, [h.headset, h.dongle, h.studio]);
+        solo.prefs = {
+            "togetherCentre": true
+        };
         finish(ghost, 0, "[]");
         check("counter-proof: everything is unplugged: no ghost", ghost.offered, false);
 
@@ -473,6 +509,13 @@ Item {
     }
     function view() {
         return scene.world.ghostView.item;
+    }
+    // The scene's own settings, as the shell saves them: a memory that has seen this group used
+    function learn(members) {
+        SettingsData.pluginSettings = Object.assign({}, SettingsData.pluginSettings, {
+            "togetherHabits": Habits.record({}, members, Date.now())
+        });
+        PluginService.pluginDataChanged("orbitBluetooth");
     }
     function clickGhost(button) {
         mouse.mouseClick(scene, scene.ghost.px, scene.ghost.py, button);
@@ -566,7 +609,9 @@ Item {
             "until": () => scene.settled,
             "run": () => {
                 const g = scene.ghost;
-                check("another set is proposed: up to four, the output in use first", [g.offered, g.proposal.members], [true, [h.dongle, h.headset, h.one]]);
+                check("counter-proof: a third device is connected, and the pair that was turned down stays down", [g.offered, g.proposal.members], [false, [h.dongle, h.headset]]);
+                h.learn([h.dongle, h.headset, h.one]);
+                check("a learned group is another set: it is proposed whole, the output in use first", [g.offered, g.proposal.members], [true, [h.dongle, h.headset, h.one]]);
                 check("(its own key)", g.key !== h.key, true);
                 const key = g.key;
                 route.audio = [route.known(h.one), route.headset];
@@ -583,6 +628,7 @@ Item {
                 h.clickCross();
                 check("the cross turns it down, and starts nothing", [route.together.isDeclined(scene.ghost.key), scene.ghost.offered, route.sharing], [true, false, []]);
                 route.audio = [route.headset, route.known(h.one), route.known(h.two)];
+                h.learn([h.dongle, h.headset, h.one, h.two]);
             }
         },
         {

@@ -3,12 +3,14 @@ import Quickshell.Services.Pipewire
 import "../common/Guide.js" as Guide
 import "../together"
 import "../together/Ghost.js" as Ghost
+import "../together/Habits.js" as Habits
 import "../together/Member.js" as Member
 import "Centre.js" as Centre
 import "Perspective.js" as Perspective
 
-// The group the scene proposes (D298): the sound goes to a wired output and a
-// Bluetooth device is connected, or the other way round. A ghost planet, a
+// The group the scene proposes (D298, D299): the sound goes to a wired output and a
+// Bluetooth device is connected, or the other way round. It is the group the user
+// listens to most when that is all there, else a pair. A ghost planet, a
 // group that does not exist yet, takes the slot on the host's ring where the
 // real group would sit (Fedora's view, never the group's own). A click makes it
 // real; a right click or the cross turns it down until the shell ends
@@ -48,11 +50,14 @@ Item {
     }
     readonly property var _bluetooth: _open ? route.audioDevices().map(d => d.address) : []
 
-    // The wired outputs plugged in are read only while the sound goes to Bluetooth: the
-    // other way round the output in use is the wired one, and its name is all that is needed
+    // What the ghost has learned of the user's groups (D299); nothing while learning is off
+    readonly property var _habits: scene.prefs.learnHabits ? scene.prefs.togetherHabits : null
+    // The wired outputs plugged in are read while the sound goes to Bluetooth, and otherwise
+    // only if a learned group holds an output that is not already known: when the output in
+    // use is the wired one, its name is all the pair needs
     WiredWatch {
         id: watch
-        active: ghost._open && !!ghost.route.current
+        active: ghost._open && (!!ghost.route.current || Habits.reaches(ghost._habits, [ghost._heard].concat(ghost._bluetooth)))
     }
     // ...and again when something that could change the answer did (a cable plugged in
     // makes a node appear, the output in use changes): nothing is polled
@@ -60,12 +65,17 @@ Item {
     on_OutputsChanged: if (_open)
         watch.refresh()
 
-    // The group to propose: { members, key }, or null. The session's own rules decide who
-    // can be in, so a click does what the ghost shows.
+    // The group to propose: { members, key }, or null: the group the user listens to most
+    // when it is all there, else a pair. What the user hid is never in it, and the session's
+    // own rules decide who can be in, so a click does what the ghost shows.
     readonly property var proposal: _open ? Ghost.proposal({
         "output": _heard,
         "bluetooth": _bluetooth,
-        "wired": watch.outputs.map(o => o.sink)
+        "wired": watch.outputs.map(o => o.sink),
+        "hidden": scene.prefs.hiddenDevices,
+        "habits": _habits,
+        "day": Habits.dayOf(Date.now()),
+        "declined": session.declined
     }, list => session.check(list)) : null
     readonly property string key: proposal ? proposal.key : ""
     // Proposed, and not turned down

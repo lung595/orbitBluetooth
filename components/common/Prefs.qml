@@ -22,7 +22,7 @@ QtObject {
     // The settings that hold a map change only when their content does: a
     // fresh object on every save (a volume level, a hidden device) would
     // wake every view bound to any of them (P137)
-    readonly property var _maps: ["ignoredDevices", "glyphOverrides", "hiddenDevices", "pcLevels"]
+    readonly property var _maps: ["ignoredDevices", "glyphOverrides", "hiddenDevices", "pcLevels", "togetherHabits"]
     function _load() {
         _data = SettingsData.getPluginSettingsForPlugin(pluginId) || ({});
         for (const key of _maps) {
@@ -69,6 +69,11 @@ QtObject {
     // Listen together: a nudge (ms, -100..100) on the automatic wait of the
     // wired outputs, for what the figures cannot know (a speaker's own delay)
     readonly property int togetherFineDelay: Delay.cleanFine(Number(_get("togetherFineDelay", 0)))
+    // The ghost group learns which outputs are listened to together (D299): on
+    // by default since it is only hashes, capped and local; off erases it
+    readonly property bool learnHabits: _get("learnHabits", true)
+    // What it learned: a group of hashed members -> { n: uses, d: day of the last }
+    property var togetherHabits: ({})
     readonly property string imageFolder: _get("imageFolder", "")
     property var glyphOverrides: ({})
     readonly property bool ancEnabled: _get("ancEnabled", true)

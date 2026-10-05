@@ -1,12 +1,14 @@
 .pragma library
+.import "Habits.js" as Habits
 .import "Member.js" as Member
 .import "Together.js" as Together
 
 // The group the scene proposes (D298): while the sound goes to a wired output
 // and a Bluetooth device is connected, or the other way round, a ghost planet
 // offers to make them listen together. This is its pure logic: which outputs
-// it would put together, the key a refusal is remembered by, and what a new
-// reading of the plugged outputs depends on. The QML only reads and draws.
+// it would put together (the group the user listens to most, D299, else a
+// pair), the key a refusal is remembered by, and what a new reading of the
+// plugged outputs depends on. The QML only reads and draws.
 // Tested by tests/ghost.test.js.
 
 // How many refusals are kept in memory: plugging and unplugging all day never
@@ -39,30 +41,43 @@ function key(members) {
     return (Array.isArray(members) ? members : []).map(Member.clean).filter(a => !!a).sort().join(",");
 }
 
+// Whether `who` was hidden by the user (the black hole's store: member -> name)
+function isHidden(hidden, who) {
+    return !!who && !!hidden && typeof hidden === "object" && hidden[who] !== undefined;
+}
+
+// What is left of a list of outputs once the hidden ones are out: a hidden
+// output is never proposed, whatever the memory says
+function shown(list, hidden) {
+    return (Array.isArray(list) ? list.slice(0, MAX_POOL) : []).filter(who => !isHidden(hidden, Member.clean(who)));
+}
+
 // The group to propose, or null: { members, key }. `facts` is { output, bluetooth,
-// wired }: the member that is the output in use (a Bluetooth address, or a
-// wired output's node name; "" when it is neither), the Bluetooth devices
-// connected with a sound output, the wired outputs plugged in. The output in
-// use comes first, then the candidates of the other kind in a fixed order, at
-// most Together.MAX_MEMBERS in all. `check(list)` is the session's own
-// (TogetherSession.check: null when the list could start): a candidate it
-// would refuse (a headset in call mode, an output that has gone quiet) is left
-// out, so what is proposed is what a click can do.
+// wired, hidden, habits, day, declined }: the member that is the output in use
+// (a Bluetooth address, or a wired output's node name; "" when it is neither),
+// the Bluetooth devices connected with a sound output, the wired outputs plugged
+// in, the hidden outputs, what Habits remembers with today's day number, and the
+// groups the user turned down. The group is the learned one worth most whose
+// members are all there (Habits.choose); with none, a pair: the output in use
+// and its most used partner among the candidates of the other kind, else the
+// first of them. Never the whole lot: a bigger group is built in the chooser.
+// `check(list)` is the session's own (TogetherSession.check: null when the list
+// could start): what it would refuse (a headset in call mode, an output that
+// has gone quiet) is left out, so what is proposed is what a click can do.
 function proposal(facts, check) {
     const f = facts && typeof facts === "object" ? facts : {};
     const output = Member.clean(f.output);
-    if (!output || typeof check !== "function")
+    if (!output || typeof check !== "function" || isHidden(f.hidden, output))
         return null;
-    const members = [output];
-    for (const who of others(output, Member.isWired(output) ? f.bluetooth : f.wired)) {
-        if (members.length >= Together.MAX_MEMBERS)
-            break;
+    const bluetooth = shown(f.bluetooth, f.hidden);
+    const wired = shown(f.wired, f.hidden);
+    const learned = Habits.choose(f.habits, f.day, output, bluetooth.concat(wired), list => !isDeclined(f.declined, key(list)) && !check(list));
+    if (learned)
+        return { "members": learned, "key": key(learned) };
+    for (const who of Habits.bestFirst(f.habits, f.day, output, others(output, Member.isWired(output) ? bluetooth : wired)))
         if (!check([output, who]))
-            members.push(who);
-    }
-    if (members.length < 2 || check(members))
-        return null;
-    return { "members": members, "key": key(members) };
+            return { "members": [output, who], "key": key([output, who]) };
+    return null;
 }
 
 // --- The refusals ----------------------------------------------------------------------

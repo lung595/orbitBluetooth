@@ -7,6 +7,7 @@ import qs.Services
 import "components/common"
 import "components/noise"
 import "components/pairing"
+import "components/together"
 import "components/volume"
 import "components/wear"
 import "components/common/Address.js" as Address
@@ -87,6 +88,12 @@ Item {
     }
 
     readonly property alias route: audioRoute
+
+    // What the user listens to together, kept for the ghost group (D299)
+    HabitLog {
+        session: audioRoute.together
+        prefs: prefs
+    }
 
     // The pop-up that shows both levels whenever one changes (D252, D258)
     // The volume keys and Orbit's smart steps, on the user's click (D265)
