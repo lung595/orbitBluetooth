@@ -46,7 +46,13 @@ Item {
         canvas.requestPaint()
 
     readonly property var _scales: sectors.map(t => t.scale)
-    onSectorsChanged: if (visible)
+    // A step of the sectors (every volume step moves their sizes) asks for a
+    // picture only when nothing else is about to paint it: a blank picture needs
+    // none, and while the feed's frames or the fade run, the next of them (at
+    // most two periods away) carries the new sectors. Asking at every step as
+    // well painted the same picture again, about twice as often while a volume
+    // key is held over playing sound.
+    onSectorsChanged: if (visible && model.alive > 0 && !model.animating)
         canvas.requestPaint()
 
     // A muted sector keeps a faint picture
