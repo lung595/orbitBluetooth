@@ -63,6 +63,21 @@ function depthAt(g, y) {
     return Math.max(-1, Math.min(1, (y - g.cy) / Math.max(1, g.ry)));
 }
 
+// The height of the orbits' ellipse in the view: flattened to FLAT in the
+// profile view, never taller than it was
+function beltRy(g, profile) {
+    return lerp(g.ry, Math.min(g.ry, g.rx * FLAT), profile);
+}
+
+// The same factor for a body that floats at screen height `y` (the black hole):
+// its depth from where it is in the view's belt, then how much bigger or smaller
+// it looks. `g` is the scene's own geometry: only its middle line and its belt
+// are read, never the black hole's own fields, so that the hole's size can
+// depend on this without a loop.
+function leanAt(g, y, profile) {
+    return lean(depthAt({ "cy": g.cy, "ry": beltRy(g, profile) }, y), profile);
+}
+
 // The scene's geometry as the profile view sees it: the orbits flattened to
 // FLAT and the connected ring centred on the host (from level, the ring's near
 // and far edges are the same distance from its middle). `g` itself, not a
@@ -71,7 +86,7 @@ function flat(g, profile) {
     if (profile <= 0)
         return g;
     const o = copy(g);
-    o.ry = lerp(g.ry, Math.min(g.ry, g.rx * FLAT), profile);
+    o.ry = beltRy(g, profile);
     o.ringRy = lerp(g.ringRy, Math.min(g.ringRy, g.rx * g.innerNorm * FLAT), profile);
     o.ringCy = lerp(g.ringCy, g.cy, profile);
     return o;

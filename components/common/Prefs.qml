@@ -2,6 +2,7 @@ import QtQuick
 import qs.Common
 import qs.Services
 import "../together/Delay.js" as Delay
+import "Hidden.js" as Hidden
 import "../volume/Audiophile.js" as Audiophile
 import "../volume/Polar.js" as Polar
 import "../volume/Steps.js" as Steps
@@ -159,16 +160,11 @@ QtObject {
     }
 
     function isHidden(address) {
-        return !!address && hiddenDevices[address] !== undefined;
+        return Hidden.isHidden(hiddenDevices, address);
     }
 
     function setHidden(address, name, hidden) {
-        const next = Object.assign({}, hiddenDevices);
-        if (hidden)
-            next[address] = name || address;
-        else
-            delete next[address];
-        set("hiddenDevices", next);
+        set("hiddenDevices", Hidden.set(hiddenDevices, address, name, hidden));
     }
 
     function imageFor(device) {

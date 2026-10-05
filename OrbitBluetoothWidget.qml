@@ -5,6 +5,7 @@ import qs.Widgets
 import qs.Modules.Plugins
 import "components/device"
 import "components/scene"
+import "components/common/Hidden.js" as Hidden
 import "components/device/DeviceCatalog.js" as Catalog
 
 // Bar pill + bar popout + Control Center tile. The Control Center detail is a
@@ -20,7 +21,7 @@ PluginComponent {
     readonly property var hiddenDevices: pluginData.hiddenDevices ?? ({})
     readonly property var connectedDevices: {
         const all = BluetoothService.adapter?.devices?.values ?? [];
-        return all.filter(d => d && d.connected && hiddenDevices[d.address] === undefined);
+        return all.filter(d => d && d.connected && !Hidden.isHidden(hiddenDevices, d.address));
     }
     readonly property var overrides: pluginData.glyphOverrides ?? ({})
 

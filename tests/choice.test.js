@@ -132,6 +132,32 @@ eq("adding nobody is not an addition", [Choice.outcome([XM, AV], []).why, Choice
 eq("nothing given, nothing asked", [Choice.outcome(null, null), Choice.outcome("x", { "length": 2 })], [{ "mode": "start", "list": [], "why": "pick-more" }, { "mode": "start", "list": [], "why": "pick-more" }]);
 eq("a lone member is no group: a new one is made", Choice.outcome([XM], [AV, SP1]), { "mode": "start", "list": [AV, SP1], "why": "" });
 
+// --- Hidden devices (the eye of a row, the black hole) ----------------------------------------------
+const hide = (list, extra) => view(Object.assign({ "hidden": list.reduce((m, id) => Object.assign(m, { [id]: "name of " + id }), {}) }, extra));
+const away = hide([W2, AV, MOUSE]);
+eq("a hidden output leaves its section, wired or Bluetooth", ids(away).filter(s => s[0] !== "hidden"), [["wired", [W1, W4, W3]], ["bluetooth", [CALL, SP1, BUDS, XM]]]);
+eq("and is listed in the Hidden section, last, by name", ids(away).pop(), ["hidden", []]);
+const open = hide([W2, AV, MOUSE], { "showHidden": true });
+eq("open, the Hidden section lists the store, even a device that plays no sound", ids(open).pop(), ["hidden", [W2, MOUSE, AV]]);
+eq("a hidden row is shown as such: faint, never ticked", ["why", "ticked", "locked", "caption"].map(k => row(open, W2)[k]), ["hidden", false, false, ""]);
+eq("it keeps the picture and the name of the output that is there", [row(open, W2).icon, row(open, W2).label, row(open, AV).icon, row(open, AV).label], ["usb", "Acme Studio 2x2", "speaker_group", "Living Room Bar"]);
+eq("every section says how many rows it holds, the folded one how many it hides", away.sections.map(s => [s.id, s.count]), [["wired", 3], ["bluetooth", 4], ["hidden", 3]]);
+const LOST = "AA:BB:CC:DD:EE:99";
+const gone = view({ "hidden": { [W5]: "Old Dock", [LOST]: "Old Buds" }, "showHidden": true });
+eq("a hidden output that is not there is listed from the store, by the name it had", ids(gone).pop(), ["hidden", [LOST, W5]]);
+eq("it has the generic picture of its kind", [row(gone, W5).icon, row(gone, W5).label, row(gone, LOST).icon, row(gone, LOST).label], ["cable", "Old Dock", "bluetooth", "Old Buds"]);
+eq("nothing hidden, no Hidden section", ids(view({ "hidden": {} })).map(s => s[0]), ["wired", "bluetooth"]);
+eq("hidden outputs do not count for a group to make", [view({ "wired": [wired[0]], "bluetooth": [body(XM, "Solo", "speaker")], "hidden": { [W1]: "x" } }).enough, view({ "wired": [wired[0]], "bluetooth": [body(XM, "Solo", "speaker")], "hidden": {} }).enough], [false, true]);
+eq("what is ticked is dropped once it is hidden", view({ "chosen": [XM, AV], "hidden": { [AV]: "x" } }).chosen, [XM]);
+eq("a member is never hidden away: it stays in its section", [ids(hide([XM], { "members": [XM, W1] })).map(s => s[0]), row(hide([XM], { "members": [XM, W1] }), XM).why], [["wired", "bluetooth"], "already"]);
+eq("a hidden id is read in any spelling", ids(view({ "hidden": { [XM]: "x" }, "bluetooth": [body(XM.toLowerCase(), "Low", "speaker")] })).pop(), ["hidden", []]);
+eq("the store is trusted for nothing: junk keys and junk stores give no row", [hide(["x", "alsa_output.x; rm", "AA:BB"], { "showHidden": true }).sections.some(s => s.id === "hidden"), view({ "hidden": "x" }).sections.length, view({ "hidden": [XM] }).sections.length, view({ "hidden": null }).sections.length], [false, 2, 2, 2]);
+eq("hidden: a folded section is told apart from an open one", [away.sections.pop().rows.length, open.sections.pop().rows.length], [0, 3]);
+eq("what is given to hide is never changed", (() => { const store = { [W2]: "x" }; const before = JSON.stringify(store); view({ "hidden": store, "showHidden": true }); return JSON.stringify(store) === before; })(), true);
+eq("hideWhy: a member of the group cannot be hidden, a lone one is no member", [Choice.hideWhy([XM, AV], {}, XM), Choice.hideWhy([XM], {}, XM), Choice.hideWhy([], {}, XM)], ["in-group", "", ""]);
+eq("hideWhy: a wired member too", Choice.hideWhy([XM, W1], {}, W1), "in-group");
+eq("hideWhy: not an output, or a store that is full, say so", [Choice.hideWhy([], {}, "x; rm"), Choice.hideWhy([], Object.fromEntries(Array.from({ length: 64 }, (_, i) => ["AA:BB:CC:DD:" + (i < 16 ? "0" : "") + i.toString(16).toUpperCase() + ":01", "n"])), XM)], ["bad-address", "hidden-full"]);
+
 // --- The words -----------------------------------------------------------------------------------------
 eq("no group yet: it is created", [Choice.labels([]).entry, Choice.labels(null).title, Choice.labels([XM]).action], ["Create a group…", "Create a group", "Listen together"]);
 eq("a group there is: outputs are added", [Choice.labels([XM, AV]).entry, Choice.labels([XM, AV]).title, Choice.labels([XM, AV]).action], ["Add to the group…", "Add to the group", "Add"]);

@@ -15,6 +15,11 @@ import "../together/Choice.js" as Choice
 // lists the wired outputs: closed, nothing of it runs (value 6).
 // A click on a row that cannot be ticked says why and leaves the chooser open
 // (value 10); Escape, or a click elsewhere, closes the whole menu.
+// What the user does not want in the list is hidden from it: the eye of a row
+// (or H) hides the output, a row dragged onto the black hole too (a chip with
+// its picture follows the pointer, the hole lights up and shows an eye); the
+// hidden ones wait in a folded Hidden section, each with an eye to bring it
+// back. The store is the black hole's, so the count there and its card follow.
 Rectangle {
     id: chooser
 
@@ -36,6 +41,13 @@ Rectangle {
     property string cursorId: ""
     // The cursor was moved by a key: the list scrolls to it
     property bool byKey: false
+    // The Hidden section is open (it starts folded)
+    property bool hiddenOpen: false
+    // The row carried to the black hole, where the pointer is (in the chooser's
+    // coordinates) and whether letting go there hides it
+    property var carrying: null
+    property point carryAt: Qt.point(0, 0)
+    property bool overHole: false
 
     readonly property var words: Choice.labels(scene.together.members())
     readonly property var view: Choice.build({
@@ -43,8 +55,12 @@ Rectangle {
         "bluetooth": bluetooth(),
         "members": scene.together.members(),
         "chosen": chosen,
+        "hidden": scene.prefs.hiddenDevices,
+        "showHidden": hiddenOpen,
         "refusal": who => scene.together.memberCheck(who)
     })
+    // Something is hidden: the Hidden section is there
+    readonly property bool anyHidden: view.sections.some(s => s.id === "hidden")
     readonly property var rows: [].concat(...view.sections.map(s => s.rows))
     readonly property var plan: Choice.outcome(scene.together.members(), view.chosen)
     // Nothing to make a group of, now that the wired outputs have been read
@@ -65,12 +81,46 @@ Rectangle {
                 }));
     }
 
-    // A click on a row: it is ticked or unticked, or says why it cannot be
+    // A click on a row: it is ticked or unticked, or says why it cannot be; a
+    // hidden one is brought back
     function pick(row) {
-        if (row.why)
+        if (row.section === "hidden")
+            bringBack(row);
+        else if (row.why)
             refused(row.why, row.id);
         else
             chosen = Choice.toggle(view.chosen, row.id);
+    }
+    // The eye of a row: hides the output, or brings it back; the scene says
+    // why when it cannot be hidden (a member of the group)
+    function eyeOf(row) {
+        if (row.section === "hidden")
+            bringBack(row);
+        else
+            scene.hideById(row.id, row.label);
+    }
+    // A hidden output is back; the section folds again once it is empty
+    function bringBack(row) {
+        if (view.sections.find(s => s.id === "hidden").count <= 1)
+            hiddenOpen = false;
+        scene.unhide(row.id);
+    }
+    // A row is carried and the pointer is at `at` in `line`: the chip follows it
+    // and the hole feeds on it
+    function carry(line, at) {
+        carrying = line.row;
+        carryAt = chooser.mapFromItem(line, at.x, at.y);
+        overHole = scene.carryToHole(scene.mapFromItem(line, at.x, at.y));
+    }
+    // It was let go: over the hole, the output is hidden
+    function drop() {
+        const row = carrying;
+        const hit = overHole;
+        carrying = null;
+        overHole = false;
+        scene.dropFromHole();
+        if (hit && row)
+            eyeOf(row);
     }
     // The button: the group, or why it is not one yet
     function confirm() {
@@ -98,6 +148,12 @@ Rectangle {
                 pick(row);
         } else if (key === Qt.Key_Return || key === Qt.Key_Enter) {
             confirm();
+        } else if (key === Qt.Key_H) {
+            const row = rows.find(r => r.id === cursorId);
+            if (row)
+                eyeOf(row);
+        } else if ((key === Qt.Key_Right || key === Qt.Key_Left) && anyHidden) {
+            hiddenOpen = key === Qt.Key_Right;
         } else {
             return false;
         }
@@ -137,6 +193,8 @@ Rectangle {
     focus: true
     Keys.onPressed: event => event.accepted = chooser.press(event.key)
     Component.onCompleted: forceActiveFocus()
+    // Closed while a row is carried: the hole stops feeding
+    Component.onDestruction: scene.dropFromHole()
 
     // Clicks that miss a row stay here: they must not reach the menu's own
     // catch-all, which closes it
@@ -208,15 +266,47 @@ Rectangle {
                         required property var modelData
                         width: list.width
 
-                        StyledText {
+                        // The Hidden section's heading also says how many there are
+                        // and opens or folds it
+                        Item {
+                            id: heading
+                            readonly property bool folds: section.modelData.id === "hidden"
                             width: parent.width
                             height: 24
-                            leftPadding: 10
-                            verticalAlignment: Text.AlignVCenter
-                            text: section.modelData.title
-                            color: chooser.paper.fg(0.55)
-                            font.pixelSize: Theme.fontSizeSmall - 1
-                            font.weight: Font.Medium
+                            StyledText {
+                                id: headingText
+                                x: 10
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: section.modelData.title
+                                color: chooser.paper.fg(0.55)
+                                font.pixelSize: Theme.fontSizeSmall - 1
+                                font.weight: Font.Medium
+                            }
+                            StyledText {
+                                visible: heading.folds
+                                anchors.left: headingText.right
+                                anchors.leftMargin: 6
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: section.modelData.count
+                                color: chooser.paper.fg(0.4)
+                                font.pixelSize: Theme.fontSizeSmall - 1
+                            }
+                            DankIcon {
+                                visible: heading.folds
+                                anchors.right: parent.right
+                                anchors.rightMargin: 10
+                                anchors.verticalCenter: parent.verticalCenter
+                                name: chooser.hiddenOpen ? "expand_less" : "expand_more"
+                                size: 16
+                                color: chooser.paper.fg(0.5)
+                            }
+                            MouseArea {
+                                objectName: "hiddenHeading" // found by the tests
+                                anchors.fill: parent
+                                enabled: heading.folds
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: chooser.hiddenOpen = !chooser.hiddenOpen
+                            }
                         }
                         Repeater {
                             model: section.modelData.rows
@@ -233,6 +323,9 @@ Rectangle {
                                     chooser.cursorId = modelData.id;
                                 }
                                 onClicked: chooser.pick(modelData)
+                                onEye: chooser.eyeOf(modelData)
+                                onCarried: at => chooser.carry(line, at)
+                                onDropped: chooser.drop()
                                 onCurrentChanged: {
                                     if (current && chooser.byKey)
                                         chooser.reveal(line);
@@ -284,6 +377,52 @@ Rectangle {
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: chooser.confirm()
+            }
+        }
+    }
+
+    // The output carried to the black hole: its picture and an eye badge follow
+    // the pointer; over the hole it shrinks, as if it were being swallowed
+    Rectangle {
+        id: chip
+        objectName: "carryChip" // found by the tests
+        visible: chooser.carrying !== null
+        z: 10
+        width: 38
+        height: 38
+        radius: 12
+        x: chooser.carryAt.x - width / 2
+        y: chooser.carryAt.y - height / 2
+        color: chooser.paper.fill(0.97)
+        border.width: 1
+        border.color: chooser.overHole ? Theme.primary : chooser.paper.fg(0.18)
+        scale: chooser.overHole ? 0.8 : 1
+        Behavior on scale {
+            enabled: chooser.scene.motion
+            NumberAnimation {
+                duration: 120
+                easing.type: Easing.OutCubic
+            }
+        }
+        DankIcon {
+            anchors.centerIn: parent
+            name: chooser.carrying?.icon ?? "bluetooth"
+            size: 20
+            color: chooser.paper.ink
+        }
+        Rectangle {
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.margins: -5
+            width: 16
+            height: 16
+            radius: 8
+            color: Theme.primary
+            DankIcon {
+                anchors.centerIn: parent
+                name: "visibility_off"
+                size: 11
+                color: Theme.primaryText
             }
         }
     }
