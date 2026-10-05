@@ -203,8 +203,12 @@ Item {
     readonly property real ringScale: (slotMix * depthScale + (1 - slotMix) * (0.66 + 0.34 * signal) * Perspective.lean(depth, profile)) * connectedMix * (scene.glass ? 0.75 : 1) * scene.centre.system.k
     readonly property real baseScale: focused ? 1 : ringScale + (roleDiameter / diameter - ringScale) * roleMix
     readonly property bool hovered: mouse.containsMouse && !scene.focusBody && !scene.hiddenOpen
-    // The most a copy shows of itself: behind the source of a group it is drawn over it, so it lets it show through
-    readonly property real seeThrough: Centre.seeThrough(role, depth, roleMix)
+    // How whole it is drawn: a copy behind the source of a group is drawn over it, so
+    // it keeps only a dashed outline there (whole again when it is picked: the
+    // focus card shows it big)
+    readonly property real solid: focused ? 1 : Centre.solidity(role, depth, roleMix)
+    // The dashed outline of a copy, for the tests
+    readonly property alias outline: behind
 
     width: diameter
     height: diameter
@@ -325,14 +329,24 @@ Item {
         anchors.fill: parent
         scale: body.baseScale * body.popScale * body.focusScale * body.hoverScale * body.hideMix * body.swallowScale
         // Slightly dimmer on the far side (as dark as it is small in the profile
-        // view), and a copy behind the source lets it show through (it is drawn
-        // over it). Changes every frame, so it lives here and not in the body's
+        // view). Changes every frame, so it lives here and not in the body's
         // opacity (whose Behavior would restart endlessly and never finish
         // fading in)
-        opacity: body.inSlot && !body.focused ? Math.min(Perspective.haze(body.depth, body.profile), body.seeThrough) : 1
+        opacity: body.inSlot && !body.focused ? Perspective.haze(body.depth, body.profile) : 1
 
         BodyFace {
             body: body
+        }
+
+        // A copy behind the source (it is drawn over it): the dashed outline stands in for the disc
+        Loader {
+            id: behind
+            anchors.fill: parent
+            active: body.role === "copy"
+            sourceComponent: BehindOutline {
+                solid: body.solid
+                ink: body.night.behindInk
+            }
         }
 
         ConnectingFx {

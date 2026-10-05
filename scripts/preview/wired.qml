@@ -15,11 +15,15 @@ import "mock/State.js" as State
 // Modes: wired (a headset, a USB interface, a screen on HDMI and a speaker),
 //        wiredjack (the three kinds of wired output, a jack among them),
 //        wiredsource (the USB interface is the source, the others its copies),
-//        wiredpair (a headset and one wired output)
+//        wiredpair (a headset and one wired output),
+//        wiredmix (the USB interface is the source, a screen on HDMI and a
+//        headset its copies: one of each kind to orbit)
 // Suffixes: "-loose" catches the cable of an output that has just joined,
 // "-reduce" turns Reduce motion on, "-light" renders with a light theme's
 // accent colors, "-silent" stops the made-up sound (nothing travels on the
-// beams), "-x2" renders at twice the size
+// beams), "-x2" renders at twice the size, "-t<seconds>" stops the copies'
+// orbit at that time of its turn (Reduce motion on: 22 puts the first copy at
+// the far end, right behind the source; 3 on the horizon)
 Window {
     id: win
     readonly property var args: Qt.application.arguments
@@ -30,6 +34,8 @@ Window {
     readonly property bool reduce: parts.indexOf("reduce") > 0
     readonly property bool light: parts.indexOf("light") > 0
     readonly property bool silent: parts.indexOf("silent") > 0
+    // The time the orbit is stopped at (-1: it turns)
+    readonly property real stopAt: parts.reduce((at, p) => /^t\d+$/.test(p) ? Number(p.slice(1)) : at, -1)
     readonly property int pixelScale: parts.indexOf("x2") > 0 ? 2 : 1
     readonly property string out: args[args.length - 1]
 
@@ -42,7 +48,8 @@ Window {
             "wired": [headset, dac, screen, speaker],
             "wiredjack": [headset, jack, dac, screen],
             "wiredsource": [dac, headset, speaker],
-            "wiredpair": [headset, dac]
+            "wiredpair": [headset, dac],
+            "wiredmix": [dac, screen, headset]
         })
     readonly property var members: groups[mode] || groups.wired
 
@@ -61,7 +68,7 @@ Window {
             Theme.error = "#BA1A1A";
             Theme.errorText = "#FFFFFF";
         }
-        SettingsData.reduceMotion = reduce;
+        SettingsData.reduceMotion = reduce || stopAt >= 0;
         Pipewire.playing = !silent;
         BluetoothService.available = true;
         BluetoothService.enabled = true;
@@ -110,6 +117,10 @@ Window {
                 } else {
                     // The scene settles, with or without motion, and the sun has gone round a little
                     grab.interval = 800;
+                }
+                if (win.stopAt >= 0) {
+                    scene.orbitTime = win.stopAt;
+                    scene.wake();
                 }
                 grab.start();
             }

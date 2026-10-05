@@ -49,6 +49,17 @@ QtObject {
     readonly property color connectedFill: whiteBodies ? Qt.tint("#FFFFFF", Theme.withAlpha(Theme.primary, 0.1)) : Qt.tint(Qt.rgba(0.06, 0.07, 0.09, 0.92), Theme.withAlpha(primary, 0.16))
     readonly property color connectedEdge: Theme.withAlpha(primary, 0.55)
     readonly property color connectedInk: whiteBodies ? bodyInk : Qt.lighter(primary, 1.12)
+    // What a copy of a group keeps once it is behind the source and its disc has
+    // gone (its dashed outline and its glyph). It is drawn over the source and
+    // over the night sky, so with a light theme (a white source, and the dark
+    // accent of a white disc, which the sky swallows) it is the accent at mid
+    // lightness, which reads on both; with a dark theme it is connectedInk.
+    readonly property color behindInk: whiteBodies ? Qt.hsla(Theme.primary.hslHue, Theme.primary.hslSaturation, 0.5, 1) : Qt.lighter(primary, 1.12)
+    // A member's glyph at a solidity (Centre.solidity): its own colour while whole,
+    // the one above once it is only an outline
+    function memberInk(solid) {
+        return Qt.tint(connectedInk, Theme.withAlpha(behindInk, 1 - solid));
+    }
 
     // The sky itself and the ink drawn on it. The sky is night in every theme
     // on purpose, so these are the one place its constants live; everything

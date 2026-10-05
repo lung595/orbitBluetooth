@@ -23,6 +23,8 @@ Item {
     readonly property alias bodies: bodyRepeater
     readonly property alias wiredMembers: wiredRepeater
     readonly property alias beams: beamsLoader
+    readonly property alias farOrbit: farOrbitLoader
+    readonly property alias nearOrbit: nearOrbitLoader
     readonly property alias focusCard: focusCardItem
     readonly property alias tetherLayer: tetherLayerItem
     readonly property alias invitation: inviteLoader
@@ -189,6 +191,32 @@ Item {
         }
     }
 
+    // The copies' trajectory of a Listen together (CentreOrbit): its far half
+    // behind the source, under the beams, and its near half in front of the
+    // source but under every copy (a copy is at least 0.25 over the source's
+    // order: Centre.bodyZ)
+    Loader {
+        id: farOrbitLoader
+        anchors.fill: parent
+        z: world.centre.groupZ - 3
+        active: world.centre.shown
+        opacity: world.dim
+        sourceComponent: CentreOrbit {
+            centre: world.centre
+            near: false
+        }
+    }
+    Loader {
+        id: nearOrbitLoader
+        anchors.fill: parent
+        z: world.centre.groupZ + 0.2
+        active: world.centre.shown
+        opacity: world.dim
+        sourceComponent: CentreOrbit {
+            centre: world.centre
+            near: true
+        }
+    }
     // A Listen together at the centre (OrbitCentre): the beams under the
     // planets, and the volume ring above the far side of the orbit; both sort
     // around the group's own stacking order (the source's is groupZ, a copy's

@@ -55,8 +55,11 @@ Item {
     property bool hideArmed: false
     readonly property alias pointer: mouse
     readonly property bool hovered: mouse.containsMouse && !scene.focusBody && !scene.hiddenOpen
-    // The most a copy shows of itself: behind the source it is drawn over it, so it lets it show through
-    readonly property real seeThrough: Centre.seeThrough(role, depth, 1)
+    // How whole it is drawn: a copy behind the source is drawn over it, so it keeps
+    // only a dashed outline there
+    readonly property real solid: Centre.solidity(role, depth, 1)
+    // The dashed outline of a copy, for the tests
+    readonly property alias outline: behind
 
     // It grows into its place and fades in when it joins or takes another role: a
     // brief transition, once, none with Reduce motion
@@ -110,9 +113,8 @@ Item {
         id: visual
         anchors.fill: parent
         scale: (0.7 + 0.3 * body.arrive) * body.popScale * body.hoverScale
-        // Darker on the far side of the orbit, as small as it is dark; a copy
-        // behind the source lets it show through (never more than that)
-        opacity: body.arrive * Math.min(Perspective.haze(body.depth, body.centre.profile), body.seeThrough)
+        // Darker on the far side of the orbit, as small as it is dark
+        opacity: body.arrive * Perspective.haze(body.depth, body.centre.profile)
 
         Rectangle {
             anchors.centerIn: parent
@@ -120,6 +122,7 @@ Item {
             height: width
             radius: width * Sign.CORNER
             color: Theme.withAlpha(body.night.primary, 0.07)
+            opacity: body.solid
         }
         Rectangle {
             anchors.fill: parent
@@ -127,13 +130,26 @@ Item {
             color: body.night.connectedFill
             border.width: 1
             border.color: body.night.connectedEdge
+            opacity: body.solid
+        }
+        // A copy behind the source: the dashed outline stands in for the disc
+        Loader {
+            id: behind
+            anchors.fill: parent
+            active: body.role === "copy"
+            sourceComponent: BehindOutline {
+                solid: body.solid
+                ink: body.night.behindInk
+                corner: Sign.CORNER
+            }
         }
         DeviceGlyph {
             anchors.centerIn: parent
             width: parent.width * 0.55
             height: width
             kind: Glyphs.wired(body.kind)
-            color: body.night.connectedInk
+            color: body.night.memberInk(body.solid)
+            opacity: Centre.inkOf(body.solid)
             stroke: 1.5
         }
 

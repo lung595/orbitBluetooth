@@ -4,7 +4,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const C = load("Centre.js", ["PERIOD", "MAX_SHIFT", "GROUP_SIZE", "TILT", "clamp01", "ease", "approach", "grow", "sizes", "glyphsOffset", "glyphDisc", "glyphSpacing", "GLYPH_MIN", "groupAt", "bodyZ", "seeThrough", "COPY_LIFT", "SEE_THROUGH", "away", "phaseAt", "copySlot", "depthSize", "parallax", "copiesOf", "roleOf", "pulse"]);
+const C = load("Centre.js", ["PERIOD", "MAX_SHIFT", "GROUP_SIZE", "TILT", "clamp01", "ease", "approach", "grow", "sizes", "glyphsOffset", "glyphDisc", "glyphSpacing", "GLYPH_MIN", "groupAt", "bodyZ", "solidity", "inkOf", "COPY_LIFT", "ORBIT_SPREAD", "BEHIND_SPAN", "BEHIND_INK", "away", "phaseAt", "copySlot", "depthSize", "parallax", "copiesOf", "roleOf", "pulse"]);
 const V = load("MasterVolume.js");
 const P = load("Perspective.js", ["FLAT", "size"]);
 
@@ -42,8 +42,16 @@ const s = C.sizes(g);
 eq("sizes: the source is exactly as big as the host's core, a copy smaller than a ring planet", [s.source, s.copy < g.bodySize, s.copy >= 12], [g.coreSize, true, true]);
 eq("sizes: the source follows the core on any scene", [C.sizes(small).source, C.sizes({ cx: 0, cy: 0, rx: 400, ry: 250, coreSize: 90, bodySize: 60 }).source], [small.coreSize, 90]);
 eq("sizes: the volume ring is outside the source, the orbit outside the ring", [s.ring > s.source / 2, s.radius - s.copy / 2 - s.ring >= 12], [true, true]);
+// The copies used to orbit 76.75 px from a 65 px source (a tight ring just clear of the gauge): 40 % farther now
+eq("sizes: the copies orbit 40 % farther than the tight ring they used to", [C.ORBIT_SPREAD, near(s.radius), near(76.75 * 1.4)], [1.4, near(107.45), near(107.45)]);
 const t = C.sizes(small);
 eq("sizes: on a small scene the copies shrink and the orbit still fits", [t.copy < s.copy, t.copy >= 12, t.radius <= small.rx * 0.9], [true, true, true]);
+// The spread orbit stays in the scene on every size the scene can have (the narrowest widget to a big desktop)
+const scenes = [[220, 200], [300, 300], [420, 380], [520, 440], [800, 600], [1400, 800]].map(([w, h]) => {
+    const m = Math.min(w, h), bodySize = Math.round(Math.max(34, m * 0.135));
+    return { cx: w / 2, cy: h / 2, rx: Math.max(40, w / 2 - bodySize * 0.8), ry: Math.max(30, h / 2 - bodySize * 1.25), coreSize: Math.round(m * 0.17), bodySize };
+});
+eq("sizes: the orbit stays inside the scene's ring area, and the farthest copy inside the scene, on every size", [scenes.map(sc => C.sizes(sc).radius <= sc.rx * 0.9 + 0.001), scenes.map(sc => C.sizes(sc).radius + C.sizes(sc).copy / 2 <= sc.cx)], [scenes.map(() => true), scenes.map(() => true)]);
 
 // --- the copies' orbit ----------------------------------------------------------
 const centre = C.groupAt(g, 0, slot);
@@ -73,8 +81,16 @@ eq("z: in a group everything sorts by height, the far half of the ring included,
 eq("z: a member is where the group is, its source in the middle", [C.bodyZ(body({ role: "source", depth: 1, py: 10 }), true, 1300), C.bodyZ(body({ role: "source", depth: 1, py: 999 }), false, 1300)], [1300, 1300]);
 eq("z: its copies over the source, near over far, whatever their height", [-1, -0.4, 0.4, 1].map(depth => C.bodyZ(body({ role: "copy", depth, py: 5 }), true, 1300)), [1300.25, 1300.4, 1300.6, 1300.75]);
 eq("z: even the farthest copy is over the source, and none rises a whole level (nothing outside the group sorts between them)", [C.bodyZ(body({ role: "copy", depth: -1 }), true, 1300) > C.bodyZ(body({ role: "source" }), true, 1300), C.bodyZ(body({ role: "copy", depth: 1 }), true, 1300) < 1301], [true, true]);
-eq("see through: a copy behind the source lets it show, whole on the near side, the source and a stranger always whole", [-1, -0.5, 0, 0.5, 1].map(d => near(C.seeThrough("copy", d, 1))).concat([C.seeThrough("source", -1, 1), C.seeThrough("", -1, 1)]), [0.58, 0.58, 0.58, 0.79, 1, 1, 1]);
-eq("see through: it only takes hold as the device takes its place in the group", [0, 0.5, 1].map(mix => near(C.seeThrough("copy", -1, mix))), [1, 0.79, 0.58]);
+// A copy behind the source is a dashed outline (solidity 0), whole on the near side (1), over BEHIND_SPAN of depth either side of the horizon
+const solid = (d, mix = 1) => near(C.solidity("copy", d, mix));
+eq("solidity: a copy is only an outline behind the source and whole in front of it, the turn is smooth around the horizon", [-1, -0.25, -0.125, 0, 0.125, 0.25, 1].map(d => solid(d)), [0, 0, 0.156, 0.5, 0.844, 1, 1]);
+eq("solidity: the source and a stranger are always whole", [C.solidity("source", -1, 1), C.solidity("", -1, 1), C.solidity("source", 0, 0)], [1, 1, 1]);
+eq("solidity: it never falls as the copy comes round to the near side", Array.from({ length: 41 }, (_, i) => solid(-1 + i / 20)).every((v, i, all) => i === 0 || v >= all[i - 1]), true);
+eq("solidity: the turn is over a quarter of depth either side, so a copy clear of the source (the sides of its orbit) is whole or outline as the half it is on says", [C.BEHIND_SPAN, solid(-C.BEHIND_SPAN), solid(C.BEHIND_SPAN)], [0.25, 0, 1]);
+eq("solidity: it only takes hold as the device takes its place in the group", [0, 0.5, 1].map(mix => solid(-1, mix)), [1, 0.5, 0]);
+eq("solidity: a copy passing behind is no longer the old 58 % ghost (counter-proof: it kept its disc then)", C.solidity("copy", -1, 1) < 0.58, true);
+eq("ink: the glyph keeps most of itself once the disc has gone, all of it when whole", [C.BEHIND_INK, near(C.inkOf(0)), near(C.inkOf(0.5)), C.inkOf(1)], [0.7, 0.7, 0.85, 1]);
+eq("ink: it is never out of range", [C.inkOf(-3), C.inkOf(9)], [0.7, 1]);
 eq("z: a body outside the group is behind it when the group is lifted over the system, and sorts with it otherwise", [C.bodyZ(body({ py: 400 }), true, 100 + 190 + 1000) < 100 + 190 + 1000, C.bodyZ(body({ py: 400 }), true, 100 + 190 + 40) > 100 + 190 + 40], [true, true]);
 
 // --- the sky behind the camera --------------------------------------------------

@@ -17,7 +17,9 @@ var TILT = Perspective.FLAT;        // orbit height over width: the profile view
 var MAX_SHIFT = 12;                 // px the sky may drift: the margin around the starfield
 var PARALLAX = 0.08;                // how far the sky follows the camera, far stars barely move
 var COPY_LIFT = 0.5;                // a copy's order over the source's at the middle of its orbit: under 1, so that nothing outside the group sorts between them
-var SEE_THROUGH = 0.58;             // how much of itself a copy keeps while it is behind the source
+var ORBIT_SPREAD = 1.4;             // how much farther than a tight ring the copies orbit: the source and its gauge stay in the clear, and a copy passing behind the source covers little of it
+var BEHIND_SPAN = 0.25;             // depth either side of the horizon (0) over which a copy turns from whole to its dashed outline
+var BEHIND_INK = 0.7;               // how much of its glyph a copy keeps while it is only an outline
 var GLYPH_DISC = 0.34;              // a member's disc in the row of icons under the group, of the host's core size
 var GLYPH_OVERLAP = 0.18;           // how much of a disc the next one covers: the bar pill's 4 px on its 22 px discs
 var GLYPH_MIN = 14;                 // px: the smallest disc, so a glyph can still be read when the group steps back
@@ -54,17 +56,18 @@ function grow(value, goal, ref, dt, seconds) {
 // distance from the source to a copy. The source is as big as the host's core
 // (the same planet, now at the centre); the ring sits just outside what it
 // already wears (battery arc, noise-control halo) and the copies orbit
-// outside the ring; on a small scene the copies shrink so the orbit still fits.
+// outside the ring, ORBIT_SPREAD times as far as a tight ring would put them;
+// on a small scene the copies shrink so that orbit still fits.
 function sizes(g) {
     const source = g.coreSize;
     const ring = source / 2 + Math.max(16, source * 0.2);
     const gap = ring - source / 2 + 12;
     const room = g.rx * 0.9;
-    const copy = Math.max(12, Math.min(g.bodySize * 0.85, source * 0.5, 2 * (room - source / 2 - gap)));
+    const copy = Math.max(12, Math.min(g.bodySize * 0.85, source * 0.5, 2 * (room / ORBIT_SPREAD - source / 2 - gap)));
     // The speaker that crowns the volume ring and the chip behind it: CentreRing
     // draws them at this size
     const chipIcon = Math.max(10, Math.round(source * 0.22));
-    return { "source": source, "ring": ring, "copy": copy, "radius": source / 2 + gap + copy / 2, "chipIcon": chipIcon, "chip": chipIcon + 8 };
+    return { "source": source, "ring": ring, "copy": copy, "radius": (source / 2 + gap + copy / 2) * ORBIT_SPREAD, "chipIcon": chipIcon, "chip": chipIcon + 8 };
 }
 
 // How far from the group's centre (px, at full size) the icons of its members
@@ -107,8 +110,9 @@ function groupAt(g, stage, slot) {
 // height, the host among them. The members of the group keep together around
 // the group's own order `groupZ` (Sun.groupZ): the source in the middle of it,
 // its copies always over it, the near ones in front of the far ones. A copy
-// behind the source is not hidden by it: it is seen through (seeThrough) and
-// answers a click first, instead of waiting for its turn round to the front.
+// behind the source is not hidden by it: it is drawn as a dashed outline
+// (solidity) and answers a click first, instead of waiting for its turn round
+// to the front.
 function bodyZ(b, grouped, groupZ) {
     if (b.role)
         return groupZ + (b.role === "source" ? 0 : COPY_LIFT + b.depth * COPY_LIFT / 2);
@@ -117,16 +121,23 @@ function bodyZ(b, grouped, groupZ) {
     return 100 + b.py;
 }
 
-// The most of itself a member of the group shows (0..1; the haze of its depth
-// can only take it lower): a copy that passes behind the source is drawn over
-// it, so it lets it show through (SEE_THROUGH, whatever the view) and is whole
-// once it is on the near side; the source, and what is not in the group, have
-// no limit. `mix` (0..1) is how far the member has taken its place in the
-// group, so that nothing pops when a device joins.
-function seeThrough(role, depth, mix) {
+// How whole a member of the group is drawn (0..1): a copy that passes behind
+// the source is drawn over it, so it gives up its disc and keeps only a dashed
+// outline (0, whatever the view), and is whole again on the near side (1); it
+// turns over BEHIND_SPAN of depth either side of the horizon, where it is
+// clear of the source. The source, and what is not in the group, are always
+// whole. `mix` (0..1) is how far the member has taken its place in the group,
+// so that nothing pops when a device joins.
+function solidity(role, depth, mix) {
     if (role !== "copy")
         return 1;
-    return Perspective.lerp(1, Perspective.lerp(SEE_THROUGH, 1, clamp01(depth)), mix);
+    return Perspective.lerp(1, ease((depth + BEHIND_SPAN) / (2 * BEHIND_SPAN)), clamp01(mix));
+}
+
+// How much of its glyph a member keeps (0..1) at a solidity: the glyph stays
+// readable once the disc behind it has gone
+function inkOf(solid) {
+    return Perspective.lerp(BEHIND_INK, 1, clamp01(solid));
 }
 
 // How far the host has left the centre for its path around the group (0..1):

@@ -8,8 +8,9 @@ import "mock/State.js" as State
 import "mock/Devices.js" as Devices
 
 // Test of a copy that passes behind the source of a Listen together group: it
-// is drawn over the source, seen through it, and it is the one that answers a
-// press at its middle, instead of waiting for its turn round to the front.
+// is drawn over the source as a dashed outline (its disc gone), and it is the
+// one that answers a press at its middle, instead of waiting for its turn round
+// to the front.
 // The orbit rests (Reduce motion) at a time chosen so that the copy sits at the
 // far end of its orbit, right over the source. The press is routed as Qt does:
 // to the highest stacking order whose zone holds the point. Run with
@@ -81,12 +82,12 @@ Item {
                 check("a press at its middle reaches it, not the source", pressReaches(copy.px, copy.py) === copy, true);
                 check("with the old stacking (far copies behind the source) the source got it (counter-proof)", src.z > scene.centre.groupZ + copy.depth, true);
                 check("a press on the source's side, away from both copies, still reaches the source", pressReaches(src.px - src.diameter * src.baseScale * 0.4, src.py) === src, true);
-                check("it lets the source show through, and is not invisible", [copy.seeThrough > 0.5, copy.seeThrough < 0.65], [true, true]);
-                check("the source itself is whole", src.seeThrough, 1);
+                check("it is only a dashed outline there (its disc has gone), and the outline is shown", [copy.solid, copy.outline.active, copy.outline.item.visible, copy.outline.item.opacity], [0, true, true, 1]);
+                check("the source itself is whole and has no outline", [src.solid, src.outline.active], [1, false]);
                 check("the cables and beams stay under every member", [scene.world.beams.z < src.z, scene.world.beams.z < copy.z], [true, true]);
                 // The wired copy, now at the near end: whole and in front
                 const w = wired(h.dac);
-                check("the wired copy, on the near side, is whole and over the source too", [w.depth > 0.9, w.seeThrough, w.z > src.z], [true, 1, true]);
+                check("the wired copy, on the near side, is whole (no outline drawn) and over the source too", [w.depth > 0.9, w.solid, w.outline.item.visible, w.z > src.z], [true, 1, false, true]);
                 // The orbit turns half way round: the wired copy goes behind the source
                 scene.orbitTime = 9.375;
                 scene.wake();
@@ -98,7 +99,7 @@ Item {
                 const src = scene.centre.bodyOf(h.headset), w = wired(h.dac);
                 const over = Math.hypot(w.px - src.px, w.py - src.py) < src.diameter * src.baseScale / 2;
                 check("the wired copy is at the far end of its orbit, over the source's disc", [w.depth < -0.9, over], [true, true]);
-                check("it is drawn over the source and seen through", [w.z > src.z, w.seeThrough > 0.5, w.seeThrough < 0.65], [true, true, true]);
+                check("it is drawn over the source as a dashed outline", [w.z > src.z, w.solid, w.outline.item.visible], [true, 0, true]);
                 check("a press at its middle reaches it, not the source", pressReaches(w.px, w.py) === w, true);
                 check("the cable stays under it", scene.world.beams.z < w.z, true);
             }
