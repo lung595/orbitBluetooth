@@ -376,10 +376,8 @@ Item {
     }
     // The menu's group chooser, opened straight on `b` (the radar's "Add a device…")
     function openGroupChooser(b, point) {
-        if (!b)
-            return;
-        menu.popup(b, point);
-        menu.choose("group");
+        if (b)
+            menu.addDevices(b, point);
     }
 
     // --- Focus and rename (the detail card) ----------------------------------

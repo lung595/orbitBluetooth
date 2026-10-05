@@ -12,7 +12,7 @@ import "mock/Devices.js" as Devices
 // member or on a wired member opens it on theirs (never the old detail card,
 // which Details still reaches); the gestures move the group's level and a
 // member's own one, and mute; the hero's actions do their job (Remove from group,
-// Stop group); and Escape's way back (stepBack) closes it. Run with tests/qml/run.sh.
+// Add a device…, Stop group); and Escape's way back (stepBack) closes it. Run with tests/qml/run.sh.
 Item {
     id: h
     width: 520
@@ -50,6 +50,17 @@ Item {
             if ("slotOf" in child)
                 return child;
             const found = view(child);
+            if (found)
+                return found;
+        }
+        return null;
+    }
+    // The right-click menu, found like the radar's view
+    function menu(item) {
+        for (const child of item.children) {
+            if ("choosing" in child && "entries" in child)
+                return child;
+            const found = menu(child);
             if (found)
                 return found;
         }
@@ -139,6 +150,15 @@ Item {
                 check("the radar goes back to the group's level", [h.radar.open, h.radar.heroId], [true, "group"]);
                 scene.stepBack();
                 check("Escape's way back closes it, and leaves the group's view alone", [h.radar.open, scene.focusBody, scene.centre.recalled], [false, null, false]);
+                h.radar.show("");
+            }
+        },
+        {
+            "then": 100,
+            "run": () => {
+                h.radar.choose("add");
+                check("Add a device… closes the radar and opens the group chooser, the menu's entries out of the way", [h.radar.open, scene.menuOpen, h.menu(scene).choosing], [false, true, true]);
+                h.menu(scene).close();
                 h.radar.show("");
             }
         },
