@@ -109,7 +109,7 @@ orbitBluetooth/
 │   │   ├── OrbitPhysics.qml, Physics.js  # one motion step for every body (Physics.js pure, tested)
 │   │   ├── Cover.js             # is the desktop hidden behind windows? (pure, tested)
 │   │   ├── OrbitChrome.qml, ScanChip.qml, AdapterNotice.qml, OrbitNote.qml  # what floats above the world: scan chip, Bluetooth off, notes
-│   │   ├── OrbitMenu.qml        # the right-click menu (with Leave / Stop together)
+│   │   ├── OrbitMenu.qml, MenuEntries.js  # the right-click menu: the QML gathers the facts and draws, MenuEntries.js (pure, tested) decides the entries, their order and hairlines; `addDevices()` opens the group chooser on its own
 │   │   ├── OrbitTogether.qml    # Listen together in the scene: the drop, the notes, leave and stop
 │   │   ├── GroupChooser.qml, GroupRow.qml  # the *Create a group…* checklist (created by the menu only while it is open) and its rows
 │   │   ├── BlackHole.qml, RingWave.qml   # the "Hidden" black hole (two shaders), the connected ring's wave
