@@ -67,6 +67,13 @@ Item {
         property bool hiddenOpen: false
         property bool renaming: false
         property bool menuOpen: false
+        // The volume radar: stepBack closes it before anything else. Closed in these parts (its own test opens a real one)
+        readonly property var radar: QtObject {
+            property bool open: false
+            function close() {
+                open = false;
+            }
+        }
         property int hiddenClosed: 0
         property var centre: centreItem
         function wake() {
@@ -267,9 +274,11 @@ Item {
         {
             "then": 100,
             "run": () => {
-                // A card over the group's view: the click closes it first
+                // A card over the group's view: the click closes it first. The card of a
+                // member is asked for, as the radar's Details does: a plain click on a
+                // member opens its radar (tests/qml/radar.test.qml)
                 scene.centre.release();
-                scene.focusOn(scene.centre.bodyOf(h.headset));
+                scene.focusOn(scene.centre.bodyOf(h.headset), true);
                 check("a card is open over the group", [!!scene.focusBody, scene.centre.recalled], [true, false]);
                 h.clickSky();
                 check("a click on the sky closes the card, and Fedora's view stays away", [scene.focusBody, scene.centre.recalled, h.fellThrough], [null, false, 2]);
