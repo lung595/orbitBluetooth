@@ -16,6 +16,8 @@ var GROUP_SIZE = 0.7;               // the group's size on its ring slot at the 
 var TILT = Perspective.FLAT;        // orbit height over width: the profile view's, one value for every orbit
 var MAX_SHIFT = 12;                 // px the sky may drift: the margin around the starfield
 var PARALLAX = 0.08;                // how far the sky follows the camera, far stars barely move
+var COPY_LIFT = 0.5;                // a copy's order over the source's at the middle of its orbit: under 1, so that nothing outside the group sorts between them
+var SEE_THROUGH = 0.58;             // how much of itself a copy keeps while it is behind the source
 
 function clamp01(v) {
     return Math.max(0, Math.min(1, v));
@@ -83,14 +85,28 @@ function groupAt(g, stage, slot) {
 // own view the far half of the connected ring passes behind the host's core
 // (z 50) and the rest sorts by height. In the profile view everything sorts by
 // height, the host among them. The members of the group keep together around
-// the group's own order `groupZ` (Sun.groupZ): its far copies behind its
-// source, the near ones in front.
+// the group's own order `groupZ` (Sun.groupZ): the source in the middle of it,
+// its copies always over it, the near ones in front of the far ones. A copy
+// behind the source is not hidden by it: it is seen through (seeThrough) and
+// answers a click first, instead of waiting for its turn round to the front.
 function bodyZ(b, grouped, groupZ) {
     if (b.role)
-        return groupZ + (b.role === "source" ? 0 : b.depth);
+        return groupZ + (b.role === "source" ? 0 : COPY_LIFT + b.depth * COPY_LIFT / 2);
     if (!grouped && b.inSlot && b.depth < 0)
         return 10 + b.py * 0.01;
     return 100 + b.py;
+}
+
+// The most of itself a member of the group shows (0..1; the haze of its depth
+// can only take it lower): a copy that passes behind the source is drawn over
+// it, so it lets it show through (SEE_THROUGH, whatever the view) and is whole
+// once it is on the near side; the source, and what is not in the group, have
+// no limit. `mix` (0..1) is how far the member has taken its place in the
+// group, so that nothing pops when a device joins.
+function seeThrough(role, depth, mix) {
+    if (role !== "copy")
+        return 1;
+    return Perspective.lerp(1, Perspective.lerp(SEE_THROUGH, 1, clamp01(depth)), mix);
 }
 
 // How far the host has left the centre for its path around the group (0..1):

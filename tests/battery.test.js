@@ -3,8 +3,9 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const Charge = load("Charge.js", ["analyze", "formatShort", "timeText", "levelText", "statItems", "footnote"]);
+const Charge = load("Charge.js", ["analyze", "formatShort", "timeText", "levelText", "statItems", "footnote", "levelColor"]);
 const Endurance = load("Endurance.js", ["ratedHours"]);
+const Battery = load("Battery.js", ["OK_FROM", "LOW_FROM", "CRITICAL_MAX", "tone"]);
 
 // Time left: rated life at first, then the measured drain takes over
 const now = Date.UTC(2026, 8, 26, 12, 0, 0);
@@ -39,5 +40,13 @@ eq("ready at, reported: no ≈", tiles[0].value.startsWith("≈"), false);
 eq("tiles, full", Charge.statItems({ source: "system", state: "full", health: 0 }, false, now).length, 0);
 eq("footnote, reported", Charge.footnote(fill, true), "Reported by the device");
 eq("footnote, rated", Charge.footnote(drain, false), "From the rated battery life · refines as it drains");
+
+// The arc around a disc: a traffic light by level, its own look while charging
+eq("tone: 40 % and up is fine", [100, 80, 40].map(l => Battery.tone(l, false)), ["ok", "ok", "ok"]);
+eq("tone: 16 to 39 % is running low", [39, 25, 16].map(l => Battery.tone(l, false)), ["low", "low", "low"]);
+eq("tone: 15 % and down is critical", [15, 5, 0].map(l => Battery.tone(l, false)), ["critical", "critical", "critical"]);
+eq("tone: charging is its own, whatever the level", [100, 40, 39, 16, 15, 0].map(l => Battery.tone(l, true)), Array(6).fill("charging"));
+eq("tone: the red limit is the one just under the amber one", [Battery.CRITICAL_MAX, Battery.LOW_FROM - 1, Battery.OK_FROM], [15, 15, 40]);
+eq("the card's ramp stays red as long as the arc does", [Charge.levelColor(0), Charge.levelColor(Battery.CRITICAL_MAX), Charge.levelColor(Battery.LOW_FROM) !== Charge.levelColor(0)], ["#ff5468", "#ff5468", true]);
 
 done();
