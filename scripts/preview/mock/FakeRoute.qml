@@ -133,6 +133,36 @@ QtObject {
                 "address": a
             };
         }
+        // The ghost group (OrbitGhost), as the real session answers it: a list can start
+        // when each member is an output the route knows or a wired one (by its node name)
+        function check(list) {
+            const unknown = list.find(a => !/^alsa_output\./.test(a) && !fake.known(a));
+            if (list.length < 2)
+                return {
+                    "why": "too-few",
+                    "address": ""
+                };
+            return unknown ? {
+                "why": "not-connected",
+                "address": unknown
+            } : null;
+        }
+        function start(list) {
+            const r = check(list);
+            if (!r)
+                fake.sharing = list.slice();
+            return r;
+        }
+        // The groups the user turned down, by key (kept as long as the route)
+        property var declined: ({})
+        function decline(key) {
+            declined = Object.assign({}, declined, {
+                [key]: true
+            });
+        }
+        function isDeclined(key) {
+            return declined[key] === true;
+        }
     }
     function known(address) {
         if (address === "02:00:00:00:10:06")
@@ -184,5 +214,12 @@ QtObject {
     }
     function toggleMute(address) {
         return "pc";
+    }
+    // The Bluetooth devices that play sound, and the one in use (AudioRoute's
+    // audioDevices() and current), for a test to set: none at first
+    property var audio: []
+    property var current: null
+    function audioDevices() {
+        return audio;
     }
 }

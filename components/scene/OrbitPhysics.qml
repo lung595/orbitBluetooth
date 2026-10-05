@@ -12,14 +12,16 @@ import "../centre/Perspective.js" as Perspective
 //  - nothing at all once the scene has settled.
 // A Listen together at the centre rides this same step (the group's orbit,
 // the camera's voyage, the sun's path, the beams): it adds no timer of its
-// own. The devices outside the group live in the sun's geometry then (the
-// scene's own while there is no group): `geo`.
+// own, and neither does the ghost group that proposes one (its fade and its
+// slot on the ring). The devices outside the group live in the sun's geometry
+// then (the scene's own while there is no group): `geo`.
 Item {
     id: physics
     required property var scene
     required property Repeater repeater  // the device bodies
     required property var card           // the detail card: a focused body becomes its glyph
     required property var centre         // a Listen together at the centre (OrbitCentre)
+    required property var ghost          // the group the scene proposes (OrbitGhost)
 
     readonly property bool _stepping: scene.active && scene.visible && scene.width > 0 && !scene.settled
     readonly property bool _fullRate: !!scene.dragBody || _lively
@@ -137,6 +139,7 @@ Item {
             s.holeSpin += dt * (0.32 + 1.8 * s.holeFeed);
         }
         centre.advance(dt, timeDriven);
+        ghost.advance(dt);
         const geo = centre.sunGeometry();
 
         const all = [];
@@ -154,14 +157,18 @@ Item {
         const outerPhase = s.orbitTime * 0.018 - Math.PI / 2;
         // The group is a planet of the host's ring too (Fedora's view): it keeps
         // its slot, a gap in the ring, while it has the centre, so the ring does
-        // not reshuffle when it steps back
+        // not reshuffle when it steps back. The ghost group that proposes one takes
+        // that same slot, so a click lands where it was.
         if (centre.grouped) {
             inner.unshift(centre);
             centre.place(Physics.ringSlot(geo, 0, inner.length, innerPhase));
+        } else if (ghost.shown) {
+            inner.unshift(ghost);
+            ghost.place(Physics.ringSlot(geo, 0, inner.length, innerPhase));
         }
         const amp = timeDriven ? (s.dragBody ? 7 : 3.5) : 0;
 
-        let moving = !!s.dragBody || centre.travelling;
+        let moving = !!s.dragBody || centre.travelling || ghost.fading;
         let maxLag = 0;     // px, farthest any body is from where it should be
         for (const b of all) {
             if (!b.spawned)
@@ -222,7 +229,7 @@ Item {
             }
             fx = fx || comet;
         }
-        const fast = comet || !!s.focusBody || centre.travelling;
+        const fast = comet || !!s.focusBody || centre.travelling || ghost.fading;
         if (_fxFast !== fast)
             _fxFast = fast;
         // Ambient's slow drift on the desktop with nobody around: bodies move

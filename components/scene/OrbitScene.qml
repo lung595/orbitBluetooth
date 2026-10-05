@@ -311,6 +311,15 @@ Item {
     }
     readonly property alias centre: centreCtl
 
+    // --- The group the scene proposes: a ghost planet on the host's ring (OrbitGhost) ---
+    OrbitGhost {
+        id: ghostCtl
+        scene: orbitRoot
+        centre: centreCtl
+        session: togetherCtl.session
+    }
+    readonly property alias ghost: ghostCtl
+
     // --- Two outputs on one radio: a note, once per pair (OrbitRadio) ----------------
     OrbitRadio {
         scene: orbitRoot
@@ -389,6 +398,7 @@ Item {
         repeater: worldItem.bodies
         card: worldItem.focusCard
         centre: centreCtl
+        ghost: ghostCtl
     }
     onDragBodyChanged: physics.kick()
     onFocusBodyChanged: physics.kick()
