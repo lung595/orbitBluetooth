@@ -432,7 +432,6 @@ A small black hole drifts in the outer field. Drag a device you never use into i
 
 Hidden outputs stay connected or plugged in; hiding only removes them from the lists and the orbit. The list keeps at most 64 of them; past that a short note asks you to bring one back first.
 
-
 | Hidden devices | Right-click menu |
 | --- | --- |
 | ![Hidden devices listed by the black hole](../screenshots/hidden.png) | ![Right-click menu of a headset](../screenshots/menu.png) |
