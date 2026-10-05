@@ -42,16 +42,12 @@ eq("a nameless device", Guide.connectNote("pair", "").title, "Could not pair thi
 // --- Wired outputs (D298): the notes that say it in their own words (value 10) --------------------
 const All = load("Guide.js");
 const WIRED = "alsa_output.usb-Acme_Demo_Headset-00.analog-stereo", PHONES = "AA:BB:CC:DD:EE:01";
-// Their sections of the guide are written with the release: until a title is in
-// docs/GUIDE.md the check of its anchor is not asked. Take a title out of this
-// list once its section is written (the last check here says so).
-const PENDING = ["wired-delay", "wired-outputs"];
 const wiredReasons = ["not-connected", "member-out", "member-left", "source"];
 wiredReasons.forEach(w => {
     const n = All.togetherNote(w, "Interface", WIRED);
     eq("wired " + w + " says what and what to do", !!(n.title && n.hint), true);
     eq("wired " + w + " is told in its own words", [n.title, n.hint].join(" ") !== [All.togetherNote(w, "Interface", PHONES).title, All.togetherNote(w, "Interface", PHONES).hint].join(" "), true);
-    eq("wired " + w + " links to a section that exists or is about to", anchors.indexOf(n.anchor) >= 0 || PENDING.indexOf(n.anchor) >= 0, true);
+    eq("wired " + w + " links to a section that exists", anchors.indexOf(n.anchor) >= 0, true);
     eq("wired " + w + " names the output by its name, not its node", [n.title.indexOf("Interface") >= 0, JSON.stringify(n).indexOf("alsa_output")], [true, -1]);
 });
 eq("an output that is gone was unplugged, not disconnected", [All.togetherNote("member-out", "Interface", WIRED).title, All.togetherNote("member-left", "Interface", WIRED).title], ["Interface was unplugged", "Interface was unplugged"]);
@@ -68,7 +64,5 @@ eq("a Bluetooth source's note is the one it was", [All.togetherNote("source", "X
 });
 // Only a token that is a member picks the wired wording: a half-written one is nothing
 eq("a token that is not a member's does not change the words", [All.togetherNote("member-out", "x", "alsa_output.a b"), All.togetherNote("member-out", "x", "alsa_output.a..b"), All.togetherNote("member-out", "x", null), All.togetherNote("member-out", "x", 5)], new Array(4).fill(All.togetherNote("member-out", "x")));
-// The sections of the guide, once written, are no longer pending
-eq("a title of the pending list goes as soon as its section is written", PENDING.filter(a => anchors.indexOf(a) >= 0), []);
 
 done();

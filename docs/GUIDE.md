@@ -8,7 +8,7 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 - [The orbit](#the-orbit) · [If it does not connect](#if-it-does-not-connect) · [If it does not disconnect](#if-it-does-not-disconnect) · [Bluetooth is off](#bluetooth-is-off)
 - [The detail card](#the-detail-card)
 - [The two volumes](#the-two-volumes) · [Separate PC volume](#separate-pc-volume) · [Volume pop-up](#volume-pop-up) · [Smart volume steps](#smart-volume-steps) · [Volume keys](#volume-keys) · [What really plays](#what-really-plays)
-- [Listen together](#listen-together) · [The source at the center](#the-source-at-the-center) · [The volume at the center](#the-volume-at-the-center) · [What it costs](#what-it-costs) · [Limits](#limits) · [Works with multipoint headsets](#works-with-multipoint-headsets) · [Two outputs, one radio](#two-outputs-one-radio)
+- [Listen together](#listen-together) · [Create a group from the menu](#create-a-group-from-the-menu) · [Suggested groups](#suggested-groups) · [The source at the center](#the-source-at-the-center) · [The volume at the center](#the-volume-at-the-center) · [Wired outputs](#wired-outputs) · [Wired outputs in the group](#wired-outputs-in-the-group) · [Wired delay](#wired-delay) · [What it costs](#what-it-costs) · [Limits](#limits) · [Works with multipoint headsets](#works-with-multipoint-headsets) · [Two outputs, one radio](#two-outputs-one-radio)
 - [Earbuds: the trio](#earbuds-the-trio)
 - [Hiding devices: the black hole](#hiding-devices-the-black-hole)
 - [Noise control](#noise-control) · [Pause when you take the headset off](#pause-when-you-take-the-headset-off) · [How long a conversation lasts](#how-long-a-conversation-lasts)
@@ -223,9 +223,9 @@ All four are read through `pw-dump` and `pw-top` (they come with PipeWire), only
 
 ## Listen together
 
-The same sound on **two, three or four** Bluetooth outputs at once: the headset **and** the receiver, two speakers, two pairs of headphones for one film.
+The same sound on **two, three or four** outputs at once, Bluetooth or [wired](#wired-outputs): the headset **and** the receiver, two speakers, two pairs of headphones for one film, a Bluetooth headset next to a USB audio interface.
 
-- **Start**: in the orbit, **drag one connected audio device onto another**. As soon as you carry it, a soft halo breathes around each device it could join and a thread of light runs toward the nearest, brighter as they come closer, so you can see it can be done. The zone that takes the drop is **twice the target's radius** around its center (60 px at least), so a small planet far in the ring is as easy to hit as a big one. While it is over that zone, the thread is whole and the hint under the orbit reads *Release to listen together*; let go and both play the same sound. Pulled away from the ring, the invitation fades (that is the gesture to disconnect). With *Reduce motion* the halos and the light dots stand still. The dragged device springs back to its place, so you can see nothing moved.
+- **Start**: in the orbit, **drag one connected audio device onto another** (or [create a group from the menu](#create-a-group-from-the-menu), or click a [suggested group](#suggested-groups)). As soon as you carry it, a soft halo breathes around each device it could join and a thread of light runs toward the nearest, brighter as they come closer, so you can see it can be done. The zone that takes the drop is **twice the target's radius** around its center (60 px at least), so a small planet far in the ring is as easy to hit as a big one. While it is over that zone, the thread is whole and the hint under the orbit reads *Release to listen together*; let go and both play the same sound. Pulled away from the ring, the invitation fades (that is the gesture to disconnect). With *Reduce motion* the halos and the light dots stand still. The dragged device springs back to its place, so you can see nothing moved.
 - **Add one more**: drag another connected device onto **any** device that already listens together. Up to **4** outputs; at the fourth, a short note says so and links here.
 - **One leaves**: right-click a device that listens together and choose **Leave together**; the others keep playing. Dragging it outward, away from the group, does the same without disconnecting it (the hint reads *Release to leave the group*). Turning it off ends its part too. With **three or more** the entry is **Leave together** next to **Stop together**; with two, leaving would end the session, so only **Stop together** is shown.
 - **Stop it all**: **Stop together** in the right-click menu of any member, or `dms ipc call orbitBluetooth separate`. A session also ends **by itself** when fewer than two outputs remain, and when the shell ends (a crash included).
@@ -237,6 +237,45 @@ The same sound on **two, three or four** Bluetooth outputs at once: the headset 
   - The inner half circle (this PC's level) keeps its place and size.
 - **Which sound is copied**: the one you hear. If one of the outputs is your current output, its sound is copied to all the others; otherwise the first one in the session. Orbit never changes your default output. If you later make another member your output, the copies follow it a moment after.
 - **Each level is its own**: every output keeps its own volume (its buttons), and this PC's level reaches them all. Moving this PC's level moves it for **every** output that has Orbit's [separate PC volume](#separate-pc-volume); when a device joins, its PC level is set to the one the session has. Each such output keeps that last level afterwards, as the PC level of a device always is. An output with no filter of its own (a device that follows this PC's level) keeps **its own** level: Orbit never writes the volume that PipeWire remembers for a device.
+
+### Create a group from the menu
+
+You do not have to drag one device onto another: **right-click a connected output** (headphones, a speaker, a USB or HDMI output) and choose **Create a group…**. A checklist opens on the sky:
+
+- **Wired** lists the outputs that are really plugged in right now (USB, HDMI, a jack with something in it). An unplugged jack is not there. They are read once, when the list opens.
+- **Bluetooth** lists the devices that are connected and can play sound.
+- The device you right-clicked is already ticked. Tick the others and press **Listen together**. Up to four outputs listen together.
+
+When a group already listens, the entry reads **Add to the group…**: the members are shown with *In the group*, tick the newcomers and press **Add**.
+
+A row you cannot tick stays in the list, faint, with the reason at its end. Click it and a short note says what to do (with a link back to this page):
+
+| Written on the row | Why | What to do |
+|---|---|---|
+| *No sound yet* | The device is connected but has no sound output yet: it does not play sound, or its audio is not ready | Wait a moment, see [Works with multipoint headsets](#works-with-multipoint-headsets) |
+| *Call mode* | A headset on its call profile plays mono | Switch it back to music first |
+| *In the group* | It already listens together | Tick the ones to add |
+| *Group is full* | Four outputs is the most | Untick one, or let a member leave |
+
+Pressing the button with fewer than two outputs ticked (or nothing to add) says *Tick another output*. Nothing is refused in silence, and the list stays open so that you can change what is ticked.
+
+Keys: **↑ / ↓** move along the rows, **Space** ticks or unticks, **Enter** is the button, **Escape** closes. With *Reduce motion* on, the list simply appears. If the list is longer than the room it has (a small tile), it scrolls, and a thin mark on its right edge shows where you are.
+
+- **If the wired section is missing**, plug the cable in first and open the list again: it is read when it opens, not while it is open.
+- **What it reads**: the wired outputs, once, with PipeWire's own tool (`pactl --format=json list sinks`, a fixed command), only while the list is open. Nothing is stored and nothing is sent. Only the devices on the sky are offered, not one hidden in the black hole.
+- **Not yet tried on real hardware**: the checks used made-up outputs, so the real click-through and the real Escape are still to be seen.
+
+### Suggested groups
+
+When two kinds of outputs are available at once (your sound goes to a **wired output**, a jack, USB or HDMI audio, and at least one **Bluetooth audio device** is connected, or the sound goes to a **Bluetooth device** and at least one **wired output** is plugged in), Orbit shows a **ghost planet** on this computer's ring: a dotted, translucent disc as big as the real group would be, with the names it would put together under it (*Studio speakers + XM6*).
+
+- **What it contains.** The output in use first, then the devices of the other kind, up to four in all. It is exactly what a click will start: the session's own rules decide who can be in, so the ghost never promises a group that cannot be made.
+- **Start it.** Click the ghost. It turns into the real group and takes the center. If the group cannot start after all, a short note says why, with a link to this guide.
+- **Turn it down.** Right-click the ghost, or click the small **✕** next to it. The same set of devices is not suggested again until the shell restarts; another set (a device that comes or goes) is a new suggestion. Ending a group yourself counts as turning the same suggestion down.
+- **Changed your mind?** [Create a group from the menu](#create-a-group-from-the-menu), or dragging a device onto another, always works; restarting the shell forgets every refusal.
+- **When you do not see it.** A group is already running (the ghost never shows during one); a headset is in call mode (it cannot share the sound); the device that would join is not connected any more; **The listening source takes the center** is off; or you are looking at the group's own view (the ghost lives in this computer's view, see [The source at the center](#the-source-at-the-center)).
+- **Reduce motion.** The ghost is simply there or not, with no fade, and the ring stands still, so the ghost rests at the top of the ring, partly behind this computer's core; it still answers clicks.
+- **What it costs.** No timer and no animation of its own: it rides the scene's one loop, which stops when nobody looks. The plugged outputs are read (with `pactl`) only while the ghost can appear and the sound goes to Bluetooth, and again when the output in use or the connected devices change, and whenever the orbit opens. The refusals are kept **in memory only**, until the shell ends; nothing is written to disk and nothing is sent. Not measured in the real shell yet.
 
 ### The source at the center
 
@@ -268,23 +307,65 @@ A ring around the center planet is the **general volume** of the group.
 - **A copy without a level of its own** (a device that follows this PC's level) says so in a short note, *… has no volume of its own*, with a link to this section: turn the ring instead.
 - Nothing is saved: Orbit sets the same levels the card sets, and only while you act.
 
+### Wired outputs
+
+Listen together takes two to four outputs, **Bluetooth or wired**: a USB headset or interface, a screen on HDMI, a sound card's jack. A wired output joins from the group menu (**Create a group…** and **Add to the group…**, see [Create a group from the menu](#create-a-group-from-the-menu)), from a [suggested group](#suggested-groups), or from the command line, where `together` and `togetherAdd` take its node name (`alsa_output.…`) next to the Bluetooth addresses. `dms ipc call orbitBluetooth togetherOutputs` prints the wired outputs PipeWire shows as JSON (`output`, `name`, `kind`, `member`), read when you ask and never watched. Inside the group a wired output is drawn as a rounded square, see [Wired outputs in the group](#wired-outputs-in-the-group), and [Wired delay](#wired-delay) lines it up with the Bluetooth ones.
+
+When something is wrong, a short note says it in these words and links here:
+
+- **“… is not plugged in”**: the output is not there (unplugged, or its sound card is asleep). Plug it in, wait until it shows in the sound settings, then add it again.
+- **“… was unplugged”**: a member went away while the group was playing. With three or more outputs the others keep listening together; with two the group ends with it. Plug it back in and add it again.
+- **“… is where the sound comes from”**: you asked to hold back, by hand (`togetherDelay`), the output you hear. Only the other outputs can be held back by hand; Orbit sets the wait of a wired one itself, and [Wired delay](#wired-delay) nudges it.
+- The same output cannot be added twice, and a group holds at most four outputs.
+
+**Not yet tried on real hardware**: wired outputs in a group are checked with made-up outputs and a simulated sound server only. A USB interface, an HDMI screen and the jack are still to be tried.
+
+### Wired outputs in the group
+
+An output that is not Bluetooth (a USB interface, a screen on HDMI, the computer's headphone jack) can listen together too. Inside the group it is easy to tell from a Bluetooth device: it is a **rounded square**, not a round planet.
+
+- **Its picto says what it is**: a trident for a **USB** device, a video port for **HDMI** or DisplayPort, a jack plug for the **analog** output (headphones, speakers, line out), a plug for anything else. The connection beats the name: a USB dock with an HDMI profile is a USB device. Its **name** shows while the pointer is on it, above it in the upper half of the group and under it elsewhere, so it never lands on the source.
+- **The cable**: a thin straight cable joins each wired output to the **source**, because the source is where the sound is taken from. It hangs a little slack for the first 0.4 s after the output joins, then tightens, once; a small pulse runs along it only while sound plays. With *Reduce motion* the cable is taut at once and nothing pulses.
+- **A wired source**: when the output you hear is a wired one, it takes the center as a big rounded square, as big as this computer's core is when it is the main one. It has no cable (the others' beams start from it).
+- **Place and turn**: the squares sit on the same tilted ring as Bluetooth copies, one turn in about 25 s, bigger on the near side, and they sort with the planets: one passing in front hides one behind.
+- **Leave**: right-click the square. **Leave together** takes this output out (the others keep playing; with two outputs only **Stop together** is shown). A wired output has no *Connect*, *Disconnect* or *Forget*, and **Hide** only explains that an output of a group stays in it. A square cannot be dragged out of the group: use the menu.
+- **Add one more**: drop a connected device on a square like on any member of the group. A device that is not connected gets the usual short note.
+- **Volume**: scroll over a square for **its own level** (a thin arc around it shows it while the pointer is on it); scroll over a wired **source** for the group's general level, as for any source. An output that has no level of its own says so in a short note linking to [the volume at the center](#the-volume-at-the-center).
+- **What it costs**: nothing at rest. A square is placed from the group's own turn (no spring, no timer), so the scene still settles; the only animations are a short pop when it appears and the cable's single 0.4 s tightening, and with *Reduce motion* neither plays.
+- **Limits**: the squares jump into place when the group changes (no glide) and vanish without a fade when an output leaves; planets of the outer belt that pass behind the group are not pushed away from them.
+- **Not yet tried on real hardware**: the squares and the cable are checked offscreen with made-up outputs, not yet with a real pointer, a real wheel and real devices.
+
+### Wired delay
+
+A wired output answers in a few milliseconds, a Bluetooth one a good deal later. When they listen together, Orbit makes the wired output wait for what the Bluetooth one adds, and never delays the Bluetooth one. Orbit works the wait out from what PipeWire reports, so there is nothing to set. `dms ipc call orbitBluetooth togetherStatus` shows those figures as `latenciesMs`; a wired output with no figure counts as 0 ms.
+
+**Wired delay** (Settings → Orbit) is for what the figures cannot know: a speaker with its own processing, a TV, a USB interface that does not report its latency. Move the slider until the wired output and the Bluetooth one are heard together: later if the wired one is early, earlier if it is late. It goes from −100 to +100 ms in 5 ms steps, starts at 0 and never moves by itself; it is saved once, when you let go of the slider, and **Reset to 0** puts it back. The same nudge is available from the command line: `dms ipc call orbitBluetooth wiredDelay up | down | +10 | -10 | 20 | reset | status` (`up` and `down` are one step, a signed number is a change from now, a plain number is the exact value from 0 to 100, and the answer is the correction in force).
+
+**When the sound comes from the wired output** (it is the output you hear), a Bluetooth copy can only arrive later than the wired sound, and nothing can speed a Bluetooth stream up. Orbit then holds the wired output back with a small filter of its own for as long as the group listens together, so both are heard together; the filter goes away with the group. If the wired output reports no latency, or the filter does not come up, the Bluetooth copy stays a little late: nudge it with **Wired delay**. This filter is checked on a simulated sound server only: it is not yet confirmed on real hardware.
+
+**A USB output that reports no latency** counts as 0 ms: Orbit does not guess. Use **Wired delay** to bring it in line by ear.
+
 ### What it costs
 
 Nothing while no session runs. During one, Orbit runs **one small sound process per output beyond the first** (two outputs: one, four outputs: three). Each is **passive**, so with no sound playing it holds nothing open and every output can fall asleep as before. They belong to the shell: they disappear when the shell ends, even after a crash, and nothing is written to disk or to your sound setup. A session saves nothing: the only thing kept is each output's PC level, which Orbit already remembers per device.
 
 The center has no timer of its own: the trip, the orbit, the sun's revolution and the beams ride the scene's one loop, which stops by itself when nobody sees the scene (with Reduce motion it only runs for the 0.25 s fade, then stops). The sun's revolution is moved by that loop, not by a QML animation, and the whole system is drawn through one transformed item. Measured on the offscreen preview scene (not on the real shell), a group costs about 2.3 % of one core before the sun and about 2.5 to 2.8 % with it, and 0.1 % with Reduce motion; the cost inside the shell has **not been measured yet**, and neither has the GPU cost of the depth blur.
 
+Wired outputs add nothing at rest. The plugged outputs are read with `pactl` only when something asks (the list of *Create a group…* when it opens, the [ghost group](#suggested-groups) while it can appear), never polled; a wired square has no timer and no spring; the small filter that holds a wired source back exists only while the group listens. None of it has been measured in the real shell yet.
+
 ### Limits
 
-- **Four outputs at most**, and each must be a **connected Bluetooth audio device** with a sound output. Orbit tells you why when one cannot take part (not connected, no sound output yet, a headset on its call profile, the same device twice, a fifth device) and links here.
-- **The outputs may not be in sync.** Bluetooth codecs have different delays (a headset on AAC against a receiver on SBC), and Orbit cannot measure them, so it promises no synchronisation. If you hear an echo, the output that is early is the one to hold back: `dms ipc call orbitBluetooth togetherDelay AA:BB:CC:DD:EE:02 120` (0 to 500 ms) makes **that member** wait; each member has its own value, and you try one until it sounds as one. Only a copy can wait: the output the sound is taken from never does, so if it is the late one, make another member the output you hear. A change restarts that copy for a moment and lasts for this session only (nothing is saved).
+- **Four outputs at most**, and each must be a **connected Bluetooth audio device** with a sound output, or a **wired output** that is plugged in. Orbit tells you why when one cannot take part (not connected or not plugged in, no sound output yet, a headset on its call profile, the same device twice, a fifth device) and links here.
+- **Wired outputs are not yet tried on real hardware** (a USB interface, an HDMI screen, the jack): they are checked with made-up outputs and a simulated sound server. The filter that holds a wired output back when it is the one you hear is not confirmed there either, and a USB output that reports no latency counts as 0 ms (see [Wired delay](#wired-delay)).
+- **Next to a Bluetooth source that has Orbit's PC filters**, the ring around the center and its speaker (the group's general volume) do not move a wired output: a muted group can still play through it. Scroll over the wired square for its own level.
+- **The outputs may not be in sync.** Bluetooth codecs have different delays (a headset on AAC against a receiver on SBC), and Orbit cannot measure them, so it promises no synchronisation. If you hear an echo, the output that is early is the one to hold back: `dms ipc call orbitBluetooth togetherDelay AA:BB:CC:DD:EE:02 120` (0 to 1000 ms) makes **that member** wait; each member has its own value, and you try one until it sounds as one. Only a copy can wait: the output the sound is taken from never does, so if it is the late one, make another member the output you hear. A change restarts that copy for a moment and lasts for this session only (nothing is saved).
 - **A video's picture is not delayed** either: with a large delay, lips drift from the sound.
 - **The level is shared through Orbit's own filters.** If the output you hear has **no** such filter (a device without absolute volume), the copies take its sound after its volume, so nothing can be shared: each output plays at its own level, and the copies follow the level of the source. Orbit prefers that to applying a level twice.
 - **Call profile**: a headset whose microphone is in use drops to a narrow call mode; Orbit does not take it in until it is back on its music profile. A member that falls into a call keeps its place and plays again when the call ends.
 - **At the center, the ring sets the group's level, not the source device's**: the source's own level stays on its card, and there is no `dms ipc call` for the general level yet.
 - **Dropping a device that is not connected** on the group says to connect it first; Orbit does not connect it for you here.
 - **Dragging a member outward** is the gesture that disconnects any other device, but a member only leaves the group: it stays connected and plays on its own again. To disconnect it, use its menu or the × button.
-- **If one output goes away** (a headset handed over to your phone, an output that fell asleep), it stays a member and picks the sound up again when it returns, without a message. A member leaves only on a real Bluetooth disconnection, or when you take it out.
+- **If one output goes away** (a headset handed over to your phone, an output that fell asleep), it stays a member and picks the sound up again when it returns, without a message. A member leaves only on a real Bluetooth disconnection, when you take it out, or, for a wired output, when it is unplugged (a note says so, see [Wired outputs](#wired-outputs)).
 
 ### Works with multipoint headsets
 

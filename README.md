@@ -83,6 +83,9 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 - **Two volumes**: open a connected audio device and its card shows the device's own level and this PC's as two half circles, with the sound itself moving inside. Drag or scroll each, click the planet to mute, and a soft tick plays in the device itself.
 - **Volume pop-up and smart steps**: whenever a volume changes, the same screen shows both levels inside Dank Island (or in place of DMS's OSD, which is switched off); 1 % per slow notch, faster when you scroll or press fast, and your volume keys can use it in one click.
 - **Listen together**: drag one connected audio device onto another (halos and a thread of light show where it can go) and both play the same sound; drag a third (up to four) onto any of them. The volumes' half circle splits into one arc per output, and **the source takes the center of the view** while the others circle it, with a ring around it for the group's volume, and this computer circles the group like a sun. It comes apart by itself when one disconnects, and ends with the shell.
+- **Wired outputs in a group**: a USB interface, an HDMI screen or the headphone jack can listen together too. Inside the group it is a **rounded square** with the picto of its kind, tied to the source by a thin **cable** that tightens as it joins; Orbit lines it up with the Bluetooth outputs by itself and a *Wired delay* nudge covers the rest ([more](docs/GUIDE.md#wired-outputs-in-the-group)). Not yet tried on real hardware.
+- **Create a group from the menu**: right-click a connected output, *Create a group…*, tick the wired outputs that are plugged in and the Bluetooth ones that are connected, then press *Listen together* ([more](docs/GUIDE.md#create-a-group-from-the-menu)).
+- **Suggested groups**: when the sound goes to a wired output while a Bluetooth device is connected (or the other way round), a dotted *ghost planet* proposes a group; one click makes it real, a right-click turns it down until the shell restarts ([more](docs/GUIDE.md#suggested-groups)).
 - **What really plays**: a short line under the device name and in the pop-up, for example *Bluetooth · LDAC · 96 kHz · 24 bit*, and a button that unfolds the rest: channels, profile, the codec's bit rate, latency and the audio quantum, each only when it can be honestly read.
 - **Live charging**: energy beam, time to full, charge speed, session chart.
 - **Earbuds trio**: the case and both buds in their own mini orbit, each with its battery.
@@ -106,8 +109,12 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 | Scroll over a half circle, its icon or its percentage, or drag a moon | That level: the device's or this PC's, with smart steps; a soft tick plays in the device every 5 % ([more](docs/GUIDE.md#the-two-volumes)) |
 | Click the planet of an open audio device | Mute or unmute |
 | Drag a connected audio device onto another (or onto any device already in the group) | Listen together: the same sound on both, up to 4 outputs ([more](docs/GUIDE.md#listen-together)) |
+| Right-click a connected output, **Create a group…** | A checklist of the wired and Bluetooth outputs to listen together, the one you clicked already ticked ([more](docs/GUIDE.md#create-a-group-from-the-menu)) |
+| Click the dotted *ghost planet* on the ring (right-click it, or its ✕, to turn it down) | Start the suggested group, or refuse it until the shell restarts ([more](docs/GUIDE.md#suggested-groups)) |
 | Scroll over the ring around the center planet, or over the planet | The group's general volume, the gaps between outputs kept ([more](docs/GUIDE.md#the-volume-at-the-center)) |
 | Scroll over an output orbiting the center | That output's own volume |
+| Right-click a wired output of the group (the rounded square) | Menu: leave or stop listening together, hide ([more](docs/GUIDE.md#wired-outputs-in-the-group)) |
+| Scroll over a wired output of the group | Its own level; over a wired source, the group's general level ([more](docs/GUIDE.md#wired-outputs-in-the-group)) |
 | Click this computer (the sun around the group), or the group | This computer's view, or the group's view; a click in the empty sky steps one view back ([more](docs/GUIDE.md#the-source-at-the-center)) |
 | Right-click a device | Menu: connect, noise-control modes, leave or stop listening together, hide, forget |
 | Forget a device (unpair) | Right-click → **Forget**, click again to confirm; or the 🗑 button of its detail card |
@@ -132,6 +139,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Quick disconnect button (× on hover) | Off |
 | | Center device | Automatic |
 | | The listening source takes the center (Listen together) | On |
+| | Wired delay (nudges the wait that lines wired outputs up with Bluetooth ones, −100 to +100 ms) | 0 ms |
 | Scanning | Scan automatically | On |
 | | Offer new devices (a *Connect* card in the view) | On |
 | | Pop-up for new headphones (listens to any search, free) | On |
@@ -180,8 +188,10 @@ dms ipc call orbitBluetooth volumeKeys on    # on, off or status: your volume ke
 dms ipc call orbitBluetooth together "AA:BB:CC:DD:EE:01 AA:BB:CC:DD:EE:02"  # listen together: 2 to 4 addresses, one quoted argument
 dms ipc call orbitBluetooth togetherAdd AA:BB:CC:DD:EE:03     # add one more output to the group
 dms ipc call orbitBluetooth togetherRemove AA:BB:CC:DD:EE:03  # take one out (the group ends below two)
-dms ipc call orbitBluetooth togetherDelay AA:BB:CC:DD:EE:02 120  # hold one output back, 0 to 500 ms, this session only
-dms ipc call orbitBluetooth togetherStatus   # who listens together (JSON)
+dms ipc call orbitBluetooth togetherDelay AA:BB:CC:DD:EE:02 120  # hold one output back, 0 to 1000 ms, this session only
+dms ipc call orbitBluetooth togetherStatus   # who listens together (JSON, with each member's latency)
+dms ipc call orbitBluetooth togetherOutputs  # the wired outputs Listen together can take (JSON)
+dms ipc call orbitBluetooth wiredDelay up    # nudge the wired outputs' wait: up, down, +10, -10, 20, reset or status
 dms ipc call orbitBluetooth separate         # end listening together
 ```
 
@@ -205,9 +215,12 @@ Bind them in your compositor, for example in niri: `Mod+N { spawn "dms" "ipc" "c
 | Settings or widgets of Orbit left after removing it while DMS was not running | Install it again, then remove it from DMS while it runs: it cleans up after itself, see [Uninstalling](docs/GUIDE.md#uninstalling) |
 | Volume keys still use smart steps after removing Orbit while DMS was not running | They still work (they fall back to DMS); give them back: `dms keybinds set niri XF86AudioRaiseVolume "spawn dms ipc call audio increment 3" --allow-when-locked`, same with `XF86AudioLowerVolume` and `decrement`, see [Volume keys](docs/GUIDE.md#volume-keys) |
 | DMS's volume OSD stays off after removing Orbit | DMS saved its settings while Orbit held that switch off: turn **Volume** back on in DMS's *Settings → On-screen Displays*, see [DMS's own volume OSD](docs/GUIDE.md#dmss-own-volume-osd) |
-| Listen together refuses a device | A short note says why (not connected, no sound output yet, on a call profile, four already) and the GitHub mark opens [Listen together](docs/GUIDE.md#listen-together) |
+| Listen together refuses a device | A short note says why (not connected or not plugged in, no sound output yet, on a call profile, four already) and the GitHub mark opens [Listen together](docs/GUIDE.md#listen-together) |
 | An output orbiting the center ignores the wheel | It has no volume of its own (it follows this PC's level): a note says so, turn the ring around the center, see [The volume at the center](docs/GUIDE.md#the-volume-at-the-center) |
 | The outputs of Listen together are not in sync | Hold the early one back with `togetherDelay`, see [Limits](docs/GUIDE.md#limits) |
+| *Create a group…* is not in the menu | The device must be connected and play sound; a headset gets it a moment after it connects, see [Create a group from the menu](docs/GUIDE.md#create-a-group-from-the-menu) |
+| The list says *No other output yet*, or a wired output is missing from it | Connect another Bluetooth output, or plug in the wired one and let it show in your sound settings, then open the list again: it is read when it opens, see [Wired outputs](docs/GUIDE.md#wired-outputs) |
+| A wired output and a Bluetooth one are not heard together | Nudge **Wired delay** in the settings, see [Wired delay](docs/GUIDE.md#wired-delay) |
 | Time to full looks off | Some headsets report in 10 % steps; it improves over time |
 
 Some Sony headsets do not report charging, or drop Bluetooth while charging: this is a hardware limit.
@@ -219,7 +232,7 @@ Some Sony headsets do not report charging, or drop Bluetooth while charging: thi
 - **Noise control**: a small helper talks to your headset over a local Bluetooth socket, only while needed. With **Pause when you take the headset off** on, that connection stays open while a Sony headset with a wearing sensor is connected; Orbit pauses and resumes your players through MPRIS on the local D-Bus, keeps nothing and sends nothing; to the headset it sends one message when the connection opens, the request to log its wearing events.
 - **New headphones pop-up**: by default Orbit only listens to searches you start yourself; nothing runs in the background. The optional **Background scan** (off by default) does a local scan of 8 s about once a minute, only while the screen is on, no Bluetooth audio is connected and the battery is above the threshold.
 - **Two volumes**: talk to the local sound server (PipeWire) only; the tick is a sound file shipped with Orbit, the picture of the sound is read locally with `cava`.
-- **Listen together**: one small local sound process per output beyond the first, only while a group listens; it talks to PipeWire only, saves nothing, logs nothing, and ends with the shell. [More](docs/GUIDE.md#listen-together)
+- **Listen together**: one small local sound process per output beyond the first, only while a group listens; it talks to PipeWire only, saves nothing, logs nothing, and ends with the shell. Wired outputs are listed with `pactl list sinks` only when something asks (the *Create a group…* list, the suggested group) and kept in memory; a wired member's name is kept in memory for the session, and the groups you turn down are remembered in memory only, until the shell ends. The **Wired delay** nudge is one number in Orbit's own settings. Nothing is sent. [More](docs/GUIDE.md#listen-together)
 - **Audio details**: read from PipeWire (`pactl list sinks`) while the card or the pop-up shows, only if a fact is chosen; kept in memory, dropped when it closes. Latency and bit rate also read the graph once with `pw-dump`, and the quantum once with `pw-top` (about 2 s), only while the details are unfolded (or the fact is on the line). Orbit never writes to PipeWire or to the headset.
 - **DMS's volume OSD**: while Orbit's pop-up is on, Orbit holds DMS's *Volume* switch off, in memory only, and lets go of it around each of DMS's own saves, so nothing of it reaches DMS's files. [More](docs/GUIDE.md#dmss-own-volume-osd)
 - **Volume keys**: only if you click *Enable*, Orbit asks DMS (`dms keybinds`) to bind them; *Undo* and uninstalling give them back exactly. [More](docs/GUIDE.md#volume-keys)
