@@ -141,17 +141,23 @@ Item {
         {
             "then": 100,
             "run": () => {
-                // A click on the ring lands where it is, even across the top from the level
+                // A click on the gauge lands where it is, wherever the level was
                 const ring = scene.world.ring.item;
-                const at = v => [ring.width / 2 + Math.sin(v * 2 * Math.PI) * ring.radius, ring.height / 2 - Math.cos(v * 2 * Math.PI) * ring.radius];
+                const at = v => [ring.width / 2 + Math.cos((135 + 270 * v) * Math.PI / 180) * ring.radius, ring.height / 2 + Math.sin((135 + 270 * v) * Math.PI / 180) * ring.radius];
+                const gap = deg => [ring.width / 2 + Math.cos(deg * Math.PI / 180) * ring.radius, ring.height / 2 + Math.sin(deg * Math.PI / 180) * ring.radius];
+                const level = () => Math.round(route.shared.audio.volume * 100);
                 route.writeLevel(route.shared, 0.9);
                 ring.press(...at(0.1));
-                check("a click just past the top reads there, not at the far end", Math.round(route.shared.audio.volume * 100), 10);
+                check("a click on the track jumps there, not to where the level was", level(), 10);
                 ring.press(...at(0.95));
-                ring.drag(...at(0.05));
-                check("held, crossing the top stops at the end", Math.round(route.shared.audio.volume * 100), 100);
+                ring.drag(...gap(90));
+                check("held, crossing the gap stays at the end it came from", level(), 100);
                 ring.drag(...at(0.9));
-                check("and coming back follows the pointer", Math.round(route.shared.audio.volume * 100), 90);
+                check("and coming back follows the pointer", level(), 90);
+                ring.press(...gap(60));
+                check("a press in the gap picks the nearer end (the end)", level(), 100);
+                ring.press(...gap(120));
+                check("and the other (the start)", level(), 0);
             }
         },
         {

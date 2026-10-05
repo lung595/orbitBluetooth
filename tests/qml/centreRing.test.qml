@@ -1,12 +1,14 @@
 import QtQuick
 import "components/centre"
 
-// Test of CentreRing (D295): the ring around the group's source says that it
-// is the volume. The speaker at the top follows the level and the mute, a
-// thumb marks the end of the level once the arc has left the speaker, and the
-// level is written out for a moment after every change, whoever made it,
-// with no timer running at rest. The volume and the scene are stand-ins with
-// only what the ring reads. Run with tests/qml/run.sh.
+// Test of CentreRing (D295): the gauge around the group's source says that it
+// is the volume. It sits on the source disc as it is drawn (its body, or the
+// group's rule for a wired source) and not where the group is meant to be, the
+// speaker at the arc's start follows the level and the mute, a thumb marks the
+// end of the level once the arc has left the speaker, and the level is written
+// out for a moment after every change, whoever made it, with no timer running
+// at rest. The volume and the scene are stand-ins with only what the gauge
+// reads. Run with tests/qml/run.sh.
 Item {
     id: h
 
@@ -28,6 +30,7 @@ Item {
     QtObject {
         id: night
         readonly property color primary: "#6aa7ff"
+        readonly property color tertiary: "#c58cff"
         function ink(alpha) {
             return Qt.rgba(1, 1, 1, alpha);
         }
@@ -43,7 +46,8 @@ Item {
                 "coreSize": 75
             })
         readonly property var sizes: ({
-                "ring": 60
+                "ring": 60,
+                "source": 40
             })
         property var group: ({
                 "x": 200,
@@ -51,6 +55,27 @@ Item {
                 "scale": 1
             })
         readonly property real presence: 1
+        // The source disc: its body follows its slot on a spring, so it is
+        // not where the group is (a wired source has no body: the group's rule
+        // puts it there)
+        readonly property string source: "source"
+        property bool wired: false
+        property var disc: ({
+                "px": 190,
+                "py": 205,
+                "diameter": 40,
+                "baseScale": 1
+            })
+        function bodyOf(address) {
+            return wired ? null : disc;
+        }
+        function spotOf(address) {
+            return {
+                "x": group.x,
+                "y": group.y,
+                "size": sizes.source * group.scale
+            };
+        }
     }
     CentreRing {
         id: ring
@@ -102,40 +127,63 @@ Item {
         }
         return null;
     }
-    // Where the middle of the ring's speaker lands in `host`
+    // Where the middle of the ring's speaker lands in `host`, to a hundredth of a pixel
     function speakerAt(host, ring) {
         const chip = named(ring, "speaker");
-        return chip ? chip.mapToItem(host, chip.width / 2, chip.height / 2) : null;
+        const at = chip ? chip.mapToItem(host, chip.width / 2, chip.height / 2) : null;
+        return at ? {
+            "x": Math.round(at.x * 100) / 100,
+            "y": Math.round(at.y * 100) / 100
+        } : null;
     }
 
     function atRest() {
         check("created: nothing is written out, reading the level is no change", [ring.recent, ring.reading], [false, "40%"]);
-        check("the speaker sits where the arc starts, whoever sizes the ring", [speakerAt(h, ring), speakerAt(sceneHost, filled.item)], [
+        // The arc starts at the bottom left (135 degrees), 60 px from the disc's middle
+        check("the speaker sits where the arc starts, on the disc and not on the group, whoever sizes the ring", [speakerAt(h, ring), speakerAt(sceneHost, filled.item)], [
             {
-                "x": 200,
-                "y": 140
+                "x": 147.57,
+                "y": 247.43
             },
             {
-                "x": 200,
-                "y": 140
+                "x": 147.57,
+                "y": 247.43
             }
         ]);
+        stand.disc = {
+            "px": 150,
+            "py": 120,
+            "diameter": 40,
+            "baseScale": 0.5
+        };
+        check("and follows the disc as it moves and shrinks", speakerAt(sceneHost, filled.item), {
+            "x": 128.79,
+            "y": 141.21
+        });
+        stand.wired = true;
         stand.group = {
             "x": 150,
             "y": 120,
             "scale": 0.5
         };
-        check("and follows the group as it steps back", speakerAt(sceneHost, filled.item), {
-            "x": 150,
-            "y": 90
+        check("a wired source has no body: it follows the group's rule, the same place", speakerAt(sceneHost, filled.item), {
+            "x": 128.79,
+            "y": 141.21
         });
+        stand.wired = false;
         stand.group = {
             "x": 200,
             "y": 200,
             "scale": 1
         };
+        stand.disc = {
+            "px": 200,
+            "py": 200,
+            "diameter": 40,
+            "baseScale": 1
+        };
         check("the speaker follows the level", [ring.glyph, (fake.level = 0, ring.glyph), (fake.level = 0.8, ring.glyph)], ["volume_down", "volume_mute", "volume_up"]);
-        check("the thumb sits on the arc's end once it has left the speaker", [ring.thumbSize, (fake.level = 0.01, ring.thumbSize)], [9, 0]);
+        check("the thumb sits on the arc's end once it has left the speaker", [ring.thumbSize, (fake.level = 0.01, ring.thumbSize)], [12, 0]);
         fake.level = 0.4;
     }
 

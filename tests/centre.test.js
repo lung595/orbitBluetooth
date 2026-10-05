@@ -108,9 +108,13 @@ eq("master: all silent, they all go to the level asked", V.scale([0, 0], 0, 0.4)
 eq("master: to zero silences everyone", V.scale([0.4, 0.3], 0.5, 0), [0, 0]);
 eq("master: never below 0 or above 1", V.scale([1, 0.01], 1, -5).concat(V.scale([1, 0.01], 1, 5)), [0, 0, 1, 0.01]);
 eq("master: one member alone is the general level itself", round(V.scale([0.7], 0.7, 0.2)), [0.2]);
-eq("pointer: the ring reads 0 at the top and goes clockwise", [V.fromPointer(0, 0, 0, -10, 0.5), V.fromPointer(0, 0, 10, 0, 0.3), V.fromPointer(0, 0, 0, 10, 0.5), near(V.fromPointer(0, 0, -10, 0, 0.7))], [0, 0.25, 0.5, 0.75]);
-eq("pointer: crossing the top stops at the end instead of jumping to the other", [V.fromPointer(0, 0, -1, -10, 0.1), V.fromPointer(0, 0, 1, -10, 0.9)], [0, 1]);
-eq("pointer: with no reference (a fresh press) a click just left of the top reads near the end, just right near the start", [V.fromPointer(0, 0, -1, -10, NaN), V.fromPointer(0, 0, 1, -10, NaN)].map(v => Math.round(v * 100) / 100), [0.98, 0.02]);
+// The pointer on the gauge: 270 degrees from the bottom left (0) over the top to the bottom right (1), the gap at the bottom
+const at = (deg, r = 10) => [Math.cos(deg * Math.PI / 180) * r, Math.sin(deg * Math.PI / 180) * r];
+eq("pointer: the gauge reads 0 at the bottom left, 0.5 at the top, 1 at the bottom right", [V.fromPointer(0, 0, ...at(135)), V.fromPointer(0, 0, 0, -10), V.fromPointer(0, 0, ...at(45))].map(near), [0, 0.5, 1]);
+eq("pointer: it goes clockwise, a quarter of the way at the left, three quarters at the right", [V.fromPointer(0, 0, -10, 0), V.fromPointer(0, 0, 10, 0)].map(near), [0.167, 0.833]);
+eq("pointer: a fresh press in the gap picks the nearer end", [V.fromPointer(0, 0, ...at(60), NaN), V.fromPointer(0, 0, ...at(120), NaN), V.fromPointer(0, 0, ...at(89), NaN), V.fromPointer(0, 0, ...at(91), NaN)], [1, 0, 1, 0]);
+eq("pointer: held, the gap keeps the end the pointer came from (no jump across it)", [V.fromPointer(0, 0, ...at(100), 0.95), V.fromPointer(0, 0, ...at(80), 0.05)], [1, 0]);
+eq("pointer: the level is held at both ends, it never wraps", [V.fromPointer(0, 0, ...at(136), 0.5), V.fromPointer(0, 0, ...at(44), 0.5)].map(v => Math.round(v * 100) / 100), [0, 1]);
 eq("speaker: crossed out when muted, whatever the level", [V.icon(0.8, true), V.icon(0, true)], ["volume_off", "volume_off"]);
 eq("speaker: empty at zero, one wave under half, two from half", [V.icon(0, false), V.icon(0.3, false), V.icon(0.49, false), V.icon(0.5, false), V.icon(1, false)], ["volume_mute", "volume_down", "volume_down", "volume_up", "volume_up"]);
 

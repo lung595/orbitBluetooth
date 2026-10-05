@@ -49,6 +49,12 @@ Window {
     readonly property bool bench: parts.indexOf("bench") > 0
     readonly property bool feed: parts.indexOf("feed") > 0
     readonly property var sunAngle: parts.find(p => /^sun\d+$/.test(p))
+    // "-level35" sets the group's general volume before the group forms (the
+    // gauge shows no reading), "-read35" sets it while the picture is taken (the
+    // gauge writes its level out), "-muted" mutes the group the same way
+    readonly property var levelPart: parts.find(p => /^level\d+$/.test(p))
+    readonly property var readPart: parts.find(p => /^read\d+$/.test(p))
+    readonly property bool muted: parts.indexOf("muted") > 0
     // Speakers that listen together with the headset in the "together" shots
     readonly property int outputs: mode.startsWith("together") && mode !== "togetherback" ? Number(mode.slice(8)) - 1 : mode === "togetherback" ? 2 : 0
     readonly property bool fold: parts.indexOf("fold") > 0 || unfold
@@ -138,8 +144,26 @@ Window {
         return scene.world.children.find(c => c.address === address);
     }
 
+    // The group's volume (the gauge): quiet before the group forms, or heard just before the picture
+    Timer {
+        running: !!win.levelPart
+        interval: 1
+        onTriggered: fakeRoute.writeLevel(fakeRoute.shared, Number(win.levelPart.slice(5)) / 100)
+    }
+    Timer {
+        id: reader
+        interval: 900
+        onTriggered: {
+            if (win.readPart)
+                fakeRoute.writeLevel(fakeRoute.shared, Number(win.readPart.slice(4)) / 100);
+            if (win.muted)
+                fakeRoute.writeMuted(fakeRoute.shared, true);
+        }
+    }
+
     // Puts the scene in the state the mode shows (opens a card, a menu, a drag…)
     function stage() {
+        reader.start();
         if (mode.startsWith("buds")) {
             const b = bodyOf("00:11:22:33:44:55");
             if (b)
