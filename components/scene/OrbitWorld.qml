@@ -191,7 +191,8 @@ Item {
 
     // A Listen together at the centre (OrbitCentre): the beams under the
     // planets, and the volume ring above the far side of the orbit; both sort
-    // around the group's own stacking order (a copy's is groupZ + its depth)
+    // around the group's own stacking order (the source's is groupZ, a copy's
+    // a little over it, the near ones first: Centre.bodyZ)
     Loader {
         id: beamsLoader
         anchors.fill: parent
