@@ -8,7 +8,9 @@ import "Centre.js" as Centre
 // source. One half per instance: OrbitWorld puts the far half behind the source
 // and the near half in front of it, under every copy. Laid out once at the
 // group's full size and only carried and scaled with the group (as the ghost
-// group's dotted ring is): nothing is painted or animated again.
+// group's dotted ring is): nothing is painted or animated again, except while
+// the group steps back onto the host's ring or returns, when the orbit
+// tightens or widens (Centre.spreadAt) and the ellipse is laid out again with it.
 Item {
     id: orbit
 

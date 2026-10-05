@@ -4,7 +4,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const C = load("Centre.js", ["PERIOD", "MAX_SHIFT", "GROUP_SIZE", "TILT", "clamp01", "ease", "approach", "grow", "sizes", "glyphsOffset", "glyphDisc", "glyphSpacing", "GLYPH_MIN", "groupAt", "bodyZ", "solidity", "inkOf", "COPY_LIFT", "ORBIT_SPREAD", "BEHIND_SPAN", "BEHIND_INK", "away", "phaseAt", "copySlot", "depthSize", "parallax", "copiesOf", "roleOf", "pulse"]);
+const C = load("Centre.js", ["PERIOD", "MAX_SHIFT", "GROUP_SIZE", "TILT", "clamp01", "ease", "approach", "grow", "sizes", "glyphsOffset", "glyphDisc", "glyphSpacing", "GLYPH_MIN", "groupAt", "bodyZ", "solidity", "inkOf", "COPY_LIFT", "ORBIT_SPREAD", "spreadAt", "BEHIND_SPAN", "BEHIND_INK", "away", "phaseAt", "copySlot", "depthSize", "parallax", "copiesOf", "roleOf", "pulse"]);
 const V = load("MasterVolume.js");
 const P = load("Perspective.js", ["FLAT", "size"]);
 
@@ -52,6 +52,22 @@ const scenes = [[220, 200], [300, 300], [420, 380], [520, 440], [800, 600], [140
     return { cx: w / 2, cy: h / 2, rx: Math.max(40, w / 2 - bodySize * 0.8), ry: Math.max(30, h / 2 - bodySize * 1.25), coreSize: Math.round(m * 0.17), bodySize };
 });
 eq("sizes: the orbit stays inside the scene's ring area, and the farthest copy inside the scene, on every size", [scenes.map(sc => C.sizes(sc).radius <= sc.rx * 0.9 + 0.001), scenes.map(sc => C.sizes(sc).radius + C.sizes(sc).copy / 2 <= sc.cx)], [scenes.map(() => true), scenes.map(() => true)]);
+
+// The orbit is wide while the group has the centre and tightens as it steps back onto the host's ring
+eq("spread: wide while the group has the centre, the former tight ring once it has stepped back", [C.spreadAt(0), C.spreadAt(1)], [C.ORBIT_SPREAD, 1]);
+eq("spread: half way is half way, and a stage outside 0..1 is held at its end", [near(C.spreadAt(0.5)), C.spreadAt(-2), C.spreadAt(9)], [near(1.2), C.ORBIT_SPREAD, 1]);
+const spreads = Array.from({ length: 21 }, (_, i) => C.spreadAt(i / 20));
+eq("spread: it only tightens as the group steps back, and never leaves the range between the two", [spreads.every((v, i) => i === 0 || v <= spreads[i - 1]), spreads.every(v => v >= 1 && v <= C.ORBIT_SPREAD)], [true, true]);
+const tight = C.sizes(g, 1);
+eq("sizes: with no spread the copies are on the tight ring they used to be (the ring, a gap, half a copy)", [near(tight.radius), near(tight.ring + 12 + tight.copy / 2), tight.copy], [near(76.75), near(76.75), s.copy]);
+eq("sizes: the wide orbit is the tight one times the spread, and the default is the wide one", [near(s.radius), C.sizes(g)], [near(tight.radius * C.ORBIT_SPREAD), C.sizes(g, C.ORBIT_SPREAD)]);
+eq("sizes: on a small scene a copy on the tight ring is no smaller than on the wide orbit", [C.sizes(small, 1).copy >= t.copy, C.sizes(small, 1).radius < t.radius], [true, true]);
+eq("sizes: the ring, the source and the speaker do not depend on the spread", [C.sizes(g, 1).source, C.sizes(g, 1).ring, C.sizes(g, 1).chip], [s.source, s.ring, s.chip]);
+// On every scene, at every point on the way from the wide orbit to the tight ring, the orbit still fits
+eq("sizes: the orbit fits at every spread on the way, on every size", scenes.concat([small]).map(sc => spreads.every(sp => C.sizes(sc, sp).radius <= sc.rx * 0.9 + 0.001 && C.sizes(sc, sp).radius + C.sizes(sc, sp).copy / 2 <= sc.cx)), scenes.concat([small]).map(() => true));
+// No pop: along the 0.5 s of the step back, the orbit moves a few px a frame at most
+const way = spreads.map(sp => C.sizes(g, sp).radius);
+eq("sizes: the orbit tightens smoothly, no step of more than 3 px in a twentieth of the way", [way.every((v, i) => i === 0 || v <= way[i - 1]), way.every((v, i) => i === 0 || way[i - 1] - v < 3), near(way[0]), near(way[20])], [true, true, near(107.45), near(76.75)]);
 
 // --- the copies' orbit ----------------------------------------------------------
 const centre = C.groupAt(g, 0, slot);
@@ -136,6 +152,8 @@ for (const [what, scene] of [["bar popout", g], ["small scene", small]]) {
     const z = C.sizes(scene);
     eq("icons offset (" + what + "): under the ring and under the copies' lowest point", [C.glyphsOffset(z, false) > z.ring, C.glyphsOffset(z, false) > z.radius * C.TILT + z.copy / 2], [true, true]);
     eq("icons offset (" + what + "): over the group they clear the speaker that crowns the ring too", [C.glyphsOffset(z, true) >= z.ring + z.chip / 2 + 6, C.glyphsOffset(z, true) > C.glyphsOffset(z, false)], [true, true]);
+    const tightZ = C.sizes(scene, 1);
+    eq("icons offset (" + what + "): on the tight ring of a stepped back group they are still clear of the ring and of the copies' lowest point", [C.glyphsOffset(tightZ, false) > tightZ.ring, C.glyphsOffset(tightZ, false) > tightZ.radius * C.TILT + tightZ.copy / 2, C.glyphsOffset(tightZ, true) >= tightZ.ring + tightZ.chip / 2 + 6], [true, true, true]);
     eq("sizes (" + what + "): the speaker's chip is its glyph and a margin", [z.chip, z.chipIcon], [Math.max(10, Math.round(z.source * 0.22)) + 8, Math.max(10, Math.round(z.source * 0.22))]);
 }
 eq("icons: a disc is a third of the core in the middle, as the bar pill's is of its icon", [C.glyphDisc(65, 1), C.glyphDisc(75, 1)], [22, 26]);

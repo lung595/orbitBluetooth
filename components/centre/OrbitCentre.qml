@@ -66,7 +66,10 @@ Item {
     // both views; `flat` is its geometry then, the scene itself with no group
     readonly property real profile: presence
     readonly property var flat: Perspective.flat(scene, profile)
-    readonly property var sizes: Centre.sizes(scene)
+    // The copies' orbit is wide while the group has the centre and tight on the
+    // host's ring (Centre.spreadAt), so it changes only while the group steps
+    // back or returns: everything that reads the sizes follows it from there
+    readonly property var sizes: Centre.sizes(scene, Centre.spreadAt(stage))
     // Fedora's view puts the group on a slot of the host's ring: the physics
     // step lays the ring out and hands the slot over (place)
     property var _slot: ({

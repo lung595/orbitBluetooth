@@ -17,7 +17,7 @@ var TILT = Perspective.FLAT;        // orbit height over width: the profile view
 var MAX_SHIFT = 12;                 // px the sky may drift: the margin around the starfield
 var PARALLAX = 0.08;                // how far the sky follows the camera, far stars barely move
 var COPY_LIFT = 0.5;                // a copy's order over the source's at the middle of its orbit: under 1, so that nothing outside the group sorts between them
-var ORBIT_SPREAD = 1.4;             // how much farther than a tight ring the copies orbit: the source and its gauge stay in the clear, and a copy passing behind the source covers little of it
+var ORBIT_SPREAD = 1.4;             // how much farther than a tight ring the copies orbit while the group has the centre (spreadAt): the source and its gauge stay in the clear, and a copy passing behind the source covers little of it
 var BEHIND_SPAN = 0.25;             // depth either side of the horizon (0) over which a copy turns from whole to its dashed outline
 var BEHIND_INK = 0.7;               // how much of its glyph a copy keeps while it is only an outline
 var GLYPH_DISC = 0.34;              // a member's disc in the row of icons under the group, of the host's core size
@@ -52,22 +52,31 @@ function grow(value, goal, ref, dt, seconds) {
     return ref * approach(value / ref, goal / ref, dt, seconds);
 }
 
+// How much farther than a tight ring the copies orbit, for a stage (0..1: how
+// far the group has stepped back onto the host's ring): ORBIT_SPREAD while it
+// has the centre, a tight ring once it is one more planet on the host's ring,
+// where a wide orbit would cross the host and its neighbours. It follows the
+// group's own easing (groupAt), so the orbit and the group arrive together.
+function spreadAt(stage) {
+    return Perspective.lerp(ORBIT_SPREAD, 1, ease(stage));
+}
+
 // Sizes in px: the source planet, the volume ring around it, a copy, and the
 // distance from the source to a copy. The source is as big as the host's core
 // (the same planet, now at the centre); the ring sits just outside what it
 // already wears (battery arc, noise-control halo) and the copies orbit
-// outside the ring, ORBIT_SPREAD times as far as a tight ring would put them;
-// on a small scene the copies shrink so that orbit still fits.
-function sizes(g) {
+// outside the ring, `spread` times as far as a tight ring would put them
+// (spreadAt); on a small scene the copies shrink so that orbit still fits.
+function sizes(g, spread = ORBIT_SPREAD) {
     const source = g.coreSize;
     const ring = source / 2 + Math.max(16, source * 0.2);
     const gap = ring - source / 2 + 12;
     const room = g.rx * 0.9;
-    const copy = Math.max(12, Math.min(g.bodySize * 0.85, source * 0.5, 2 * (room / ORBIT_SPREAD - source / 2 - gap)));
+    const copy = Math.max(12, Math.min(g.bodySize * 0.85, source * 0.5, 2 * (room / spread - source / 2 - gap)));
     // The speaker that crowns the volume ring and the chip behind it: CentreRing
     // draws them at this size
     const chipIcon = Math.max(10, Math.round(source * 0.22));
-    return { "source": source, "ring": ring, "copy": copy, "radius": (source / 2 + gap + copy / 2) * ORBIT_SPREAD, "chipIcon": chipIcon, "chip": chipIcon + 8 };
+    return { "source": source, "ring": ring, "copy": copy, "radius": (source / 2 + gap + copy / 2) * spread, "chipIcon": chipIcon, "chip": chipIcon + 8 };
 }
 
 // How far from the group's centre (px, at full size) the icons of its members
