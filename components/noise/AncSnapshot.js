@@ -4,7 +4,7 @@
 // how a helper report or a local command updates what the UI shows.
 
 // Settings the UI must not see rewound by a report that predates them
-var SETTINGS = ["mode", "ambient", "voice", "chat"];
+var SETTINGS = ["mode", "ambient", "voice", "chat", "touch"];
 
 // Merges one JSON line from the helper into the previous snapshot.
 // `pending` is true while a command waits for the next session. Returns
@@ -49,7 +49,7 @@ function withSetting(snapshot, key, value) {
     if (!snapshot || !snapshot.state)
         return null;
     var st = Object.assign({}, snapshot.state);
-    st[key] = key === "ambient" ? parseInt(value) : (key === "voice" || key === "chat") ? value === "on" : value;
+    st[key] = key === "ambient" ? parseInt(value) : (key === "voice" || key === "chat" || key === "touch") ? value === "on" : value;
     return Object.assign({}, snapshot, {
         "state": st
     });

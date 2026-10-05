@@ -26,7 +26,7 @@ Item {
     property bool _noCava: false
     // Set while Orbit itself stops cava to move it to another output
     property bool _moving: false
-    readonly property string _conf: node && !_noCava ? (Polar.cavaConfig(node.name + ".monitor", fps, bars) || "") : ""
+    readonly property string _conf: (node && node.name && !_noCava) ? (Polar.cavaConfig(node.name + ".monitor", fps, bars) || "") : ""
 
     function _take(f) {
         if (!f)
@@ -64,14 +64,14 @@ Item {
         frame = null
 
     PwNodePeakMonitor {
-        node: feed.node
-        enabled: feed.active && feed._noCava && !!feed.node
+        node: feed.node && feed.node.name ? feed.node : null
+        enabled: feed.active && feed._noCava && !!(feed.node && feed.node.name)
         onPeaksChanged: {
             const p = peaks || [];
             if (p.length)
                 feed._take({
-                    "l": [Math.min(1, p[0])],
-                    "r": [Math.min(1, p.length > 1 ? p[1] : p[0])]
+                    "l": [Math.min(1, p[0] || 0)],
+                    "r": [Math.min(1, (p.length > 1 ? p[1] : p[0]) || 0)]
                 });
         }
     }

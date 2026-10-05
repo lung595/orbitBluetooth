@@ -22,15 +22,15 @@ Item {
     property var dev: null
 
     readonly property var shown: route ? Route.shownLevels(route.deviceNode(dev), route.pcNode(dev)) : ({})
-    readonly property var deviceAudio: shown.device && shown.device.audio ? shown.device.audio : null
-    readonly property var pcAudio: shown.pc && shown.pc.audio ? shown.pc.audio : null
+    readonly property var deviceAudio: shown?.device?.audio ?? null
+    readonly property var pcAudio: shown?.pc?.audio ?? null
 
-    readonly property real deviceLevel: deviceAudio ? Math.min(1, deviceAudio.volume) : -1
-    readonly property real pcLevel: pcAudio ? Math.min(1, pcAudio.volume) : 0
-    readonly property bool deviceMuted: deviceAudio ? deviceAudio.muted : false
-    readonly property bool pcMuted: pcAudio ? pcAudio.muted : false
-    readonly property string deviceIcon: dev ? Route.iconFor(Catalog.resolve(dev.device, prefs ? prefs.glyphOverrides : ({}))) : "speaker"
-    readonly property string pcIcon: shown.ownIcon ? deviceIcon : "computer"
+    readonly property real deviceLevel: deviceAudio ? Math.min(1, deviceAudio.volume ?? 0) : -1
+    readonly property real pcLevel: pcAudio ? Math.min(1, pcAudio.volume ?? 0) : 0
+    readonly property bool deviceMuted: deviceAudio ? (deviceAudio.muted ?? false) : false
+    readonly property bool pcMuted: pcAudio ? (pcAudio.muted ?? false) : false
+    readonly property string deviceIcon: dev?.device ? Route.iconFor(Catalog.resolve(dev.device, prefs ? prefs.glyphOverrides : ({}))) : "speaker"
+    readonly property string pcIcon: shown?.ownIcon ? deviceIcon : "computer"
     // How loud it is heard: the device's level times this PC's (the
     // vectorscope's picture is drawn that big)
     readonly property real heardLevel: Polar.heardLevel(deviceLevel, pcLevel, deviceMuted, pcMuted)

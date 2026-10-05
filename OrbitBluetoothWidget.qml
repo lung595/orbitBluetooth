@@ -86,7 +86,7 @@ PluginComponent {
                     anchors.centerIn: parent
                     width: parent.width * 0.64
                     height: width
-                    kind: Catalog.resolve(modelData, root.overrides)
+                    kind: modelData ? Catalog.resolve(modelData, root.overrides) : "bluetooth"
                     color: Theme.primary
                     stroke: 1.8
                 }

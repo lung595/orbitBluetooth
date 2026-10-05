@@ -137,6 +137,8 @@ Item {
     }
 
     function onConnection(device, connected) {
+        if (!device || !device.address)
+            return;
         const addr = device.address;
         const next = Object.assign({}, since);
         const log = Object.assign({}, batteryLog);
@@ -154,7 +156,7 @@ Item {
     }
 
     function onBattery(device, percent) {
-        if (percent < 0 || !device.connected)
+        if (!device || !device.address || percent < 0 || !device.connected)
             return;
         const addr = device.address;
         const samples = (batteryLog[addr] || []).slice(-(maxSamples - 1));
@@ -191,13 +193,13 @@ Item {
             readonly property bool fromBluez: nativePath.startsWith("/org/bluez/")
             property string address: fromBluez ? Address.find(nativePath) : ""
 
-            readonly property var info: address && !modelData.isLaptopBattery ? {
-                "state": modelData.state,
-                "percentage": modelData.percentage > 0 ? Math.round(modelData.percentage * 100) : -1,
-                "timeToFull": modelData.timeToFull,
-                "timeToEmpty": modelData.timeToEmpty,
-                "changeRate": Math.abs(modelData.changeRate),
-                "health": modelData.healthSupported ? modelData.healthPercentage : -1
+            readonly property var info: (address && modelData && !modelData.isLaptopBattery) ? {
+                "state": modelData.state ?? 0,
+                "percentage": (modelData.percentage ?? 0) > 0 ? Math.round(modelData.percentage * 100) : -1,
+                "timeToFull": modelData.timeToFull ?? 0,
+                "timeToEmpty": modelData.timeToEmpty ?? 0,
+                "changeRate": Math.abs(modelData.changeRate ?? 0),
+                "health": modelData.healthSupported ? (modelData.healthPercentage ?? -1) : -1
             } : null
 
             onInfoChanged: if (address)
@@ -227,13 +229,15 @@ Item {
             // BlueZ battery, or the kernel/UPower one for HID-only devices
             readonly property int percent: modelData?.batteryAvailable ? Math.round(modelData.battery * 100) : (root.power[modelData?.address]?.percentage ?? -1)
 
-            onConnectedChanged: root.onConnection(modelData, connected)
-            onPercentChanged: root.onBattery(modelData, percent)
+            onConnectedChanged: if (modelData) root.onConnection(modelData, connected)
+            onPercentChanged: if (modelData) root.onBattery(modelData, percent)
 
             Component.onCompleted: {
-                if (connected)
-                    root.onConnection(modelData, true);
-                root.onBattery(modelData, percent);
+                if (modelData) {
+                    if (connected)
+                        root.onConnection(modelData, true);
+                    root.onBattery(modelData, percent);
+                }
             }
         }
     }

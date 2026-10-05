@@ -251,11 +251,12 @@ Column {
     // hidden, so the row could never come back once hidden.
     readonly property bool showVoice: (features?.voice ?? false) && st.mode === "ambient"
     readonly property bool showChat: features?.chat ?? false
+    readonly property bool showTouch: features?.touch ?? false
 
     Row {
         anchors.horizontalCenter: parent.horizontalCenter
         spacing: Theme.spacingS
-        visible: panel.showVoice || panel.showChat
+        visible: panel.showVoice || panel.showChat || panel.showTouch
 
         Chip {
             id: voiceChip
@@ -272,6 +273,14 @@ Column {
             label: "Conversation"
             checked: panel.st.chat === true
             onToggled: panel.scene.ancSend(panel.address, "chat", checked ? "off" : "on")
+        }
+        Chip {
+            id: touchChip
+            visible: panel.showTouch
+            icon: "touch_app"
+            label: "Touch"
+            checked: panel.st.touch === true
+            onToggled: panel.scene.ancSend(panel.address, "touch", checked ? "off" : "on")
         }
     }
 

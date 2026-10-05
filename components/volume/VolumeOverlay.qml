@@ -85,7 +85,8 @@ TwoLevels {
     // not the user turning a knob: no pop-up for a moment after the shown
     // levels change
     property double _calmUntil: 0
-    onShownChanged: _calmUntil = Date.now() + 1500
+    onShownChanged: _calmUntil = Date.now() + 2000
+    onDevChanged: _calmUntil = Date.now() + 3000
 
     function poke() {
         if (mode === "off" || Date.now() < _calmUntil)
@@ -104,11 +105,15 @@ TwoLevels {
         onTriggered: root._settled = true
     }
     function _showAll() {
+        if (mode === "off" || Date.now() < _calmUntil)
+            return;
         _offerKeys();
         const inIsland = _showInIslands();
-        const list = popups.instances;
+        const list = popups.instances || [];
         for (let i = 0; i < list.length; i++) {
             const p = list[i];
+            if (!p)
+                continue;
             if (inIsland.indexOf(p.modelData) !== -1) {
                 if (p.shouldBeVisible)
                     p.hide();
@@ -289,6 +294,6 @@ TwoLevels {
     }
 
     // One cava for every screen's pop-up, only while one shows
-    soundNode: dev ? dev.sink : Pipewire.defaultAudioSink
+    soundNode: dev?.sink ?? Pipewire.defaultAudioSink
     listening: anyShown && _settled
 }

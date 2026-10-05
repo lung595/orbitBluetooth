@@ -134,6 +134,7 @@ class Samsung(unittest.TestCase):
         self.assertTrue(proto.state["chat"])
         self.assertEqual(proto.state["battery"]["case"]["level"], 40)
         self.assertEqual(sent[0][3], 0x88)    # manager info after the first status
+        self.assertEqual(sent[1][3], 0x6F)    # SET_ANC_WITH_ONE_EARBUD
         proto.receive(proto.encode(0x77, h("02")))
         self.assertEqual(proto.state["mode"], "ambient")
 
@@ -142,6 +143,17 @@ class Samsung(unittest.TestCase):
         self.assertEqual(proto.features["modes"], ["nc", "off"])
         proto.set_mode("nc")
         self.assertEqual(sent[-1][3:5], h("98 01"))
+
+    def test_samsung_touch_toggle(self):
+        proto, sent = make("samsung", "Galaxy Buds FE")
+        self.assertTrue(proto.features["touch"])
+        proto.set_touch(True)
+        self.assertTrue(proto.state["touch"])
+        self.assertEqual(sent[-1][3], 0x90)
+        self.assertEqual(sent[-1][4:11], b"\x01" * 7)
+        proto.set_touch(False)
+        self.assertFalse(proto.state["touch"])
+        self.assertEqual(sent[-1][4:11], b"\x00" * 7)
 
 
 class Bose(unittest.TestCase):

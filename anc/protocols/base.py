@@ -49,8 +49,8 @@ class Protocol:
         # kept and applied as soon as it exists
         self.deferred = {}
         self.model = ""
-        self.features = {"modes": [], "ambientMax": 0, "levelMode": "ambient", "voice": False, "chat": False}
-        self.state = {"mode": None, "ambient": None, "voice": None, "chat": None, "battery": {}}
+        self.features = {"modes": [], "ambientMax": 0, "levelMode": "ambient", "voice": False, "chat": False, "touch": False}
+        self.state = {"mode": None, "ambient": None, "voice": None, "chat": None, "touch": None, "battery": {}}
 
     # --- to implement per brand ------------------------------------------
 
@@ -76,6 +76,9 @@ class Protocol:
         pass
 
     def set_chat(self, enabled):
+        pass
+
+    def set_touch(self, enabled):
         pass
 
     def refresh(self):
@@ -132,10 +135,18 @@ class Protocol:
                 self.set_chat(value in ("1", "true", "on"))
             else:
                 self.deferred["chat"] = value
+        elif key == "touch":
+            if self.features["touch"]:
+                self.deferred.pop("touch", None)
+                self.set_touch(value in ("1", "true", "on"))
+            else:
+                self.deferred["touch"] = value
 
     def flush_deferred(self):
         if self.ready and self.deferred.get("chat") is not None and self.features["chat"]:
             self.set("chat", self.deferred.pop("chat"))
+        if self.ready and self.deferred.get("touch") is not None and self.features["touch"]:
+            self.set("touch", self.deferred.pop("touch"))
 
     def set_battery(self, part, level, charging=False):
         if 0 <= level <= 100:
