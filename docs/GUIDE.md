@@ -428,7 +428,7 @@ The drawings are chosen by name (stem or pebble buds; tall, wide or pebble case;
 
 ## Hiding devices: the black hole
 
-A small black hole drifts in the outer field. Drag a device you never use into it (or right-click it and pick **Hide**): it disappears from the orbit and the bar, but **stays connected**. Click the black hole to list what it holds and **Show** to bring a device back. A device that [listens together](#listen-together) cannot be hidden while it is in the group: it would go on playing out of sight, so a short note says to pull it out first (right-click, **Leave together**).
+A small black hole drifts in the outer field (while a [group](#listen-together) has the center it is as small as the rest of your devices, which keep away, and it grows back with them). Drag a device you never use into it (or right-click it and pick **Hide**): it disappears from the orbit and the bar, but **stays connected**. Click the black hole to list what it holds and **Show** to bring a device back. A device that [listens together](#listen-together) cannot be hidden while it is in the group: it would go on playing out of sight, so a short note says to pull it out first (right-click, **Leave together**).
 
 **From the group chooser.** In **Create a group…** every row shows an eye when you point at it or move the keyboard cursor onto it (press `H` for the same): the output leaves the Wired / Bluetooth lists and waits in a *Hidden* section at the bottom, folded until you open it (click its heading, or press Right; Left folds it). The eye of a hidden row brings it back. You can also drag a row onto the black hole: a small chip with the output's picture and an eye badge follows the pointer, the hole lights up and shows an eye, and letting go over it hides the output. A wired output is hidden the same way as a Bluetooth device and counts in the hole's *Hidden · N*. An output that plays in the running group cannot be hidden (it would keep playing out of sight): Orbit says so under the orbit; pull it out of the group first (right-click, **Leave together**).
 
@@ -542,16 +542,18 @@ When not charging, the readout shows the time left and the tiles switch to **EMP
 
 ### Battery arc colours
 
-The arc around a connected device's disc tells the level at a glance, and never takes the color of the group's [volume gauge](#the-volume-at-the-center) (your theme's primary):
+The arc around a connected device's disc tells the level at a glance by its color, which drifts with the level between three colors of your theme, and never takes the color of the group's [volume gauge](#the-volume-at-the-center) (your theme's primary):
 
 | Arc | Meaning |
 | --- | --- |
-| Green | 40 % and up |
-| Amber | 16 to 39 % |
 | Red | 15 % and down |
+| Red toward amber | 16 to 34 %: the lower, the redder |
+| Amber | 35 % |
+| Amber toward green | 36 to 99 %: the higher, the greener |
+| Green | 100 % |
 | Blue-violet, breathing | Charging, whatever the level |
 
-The charging color is your theme's *info* blue; when your theme's primary is that same blue (a theme generated from a blue wallpaper often is), it is the theme's *tertiary* accent instead, so it is never mistaken for the volume gauge. In the stock Blue and Cyan themes no color of the theme tells itself apart from the primary. The card's gauge keeps its own smooth red-to-aqua ramp, red for as long as the arc is.
+A point of level moves the color a little, so you read a 60 % battery as different from a 45 % one without a number. The blend is made on hue, saturation and lightness, so the middle of the way stays as vivid as its ends (a mix of red and green in RGB would go muddy). The charging color is your theme's *info* blue; when your theme's primary is that same blue (a theme generated from a blue wallpaper often is), it is the theme's *tertiary* accent instead, so it is never mistaken for the volume gauge. In the stock Blue and Cyan themes no color of the theme tells itself apart from the primary. The card's gauge keeps its own smooth red-to-aqua ramp, red for as long as the arc is.
 
 ## New headphones pop-up
 

@@ -39,10 +39,19 @@ function advance(phase, dt, speed) {
     return phase + dt * speed / PERIOD * Math.PI * 2;
 }
 
+// How big the black hole is drawn, of its size in the scene's own view, once the
+// group has the centre by `away` (0..1). What is hidden belongs to the host, so
+// the hole shrinks with the host's system, to the size that system has at the
+// middle of its path (SIZE), instead of keeping its full size beside planets
+// that have shrunk; it grows back as the host takes the centre again.
+function holeScale(away) {
+    return Perspective.lerp(1, SIZE, away);
+}
+
 // The scene's geometry as seen from the system `t` ({ x, y, k }): the same
 // rings and belt, centred on the sun and scaled, so the scene's motion maths
 // (slots, drag, separation) work on it unchanged. A new plain object each
-// time, safe to adjust; the black hole stays where and as big as it is.
+// time, safe to adjust; the black hole stays where it is (its size: holeScale).
 function view(g, t) {
     const v = Perspective.copy(g);
     v.cx = t.x;
