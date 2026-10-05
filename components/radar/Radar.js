@@ -12,7 +12,7 @@ var STYLES = ["hero"];
 
 var START = 135;      // where a dial's gauge starts, in degrees clockwise from 3 o'clock (7:30)
 var SWEEP = 270;      // how far it runs, so it opens at the bottom, where the mute badge sits
-var HERO = 0.25;      // the hero's radius, of the radar's side
+var HERO = 0.22;      // the hero's radius, of the radar's side
 var SATELLITE = 0.085;
 var ORBIT = 0.4;      // the satellites' ring, of the side, from the hero's middle
 var SPREAD = 50;      // degrees between two satellites at most
@@ -64,6 +64,14 @@ function heroOf(ids, want) {
 // The dials around the hero, in the order of the group
 function around(ids, hero) {
     return ids.filter(id => id !== hero);
+}
+
+// The line under the hero's name in the card's header: what it is, and for the
+// group how many outputs share the sound
+function subtitle(kind, outputs) {
+    if (kind === "group")
+        return "Group · " + outputs + (outputs === 1 ? " output" : " outputs");
+    return kind === "wired" ? "Wired" : "Bluetooth";
 }
 
 // What can be done with the hero, as { id, icon, label, danger }, by what it is:

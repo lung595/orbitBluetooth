@@ -1,33 +1,50 @@
 import QtQuick
 import qs.Common
 import qs.Widgets
+import "../card"
 
-// The actions that go with the radar's hero, as a row of pills: an icon and a few
-// words each, the destructive one in red. It only says which was chosen.
+// The actions that go with the radar's hero, as a row of glass pills: an icon and
+// a few words each, the destructive one tinted red. It only says which was chosen.
 Flow {
     id: chips
 
     // [{ id, icon, label, danger }] (Radar.chips)
     property var model: []
-    required property var night
+    required property PaperColors paper
 
     signal chosen(string id)
 
     spacing: 8
 
+    // How wide the pills are side by side, so the view can centre a short row
+    readonly property real natural: {
+        let total = 0;
+        for (let i = 0; i < pills.count; i++) {
+            const pill = pills.itemAt(i);
+            total += (pill ? pill.width : 0) + chips.spacing;
+        }
+        return Math.max(0, total - chips.spacing);
+    }
+
     Repeater {
+        id: pills
         model: chips.model
         delegate: Rectangle {
             id: chip
             required property var modelData
-            readonly property color ink: modelData.danger ? chips.night.error : chips.night.ink(0.92)
+            readonly property color ink: modelData.danger ? Theme.error : chips.paper.ink
 
             width: row.implicitWidth + 22
             height: 30
             radius: height / 2
-            color: area.containsMouse ? Theme.withAlpha(ink, 0.2) : chips.night.smoke(0.55)
+            color: area.containsMouse ? (modelData.danger ? Theme.withAlpha(ink, 0.16) : chips.paper.fg(0.12)) : chips.paper.fg(0.05)
             border.width: 1
-            border.color: Theme.withAlpha(ink, area.containsMouse ? 0.7 : 0.35)
+            border.color: modelData.danger ? Theme.withAlpha(ink, area.containsMouse ? 0.6 : 0.35) : chips.paper.fg(0.07)
+            Behavior on color {
+                ColorAnimation {
+                    duration: 140
+                }
+            }
 
             Row {
                 id: row
