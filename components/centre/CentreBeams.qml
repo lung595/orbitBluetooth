@@ -1,38 +1,41 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import qs.Common
+import "../together/Member.js" as Member
 import "Centre.js" as Centre
 
-// The soft beams from the source to each copy. A small pulse travels along
-// them only while sound plays (CentreWatch); the pulse is placed from the
-// beams' clock, which the scene's step advances, so there is no animation
-// here. The ends follow the bodies, which is what the eye sees fly into place.
+// The soft beams from the source to each Bluetooth copy, and a cable to each
+// wired one (WiredCable). A small pulse travels along them only while sound
+// plays (CentreWatch); the pulse is placed from the beams' clock, which the
+// scene's step advances, so there is no animation here. The ends follow the
+// discs, which is what the eye sees fly into place.
 Item {
     id: beams
 
     required property var centre
     readonly property var night: centre.scene.night
-    readonly property var origin: centre.bodyOf(centre.source)
+    // Where the source is: its body, or its spot when it is a wired output
+    readonly property var origin: centre.pointOf(centre.source)
 
     anchors.fill: parent
     opacity: centre.presence
 
     Repeater {
-        model: beams.centre.copies
+        model: beams.centre.copies.filter(a => !Member.isWired(a))
 
         delegate: Item {
             id: beam
 
             required property string modelData
-            required property int index
-            readonly property var copy: beams.centre.bodyOf(modelData)
-            readonly property real dx: copy && beams.origin ? copy.px - beams.origin.px : 0
-            readonly property real dy: copy && beams.origin ? copy.py - beams.origin.py : 0
-            readonly property var pulse: Centre.pulse(beams.centre.beamTime, index, beams.centre.copies.length)
+            readonly property var end: beams.centre.pointOf(modelData)
+            readonly property real dx: end && beams.origin ? end.x - beams.origin.x : 0
+            readonly property real dy: end && beams.origin ? end.y - beams.origin.y : 0
+            // Spread over every copy, wired ones included, so the pulses do not beat together
+            readonly property var pulse: Centre.pulse(beams.centre.beamTime, beams.centre.copies.indexOf(modelData), beams.centre.copies.length)
 
-            visible: !!copy && !!beams.origin
-            x: beams.origin ? beams.origin.px : 0
-            y: beams.origin ? beams.origin.py : 0
+            visible: !!end && !!beams.origin
+            x: beams.origin ? beams.origin.x : 0
+            y: beams.origin ? beams.origin.y : 0
             width: Math.hypot(dx, dy)
             height: 0
             rotation: Math.atan2(dy, dx) * 180 / Math.PI
@@ -81,6 +84,16 @@ Item {
                 radius: width / 2
                 color: Theme.withAlpha(beams.night.primary, 0.9 * beam.pulse.alpha)
             }
+        }
+    }
+
+    // A thin cable to each wired member instead of a beam: they are rows of a
+    // list model, so a cable keeps its own tightening when others come and go
+    Repeater {
+        model: beams.centre.wired
+
+        delegate: WiredCable {
+            centre: beams.centre
         }
     }
 }

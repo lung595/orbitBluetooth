@@ -122,6 +122,17 @@ function depthSize(depth) {
     return 0.85 + 0.15 * depth;
 }
 
+// Where a member of the group sits and how big it is (px): the source in the
+// middle at the size of the host's core, copy `i` of `n` on the orbit. One rule
+// for every kind of member, so a wired output sits exactly where a Bluetooth
+// one would (D298). `sz` is sizes(g), `c` the group's { x, y, scale }.
+function place(sz, c, role, i, n, phase) {
+    if (role === "source")
+        return { "x": c.x, "y": c.y, "depth": 1, "size": sz.source * c.scale };
+    const slot = copySlot(sz.radius, c, i, n, phase);
+    return { "x": slot.x, "y": slot.y, "depth": slot.depth, "size": sz.copy * c.scale * depthSize(slot.depth) };
+}
+
 // How far the sky drifts when the camera follows the source from `from` (its
 // place on the ring) to the centre: a slight parallax, kept inside the margin
 function parallax(g, from) {

@@ -51,6 +51,12 @@ QtObject {
         property string name: ""
         property Level audio: Level {}
     }
+    // A wired output as PipeWire describes it (D298): a description and the
+    // properties of its card
+    component WiredNode: Node {
+        property string description: ""
+        property var properties: ({})
+    }
     readonly property var _others: ({
             "02:00:00:00:20:01": otherOne,
             "02:00:00:00:20:02": otherTwo,
@@ -73,6 +79,40 @@ QtObject {
         audio: Level {
             volume: 0.5
             muted: true
+        }
+    }
+    // Made-up wired outputs, by the node name a group's member is: a USB
+    // interface, a screen on HDMI and speakers on the jack
+    readonly property var _wired: ({
+            "alsa_output.usb-Fictional_Audio-DAC-00.analog-stereo": usbDac,
+            "alsa_output.pci-0000_00_1f.3.hdmi-stereo": screen,
+            "alsa_output.pci-0000_00_1f.3.analog-stereo": jack
+        })
+    readonly property WiredNode usbDac: WiredNode {
+        name: "alsa_output.usb-Fictional_Audio-DAC-00.analog-stereo"
+        description: "Fictional Audio DAC"
+        properties: ({
+                "device.bus": "usb"
+            })
+        audio: Level {
+            volume: 0.4
+        }
+    }
+    readonly property WiredNode screen: WiredNode {
+        name: "alsa_output.pci-0000_00_1f.3.hdmi-stereo"
+        description: "Fictional Monitor"
+        audio: Level {
+            volume: 0.7
+        }
+    }
+    readonly property WiredNode jack: WiredNode {
+        name: "alsa_output.pci-0000_00_1f.3.analog-stereo"
+        description: "Fictional Speakers"
+        properties: ({
+                "device.form_factor": "speaker"
+            })
+        audio: Level {
+            volume: 0.55
         }
     }
     // This PC's level shared by the outputs: the source's filter node, and
@@ -99,6 +139,8 @@ QtObject {
         // The first member is the output in use: the one whose sound is copied
         readonly property string source: active ? members[0] : ""
         function nameOf(address) {
+            if (fake._wired[address])
+                return fake._wired[address].description;
             const d = fake.known(address);
             return d && d.device ? d.device.name : "";
         }
@@ -108,12 +150,13 @@ QtObject {
             return members.indexOf(address) >= 0;
         }
         function memberNode(address) {
-            return address === "02:00:00:00:10:06" ? fake.headset.sink : fake._others[address] || null;
+            return address === "02:00:00:00:10:06" ? fake.headset.sink : fake._others[address] || fake._wired[address] || null;
         }
         // The drag's rules of the real session, as far as the scene reads them:
-        // an address the route does not know is a device that is not connected
+        // an address the route does not know is a device that is not connected;
+        // a wired output of the group can be dropped on
         function relevant(a, b) {
-            return !!fake.known(a) && !!fake.known(b);
+            return !!fake.known(a) && (!!fake.known(b) || !!fake._wired[b]);
         }
         // As the real session: a member leaves, and with fewer than two left
         // the group ends. null when it was done.

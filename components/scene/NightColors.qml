@@ -31,6 +31,13 @@ QtObject {
     readonly property color primaryText: onAccent(Theme.primary, Theme.primaryText)
     readonly property color errorText: onAccent(Theme.error, Theme.errorText)
 
+    // A connected device's disc, its border and its glyph: one definition for
+    // the Bluetooth bodies and the wired members of a group, so that both kinds
+    // read as one family
+    readonly property color connectedFill: whiteBodies ? Qt.tint("#FFFFFF", Theme.withAlpha(Theme.primary, 0.1)) : Qt.tint(Qt.rgba(0.06, 0.07, 0.09, 0.92), Theme.withAlpha(primary, 0.16))
+    readonly property color connectedEdge: Theme.withAlpha(primary, 0.55)
+    readonly property color connectedInk: whiteBodies ? bodyInk : Qt.lighter(primary, 1.12)
+
     // The sky itself and the ink drawn on it. The sky is night in every theme
     // on purpose, so these are the one place its constants live; everything
     // else (sizes, radii, spacing) comes from Theme.

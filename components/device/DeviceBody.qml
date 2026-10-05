@@ -270,23 +270,9 @@ Item {
         onFinished: body.scene.finishHide(body)
     }
 
-    SequentialAnimation {
+    PopAnimation {
         id: popAnim
-        NumberAnimation {
-            target: body
-            property: "popScale"
-            to: 1.14
-            duration: 110
-            easing.type: Easing.OutQuad
-        }
-        NumberAnimation {
-            target: body
-            property: "popScale"
-            to: 1
-            duration: 420
-            easing.type: Easing.OutBack
-            easing.overshoot: 2.2
-        }
+        body: body
     }
 
     SequentialAnimation {

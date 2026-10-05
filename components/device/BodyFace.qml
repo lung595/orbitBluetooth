@@ -51,9 +51,9 @@ Item {
                 duration: 260
             }
         }
-        color: face.body.night.whiteBodies ? (face.body.connected ? Qt.tint("#FFFFFF", Theme.withAlpha(Theme.primary, 0.1)) : Qt.rgba(1, 1, 1, face.body.dormant ? 0.35 : 0.72)) : face.body.connected ? Qt.tint(Qt.rgba(0.06, 0.07, 0.09, 0.92), Theme.withAlpha(face.body.night.primary, 0.16)) : face.body.scene.glass ? Qt.rgba(0.05, 0.06, 0.08, face.body.dormant ? 0.5 : 0.6) : Qt.rgba(1, 1, 1, face.body.dormant ? 0.05 : 0.085)
+        color: face.body.connected ? face.body.night.connectedFill : face.body.night.whiteBodies ? Qt.rgba(1, 1, 1, face.body.dormant ? 0.35 : 0.72) : face.body.scene.glass ? Qt.rgba(0.05, 0.06, 0.08, face.body.dormant ? 0.5 : 0.6) : Qt.rgba(1, 1, 1, face.body.dormant ? 0.05 : 0.085)
         border.width: 1
-        border.color: face.body.armed && face.body.holding ? Theme.withAlpha(face.body.night.error, 0.8) : face.body.armed ? Theme.withAlpha(face.body.night.primary, 0.9) : face.body.connected ? Theme.withAlpha(face.body.night.primary, 0.55) : Qt.rgba(1, 1, 1, face.body.dormant ? 0.11 : 0.17)
+        border.color: face.body.armed && face.body.holding ? Theme.withAlpha(face.body.night.error, 0.8) : face.body.armed ? Theme.withAlpha(face.body.night.primary, 0.9) : face.body.connected ? face.body.night.connectedEdge : Qt.rgba(1, 1, 1, face.body.dormant ? 0.11 : 0.17)
 
         Behavior on color {
             ColorAnimation {
@@ -69,7 +69,7 @@ Item {
         kind: face.body.kind
         imageSource: face.body.scene.prefs.imageFor(face.body.device)
         pictureSource: face.body.picture ? face.body.picture.image : ""
-        color: face.body.focused ? face.body.paper.ink : face.body.night.whiteBodies ? (face.body.connected ? face.body.night.bodyInk : face.body.night.bodyMuted) : face.body.connected ? Qt.lighter(face.body.night.primary, 1.12) : Qt.rgba(1, 1, 1, 0.86)
+        color: face.body.focused ? face.body.paper.ink : face.body.connected ? face.body.night.connectedInk : face.body.night.whiteBodies ? face.body.night.bodyMuted : Qt.rgba(1, 1, 1, 0.86)
         stroke: face.body.focused ? 1.05 : 1.5
         Behavior on color {
             ColorAnimation {

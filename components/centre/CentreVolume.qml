@@ -3,6 +3,7 @@ import qs.Common
 import "MasterVolume.js" as Master
 import "../common/Guide.js" as Guide
 import "../device/DeviceCatalog.js" as Catalog
+import "../together/Member.js" as Member
 import "../volume/Steps.js" as Steps
 
 // The volumes of the listening group at the centre (D284): the general level,
@@ -72,10 +73,14 @@ Item {
         nodes.forEach(n => route.writeMuted(n, to));
     }
 
-    // A member's own level: its Bluetooth device's, null when the device
-    // follows this PC and has none
+    // A member's own level: its Bluetooth device's, or its output's when it is
+    // a wired one; null when the device follows this PC and has none
     function ownNode(address) {
-        const node = route ? route.deviceNode(route.known(address)) : null;
+        let node = null;
+        if (Member.isWired(address))
+            node = session ? session.memberNode(address) : null;
+        else if (route)
+            node = route.deviceNode(route.known(address));
         return node && node.audio ? node : null;
     }
     // Its level 0..1, or -1 when it has none
