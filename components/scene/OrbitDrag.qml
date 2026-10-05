@@ -30,7 +30,8 @@ Item {
         const wasArmed = b.armed;
         const wasHide = b.hideArmed;
         const arm = Physics.dragArm(scene.centre.geometryOf(b), b.holding, p.x, p.y);
-        b.hideArmed = arm.hide;
+        // A wired output has no place in the hidden list: it only leaves
+        b.hideArmed = arm.hide && !b.wired;
         scene.holeFeed = arm.feed;
         b.armed = arm.armed;
         if ((b.armed && !wasArmed && !b.holding) || (b.hideArmed && !wasHide)) {
@@ -64,16 +65,22 @@ Item {
         scene.dragBody = null;
         if (!b)
             return;
+        // The gesture's state is cleared before its outcome runs: leaving the
+        // group or disconnecting reshapes the scene (the source passes to
+        // another member, bodies come and go), and nothing of the drag may be
+        // left behind if that goes wrong
+        const mate = scene.togetherDrop, hide = b.hideArmed, armed = b.armed;
         b.dragging = false;
+        b.armed = false;
+        b.hideArmed = false;
         scene.holeFeed = 0;
-        const mate = scene.togetherDrop;
         scene.togetherDrop = null;
-        if (mate && !b.hideArmed) {
+        scene.wake();
+        if (mate && !hide) {
             scene.together.drop(b, mate);
-        } else if (b.hideArmed) {
-            b.hideArmed = false;
+        } else if (hide) {
             scene.hideBody(b);
-        } else if (b.armed) {
+        } else if (armed) {
             // Pulled out of a group, a device leaves it and stays connected
             if (scene.together.isMember(b.address))
                 scene.together.leave(b.address);
@@ -84,7 +91,5 @@ Item {
             else
                 scene.startConnect(b);
         }
-        b.armed = false;
-        scene.wake();
     }
 }
