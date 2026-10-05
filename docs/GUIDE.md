@@ -515,7 +515,7 @@ On **Sony** headsets the detail card shows a **Conversation ends** row (*Short*,
 
 ## Charging and battery
 
-A charging device gets a lightning badge, a breathing battery arc and a beam of energy from your machine, drawn as magnetic field lines. Under its name you read the level and the time to full, for example `54% · 2h08`. The arc around a connected device is coloured by its level, see [Battery arc colours](#battery-arc-colours).
+A charging device gets a lightning badge, a breathing battery arc and a beam of energy from your machine, drawn as magnetic field lines. Under its name you read the level and the time to full, for example `54% · 2h08`. The arc around a connected device is colored by its level, see [Battery arc colours](#battery-arc-colours).
 
 | Charging in orbit | Charging details |
 | --- | --- |
