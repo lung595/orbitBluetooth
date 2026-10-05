@@ -45,6 +45,12 @@ function drop(length, tension) {
     return 2 * SLACK * Math.max(0, length) * (1 - t);
 }
 
+// The point at `t` (0..1) along the cable from a to b ({ x, y }) when its control
+// point hangs `drop` below the middle: where the pulse travelling along it is
+function along(a, b, t, drop) {
+    return { "x": a.x + (b.x - a.x) * t, "y": a.y + (b.y - a.y) * t + 2 * t * (1 - t) * drop };
+}
+
 // The change that brings the rows of the wired discs to the wired members of
 // the group: { remove: row numbers, last first, add: tokens, in order }. A row
 // that stays is not touched, so its disc keeps its cable and its one-time

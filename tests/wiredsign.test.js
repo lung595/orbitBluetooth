@@ -59,6 +59,12 @@ eq("cable: it only ever tightens, never slackens again on its way", steps.every(
 eq("cable: a tension past either end is the end", [S.drop(200, -3) === S.drop(200, 0), S.drop(200, 4)], [true, 0]);
 eq("cable: a longer cable hangs more, a point of a cable (no length) not at all", [S.drop(400, 0) > S.drop(200, 0), S.drop(0, 0), S.drop(-5, 0)], [true, 0, 0]);
 
+const from = { x: 100, y: 80 }, to = { x: 300, y: 120 };
+eq("cable: a pulse starts at the source and ends at the member, loose or taut", [S.along(from, to, 0, 70), S.along(from, to, 1, 70), S.along(from, to, 0, 0), S.along(from, to, 1, 0)], [from, to, from, to]);
+eq("cable: taut, the pulse is on the straight line", S.along(from, to, 0.25, 0), { x: 150, y: 90 });
+eq("cable: loose, the middle of the cable hangs half the control point's drop below the line", [S.along(from, to, 0.5, 72).x, S.along(from, to, 0.5, 72).y], [200, 100 + 36]);
+eq("cable: a pulse is never above the line of a cable that hangs (counter-proof of the direction)", [0.1, 0.3, 0.5, 0.7, 0.9].every(t => S.along(from, to, t, 50).y > S.along(from, to, t, 0).y), true);
+
 // --- the rows follow the group's wired members --------------------------------------------
 const plan = (rows, members) => S.reconcile(rows, members);
 eq("rows: a wired output joins, a row is added", plan([], [headset, usb]), { "remove": [], "add": [usb] });
