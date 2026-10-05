@@ -120,6 +120,7 @@ Item {
                 check("the far end is above the source and the near end below it: where the two arcs are", [copy.py < src.py - 1, w.py > src.py + 1], [true, true]);
                 check("the near half stays under every copy, even the farthest one (counter-proof: over it a copy would be drawn under the line)", [nearHalf.z < copy.z, nearHalf.z < w.z, nearHalf.z > src.z], [true, true, true]);
                 // The group steps back onto this computer's ring: the trajectory goes with it, smaller
+                h.widths = [];
                 c.recall();
             }
         },
@@ -146,7 +147,6 @@ Item {
                 // It left the wide orbit by a smooth way: it only narrowed, from the wide width to the tight one
                 const wide = 2 * (Centre.ORBIT_SPREAD * tight + 1), seen = h.widths, range = wide - 2 * (tight + 1);
                 check("the trajectory went through the sizes in between, narrowing, none missed (no step over a third of the way)", [seen.length > 4, seen.every((v, i) => i === 0 || v <= seen[i - 1]), near(seen[0], wide, 12), near(seen[seen.length - 1], 2 * (tight + 1), 0.001), seen.every((v, i) => i === 0 || seen[i - 1] - v < range / 3)], [true, true, true, true, true]);
-                h.widths = [];
                 c.release();
             }
         },
