@@ -60,11 +60,18 @@ Item {
         scene.wake();
     }
 
-    // The group ended or lost the hero: the radar never stays on what is gone
+    // The group ended, or the popout closed: the radar never stays on what is gone
     Connections {
         target: orbit.centre
         function onGroupedChanged() {
             if (!orbit.centre.grouped)
+                orbit.close();
+        }
+    }
+    Connections {
+        target: orbit.scene
+        function onActiveChanged() {
+            if (!orbit.scene.active)
                 orbit.close();
         }
     }
@@ -165,6 +172,15 @@ Item {
         active: orbit.open
         sourceComponent: RadarView {
             radar: orbit
+        }
+    }
+    // The sky's guided note lies under the veil: it is shown again over it, so a
+    // dial that cannot do what was asked never answers with silence (value 10)
+    Loader {
+        anchors.fill: parent
+        active: orbit.open
+        sourceComponent: OrbitNote {
+            scene: orbit.scene
         }
     }
 }

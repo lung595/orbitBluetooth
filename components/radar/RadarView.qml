@@ -66,7 +66,7 @@ Item {
     // A tap beside the dials closes it, as Escape does
     Rectangle {
         anchors.fill: parent
-        color: view.night.smoke(0.8)
+        color: view.night.smoke(0.92)
         MouseArea {
             anchors.fill: parent
             onClicked: view.radar.close()
@@ -83,6 +83,8 @@ Item {
             info: view.infoOf(modelData)
             night: view.night
             hero: modelData === view.radar.heroId
+            // The small dials and their names stay above the big one's ring
+            z: hero ? 0 : 1
             radius: slot.r
             x: view.cx + slot.x - slot.r
             y: view.cy + slot.y - slot.r

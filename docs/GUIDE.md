@@ -230,7 +230,7 @@ The same sound on **two, three or four** outputs at once, Bluetooth or [wired](#
 - **Start**: in the orbit, **drag one connected audio device onto another** (or [create a group from the menu](#create-a-group-from-the-menu), or click a [suggested group](#suggested-groups)). As soon as you carry it, a soft halo breathes around each device it could join and a thread of light runs toward the nearest, brighter as they come closer, so you can see it can be done. The zone that takes the drop is **twice the target's radius** around its center (60 px at least), so a small planet far in the ring is as easy to hit as a big one. While it is over that zone, the thread is whole and the hint under the orbit reads *Release to listen together*; let go and both play the same sound. Pulled away from the ring, the invitation fades (that is the gesture to disconnect). With *Reduce motion* the halos and the light dots stand still. The dragged device springs back to its place, so you can see nothing moved.
 - **Add one more**: drag another connected device onto **any** device that already listens together. Up to **4** outputs; at the fourth, a short note says so and links here.
 - **One leaves**: right-click a device that listens together and choose **Remove from group** (a wired member reads **Disconnect**: it leaves the group and stays plugged in); the others keep playing. Dragging it outward, away from the group, does the same without disconnecting it (the hint reads *Release to leave the group*); a wired member can be dragged out too, see [Pull a wired output out of the group](#pull-a-wired-output-out-of-the-group). Turning it off ends its part too. With only two, removing one ends the session, since one device is not a group.
-- **Stop it all**: **Stop group** in the group's radar (TODO-RADAR: name and place to be checked once the radar is in), or `dms ipc call orbitBluetooth separate`. A member's menu is short on purpose: it leaves the group or hides, the group itself is stopped from its radar. A session also ends **by itself** when fewer than two outputs remain, and when the shell ends (a crash included).
+- **Stop it all**: **Stop group** in the group's [radar](#the-volume-radar), or `dms ipc call orbitBluetooth separate`. A member's menu is short on purpose: it leaves the group or hides, the group itself is stopped from its radar. A session also ends **by itself** when fewer than two outputs remain, and when the shell ends (a crash included).
 - **On the command line** (one argument per call, so the list is quoted): `dms ipc call orbitBluetooth together "AA:BB:CC:DD:EE:01 AA:BB:CC:DD:EE:02 AA:BB:CC:DD:EE:03"` (spaces or commas), then `togetherAdd <address>`, `togetherRemove <address>`, `togetherStatus` (who listens together, as JSON), `togetherDelay <address> <ms>` (see [Limits](#limits)) and `separate`. Only connected audio devices are accepted, and a refusal says why.
 - **What you see**: while a session runs, the [two volumes](#the-two-volumes) of the card and of the pop-up change shape. The outer half circle shows the **outputs' own levels**, the inner half circle stays below, shared: **this PC's level**, what the PC sends to all of them. Without a session, the screen looks as before.
   - **With two outputs**, the outer half circle is **cut at the top**: the left half is the first output (`primary` color), the right half the second (`secondary`), each lit from its bottom corner toward the top, and both meet at the top at 100 %. Each half has its own moon, icon and percentage, and its own cloud of points (or rays, or waves), so the sound's left and right show on the output that plays it.
@@ -248,7 +248,7 @@ You do not have to drag one device onto another: **right-click a connected outpu
 - **Bluetooth** lists the devices that are connected and can play sound.
 - The device you right-clicked is already ticked. Tick the others and press **Listen together**. Up to four outputs listen together.
 
-When a group already listens, the entry reads **Add to the group…**: the members are shown with *In the group*, tick the newcomers and press **Add**. A device that is already in the group has no such entry on its menu (it cannot add itself): **Add a device…** is in the group's radar (TODO-RADAR), and opens the same list with nothing ticked, tick the outputs to bring in.
+When a group already listens, the entry reads **Add to the group…**: the members are shown with *In the group*, tick the newcomers and press **Add**. A device that is already in the group has no such entry on its menu (it cannot add itself): **Add a device…** is in the group's [radar](#the-volume-radar), and opens the same list with nothing ticked, tick the outputs to bring in.
 
 A row you cannot tick stays in the list, faint, with the reason at its end. Click it and a short note says what to do (with a link back to this page):
 
@@ -343,6 +343,18 @@ When something is wrong, a short note says it in these words and links here:
 - The same output cannot be added twice, and a group holds at most four outputs.
 
 **Not yet tried on real hardware**: wired outputs in a group are checked with made-up outputs and a simulated sound server only. A USB interface, an HDMI screen and the jack are still to be tried.
+
+### The volume radar
+
+Tap the group's icons (the row of discs under it), or click one of its members (a Bluetooth device or a wired output): a radar opens over the sky. The level you asked for is the **big dial** in the middle: the group's (the one shared level, the same as the ring's) or the member's own. Every other level stays around it as a **small dial**: tap one to make it the big one. On any dial, drag its ring to set the level, turn the wheel to step it, or press the speaker in its opening to mute it.
+
+Under the big dial, the actions that go with it:
+
+- a Bluetooth member: *Disconnect*, *Remove from group*, *Hide* and *Details* (its detail card);
+- a wired member: *Disconnect* (it leaves the group and stays plugged in) and *Hide*;
+- the group: *Add a device…* and *Stop group*.
+
+A member whose device keeps no level of its own says so instead of staying silent (see [The volume at the center](#the-volume-at-the-center)). <kbd>Esc</kbd>, the ✕ or a tap beside the dials closes the radar. It is made only while it is open: at rest nothing of it exists.
 
 ### Wired outputs in the group
 
