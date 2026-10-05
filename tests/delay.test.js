@@ -73,4 +73,30 @@ eq("the wait is capped like every other", Delay.waitsFor({ "source": W1, "taps":
 eq("no plan, no taps, no latencies", [Delay.waitsFor(null, heard, 0), Delay.waitsFor({ "source": W1 }, heard, 0), Delay.waitsFor(wired, null, 0), Delay.waitsFor(undefined, undefined, 0)], new Array(4).fill({ "source": 0, "taps": {} }));
 eq("the waits are those the processes take", Together.commands({ "source": W1, "taps": [{ "member": BT1, "capture": "orbit_wired_w_x", "playback": "bluez_output.AA_BB_CC_DD_EE_01.1" }] }, {}, Delay.waitsFor(wired, heard, 0).source)[0].command[6], "0.245");
 
+// --- The correction as the settings and the command line say it ------------------------------
+eq("the step is 5 ms and the range 100", [Delay.FINE_STEP_MS, Delay.MAX_FINE_MS], [5, 100]);
+eq("the range is a whole number of steps, so the slider reaches both ends", Delay.MAX_FINE_MS % Delay.FINE_STEP_MS, 0);
+eq("the correction is said with its sign", [Delay.fineText(0), Delay.fineText(20), Delay.fineText(-35), Delay.fineText(100)], ["0 ms", "+20 ms", "−35 ms", "+100 ms"]);
+eq("it is rounded to a whole millisecond and held in range", [Delay.fineText(12.6), Delay.fineText(-0.4), Delay.fineText(9999), Delay.fineText(-9999)], ["+13 ms", "0 ms", "+100 ms", "−100 ms"]);
+eq("what is not a number says 0 ms", [Delay.fineText(undefined), Delay.fineText(null), Delay.fineText("x"), Delay.fineText(NaN), Delay.fineText(Infinity)], new Array(5).fill("0 ms"));
+
+// up and down move by one step, from the value in force, and stop at the ends
+eq("up and down move one step", [Delay.fineFrom("up", 0), Delay.fineFrom("down", 0), Delay.fineFrom("up", 20), Delay.fineFrom("down", -20)], [5, -5, 25, -25]);
+eq("they stop at either end", [Delay.fineFrom("up", 100), Delay.fineFrom("down", -100), Delay.fineFrom("up", 98), Delay.fineFrom("down", -98)], [100, -100, 100, -100]);
+// a signed number is relative, a bare one is the wait itself
+eq("a signed number moves from now", [Delay.fineFrom("+10", 20), Delay.fineFrom("-10", 20), Delay.fineFrom("-30", 20), Delay.fineFrom("+0", 20)], [30, 10, -10, 20]);
+eq("a signed number stops at the ends", [Delay.fineFrom("+999", 20), Delay.fineFrom("-999", -20)], [100, -100]);
+eq("a bare number is that wait, from 0 to 100", [Delay.fineFrom("0", 40), Delay.fineFrom("35", 40), Delay.fineFrom("100", 40), Delay.fineFrom("007", 40)], [0, 35, 100, 7]);
+eq("a bare number beyond the range is refused, not capped", [Delay.fineFrom("101", 40), Delay.fineFrom("999", 40)], [null, null]);
+eq("reset is 0, whatever was in force", [Delay.fineFrom("reset", 60), Delay.fineFrom("reset", -60), Delay.fineFrom("RESET", 60)], [0, 0, 0]);
+eq("case and spaces around the word do not matter", [Delay.fineFrom(" Up ", 0), Delay.fineFrom("DOWN", 0)], [5, -5]);
+eq("a value in force that is not a number counts for 0", [Delay.fineFrom("up", undefined), Delay.fineFrom("+10", "x"), Delay.fineFrom("down", NaN)], [5, 10, -5]);
+// anything else is refused with null so that the caller can say how to use it
+// without echoing it back (value 11)
+eq("anything else is refused", ["", " ", "x", "1.5", "+-5", "5 5", "1e2", "0x10", "+", "-", "up5", "--5", "−10", "20ms", "\n"].map(a => Delay.fineFrom(a, 0)), new Array(15).fill(null));
+eq("nothing at all is refused", [Delay.fineFrom(undefined, 0), Delay.fineFrom(null, 0)], [null, null]);
+eq("an argument that is too long is refused before it is read", [Delay.fineFrom("0".repeat(7), 0), Delay.fineFrom("+" + "9".repeat(50), 0), Delay.fineFrom("up".repeat(10), 0)], [null, null, null]);
+eq("a number is read as its text: a negative one is relative", [Delay.fineFrom(25, 0), Delay.fineFrom(-5, 20)], [25, 15]);
+eq("the answer is always in range", ["up", "down", "+100", "-100", "reset", "50", "0"].every(a => Math.abs(Delay.fineFrom(a, 100)) <= 100 && Math.abs(Delay.fineFrom(a, -100)) <= 100), true);
+
 done();

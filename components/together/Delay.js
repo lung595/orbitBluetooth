@@ -12,6 +12,9 @@
 // How far the user can nudge the automatic delay either way (ms), to match
 // what the figures cannot know (a speaker's own processing, a TV)
 var MAX_FINE_MS = 100;
+// How much one notch of the slider, or one `up` / `down` of the command line,
+// moves it (ms): the settings, the command and their tests share this one
+var FINE_STEP_MS = 5;
 
 // A latency the caller knows: a finite number of milliseconds, not negative
 function isLatency(ms) {
@@ -22,6 +25,39 @@ function isLatency(ms) {
 // within +-MAX_FINE_MS
 function cleanFine(ms) {
     return typeof ms === "number" && isFinite(ms) ? Math.max(-MAX_FINE_MS, Math.min(MAX_FINE_MS, ms)) : 0;
+}
+
+// The correction as the settings and the command line say it, with its sign:
+// "+20 ms", "−35 ms" (a true minus sign) or "0 ms"
+function fineText(ms) {
+    const n = Math.round(cleanFine(ms));
+    return (n > 0 ? "+" : n < 0 ? "−" : "") + Math.abs(n) + " ms";
+}
+
+// The correction `dms ipc call orbitBluetooth wiredDelay <arg>` asks for, from
+// the one in force: "up" / "down" (one step), "+10" / "-10" (from now), "20"
+// (that wait, 0 to MAX_FINE_MS) or "reset" (none). null for anything else, so
+// the caller says how to use it without echoing what it was given (value 11).
+function fineFrom(arg, current) {
+    const a = String(arg === undefined || arg === null ? "" : arg).trim().toLowerCase();
+    if (a.length === 0 || a.length > 6)
+        return null;
+    const now = cleanFine(current);
+    if (a === "reset")
+        return 0;
+    if (a === "up")
+        return cleanFine(now + FINE_STEP_MS);
+    if (a === "down")
+        return cleanFine(now - FINE_STEP_MS);
+    const m = /^([+-]?)([0-9]{1,3})$/.exec(a);
+    if (!m)
+        return null;
+    const n = parseInt(m[2], 10);
+    if (m[1] === "+")
+        return cleanFine(now + n);
+    if (m[1] === "-")
+        return cleanFine(now - n);
+    return n > MAX_FINE_MS ? null : n;
 }
 
 // What each member adds before it is heard (ms), { member: ms }, from the sink
