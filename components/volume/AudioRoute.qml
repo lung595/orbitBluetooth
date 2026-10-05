@@ -6,6 +6,7 @@ import Quickshell.Services.Pipewire
 import "Route.js" as Route
 import "Steps.js" as Steps
 import "../together"
+import "../together/Wired.js" as Wired
 
 // The two volumes of a Bluetooth audio device (D249): the device's own
 // level, and this PC's level, what the PC sends to it. One RouteDevice per
@@ -41,6 +42,11 @@ Item {
     }
     function wiredFilter(name) {
         return Route.sinkNamed(Pipewire.nodes.values, Route.wiredFilterName(name));
+    }
+    // The wired outputs PipeWire lists right now (Wired.fromNodes), read when
+    // asked for (the command line) and never watched
+    function wiredSinks() {
+        return Wired.fromNodes(Pipewire.nodes.values);
     }
 
     Instantiator {

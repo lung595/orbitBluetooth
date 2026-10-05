@@ -70,7 +70,8 @@ function _entry(sink) {
         "sink": sink.name,
         "label": labelOf(sink.description),
         "bus": _word(props["device.bus"]),
-        "formFactor": _word(props["device.form_factor"]),
+        // pactl spells it with an underscore, PipeWire's own nodes with a hyphen
+        "formFactor": _word(props["device.form_factor"] || props["device.form-factor"]),
         "plugged": true
     };
 }
@@ -81,6 +82,21 @@ function _byLabel(a, b) {
     if (x !== y)
         return x < y ? -1 : 1;
     return a.sink < b.sink ? -1 : a.sink > b.sink ? 1 : 0;
+}
+
+// The wired outputs among `sinks` (as pactl lists them), sorted, at most MAX_OUTPUTS
+function _listing(sinks) {
+    const seen = {};
+    const found = [];
+    for (const sink of sinks) {
+        const entry = _entry(sink);
+        // The sink's name is its identity: a repeat is the same output
+        if (entry && !seen[entry.sink]) {
+            seen[entry.sink] = true;
+            found.push(entry);
+        }
+    }
+    return found.sort(_byLabel).slice(0, MAX_OUTPUTS);
 }
 
 // The command's text -> the plugged wired outputs, sorted, at most MAX_OUTPUTS:
@@ -94,19 +110,22 @@ function parse(jsonText) {
     } catch (e) {
         return [];
     }
-    if (!Array.isArray(sinks))
-        return [];
-    const seen = {};
-    const found = [];
-    for (const sink of sinks) {
-        const entry = _entry(sink);
-        // The sink's name is its identity: a repeat is the same output
-        if (entry && !seen[entry.sink]) {
-            seen[entry.sink] = true;
-            found.push(entry);
-        }
+    return Array.isArray(sinks) ? _listing(sinks) : [];
+}
+
+// The same outputs from the sinks PipeWire holds right now (Quickshell's node
+// list), for what cannot wait for a command: [{ sink, label, bus, formFactor }],
+// sorted, at most MAX_OUTPUTS. A node cannot tell whether something is plugged
+// into its connector, so every wired output PipeWire lists is here: those
+// Listen together accepts.
+function fromNodes(nodes) {
+    const sinks = [];
+    for (let i = 0; nodes && i < nodes.length; i++) {
+        const n = nodes[i];
+        if (n && n.isSink && !n.isStream)
+            sinks.push({ "name": n.name, "description": n.nickname || n.description, "properties": n.properties });
     }
-    return found.sort(_byLabel).slice(0, MAX_OUTPUTS);
+    return _listing(sinks).map(e => ({ "sink": e.sink, "label": e.label, "bus": e.bus, "formFactor": e.formFactor }));
 }
 
 // What picture the interface draws: "usb", "hdmi", "analog" or "other"
@@ -122,6 +141,38 @@ function kindOf(entry) {
     if (/analog/i.test(sink) || /^(headphones?|headset|speaker|internal)$/.test(e.formFactor || ""))
         return "analog";
     return "other";
+}
+
+// The same picture from a PipeWire node (its name and properties, which may be
+// missing)
+function kindOfNode(node) {
+    const n = node && typeof node === "object" ? node : {};
+    const p = n.properties && typeof n.properties === "object" ? n.properties : {};
+    return kindOf({
+        "sink": n.name,
+        "bus": _word(p["device.bus"]),
+        "formFactor": _word(p["device.form_factor"] || p["device.form-factor"])
+    });
+}
+
+// The icon (a Material Symbol) of a kind of output, for the arcs of the volume
+// wheel; the orbit draws its own pictures. Anything else is the plain speaker.
+var ICONS = { "usb": "usb", "hdmi": "settings_input_hdmi", "analog": "cable", "other": "speaker" };
+function iconOf(kind) {
+    return ICONS.hasOwnProperty(kind) ? ICONS[kind] : ICONS.other;
+}
+
+// What `dms ipc call orbitBluetooth togetherOutputs` says of each output of a
+// listing: the node name `together` takes, the name to show, the kind of
+// picture, and whether it already takes part (`members` are the session's)
+function describe(outputs, members) {
+    const taking = Array.isArray(members) ? members : [];
+    return (Array.isArray(outputs) ? outputs : []).map(o => ({
+        "output": o.sink,
+        "name": o.label,
+        "kind": kindOf(o),
+        "member": taking.indexOf(o.sink) >= 0
+    }));
 }
 
 // Do two listings hold the same outputs? Lists from parse() are sorted, so a

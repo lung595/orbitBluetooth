@@ -133,8 +133,8 @@ eq("nothing, or too long to be addresses", [Together.parseList(""), Together.par
 eq("an injected text stays one bad item", Together.refusal(Together.parseList(XM + "; reboot"), known).why, "bad-address");
 
 // --- Status (IPC) --------------------------------------------------------------------------
-eq("no session", JSON.parse(Together.status(null)), { "active": false, "members": [], "from": "", "delaysMs": {} });
-eq("a session", JSON.parse(Together.status({ "members": [XM, AV, SP1], "source": XM, "delays": { [AV]: 40 } })), { "active": true, "members": [XM, AV, SP1], "from": XM, "delaysMs": { [AV]: 40 } });
+eq("no session", JSON.parse(Together.status(null)), { "active": false, "members": [], "from": "", "delaysMs": {}, "latenciesMs": {} });
+eq("a session", JSON.parse(Together.status({ "members": [XM, AV, SP1], "source": XM, "delays": { [AV]: 40 } })), { "active": true, "members": [XM, AV, SP1], "from": XM, "delaysMs": { [AV]: 40 }, "latenciesMs": {} });
 
 // --- Wired members (D298): a session can hold wired outputs, alone or beside Bluetooth ones ------------
 // Made-up wired outputs: a USB headset, an audio interface, an unplugged one, one with no sink
@@ -251,7 +251,9 @@ eq("a list typed with wired names", [Together.parseList(W1 + "," + XM), Together
 eq("four of the longest names still fit a list", Together.parseList(new Array(4).fill("alsa_output." + "a".repeat(148)).join(",")).length, 4);
 eq("a list too long to hold four members is nothing", Together.parseList(new Array(5).fill("alsa_output." + "a".repeat(148)).join(",")), []);
 eq("an injected wired name stays one bad item", Together.refusal(Together.parseList(W1 + "; reboot"), knownAll).why, "bad-address");
-eq("status keeps wired members as they are", JSON.parse(Together.status({ "members": [XM, W1], "source": W1, "delays": { [W1]: 40 } })), { "active": true, "members": [XM, W1], "from": W1, "delaysMs": { [W1]: 40 } });
+eq("status keeps wired members as they are", JSON.parse(Together.status({ "members": [XM, W1], "source": W1, "delays": { [W1]: 40 } })), { "active": true, "members": [XM, W1], "from": W1, "delaysMs": { [W1]: 40 }, "latenciesMs": {} });
+eq("status says what each member adds before it is heard, a wired output with no figure as 0", JSON.parse(Together.status({ "members": [XM, W1], "source": W1, "delays": {}, "latencies": { [XM]: 180, [W1]: 0 } })).latenciesMs, { [XM]: 180, [W1]: 0 });
+eq("a session that has no latencies yet says none", JSON.parse(Together.status({ "members": [XM, W1], "source": W1, "delays": {}, "latencies": null })).latenciesMs, {});
 
 // --- Notes (value 10) -----------------------------------------------------------------
 const guide = new TextDecoder().decode(GLib.file_get_contents(root + "/docs/GUIDE.md")[1]);

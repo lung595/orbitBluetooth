@@ -90,6 +90,7 @@ eq("a bare number is that wait, from 0 to 100", [Delay.fineFrom("0", 40), Delay.
 eq("a bare number beyond the range is refused, not capped", [Delay.fineFrom("101", 40), Delay.fineFrom("999", 40)], [null, null]);
 eq("reset is 0, whatever was in force", [Delay.fineFrom("reset", 60), Delay.fineFrom("reset", -60), Delay.fineFrom("RESET", 60)], [0, 0, 0]);
 eq("case and spaces around the word do not matter", [Delay.fineFrom(" Up ", 0), Delay.fineFrom("DOWN", 0)], [5, -5]);
+eq("status is the one in force, kept in range and left as it is", [Delay.fineFrom("status", 35), Delay.fineFrom("Status", -35), Delay.fineFrom("status", 9999), Delay.fineFrom("status", undefined)], [35, -35, 100, 0]);
 eq("a value in force that is not a number counts for 0", [Delay.fineFrom("up", undefined), Delay.fineFrom("+10", "x"), Delay.fineFrom("down", NaN)], [5, 10, -5]);
 // anything else is refused with null so that the caller can say how to use it
 // without echoing it back (value 11)

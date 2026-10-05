@@ -36,13 +36,16 @@ function fineText(ms) {
 
 // The correction `dms ipc call orbitBluetooth wiredDelay <arg>` asks for, from
 // the one in force: "up" / "down" (one step), "+10" / "-10" (from now), "20"
-// (that wait, 0 to MAX_FINE_MS) or "reset" (none). null for anything else, so
-// the caller says how to use it without echoing what it was given (value 11).
+// (that wait, 0 to MAX_FINE_MS), "reset" (none) or "status" (the one in force,
+// unchanged). null for anything else, so the caller says how to use it without
+// echoing what it was given (value 11).
 function fineFrom(arg, current) {
     const a = String(arg === undefined || arg === null ? "" : arg).trim().toLowerCase();
     if (a.length === 0 || a.length > 6)
         return null;
     const now = cleanFine(current);
+    if (a === "status")
+        return now;
     if (a === "reset")
         return 0;
     if (a === "up")
