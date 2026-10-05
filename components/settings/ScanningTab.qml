@@ -5,6 +5,7 @@ import qs.Modules.Plugins
 // Scanning tab: when Orbit looks for devices, and its sounds.
 Column {
     id: tab
+    required property PluginSettings settings
     required property string batteryNote
 
     width: parent ? parent.width : 0
@@ -81,9 +82,21 @@ Column {
     }
 
     ToggleSetting {
+        id: volumeTick
         settingKey: "volumeTick"
         label: "Volume tick"
         description: "A soft tick on each 5 % step, so you hear the level where it plays: in the output whose level you change, and in every output when it is the group's"
+        defaultValue: true
+    }
+
+    LinkedToggle {
+        settings: tab.settings
+        // Only matters while the tick plays: without it DMS's sound is all there is
+        visible: volumeTick.value
+        settingKey: "tickAlone"
+        label: "Orbit's tick only"
+        description: "While you change a level in Orbit, DMS's own volume sound waits, so only the tick plays. DMS's own sliders and keys keep their sound"
+        anchor: "orbits-tick-only"
         defaultValue: true
     }
 

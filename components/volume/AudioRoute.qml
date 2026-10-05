@@ -154,18 +154,31 @@ Item {
         prefs: root.prefs
     }
 
+    // Orbit is about to move a level. DMS answers a change of level with a
+    // sound of its own, which the tick replaces (DmsQuiet, D360): whoever holds
+    // it back must be in place before the level moves, so every write below
+    // says so first.
+    signal levelWriting
+
     // A level or a mute written to a node reaches every member's copy when
     // it is the PC level of a Listen together session (Route.levelNodes). The
     // tick follows: in that node's output alone, or in every member's when it
     // is the group's level.
     function writeLevel(node, level) {
+        levelWriting();
         const before = node.audio.volume;
         Route.writeLevel(together.sharedNodes, node, level);
         tick.play(Route.levelNodes(together.sharedNodes, node), before, level);
     }
-    // The tick of a level written without writeLevel (the group's general level
-    // when members keep their own levels)
-    function tickNodes(nodes, before, after) {
+    // A level written to each of `nodes` on its own, unmuted: the group's
+    // general level when the members keep their own levels (and their gaps),
+    // `levels` being what each one gets. Every one of them ticks.
+    function writeLevels(nodes, levels, before, after) {
+        levelWriting();
+        nodes.forEach((n, i) => {
+            n.audio.muted = false;
+            n.audio.volume = levels[i];
+        });
         tick.play(nodes, before, after);
     }
     function writeMuted(node, muted) {

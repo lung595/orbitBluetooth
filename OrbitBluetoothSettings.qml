@@ -99,6 +99,7 @@ PluginSettings {
     }
 
     ScanningTab {
+        settings: root
         batteryNote: root.batteryNote
         visible: root.tab === "scanning"
     }

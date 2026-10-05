@@ -257,9 +257,14 @@ QtObject {
     function writeMuted(node, muted) {
         (node === shared ? together.sharedNodes : [node]).forEach(n => n.audio.muted = muted);
     }
-    // What the real route's tickNodes was asked to play (a level written without writeLevel)
+    // The real route's writeLevels: a level of its own for each node, and what
+    // it was asked to play as a tick
     property var ticked: []
-    function tickNodes(nodes, before, after) {
+    function writeLevels(nodes, levels, before, after) {
+        nodes.forEach((n, i) => {
+            n.audio.muted = false;
+            n.audio.volume = levels[i];
+        });
         ticked = ticked.concat([
             {
                 "nodes": nodes.map(n => n.name),
