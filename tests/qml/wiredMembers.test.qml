@@ -241,7 +241,7 @@ Item {
             }
         },
         {
-            // Its menu: leave or stop together, never a Bluetooth entry; leaving removes the disc and its cable
+            // Its menu: Disconnect (it leaves the group and stays plugged in) and Hide, never a Bluetooth entry; leaving removes the disc and its cable
             "then": 300,
             "until": () => scene.centre.wired.count === 1 && scene.world.wiredMembers.count === 1 && h.cables().length === 1,
             "run": () => {
@@ -251,9 +251,9 @@ Item {
                 scene.dismiss();
                 menu.popup(w, Qt.point(60, 60));
                 const ids = menu.entries.map(e => e.id);
-                check("it offers to leave and to stop, and nothing that is for a Bluetooth device", [ids.indexOf("leave") >= 0, ids.indexOf("separate") >= 0, ids.some(i => ["connect", "disconnect", "cancel", "forget"].indexOf(i) >= 0)], [true, true, false]);
+                check("it offers to disconnect (leave the group) and to hide, and nothing that is for a Bluetooth device", [menu.entries.map(e => e.label), ids.some(i => ["connect", "disconnect", "cancel", "forget", "separate", "group"].indexOf(i) >= 0)], [["Disconnect", "Hide"], false]);
                 menu.choose("leave");
-                check("leave takes the output out of the group", route.sharing, [h.headset, h.one, h.screen, h.two]);
+                check("Disconnect takes the output out of the group, the others keep listening", route.sharing, [h.headset, h.one, h.screen, h.two]);
             }
         },
         {
