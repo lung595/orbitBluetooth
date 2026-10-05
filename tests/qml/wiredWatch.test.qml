@@ -87,8 +87,10 @@ Item {
         watch.active = true;
         check("needed: the listing is asked for", runner().running, true);
         check("the command is fixed", runner().command, ["pactl", "--format=json", "list", "sinks"]);
+        check("while it is read, the list is not ready", watch.ready, false);
         finish(0, listing);
         check("only what is plugged in and wired is listed", sinks(), ["alsa_output.usb-Maker_Interface-00.analog-stereo"]);
+        check("read: the list is ready", watch.ready, true);
 
         const first = watch.outputs;
         watch.refresh();
@@ -101,11 +103,11 @@ Item {
 
         watch.active = false;
         check("nobody needs it any more: the list is dropped", watch.outputs, []);
-        check("and nothing runs", runner().running, false);
+        check("it is not ready any more, and nothing runs", [watch.ready, runner().running], [false, false]);
 
         watch.active = true;
         finish(1, listing);
-        check("a failed command gives nothing", watch.outputs, []);
+        check("a failed command gives nothing, and it was read", [watch.outputs, watch.ready], [[], true]);
 
         print(failures ? failures + " failure(s)" : "all passed");
         Qt.exit(failures ? 1 : 0);

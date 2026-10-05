@@ -1,12 +1,14 @@
 import QtQuick
 import "../common/Guide.js" as Guide
 import "../device/DeviceCatalog.js" as Catalog
+import "../together/Choice.js" as Choice
 
-// Listen together in the scene (D254, D277): what dropping one connected
-// audio device onto another says and does, and how a device leaves or the
-// session ends. The session itself is the daemon's (TogetherSession, reached
-// through the AudioRoute); this only asks it and says the answer under the
-// orbit, never in silence (value 10).
+// Listen together in the scene (D254, D277, D298): what dropping one connected
+// audio device onto another says and does, how a group is made from the
+// menu's chooser, and how a device leaves or the session ends. The session
+// itself is the daemon's (TogetherSession, reached through the AudioRoute);
+// this only asks it and says the answer under the orbit, never in silence
+// (value 10).
 Item {
     id: together
     required property var scene
@@ -70,6 +72,47 @@ Item {
     function stop() {
         if (session && session.end("ended", ""))
             scene.sounds.play("disconnect");
+    }
+
+    // --- A group made from the menu (GroupChooser) -------------------------------
+    // The members of the session, [] when nothing is shared
+    function members() {
+        return session ? session.members : [];
+    }
+    // Why `who` could not take part in any group, null when it can (what the
+    // chooser lists by); with no session to ask, nothing can
+    function memberCheck(who) {
+        return session ? session.memberCheck(who) : {
+            "why": "not-connected",
+            "address": who
+        };
+    }
+    // Whether the menu offers a group on `b`: it is connected and plays sound, or
+    // it only waits for its call profile to end (the chooser then says so)
+    function canGroup(b) {
+        if (!b)
+            return false;
+        const r = memberCheck(b.address);
+        return !r || r.why === "in-call";
+    }
+    // Says under the orbit why `who` cannot take part, never in silence
+    function refuse(why, who) {
+        scene.explain(Guide.togetherNote(why, nameOf(who)));
+    }
+    // What the chooser's button does: a new group with what is ticked, or the
+    // newcomers added to the one there is; else it says why not
+    function groupFrom(chosen) {
+        if (!session)
+            return;
+        const p = Choice.outcome(session.members, chosen);
+        const r = p.why ? {
+            "why": p.why,
+            "address": ""
+        } : p.mode === "add" ? session.add(p.list) : session.start(p.list);
+        if (r)
+            refuse(r.why, r.address);
+        else
+            scene.sounds.play("connect");
     }
 
     // A member disconnected or the session ended by itself: the user is told

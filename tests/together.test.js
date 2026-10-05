@@ -256,7 +256,7 @@ eq("status keeps wired members as they are", JSON.parse(Together.status({ "membe
 // --- Notes (value 10) -----------------------------------------------------------------
 const guide = new TextDecoder().decode(GLib.file_get_contents(root + "/docs/GUIDE.md")[1]);
 const anchors = guide.split("\n").filter(l => /^#{2,3} /.test(l)).map(l => l.replace(/^#+ /, "").toLowerCase().replace(/[^a-z0-9 -]/g, "").replace(/ /g, "-"));
-const reasons = ["same", "bad-address", "not-connected", "no-audio", "in-call", "too-few", "too-many", "outside", "already", "in-group", "not-member", "source", "no-session", "member-out", "member-left", "link-stopped", "none", "unknown"];
+const reasons = ["same", "bad-address", "not-connected", "no-audio", "in-call", "too-few", "too-many", "outside", "already", "in-group", "not-member", "source", "no-session", "member-out", "member-left", "link-stopped", "none", "pick-more", "full", "unknown"];
 reasons.forEach(w => {
     const n = Guide.togetherNote(w, "WH-1000XM6");
     eq("note " + w + " says what and what to do", !!(n.title && n.hint), true);
