@@ -136,6 +136,9 @@ eq("a lone member is no group: a new one is made", Choice.outcome([XM], [AV, SP1
 eq("no group yet: it is created", [Choice.labels([]).entry, Choice.labels(null).title, Choice.labels([XM]).action], ["Create a group…", "Create a group", "Listen together"]);
 eq("a group there is: outputs are added", [Choice.labels([XM, AV]).entry, Choice.labels([XM, AV]).title, Choice.labels([XM, AV]).action], ["Add to the group…", "Add to the group", "Add"]);
 eq("the entry is the title and an ellipsis", [[], [XM, AV]].every(m => Choice.labels(m).entry === Choice.labels(m).title + "…"), true);
+eq("on a member's own menu the entry adds another device, the member is in the group already", [Choice.labels([XM, AV], true).entry, Choice.labels([XM, AV], true).title, Choice.labels([XM, AV], true).action], ["Add a device…", "Add to the group", "Add"]);
+eq("only a group there is has a member: with none the entry still creates one", [Choice.labels([], true).entry, Choice.labels([XM], true).entry], ["Create a group…", "Create a group…"]);
+eq("anything but true is not a member (a missing answer keeps the usual words)", [undefined, null, 1, "yes"].map(x => Choice.labels([XM, AV], x).entry), ["Add to the group…", "Add to the group…", "Add to the group…", "Add to the group…"]);
 eq("every word is said", [[], [XM, AV]].every(m => Object.values(Choice.labels(m)).every(w => typeof w === "string" && w.length > 0)), true);
 eq("the captions are short", Object.values(Choice.CAPTIONS).every(c => c.length <= 14), true);
 eq("no word limits a group to two", [[], [XM, AV]].every(m => !/\btwo\b/i.test(Object.values(Choice.labels(m)).join(" "))), true);

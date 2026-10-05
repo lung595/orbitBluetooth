@@ -60,7 +60,7 @@ Item {
             list.push({
                 "id": "group",
                 "icon": "group_add",
-                "label": Choice.labels(scene.together.members()).entry
+                "label": Choice.labels(scene.together.members(), scene.together.isMember(b.address)).entry
             });
         if (scene.together.isMember(b.address)) {
             // With only two, leaving is the same as stopping

@@ -293,6 +293,25 @@ Item {
             }
         },
         {
+            // The menu of a member: it is in the group already, so it adds another device
+            "then": 100,
+            "run": () => {
+                scene.openMenu(h.body(h.one), Qt.point(60, 60));
+                check("a member's menu does not say it adds that member to the group", h.menu().entries.find(e => e.id === "group").label, "Add a device…");
+                h.menu().choose("group");
+                h.read(h.listing);
+                const c = h.chooser();
+                check("its chooser still says the group is added to, and starts with nothing ticked", [c.words.title, c.words.action, h.ticks(c)], ["Add to the group", "Add", []]);
+                c.confirm();
+                check("pressing the button with nothing ticked asks to tick one", scene.note ? scene.note.title : null, "Tick another output");
+                scene.note = null;
+                h.menu().close();
+                scene.openMenu(h.body(h.two), Qt.point(60, 60));
+                check("while the menu of a device that is not in the group keeps saying so", h.menu().entries.find(e => e.id === "group").label, "Add to the group…");
+                h.menu().close();
+            }
+        },
+        {
             // The listing is slow, or never comes: the chooser is shown without it
             "then": 700,
             "run": () => {

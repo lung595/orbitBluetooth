@@ -248,7 +248,7 @@ You do not have to drag one device onto another: **right-click a connected outpu
 - **Bluetooth** lists the devices that are connected and can play sound.
 - The device you right-clicked is already ticked. Tick the others and press **Listen together**. Up to four outputs listen together.
 
-When a group already listens, the entry reads **Add to the group…**: the members are shown with *In the group*, tick the newcomers and press **Add**.
+When a group already listens, the entry reads **Add to the group…**: the members are shown with *In the group*, tick the newcomers and press **Add**. On the menu of a device that is already in the group the entry reads **Add a device…** (it cannot add itself): nothing is ticked, tick the outputs to bring in.
 
 A row you cannot tick stays in the list, faint, with the reason at its end. Click it and a short note says what to do (with a link back to this page):
 

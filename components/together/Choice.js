@@ -44,10 +44,12 @@ var CAPTIONS = {
 
 // The words of the menu entry, of the chooser and of its button, for the
 // members of the session there is ([] for none): a group is created, or
-// outputs are added to the one that listens
-function labels(members) {
+// outputs are added to the one that listens. `onMember` is true when the menu
+// is the one of a member: that device is in the group already, so its entry
+// adds another device instead of saying it adds this one.
+function labels(members, onMember) {
     return _members(members).length ? {
-        "entry": "Add to the group…",
+        "entry": onMember === true ? "Add a device…" : "Add to the group…",
         "title": "Add to the group",
         "action": "Add",
         "empty": "Nothing else to add: connect a Bluetooth output or plug in a wired one"
