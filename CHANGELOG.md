@@ -95,6 +95,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - A learned group is stored as 32-bit hashes of its outputs: nothing readable, and it never leaves the computer, but it is not a cryptographic secret (someone holding the settings file and a list of device addresses could test which are in it). A session that lasts until the shell restarts is not counted. After you turn a learned group down, the pair of the same output can be suggested at once when no other learned group is complete.
 - Hiding from the group chooser is checked off-screen only: the menu with a hidden output and the black hole at two depths were not rendered, and the test calls the end of the swallow animation itself.
 - Dropping a device on a copy that overlaps the source can aim at the source: the drop looks for the first body of the scene, not the highest one. The charging beam and the earbuds' lightning bolt keep the theme's primary, and in the stock Blue and Cyan themes no color tells the charging arc apart from it.
+- At the center the group is always in front of this computer's devices: one that passes behind it is hidden and cannot be picked up until it comes out again (about half a turn), and with *Reduce motion*, where nothing turns, a place of the ring can stay behind the group for as long as it lasts. Click this computer to see everything.
 
 ## 1.13.3 - 2026-10-04
 

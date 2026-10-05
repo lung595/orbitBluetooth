@@ -219,6 +219,7 @@ Bind the commands in your compositor, for example in niri: `Mod+N { spawn "dms" 
 | Noise control does not appear | Headset must be paired and supported, Python 3 installed; reopen the card |
 | Music does not pause when I take the Sony headset off | `dms ipc call orbitBluetooth wearStatus` says why; the Sony app on a phone may hold the headset's control connection, see [Pause when you take the headset off](docs/GUIDE.md#pause-when-you-take-the-headset-off) |
 | A device vanished | It is in the black hole: click it, or `dms ipc call orbitBluetooth unhideAll` |
+| A device is hidden behind the group at the center | The group is always in front of this computer's devices: it comes out again on its next turn round (with *Reduce motion*, when nothing turns, it can stay behind); click this computer to see everything, see [Limits](docs/GUIDE.md#limits) |
 | An output is missing from *Create a group…* | You may have hidden it: open the *Hidden* section at the bottom of the list (or click the black hole, **Show**), see [Hiding devices](docs/GUIDE.md#hiding-devices-the-black-hole) |
 | The suggested group is not the one I use | It needs all its members connected or plugged in and not hidden; turn one down and the next best comes, or **Forget what Orbit learned** to start afresh, see [Learn my groups](docs/GUIDE.md#learn-my-groups) |
 | Settings or widgets of Orbit left after removing it while DMS was not running | Install it again, then remove it from DMS while it runs: it cleans up after itself, see [Uninstalling](docs/GUIDE.md#uninstalling) |

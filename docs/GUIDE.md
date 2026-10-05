@@ -392,6 +392,7 @@ Wired outputs add nothing at rest. The plugged outputs are read with `pactl` onl
 - **At the center, the gauge sets the group's level, not the source device's**: the source's own level stays on its card, and there is no `dms ipc call` for the general level yet.
 - **Dropping a device that is not connected** on the group says to connect it first; Orbit does not connect it for you here.
 - **Dragging a member outward** is the gesture that disconnects any other device, but a member only leaves the group: it stays connected and plays on its own again. To disconnect it, use its menu or the × button.
+- **A device can pass behind the group.** At the center the group is always in front of this computer and its devices, which travel around it: one that passes behind the source or the copies is hidden for a few seconds and cannot be picked up until it comes out again (only the group's own copies are seen through the source and answer a click). With *Reduce motion* nothing turns, so a place of the ring can stay behind the group for as long as it lasts: click this computer to bring everything back to the center, where every device can be reached.
 - **If one output goes away** (a headset handed over to your phone, an output that fell asleep), it stays a member and picks the sound up again when it returns, without a message. A member leaves only on a real Bluetooth disconnection, when you take it out, or, for a wired output, when it is unplugged (a note says so, see [Wired outputs](#wired-outputs)).
 
 ### Works with multipoint headsets
