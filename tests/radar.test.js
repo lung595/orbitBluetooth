@@ -3,7 +3,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const R = load("Radar.js", ["STYLES", "START", "SWEEP", "styleOf", "layout", "angleOf", "levelAt", "percent", "heroOf", "around", "chips"]);
+const R = load("Radar.js", ["STYLES", "START", "SWEEP", "styleOf", "layout", "angleOf", "levelAt", "percent", "heroOf", "around", "subtitle", "chips"]);
 
 const near = v => Math.round(v * 1000) / 1000;
 const side = 300;
@@ -40,6 +40,7 @@ const labels = kind => R.chips(kind).map(c => c.label);
 eq("chips: a Bluetooth member", labels("bluetooth"), ["Disconnect", "Remove from group", "Hide", "Details"]);
 eq("chips: a wired member has no details and no Bluetooth to disconnect, its Disconnect takes it out of the group", [labels("wired"), R.chips("wired")[0].id], [["Disconnect", "Hide"], "disconnect"]);
 eq("chips: the group adds a device or stops, and stopping is the one in red", [labels("group"), R.chips("group").map(c => !!c.danger)], [["Add a device…", "Stop group"], [false, true]]);
-eq("chips: every one has an id, an icon and a label", ["group", "bluetooth", "wired"].every(k => R.chips(k).every(c => c.id && c.icon && c.label)), true);
+eq("subtitle: the group says how many outputs, a member what it is", [R.subtitle("group", 3), R.subtitle("group", 1), R.subtitle("wired", 0), R.subtitle("bluetooth", 0)], ["Group · 3 outputs", "Group · 1 output", "Wired", "Bluetooth"]);
+eq("chips: every one has an id, an icon and a label",["group", "bluetooth", "wired"].every(k => R.chips(k).every(c => c.id && c.icon && c.label)), true);
 
 done();
