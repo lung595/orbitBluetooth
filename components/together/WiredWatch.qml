@@ -14,16 +14,21 @@ Item {
     property bool active: false
     // The plugged wired outputs, sorted: [{ sink, label, bus, formFactor, plugged }]
     property var outputs: []
+    // Whether the listing has been read since the list was asked for: tells
+    // "nothing is plugged in" from "not read yet"
+    property bool ready: false
 
     function refresh() {
         if (active && !reader.running)
             reader.running = true;
     }
     onActiveChanged: {
-        if (active)
+        if (active) {
             refresh();
-        else
+        } else {
             outputs = [];
+            ready = false;
+        }
     }
 
     Process {
@@ -37,6 +42,7 @@ Item {
             // The same outputs again: nothing downstream has to react
             if (!Wired.sameSet(root.outputs, next))
                 root.outputs = next;
+            root.ready = true;
         }
     }
 }

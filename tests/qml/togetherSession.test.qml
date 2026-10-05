@@ -245,6 +245,8 @@ Item {
         check("a drop needs a session to join", session.joinCheck([b]).why, "no-session");
         check("a drop of two devices is fine", session.dropCheck(a, b), null);
         check("a device is not dropped onto itself", session.check([a, a]).why, "same");
+        check("an output with sound may take part, one Orbit does not see may not", [session.memberCheck(a), session.memberCheck("AA:BB:CC:DD:EE:09").why], [null, "not-connected"]);
+        check("what is no output at all is not there either", [session.memberCheck("x; reboot").why, session.memberCheck(5).why, session.memberCheck(null).why], ["not-connected", "not-connected", "not-connected"]);
 
         // --- Two members ---------------------------------------------------------
         check("start with two", session.start([a, b]), null);
@@ -273,6 +275,7 @@ Item {
             "sink": null
         });
         check("its output went away: still a member", [session.members.length, session.active], [4, true]);
+        check("the chooser is told why it cannot be ticked", session.memberCheck(b).why, "no-audio");
         check("its copy waits", copies(), ["03<-01pc", "04<-01pc"]);
         check("no note, no ending", [h.ends, h.leaves], [[], []]);
         patch(b, {
@@ -288,6 +291,7 @@ Item {
             }
         });
         check("in a call: a member, copy stopped", [session.members.length, copies()], [4, ["02<-01pc", "04<-01pc"]]);
+        check("and the chooser says it is in a call", session.memberCheck(c).why, "in-call");
         patch(c, {
             "sink": sinkOf(c)
         });
@@ -516,6 +520,7 @@ Item {
         plug(b);
         check("start with a Bluetooth source and a wired output", session.start([a, w2]), null);
         check("the wired member is copied to, from the source's filter", [session.source, copies()], [a, ["test_two<-01pc"]]);
+        check("a wired output that is there may take part, one that is not may not", [session.memberCheck(w2), session.memberCheck("alsa_output.test_never").why], [null, "not-connected"]);
         check("only the source's level is shared", session.sharedNodes.map(n => n.name), ["orbit_pc_" + key(a)]);
         h.wait(500);
     }

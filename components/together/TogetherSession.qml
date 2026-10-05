@@ -113,6 +113,11 @@ Item {
             "address": ""
         };
     }
+    // Why one output could not take part in any group, or null when it can: not
+    // there, no sound output, in its call profile (what the group chooser lists by)
+    function memberCheck(who) {
+        return Together.memberRefusal(Together.member(who), _facts);
+    }
     // Both are connected and one of them plays sound: worth trying, and worth
     // saying why not when the other one cannot (the drag gesture)
     function relevant(a, b) {
