@@ -4,6 +4,7 @@ import qs.Common
 import qs.Services
 import "components/scene"
 import "components/centre/Perspective.js" as Perspective
+import "components/centre/Sun.js" as Sun
 import "mock"
 import "mock/Devices.js" as Devices
 import "mock/State.js" as State
@@ -15,7 +16,8 @@ import "mock/State.js" as State
 // there (and not when let go elsewhere); the hidden ones wait in a Hidden
 // section, folded to begin with and gone with the last one, each with an eye
 // that brings it back; a member of the group is not hidden: the note says why;
-// and the hole is drawn as big as its depth says in the profile view, as it was
+// and the hole is drawn as big as its depth says in the profile view, smaller
+// while a group has the centre (it shrinks with the host's system), as it was
 // in the scene's own view. Run with tests/qml/run.sh.
 Item {
     id: h
@@ -307,13 +309,16 @@ Item {
             }
         },
         {
-            // The profile view: the hole is as big as its depth says
+            // The profile view: the hole is as big as its depth says, and as small as
+            // the host's system while the group has the centre
             "then": 1500,
             "run": () => {
                 const hole = h.blackHole();
-                check("a group has the centre: the scene is in profile", scene.centre.profile, 1);
-                const lean = Perspective.leanAt(scene, scene.holeY, 1);
-                check("the hole is drawn at the size of its depth, and the drag gestures measure from that", [hole.lean === lean, hole.horizon, scene.holeHorizon], [true, Math.round(scene.bodySize * 0.2 * lean), Math.round(scene.bodySize * 0.2 * lean)]);
+                check("a group has the centre: the scene is in profile, the host's system is away", [scene.centre.profile, scene.centre.away], [1, 1]);
+                const lean = Perspective.leanAt(scene, scene.holeY, 1) * Sun.SIZE;
+                check("the hole is drawn at the size of its depth and of the host's system, and the drag gestures measure from that", [Math.abs(hole.lean - lean) < 1e-9, hole.horizon, scene.holeHorizon], [true, Math.round(scene.bodySize * 0.2 * lean), Math.round(scene.bodySize * 0.2 * lean)]);
+                // The hole drifts in the outer field: wherever it floats, even on the nearest point of the belt, it is smaller than in the scene's own view
+                check("so it is smaller than in the scene's own view, wherever it floats", [hole.horizon < Math.round(scene.bodySize * 0.2), Perspective.lean(1, 1) * Sun.holeScale(1) < 1], [true, true]);
                 check("it follows the depth, wherever it floats: smaller when high in the belt, bigger when low", [Perspective.leanAt(scene, scene.cy - scene.ry, 1) < 1, Perspective.leanAt(scene, scene.cy + scene.ry, 1) > 1], [true, true]);
                 check("its picture is as wide as its lens", hole.width, hole.lensRadius * 2);
                 route.sharing = [];

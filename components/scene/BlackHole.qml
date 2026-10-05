@@ -2,6 +2,7 @@ import QtQuick
 import qs.Common
 import qs.Widgets
 import "../centre/Perspective.js" as Perspective
+import "../centre/Sun.js" as Sun
 import "../device"
 
 // The "Hidden" planet: a small black hole parked in a corner of the scene.
@@ -30,8 +31,9 @@ Item {
     property bool eye: false
 
     // Seen in profile it is as near or as far as the belt slot it floats in, and as
-    // big or small as a body there (Perspective.leanAt); the scene's own view leaves it as it was
-    readonly property real lean: Perspective.leanAt(scene, scene.holeY, scene.centre.profile)
+    // big or small as a body there (Perspective.leanAt), and it shrinks with the host's
+    // system while a group has the centre (Sun.holeScale); the scene's own view leaves it as it was
+    readonly property real lean: Perspective.leanAt(scene, scene.holeY, scene.centre.profile) * Sun.holeScale(scene.centre.away)
     readonly property real horizon: Math.round(scene.bodySize * 0.2 * lean)
     readonly property real lensRadius: horizon * 3
     readonly property bool hovered: area.containsMouse

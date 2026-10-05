@@ -4,7 +4,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const S = load("Sun.js", ["PERIOD", "SPAN", "SIZE", "REST", "STOP", "LIFT", "system", "advance", "view", "groupView", "lift", "hostZ", "groupZ"]);
+const S = load("Sun.js", ["PERIOD", "SPAN", "SIZE", "REST", "STOP", "LIFT", "system", "holeScale", "advance", "view", "groupView", "lift", "hostZ", "groupZ"]);
 const C = load("Centre.js", ["TILT", "sizes", "groupAt"]);
 const P = load("Physics.js", ["norm", "ringSlot", "beltSlot", "dragArm", "separate"]);
 const V = load("Perspective.js", ["MID", "size"]);
@@ -87,6 +87,14 @@ eq("group: a member is still held inside the orbit and at its edge, let go one b
 const back = C.groupAt(g, 1, slot);
 const gb = S.groupView(g, sz, back);
 eq("group: stepped back it is smaller and elsewhere, and so is where a member is let go", [gb.cx === back.x, gb.cy === back.y, near(gb.rx), near(gb.rx * gb.innerNorm), near(gb.rx * gb.detachNorm)], [true, true, near(g.rx * back.scale), near(sz.radius * back.scale), near((sz.radius + sz.copy / 2 + g.bodySize) * back.scale)]);
+
+// --- the black hole shrinks with the host's system -------------------------------
+eq("hole: with the group not there it is as big as it always was", S.holeScale(0), 1);
+eq("hole: once the group has the centre it is as small as the system is at the middle of its path", [near(S.holeScale(1)), near(S.holeScale(1)) === near(S.system(g, 0, 1).k)], [S.SIZE, true]);
+eq("hole: half way, half way", near(S.holeScale(0.5)), near((1 + S.SIZE) / 2));
+const aways = [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1];
+eq("hole: it shrinks as the group arrives, never grows, never below the system's size", aways.every((a, i) => (i === 0 || S.holeScale(a) < S.holeScale(aways[i - 1])) && near(S.holeScale(a)) >= S.SIZE), true);
+eq("hole: it leaves the host's own geometry where it is (only its size follows)", [near(S.view(g, full(0)).holeX), near(S.view(g, full(0)).holeY)], [near(g.holeX), near(g.holeY)]);
 
 // --- the host's stacking order ---------------------------------------------------
 eq("z: at rest the host keeps its usual place", S.hostZ({ y: g.cy }, false), 50);
