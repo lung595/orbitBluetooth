@@ -40,9 +40,15 @@ QtObject {
 
     // Learning is off but something is left (it was just switched off, or the
     // settings were edited by hand): erased once, as the button does
-    readonly property bool _stale: !prefs.learnHabits && Habits.count(prefs.togetherHabits) > 0
-    on_StaleChanged: if (_stale)
-        prefs.set("togetherHabits", Habits.forget())
-    Component.onCompleted: if (_stale)
-        prefs.set("togetherHabits", Habits.forget())
+    function _sweep() {
+        if (!prefs.learnHabits && Habits.count(prefs.togetherHabits) > 0)
+            prefs.set("togetherHabits", Habits.forget());
+    }
+    property Connections _switch: Connections {
+        target: log.prefs
+        function onLearnHabitsChanged() {
+            log._sweep();
+        }
+    }
+    Component.onCompleted: _sweep()
 }
