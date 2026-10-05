@@ -88,9 +88,6 @@ Item {
     readonly property int fps: prefs ? prefs.scopeFps : 30
     readonly property bool reduceMotion: prefs ? prefs.reduceMotion : false
 
-    // A gesture moved a level (CardVolume plays its tick on it)
-    signal levelMoved(real before, real after)
-
     // --- The sound's picture -----------------------------------------------------
     // One cava and one picture for every screen that shows them, only while
     // someone looks (`listening`, set by the caller): nothing runs at rest
@@ -166,20 +163,16 @@ Item {
         const node = _node(part);
         if (!node || !node.audio)
             return;
-        const before = node.audio.volume;
         SessionData.suppressOSDTemporarily();
         route.writeLevel(node, Math.max(0, Math.min(1, level)));
-        levelMoved(before, node.audio.volume);
     }
     // One wheel notch over the scope: a smart step, as the keys
     function stepLevel(part, dir) {
         const node = _node(part);
         if (!node || !node.audio)
             return;
-        const before = node.audio.volume;
         SessionData.suppressOSDTemporarily();
         route.stepNode(node, dir);
-        levelMoved(before, node.audio.volume);
     }
     function toggleMute(part) {
         const node = _node(part);
