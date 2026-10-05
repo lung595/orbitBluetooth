@@ -185,6 +185,56 @@ Item {
         },
         {
             "then": 100,
+            "until": () => {
+                const v = h.view(scene);
+                return !!v && !v.entering && !v.levelsMoving && !v.clock.running;
+            },
+            "run": () => {
+                // With motion, the entrance, a level's glide and a hero swap run on the
+                // radar's one clock, which stops once they have landed
+                SettingsData.reduceMotion = false;
+                h.radar.close();
+                h.radar.show("");
+            }
+        },
+        {
+            "then": 100,
+            "run": () => {
+                const v = h.view(scene);
+                check("with motion the entrance has run its course and the clock has stopped", [v.motion, v.entering, v.clock.running], [true, false, false]);
+                check("every drawn level has landed on the real one", v.levelsMoving, false);
+                h.radar.setLevel("group", 0.2);
+                check("a level that moves wakes the clock", v.clock.running, true);
+                h.radar.show(h.headset);
+                check("a hero swap starts the morph, on the clock", [v.morphing, v.clock.running], [true, true]);
+            },
+            "until": () => {
+                const v = h.view(scene);
+                return !v.morphing && !v.levelsMoving && !v.clock.running;
+            }
+        },
+        {
+            "then": 100,
+            "run": () => {
+                const v = h.view(scene);
+                check("the morph ended exactly on the slots and the clock has stopped again", [v.morphing, v.levelsMoving, v.clock.running, JSON.stringify(v.slotOf(h.headset)) === JSON.stringify(v.targets[h.headset])], [false, false, false, true]);
+                SettingsData.reduceMotion = true;
+                h.radar.close();
+                h.radar.show("");
+            }
+        },
+        {
+            "then": 100,
+            "run": () => {
+                const v = h.view(scene);
+                check("with Reduce motion the clock never runs", [v.motion, v.entering, v.clock.running], [false, false, false]);
+                h.radar.show(h.headset);
+                check("and a hero swap is instant", [v.morphing, v.clock.running, JSON.stringify(v.slotOf(h.headset)) === JSON.stringify(v.targets[h.headset])], [false, false, true]);
+                h.radar.show("");
+            }
+        },
+        {
+            "then": 100,
             "run": () => {
                 try {
                     h.radar.choose("stop");
