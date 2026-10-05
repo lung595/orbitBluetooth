@@ -3,9 +3,9 @@ import QtQuick
 import "Depth.js" as Depth
 
 // Puts one part of the sky out of focus while a Listen together has the centre
-// (D294): the farther from the camera, the darker and the blurrier. Sits right
-// above `source` in the same parent and covers it with a blurred, darkened
-// copy kept as a texture (FrozenBlur). Outside a group there is nothing: no
+// (D294): the farther from the camera, the blurrier. Sits right above `source`
+// in the same parent and covers it with a blurred copy, its light given back,
+// kept as a texture (FrozenBlur). Outside a group there is nothing: no
 // copy, no effect, no cost.
 //
 // The blur is rendered once, at full strength, and `depth` only fades the
@@ -65,6 +65,8 @@ Item {
             source: root.source
             radius: Depth.blurRadius(width, height)
             dim: Depth.DIM
+            lift: Depth.LIFT
+            vivid: Depth.VIVID
             token: root.token
         }
     }

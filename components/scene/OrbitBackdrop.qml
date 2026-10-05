@@ -7,7 +7,8 @@ import "Depth.js" as Depth
 // the camera went when a Listen together takes the center), the black hole drifting
 // in the outer belt, and the dimming laid over them while a card is open.
 // While a Listen together has the centre the sky falls out of focus (D294):
-// darker and blurred, the blur kept as a texture (DecorDepth).
+// blurred, its light kept, in a soft glow of the sky's colour: a deep
+// atmosphere, not black. The blur is kept as a texture (DecorDepth).
 // A click on this empty sky steps back one level (OrbitFocus.stepBack): the
 // card, then Fedora's view.
 Item {
@@ -21,7 +22,7 @@ Item {
     readonly property real holeHorizon: blackHole.horizon
 
     // Desktop glass: a theme-tinted smoky veil that dissolves into the wallpaper
-    // (darker with the depth: blurring a smooth gradient would show nothing)
+    // (stronger with the depth: blurring a smooth gradient would show nothing)
     Vignette {
         visible: backdrop.scene.glass
         color: Qt.tint(backdrop.scene.night.skyDeep, Theme.withAlpha(backdrop.scene.night.primary, 0.07))
@@ -69,6 +70,26 @@ Item {
         token: [stars.tint, stars.tint2, stars.density, stars.vignette, stars.radius]
     }
 
+    // The deep atmosphere the group stands in on a solid sky: a soft glow of the
+    // accent behind it, so the blurred sky does not average to black. Static: it
+    // only moves with the group (never animated) and only exists under a group.
+    // The desktop glass has its veil instead (the wallpaper shows through)
+    Loader {
+        objectName: "atmosphere"
+        readonly property var group: backdrop.scene.centre.group
+        width: backdrop.scene.width * 0.95
+        height: backdrop.scene.height * 0.85
+        x: group.x - width / 2
+        y: group.y - height / 2
+        active: !backdrop.scene.glass && Depth.atmosphereAlpha(skyDepth.shown) > 0
+        sourceComponent: Atmosphere {
+            anchors.fill: parent
+            night: backdrop.scene.night
+            smoky: false
+            strength: Depth.atmosphereAlpha(skyDepth.shown)
+        }
+    }
+
     BlackHole {
         id: blackHole
         scene: backdrop.scene
@@ -114,7 +135,8 @@ Item {
             visible: !backdrop.scene.glass
             radius: backdrop.scene.cornerRadius
             color: "black"
-            opacity: 0.4
+            // Softer under a group: the sky behind it is already blurred and dark
+            opacity: Depth.focusDim(0.4, skyDepth.shown)
         }
         Vignette {
             visible: backdrop.scene.glass

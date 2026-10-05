@@ -6,6 +6,7 @@ import qs.Widgets
 import "../card"
 import "../centre"
 import "../device"
+import "Depth.js" as Depth
 import "Physics.js" as Physics
 
 // The orbit itself, back to front: the two orbits, the radar ping, the
@@ -13,7 +14,8 @@ import "Physics.js" as Physics
 // cards that slide up over them. Bodies and cards are siblings so a
 // focused body can sit above its card as the card's glyph. While a Listen
 // together has the centre, the host's system (its orbits and waves, its core
-// and the bodies outside the group) revolves around the group as a sun.
+// and the bodies outside the group) revolves around the group as a sun, and
+// falls far behind it (a frosted veil between the two, Depth.js).
 Item {
     id: world
     required property var scene
@@ -29,6 +31,9 @@ Item {
 
     readonly property real dim: world.scene.focusBody || world.scene.hiddenOpen ? 0.12 : 1
     readonly property var centre: world.scene.centre
+    // How far the host's system is from the camera: the camera's progress on the
+    // group (a value that follows it, not an animation; Reduce motion: half way)
+    readonly property real deep: Depth.level(world.centre.away, world.scene.motion)
 
     // A ring wave from the connected orbit: outward when a device connects,
     // inward when one leaves. Two waves, so a quick second edge still shows.
@@ -69,10 +74,12 @@ Item {
     // where the sun is: its path and size come from the centre
     Item {
         id: systemLayer
+        objectName: "systemLayer"
         width: parent.width
         height: parent.height
         transformOrigin: Item.TopLeft
         scale: world.centre.system.k
+        opacity: Depth.farOpacity(world.deep)
         x: world.centre.system.x - world.scene.cx * scale
         y: world.centre.system.y - world.scene.cy * scale
 
@@ -159,6 +166,27 @@ Item {
     Item {
         id: tetherLayerItem
         anchors.fill: parent
+    }
+
+    // Aerial perspective: while a group has the centre, a frosted veil of the
+    // sky's colour lies between the host's system (its planets, their names) and
+    // the group, so all of it falls back, over any sky (a wallpaper cannot be
+    // blurred). It sorts just under the group and moves with it, never animated
+    Loader {
+        objectName: "farVeil"
+        readonly property var group: world.centre.group
+        width: world.scene.width
+        height: world.scene.height
+        x: group.x - width / 2
+        y: group.y - height / 2
+        z: world.centre.groupZ - 3
+        active: Depth.farVeilAlpha(world.deep) > 0
+        sourceComponent: Atmosphere {
+            anchors.fill: parent
+            night: world.scene.night
+            tint: 0.2
+            strength: Depth.farVeilAlpha(world.deep)
+        }
     }
 
     // A Listen together at the centre (OrbitCentre): the beams under the

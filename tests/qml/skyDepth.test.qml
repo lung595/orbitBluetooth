@@ -2,6 +2,7 @@ import QtQuick
 import qs.Common
 import qs.Services
 import "components/scene"
+import "components/scene/Depth.js" as Depth
 import "mock"
 import "mock/Devices.js" as Devices
 import "mock/State.js" as State
@@ -13,7 +14,9 @@ import "mock/State.js" as State
 // switched off in memory and its own look comes back after (counter-proof: a
 // source with a look of its own); with Reduce motion there is no dissolve; a
 // gesture that needs the live part brings it back. Then the real scene: the
-// starfield stops twinkling behind the copy and is back when the group ends.
+// starfield stops twinkling behind the copy and is back when the group ends,
+// the atmosphere glow and the veil between the host's system and the group exist
+// only under a group, and the host's orbits fall back with the camera.
 // The default offscreen backend draws no effects, so what is tested is the
 // logic (what exists, what is live, what is drawn), not the pixels: those are
 // checked by scripts/preview/depth.sh. Run with tests/qml/run.sh.
@@ -69,6 +72,21 @@ Item {
                 return found;
         }
         return null;
+    }
+    // An item of the scene by its objectName, wherever it sits
+    function named(item, name) {
+        for (const child of item.children) {
+            if (child.objectName === name)
+                return child;
+            const found = named(child, name);
+            if (found)
+                return found;
+        }
+        return null;
+    }
+    // [atmosphere glow exists, far veil exists, the host's orbits' opacity]
+    function farState() {
+        return [h.named(scene, "atmosphere").active, h.named(scene, "farVeil").active, h.named(scene, "systemLayer").opacity];
     }
     // The loader that holds a DecorDepth's blurred copy
     function copyOf(decor) {
@@ -205,6 +223,7 @@ Item {
             "run": () => {
                 h.stars = h.find(scene, "shootingStars");
                 check("no group: the starfield twinkles and is drawn", [!!h.stars, h.stars.animate, h.stars.opacity], [true, true, 1]);
+                check("no group: no atmosphere, no veil between the host and the group, the host's orbits whole", h.farState(), [false, false, 1]);
                 route.sharing = ["02:00:00:00:10:06", "02:00:00:00:20:01"];
             }
         },
@@ -213,6 +232,7 @@ Item {
             "run": () => {
                 check("a group has the centre: the sky is at full depth", scene.centre.presence, 1);
                 check("and the live starfield rests behind its copy: not drawn, not twinkling", [h.stars.opacity, h.stars.animate], [0, false]);
+                check("and the group stands in its atmosphere, the host's system far behind a veil, its orbits faded", h.farState(), [true, true, Depth.farOpacity(1)]);
                 // From here on every render of the copy is counted
                 h.watch(h.decorOver(scene, h.stars));
             }
@@ -238,6 +258,7 @@ Item {
             "then": 1500,
             "run": () => {
                 check("Fedora's view: the sky is sharp again though the group still exists", [scene.centre.wanted, scene.centre.away, h.stars.opacity, h.stars.animate], [true, 0, 1, true]);
+                check("and the host's system is back: no atmosphere, no veil, its orbits whole", h.farState(), [false, false, 1]);
                 scene.centre.release();
             }
         },
@@ -245,6 +266,7 @@ Item {
             "then": 1500,
             "run": () => {
                 check("back on the group: the sky is behind its copy again (counter-proof)", [scene.centre.away, h.stars.opacity, h.stars.animate], [1, 0, false]);
+                check("and the host's system is far again (counter-proof)", h.farState(), [true, true, Depth.farOpacity(1)]);
                 route.sharing = [];
             }
         },
@@ -252,6 +274,7 @@ Item {
             "then": 0,
             "run": () => {
                 check("the group ended: the starfield is back, sharp and alive", [h.stars.opacity, h.stars.animate], [1, true]);
+                check("and nothing of the atmosphere or the veil is left", h.farState().slice(0, 2), [false, false]);
             }
         }
     ]

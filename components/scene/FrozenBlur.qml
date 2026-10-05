@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Effects
 
-// A blurred and darkened copy of `source`, rendered ONCE into a texture and
+// A blurred copy of `source` (a little darkened, its light given back), rendered ONCE into a texture and
 // kept: between two retakes it is a plain textured quad, no effect redraws
 // (the blur passes sit inside a layer that is never live). The source is read
 // only while a retake is scheduled, so it holds no reference to it (and the
@@ -13,10 +13,13 @@ import QtQuick.Effects
 Item {
     id: root
     required property Item source
-    // Blur radius in px and share darkened toward black (0..1), at full strength:
-    // the fade in and out is the opacity of this item, never a re-blur
+    // Blur radius in px, share darkened toward black (0..1), brightness and
+    // saturation given back after the blur (-1..1), at full strength: the fade
+    // in and out is the opacity of this item, never a re-blur
     property real radius: 24
-    property real dim: 0.45
+    property real dim: 0.2
+    property real lift: 0
+    property real vivid: 0
     // Any change of this value means the source looks different: retake
     property var token: null
     readonly property bool ready: _done
@@ -64,8 +67,12 @@ Item {
         blurEnabled: true
         blur: 1
         blurMax: root.radius
-        // Toward black, not a brightness offset: the sky is already dark, an
-        // offset would crush its faint stars and nebulae to nothing
+        // A blur conserves light but spreads it: a star becomes a faint disc and
+        // the sky averages to flat black. The brightness and saturation put the
+        // light back so the stars stay soft glowing discs; the darkening is toward
+        // black, not an offset, so the faint nebulae are not crushed to nothing
+        brightness: root.lift
+        saturation: root.vivid
         colorization: root.dim
         colorizationColor: "black"
     }
