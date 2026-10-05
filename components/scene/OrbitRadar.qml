@@ -60,11 +60,18 @@ Item {
         scene.wake();
     }
 
-    // The group ended or lost the hero: the radar never stays on what is gone
+    // The group ended, or the popout closed: the radar never stays on what is gone
     Connections {
         target: orbit.centre
         function onGroupedChanged() {
             if (!orbit.centre.grouped)
+                orbit.close();
+        }
+    }
+    Connections {
+        target: orbit.scene
+        function onActiveChanged() {
+            if (!orbit.scene.active)
                 orbit.close();
         }
     }
