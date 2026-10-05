@@ -28,8 +28,9 @@ Item {
     // --- Where it is and what it is ----------------------------------------------
     readonly property string role: Centre.roleOf(centre.members, centre.source, address)
     readonly property var spot: centre.spotOf(address)
-    readonly property real px: spot.x
-    readonly property real py: spot.y
+    // Carried by the pointer while it is dragged out of the group (OrbitDrag)
+    readonly property real px: dragging ? scene.dragX : spot.x
+    readonly property real py: dragging ? scene.dragY : spot.y
     readonly property real depth: spot.depth
     readonly property real diameter: spot.size
     readonly property var node: centre.session ? centre.session.memberNode(address) : null
@@ -44,6 +45,14 @@ Item {
     readonly property bool leaving: false
     readonly property bool swallowing: false
     readonly property real baseScale: 1
+    // The drag's state, as on a Bluetooth body: held by the group, so pulling
+    // it away arms it to leave; never hidden into the black hole (an output
+    // has no place in the hidden list)
+    readonly property bool holding: true
+    readonly property string phase: "connected"
+    property bool dragging: false
+    property bool armed: false
+    property bool hideArmed: false
     readonly property alias pointer: mouse
     readonly property bool hovered: mouse.containsMouse && !scene.focusBody && !scene.hiddenOpen
 
