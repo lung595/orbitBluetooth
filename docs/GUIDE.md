@@ -541,16 +541,18 @@ When not charging, the readout shows the time left and the tiles switch to **EMP
 
 ### Battery arc colours
 
-The arc around a connected device's disc tells the level at a glance, and never takes the color of the group's [volume gauge](#the-volume-at-the-center) (your theme's primary):
+The arc around a connected device's disc tells the level at a glance by its color, which drifts with the level between three colors of your theme, and never takes the color of the group's [volume gauge](#the-volume-at-the-center) (your theme's primary):
 
 | Arc | Meaning |
 | --- | --- |
-| Green | 40 % and up |
-| Amber | 16 to 39 % |
 | Red | 15 % and down |
+| Red toward amber | 16 to 34 %: the lower, the redder |
+| Amber | 35 % |
+| Amber toward green | 36 to 99 %: the higher, the greener |
+| Green | 100 % |
 | Blue-violet, breathing | Charging, whatever the level |
 
-The charging color is your theme's *info* blue; when your theme's primary is that same blue (a theme generated from a blue wallpaper often is), it is the theme's *tertiary* accent instead, so it is never mistaken for the volume gauge. In the stock Blue and Cyan themes no color of the theme tells itself apart from the primary. The card's gauge keeps its own smooth red-to-aqua ramp, red for as long as the arc is.
+A point of level moves the color a little, so you read a 60 % battery as different from a 45 % one without a number. The blend is made on hue, saturation and lightness, so the middle of the way stays as vivid as its ends (a mix of red and green in RGB would go muddy). The charging color is your theme's *info* blue; when your theme's primary is that same blue (a theme generated from a blue wallpaper often is), it is the theme's *tertiary* accent instead, so it is never mistaken for the volume gauge. In the stock Blue and Cyan themes no color of the theme tells itself apart from the primary. The card's gauge keeps its own smooth red-to-aqua ramp, red for as long as the arc is.
 
 ## New headphones pop-up
 
