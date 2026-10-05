@@ -48,6 +48,8 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 | Click the center, or the **Scan** chip | Start discovery |
 | <kbd>Esc</kbd>, click outside, or <kbd>←</kbd> | Step back: menu, hidden list, then detail card |
 
+On the desktop widget the keyboard is on demand: <kbd>Esc</kbd> works while the pointer is over the widget or while a menu, a card or the hidden list is open, and the keyboard goes back to your window when the pointer leaves.
+
 Connected devices orbit on the inner ring, drawn 15 % smaller so the ring stays airy; the others float in the outer field. While a connection is being made, a small comet circles the device and sonar rings leave it. Named devices are ranked before devices that only expose a MAC address.
 
 **Example: connecting new headphones.**
