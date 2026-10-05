@@ -116,4 +116,49 @@ eq("another output", Wired.sameSet(first, first.slice(0, 2).concat(Wired.parse(d
 const changed = field => Wired.sameSet(first, first.map((e, i) => i === 0 ? Object.assign({}, e, { [field]: "changed" }) : e));
 eq("a renamed output is a change, so is any other field", ["sink", "label", "bus", "formFactor"].map(changed).concat(Wired.sameSet(first, first.map((e, i) => i === 0 ? Object.assign({}, e, { "plugged": false }) : e))), [false, false, false, false, false]);
 
+// --- The same outputs from PipeWire's own nodes (a command line cannot wait for pactl) ---------------------
+// A node as Quickshell lists it, cut down to what is read
+const node = (name, description, props, extra) => Object.assign({ "name": name, "description": description, "nickname": "", "isSink": true, "isStream": false, "properties": props || { "media.class": "Audio/Sink" } }, extra);
+const nodes = [
+    node("alsa_output.usb-Acme_Studio_2x2-00.analog-stereo", "Acme Studio 2x2", { "media.class": "Audio/Sink", "device.bus": "usb" }),
+    node("alsa_output.pci-0000_00_1f.3.hdmi-stereo", "Built-in HDMI", { "media.class": "Audio/Sink", "device.bus": "pci" }),
+    node("bluez_output.AA_BB_CC_DD_EE_01.1", "Headset", { "media.class": "Audio/Sink" }),
+    node("orbit_pc_AA_BB_CC_DD_EE_01", "Orbit", { "media.class": "Audio/Sink" }),
+    node("alsa_input.usb-Acme_Mic-00.mono-fallback", "Mic", { "media.class": "Audio/Source" }, { "isSink": false }),
+    node("alsa_output.usb-Acme_Studio_2x2-00.analog-stereo", "Acme Studio 2x2", {}, { "isStream": true }),
+    node("alsa_output.pci-0000_00_1f.3.analog-stereo.monitor", "Monitor of Built-in", { "media.class": "Audio/Sink" })
+];
+eq("only the wired outputs PipeWire lists, sorted by their names", Wired.fromNodes(nodes).map(e => e.sink), ["alsa_output.usb-Acme_Studio_2x2-00.analog-stereo", "alsa_output.pci-0000_00_1f.3.hdmi-stereo"]);
+eq("an entry is what a listing gives, but it cannot say it is plugged in", Wired.fromNodes(nodes.slice(0, 1)), [{ "sink": "alsa_output.usb-Acme_Studio_2x2-00.analog-stereo", "label": "Acme Studio 2x2", "bus": "usb", "formFactor": "" }]);
+eq("a stream, a source, a Bluetooth output, Orbit's own node and a monitor are never listed", Wired.fromNodes(nodes.slice(2)).length, 0);
+eq("the nickname is the name when there is one, as the session names it", Wired.fromNodes([node("alsa_output.a", "Raw description", { "media.class": "Audio/Sink" }, { "nickname": "Desk Speakers" })])[0].label, "Desk Speakers");
+eq("the name is cleaned like any other", Wired.fromNodes([node("alsa_output.a", "Acme\u0000‮ Studio", {})])[0].label, "Acme Studio");
+eq("the form factor, with PipeWire's spelling or pactl's", [Wired.fromNodes([node("alsa_output.a", "x", { "device.form-factor": "Headset" })])[0].formFactor, Wired.fromNodes([node("alsa_output.a", "x", { "device.form_factor": "speaker" })])[0].formFactor, Wired.fromNodes([node("alsa_output.a", "x", {})])[0].formFactor], ["headset", "speaker", ""]);
+eq("a node with no properties is still an output", Wired.fromNodes([{ "name": "alsa_output.a", "description": "x", "isSink": true }]).map(e => e.sink), ["alsa_output.a"]);
+eq("a name made to be run by a shell is never listed", Wired.fromNodes(["alsa_output.a; reboot", "alsa_output.a b", "alsa_output.$(x)", "alsa_output.a\nb", "alsa_output.`x`", "-alsa_output.a", 5, null].map(n => node(n, "x", {}))), []);
+eq("the same output twice is one", Wired.fromNodes([node("alsa_output.a", "x", {}), node("alsa_output.a", "x", {})]).length, 1);
+eq("sorted by name, then by node, and no more than a half circle holds", [Wired.fromNodes([node("alsa_output.b", "Bravo", {}), node("alsa_output.a", "alpha", {}), node("alsa_output.c", "Alpha", {})]).map(e => e.sink), Wired.fromNodes(new Array(40).fill(0).map((_, i) => node("alsa_output.n" + i, "Out " + i, {}))).length], [["alsa_output.a", "alsa_output.c", "alsa_output.b"], Wired.MAX_OUTPUTS]);
+eq("nothing to read", [Wired.fromNodes(null), Wired.fromNodes(undefined), Wired.fromNodes([]), Wired.fromNodes(5), Wired.fromNodes("alsa_output.a"), Wired.fromNodes([null, undefined, 5, "x", {}])], [[], [], [], [], [], []]);
+
+// --- Which picture, from a node ---------------------------------------------------------------------------
+const nodeKind = (name, props) => Wired.kindOfNode(node(name, "x", props));
+eq("a node is read as an entry is", [nodeKind("alsa_output.a", { "device.bus": "usb" }), nodeKind("alsa_output.usb-Acme_X-00.analog-stereo", {}), nodeKind("alsa_output.pci-0000_01_00.1.hdmi-stereo", { "device.bus": "pci" }), nodeKind("alsa_output.a", { "device.bus": "pci", "device.form-factor": "headphones" }), nodeKind("alsa_output.a", { "device.form_factor": "speaker" }), nodeKind("alsa_output.a", {})], ["usb", "usb", "hdmi", "analog", "analog", "other"]);
+eq("not a node", [Wired.kindOfNode(null), Wired.kindOfNode(undefined), Wired.kindOfNode({}), Wired.kindOfNode("alsa_output.usb-x"), Wired.kindOfNode({ "name": 5, "properties": 5 })], ["other", "other", "other", "other", "other"]);
+eq("a node and its entry agree", Wired.fromNodes(nodes).map(Wired.kindOf), Wired.fromNodes(nodes).map(e => Wired.kindOfNode(nodes.find(n => n.name === e.sink))));
+
+// --- Which icon -----------------------------------------------------------------------------------------
+eq("an icon for each kind", ["usb", "hdmi", "analog", "other"].map(Wired.iconOf), ["usb", "settings_input_hdmi", "cable", "speaker"]);
+eq("the plain speaker for anything else", [Wired.iconOf(undefined), Wired.iconOf(null), Wired.iconOf(""), Wired.iconOf("bluetooth"), Wired.iconOf("__proto__"), Wired.iconOf("hasOwnProperty"), Wired.iconOf(5), Wired.iconOf({})], new Array(8).fill("speaker"));
+eq("they are Material Symbols names, never Orbit's bluetooth one", Object.keys(Wired.ICONS).map(k => Wired.ICONS[k]).every(i => /^[a-z_]+$/.test(i) && i.indexOf("bluetooth") < 0), true);
+eq("each kind has its own", new Set(Object.keys(Wired.ICONS).map(k => Wired.ICONS[k])).size, 4);
+
+// --- What the command line says -------------------------------------------------------------------------------
+const listed = Wired.fromNodes(nodes);
+eq("each output: its node name, its name, its picture, and whether it takes part", Wired.describe(listed, ["alsa_output.usb-Acme_Studio_2x2-00.analog-stereo", "AA:BB:CC:DD:EE:01"]), [
+    { "output": "alsa_output.usb-Acme_Studio_2x2-00.analog-stereo", "name": "Acme Studio 2x2", "kind": "usb", "member": true },
+    { "output": "alsa_output.pci-0000_00_1f.3.hdmi-stereo", "name": "Built-in HDMI", "kind": "hdmi", "member": false }
+]);
+eq("nobody takes part, or nothing is said of them", [Wired.describe(listed, []).some(o => o.member), Wired.describe(listed, undefined).some(o => o.member), Wired.describe(listed, "alsa_output.x").some(o => o.member)], [false, false, false]);
+eq("nothing listed, nothing described", [Wired.describe([], []), Wired.describe(null, []), Wired.describe(undefined, undefined)], [[], [], []]);
+
 done();

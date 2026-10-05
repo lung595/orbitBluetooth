@@ -1,7 +1,10 @@
 import Quickshell
 import Quickshell.Io
 import "Guide.js" as Guide
+import "Text.js" as Text
+import "../together/Delay.js" as Delay
 import "../together/Together.js" as Together
+import "../together/Wired.js" as Wired
 import "../noise/Anc.js" as Anc
 
 // The `dms ipc call orbitBluetooth ...` commands, for keyboard shortcuts.
@@ -16,7 +19,11 @@ import "../noise/Anc.js" as Anc
 //   hidden | unhideAll      newDeviceDemo | newDeviceStatus
 //   together <devices, 2 to 4> | togetherAdd <device> | togetherRemove <device>
 //   separate | togetherStatus | togetherDelay <device> <ms>
+//   togetherOutputs | wiredDelay up | down | +10 | -10 | 20 | reset | status
 //   (a device is a Bluetooth address or a wired output's node name)
+// Every argument is checked and capped before it is used, and an answer never
+// repeats what it was given: a name it shows is one the daemon knows, as one
+// clean line (value 11).
 Scope {
     id: ipc
 
@@ -33,7 +40,7 @@ Scope {
     }
     // "OK", or the note of a refusal ({ why, address }) of the session
     function _answer(session, refusal) {
-        return refusal ? _say(Guide.togetherNote(refusal.why, session.nameOf(refusal.address))) : "OK";
+        return refusal ? _say(Guide.togetherNote(refusal.why, session.nameOf(refusal.address), refusal.address)) : "OK";
     }
 
     IpcHandler {
@@ -144,10 +151,11 @@ Scope {
             return why ? Guide.levelNote(why) + " · " + Guide.url("the-two-volumes") : "OK";
         }
 
-        // Names of the devices hidden in the black hole, one per line
+        // Names of the devices hidden in the black hole, one per line (a name
+        // is the device's own: one clean line, never raw text in a terminal)
         function hidden(): string {
             const map = ipc.prefs.hiddenDevices;
-            const names = Object.keys(map).map(a => map[a] + " (" + a + ")");
+            const names = Object.keys(map).map(a => Text.line(map[a]) + " (" + Text.line(a) + ")");
             return names.length ? names.join("\n") : "No hidden devices";
         }
 
@@ -189,6 +197,27 @@ Scope {
             return Together.status(ipc.route.together.active ? ipc.route.together : null);
         }
 
+        // The wired outputs Listen together can take, as JSON, read from PipeWire
+        // when asked: [{ output, name, kind, member }]. "output" is what
+        // `together` and `togetherAdd` are given, "kind" is usb, hdmi, analog or
+        // other, and "member" says that it already takes part.
+        function togetherOutputs(): string {
+            return JSON.stringify(Wired.describe(ipc.route.wiredSinks(), ipc.route.together.members));
+        }
+
+        // Nudges the automatic wait of the wired outputs, -100..+100 ms (the
+        // setting of the same name, kept): one step up or down, a signed change
+        // or an exact value, reset or status. Answers with the one in force.
+        function wiredDelay(arg: string): string {
+            const now = ipc.prefs.togetherFineDelay;
+            const ms = Delay.fineFrom(arg, now);
+            if (ms === null)
+                return "Use: wiredDelay up | down | +10 | -10 | 20 | reset | status · " + Guide.url("wired-delay");
+            if (ms !== now)
+                ipc.prefs.set("togetherFineDelay", ms);
+            return Delay.fineText(ms);
+        }
+
         // Delays what one member plays by 0..1000 ms for this session only
         // (nothing is saved), on top of the wait Orbit works out for a wired
         // output; the output the sound is taken from has no delay of its own
@@ -198,9 +227,9 @@ Scope {
             if (!session.active)
                 return ipc._say(Guide.togetherNote("no-session", ""));
             if (!session.isMember(who))
-                return ipc._say(Guide.togetherNote("not-member", session.nameOf(who)));
+                return ipc._say(Guide.togetherNote("not-member", session.nameOf(who), who));
             if (who === session.source)
-                return ipc._say(Guide.togetherNote("source", session.nameOf(session.source)));
+                return ipc._say(Guide.togetherNote("source", session.nameOf(who), who));
             if (!/^[0-9]{1,4}$/.test(String(ms || "").trim()) || parseInt(ms, 10) > Together.MAX_DELAY_MS)
                 return "Use: togetherDelay <device> 0.." + Together.MAX_DELAY_MS + " (milliseconds) · " + Guide.url("listen-together");
             session.setDelay(who, parseInt(ms, 10));

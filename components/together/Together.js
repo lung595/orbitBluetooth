@@ -319,12 +319,15 @@ function parseList(text) {
 }
 
 // What `togetherStatus` says (IPC): the members in order, the one the sound
-// is taken from and each member's extra delay
+// is taken from, each member's extra delay, and what each one adds before it
+// is heard (the figures a wired copy's automatic wait is made from: a wired
+// output with none counts for 0, see Delay.latenciesOf)
 function status(session) {
     return JSON.stringify({
         "active": !!session,
         "members": session ? session.members : [],
         "from": session ? session.source : "",
-        "delaysMs": session ? session.delays : {}
+        "delaysMs": session ? session.delays : {},
+        "latenciesMs": session && session.latencies ? session.latencies : {}
     });
 }

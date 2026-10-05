@@ -64,6 +64,10 @@ Column {
         defaultValue: true
     }
 
+    FineDelayRow {
+        settings: tab.settings
+    }
+
     // --- Reset -------------------------------------------------------------------
     Section {
         text: "Reset"

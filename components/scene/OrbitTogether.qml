@@ -28,7 +28,7 @@ Item {
     // The note for this drop, null when it can be done
     function _note(b, o) {
         const r = session ? session.dropCheck(b.address, o.address) : null;
-        return r ? Guide.togetherNote(r.why, nameOf(r.address)) : null;
+        return r ? Guide.togetherNote(r.why, nameOf(r.address), r.address) : null;
     }
     // Under the orbit while the dragged device is over another
     function hint(b, o) {
@@ -121,11 +121,11 @@ Item {
         target: together.session
         function onEnded(why, address) {
             if (why !== "ended" && together.scene.active)
-                together.scene.explain(Guide.togetherNote(why, together.nameOf(address)));
+                together.scene.explain(Guide.togetherNote(why, together.nameOf(address), address));
         }
         function onMemberLeft(address) {
             if (together.scene.active)
-                together.scene.explain(Guide.togetherNote("member-out", together.nameOf(address)));
+                together.scene.explain(Guide.togetherNote("member-out", together.nameOf(address), address));
         }
     }
 }
