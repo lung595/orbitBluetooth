@@ -226,9 +226,25 @@ Item {
             }
         },
         {
-            "then": 400,
+            // Long enough for the host to come back (Centre.RECALL, 0.5 s)
+            "then": 1500,
             "run": () => {
                 check("a retake renders the blur once (the counter does see renders)", h.updates(), [1]);
+                // Back on Fedora's view: the group still exists, the camera is on the host
+                scene.centre.recall();
+            }
+        },
+        {
+            "then": 1500,
+            "run": () => {
+                check("Fedora's view: the sky is sharp again though the group still exists", [scene.centre.wanted, scene.centre.away, h.stars.opacity, h.stars.animate], [true, 0, 1, true]);
+                scene.centre.release();
+            }
+        },
+        {
+            "then": 1500,
+            "run": () => {
+                check("back on the group: the sky is behind its copy again (counter-proof)", [scene.centre.away, h.stars.opacity, h.stars.animate], [1, 0, false]);
                 route.sharing = [];
             }
         },

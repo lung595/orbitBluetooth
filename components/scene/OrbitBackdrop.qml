@@ -13,8 +13,10 @@ import "Depth.js" as Depth
 Item {
     id: backdrop
     required property var scene
-    // 0 = sharp, 1 = full depth of field: the camera's progress, eased
-    property real depth: scene.centre.presence
+    // 0 = sharp, 1 = full depth of field: how far the camera is on the group.
+    // It is `away`, not `presence`: back on Fedora's view the group still
+    // exists but the camera is on the host, so the sky is sharp again
+    property real depth: scene.centre.away
     // The black hole's event horizon radius, which the drag gestures measure from
     readonly property real holeHorizon: blackHole.horizon
 
