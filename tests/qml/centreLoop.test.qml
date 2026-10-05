@@ -90,12 +90,28 @@ Item {
         }
     }
 
+    // Whether the loop stopped at some point: the devices' slow poll wakes the
+    // scene for one step every 1.5 s, so a single read could land on that step
+    property bool settledSeen: false
+    Timer {
+        id: settleProbe
+        interval: 16
+        repeat: true
+        onTriggered: {
+            if (scene.settled)
+                h.settledSeen = true;
+        }
+    }
+
     // Each step runs, then waits `then` ms before the next
     readonly property var steps: [
         {
-            "then": 1800,
+            // The profile view flattens the belt, so neighbours push each other
+            // at rest and the devices' last pixels settle slowly (about 2 s)
+            "then": 3000,
             "run": () => {
                 // Reduce motion: the group is put in place, and the loop stops
+                settleProbe.start();
                 SettingsData.reduceMotion = true;
                 route.sharing = [h.headset, h.one, h.two];
             }
@@ -105,7 +121,8 @@ Item {
             "run": () => {
                 check("Reduce motion: the group has landed", [scene.centre.grouping, scene.centre.shown], [1, true]);
                 check("the source is in the middle", h.at(h.headset), [scene.cx, scene.cy]);
-                check("the scene's loop has stopped", scene.settled, true);
+                settleProbe.stop();
+                check("the scene's loop has stopped", h.settledSeen, true);
                 const host = scene.centre.host, near = h.outside(host.x, host.y), mid = h.outside(scene.cx, scene.cy);
                 check("Reduce motion: the sun stays at its rest spot, the source is as big as the core", [scene.centre.sunPhase, scene.centre.bodyOf(h.headset).roleDiameter], [Sun.REST, scene.coreSize]);
                 check("the devices outside the group live around the sun, not the middle (counter-proof: the middle)", [near.n > 0, near.mean < mid.mean], [true, true]);

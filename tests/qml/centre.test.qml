@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell.Services.Pipewire
 import qs.Common
 import "components/centre"
+import "components/centre/Centre.js" as Centre
 import "components/centre/Sun.js" as Sun
 import "mock"
 
@@ -182,7 +183,7 @@ Item {
         check("the source is held in the middle at its size", [s.role, ts.x, ts.y, s.roleDiameter, ts.snap], ["source", 260, 220, centre.sizes.source, false]);
         check("a copy is held on the orbit", [c1.role, c2.role], ["copy", "copy"]);
         const r = centre.sizes.radius;
-        check("a copy sits on the tilted orbit", near(Math.hypot((t1.x - 260) / r, (t1.y - 220) / (r * 0.55)), 1, 1e-6), true);
+        check("a copy sits on the orbit, seen in profile", near(Math.hypot((t1.x - 260) / r, (t1.y - 220) / (r * Centre.TILT)), 1, 1e-6), true);
         check("two copies are opposite each other", [near(t1.x + t2.x, 520), near(t1.y + t2.y, 440)], [true, true]);
         check("depth tells the near side", [Math.abs(c1.depth + c2.depth) < 1e-6, Math.abs(c1.depth) <= 1], [true, true]);
         check("a copy is a little smaller on the far side", (c1.depth < c2.depth) === (c1.roleDiameter < c2.roleDiameter), true);
@@ -204,7 +205,7 @@ Item {
         check("a device outside the group lives around the sun", [centre.geometryOf(other).cx, centre.geometryOf(other).cy, sunView.cx, sunView.cy], [centre.host.x, centre.host.y, centre.host.x, centre.host.y]);
         check("a member is dragged in the group's own geometry, in the middle", [centre.geometryOf(member).cx, centre.geometryOf(member).cy, groupView.cx, groupView.cy], [260, 220, 260, 220]);
         check("the sun's view is the host's size", [sunView.rx, sunView.coreSize], [scene.rx * centre.host.scale, scene.coreSize * centre.host.scale]);
-        check("the group's ring is the copies' orbit", [groupView.ringCy, near(groupView.ringRy, centre.sizes.radius * 0.55)], [220, true]);
+        check("the group's ring is the copies' orbit", [groupView.ringCy, near(groupView.ringRy, centre.sizes.radius * Centre.TILT)], [220, true]);
         // It turns while the scene's time runs (counter-proof: not without it)
         let before = centre.sunPhase;
         run(1, true);
@@ -294,7 +295,7 @@ Item {
         centre.recall();
         check("a click on the host: the group steps back", centre.recalled, true);
         run(0.5, true);
-        check("the host is back in the middle, the group small at the back", [centre.stage, centre.host.scale, centre.group.scale], [1, 1, 0.5]);
+        check("the host is back in the middle, the group a small planet of its ring", [centre.stage, centre.host.scale, centre.group.scale], [1, 1, Centre.GROUP_SIZE]);
         check("the others have their tether again, the group has none", [centre.tetherless("02:00:00:00:99:99"), centre.tetherless(h.one)], [false, true]);
         centre.release();
         // A little over its time: the steps add up to it only within rounding
