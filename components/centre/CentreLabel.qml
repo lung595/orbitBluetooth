@@ -48,6 +48,11 @@ Item {
         // Only to say the names: the pointer is never taken from what lies under
         HoverHandler {
             id: hover
+            cursorShape: Qt.PointingHandCursor
+        }
+        // A tap opens the volume radar on the group's level
+        TapHandler {
+            onTapped: caption.scene.radar.show("")
         }
     }
 }

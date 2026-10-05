@@ -1,12 +1,9 @@
 import QtQuick
 import qs.Widgets
 import "../device"
-import "../device/DeviceCatalog.js" as Catalog
-import "../device/Glyphs.js" as Glyphs
 import "../together/Together.js" as Together
-import "../together/Member.js" as Member
 import "Centre.js" as Centre
-import "WiredSign.js" as Sign
+import "MemberGlyph.js" as MemberGlyph
 
 // A group said in icons, never in words: one round disc per member, the first
 // member first, each overlapping the next like the bar pill's stack, with the
@@ -37,14 +34,9 @@ Item {
     width: row.width
     height: row.height
 
-    // The glyph of a member: a device's own, as its body wears it (the user's
-    // choice first), or the picture of a wired output's connection
+    // The glyph of a member, as everywhere else the group is drawn
     function glyphOf(token) {
-        if (Member.isWired(token)) {
-            const node = session ? session.memberNode(token) : null;
-            return Glyphs.wired(Sign.kindOf(token, node ? node.properties : null));
-        }
-        return Catalog.resolve(scene.deviceMap[token], scene.prefs.glyphOverrides);
+        return MemberGlyph.glyphOf(token, session ? session.memberNode(token) : null, scene.deviceMap[token], scene.prefs.glyphOverrides);
     }
 
     Row {

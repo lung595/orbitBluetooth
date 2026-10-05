@@ -364,14 +364,22 @@ Item {
     // Closes whatever overlay is open (detail card, hidden list, menu)
     function dismiss() {
         menu.close();
+        radar.close();
         closeHidden();
         clearFocus();
     }
 
     function openMenu(b, point) {
-        if (!b || b.swallowing || focusBody)
+        if (!b || b.swallowing || focusBody || radar.open)
             return;
         menu.popup(b, point);
+    }
+    // The menu's group chooser, opened straight on `b` (the radar's "Add a device…")
+    function openGroupChooser(b, point) {
+        if (!b)
+            return;
+        menu.popup(b, point);
+        menu.choose("group");
     }
 
     // --- Focus and rename (the detail card) ----------------------------------
@@ -381,14 +389,15 @@ Item {
         scene: orbitRoot
         menu: menu
     }
-    function focusOn(b) {
-        focusCtl.on(b);
+    // `card` asks for the detail card of a group member, which a click opens the radar for
+    function focusOn(b, card) {
+        focusCtl.on(b, card);
     }
     function clearFocus() {
         focusCtl.clear();
     }
     // Something to step back from: a card, the hidden list, or the group's view
-    readonly property bool canStepBack: !!focusBody || hiddenOpen || centre.canRecall
+    readonly property bool canStepBack: !!focusBody || hiddenOpen || radar.open || centre.canRecall
     function stepBack() {
         focusCtl.stepBack();
     }
@@ -432,6 +441,15 @@ Item {
     OrbitChrome {
         scene: orbitRoot
         bodyCount: devices.model.count
+    }
+
+    // The volume radar of a listening group, over the sky and under the menu
+    readonly property alias radar: radarCtl
+    OrbitRadar {
+        id: radarCtl
+        scene: orbitRoot
+        anchors.fill: parent
+        z: 29000
     }
 
     // Right-click menu, above everything else
