@@ -223,6 +223,7 @@ Item {
             "run": () => {
                 quiet3.hold();
                 check("no sound flag in DMS: it is not made up, the OSD is still held", [h.read(dms3, "soundVolumeChanged"), dms3.osdVolumeEnabled], [undefined, false]);
+                check("and the sound's Binding is never switched on without the flag", [quiet3.hasSoundFlag, quiet3.holding, quiet3.volumeSound.when], [false, true, false]);
                 quiet3.replaceSound = false;
                 quiet3.osd = false;
                 check("and it all ends cleanly", [h.read(dms3, "soundVolumeChanged"), dms3.osdVolumeEnabled], [undefined, true]);

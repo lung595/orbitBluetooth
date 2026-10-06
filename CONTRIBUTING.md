@@ -100,7 +100,7 @@ orbitBluetooth/
 ├── OrbitBluetoothDesktop.qml    # desktop widget
 ├── OrbitBluetoothSettings.qml   # settings page: the chip tabs, one file each in components/settings/
 ├── components/
-│   ├── settings/                # one tab per file (Look, Sound, Orbit, Headphones, Desktop, Scanning) and their shared rows (`FineDelayRow.qml` is the Wired delay slider, `HabitsRow.qml` the learned-groups switch and button)
+│   ├── settings/                # one tab per file (Look, Sound, Orbit, Headphones, Desktop, Scanning) and their shared rows (`FineDelayRow.qml` is the Wired delay slider, `HabitsRow.qml` the learned-groups switch and button, `LinkedToggle.qml` a switch with the GitHub mark that opens its guide section, like *Orbit's tick only*)
 │   ├── scene/                   # the sky every surface shows
 │   │   ├── OrbitScene.qml       # the scene: composition and wiring of the files below
 │   │   ├── Orbit.js, OrbitDevices.qml  # which devices the orbit shows (Orbit.js pure, tested), one model entry per body
@@ -134,7 +134,7 @@ orbitBluetooth/
 │   │   ├── TwoLevels.qml        # an output's two volumes, its cava and its picture (base of CardVolume, VolumeOverlay)
 │   │   ├── CardVolume.qml, Volume.js         # the detail card's two volumes and tick (Volume.js pure, tested)
 │   │   ├── VolumeOverlay.qml, VolumePopup.qml, IslandFace.qml  # volume pop-up per screen, its face inside Dank Island
-│   │   ├── DmsOsdOff.qml        # holds DMS's own volume OSD off, in memory, while the pop-up is on (D273)
+│   │   ├── DmsQuiet.qml         # holds DMS's own volume OSD (D273) and, around Orbit's own level writes, its volume sound (D360) off, in memory; `AudioRoute.levelWriting` calls `hold()` before every write (tests/qml/dmsQuiet.test.qml)
 │   │   ├── ClickAwayHold.qml    # hides the island's click-away layer while the face is up; the island's spring stays DMS's
 │   │   ├── AudioFacts.qml, FactsLine.qml, Audiophile.js  # what plays: `pactl` read on demand, the line with its info button, parsing (pure, tested)
 │   │   ├── AudioGraph.qml, AudioGraph.js, Codecs.js  # `pw-dump` / `pw-top` read only while looked at and wanted; their parsing and the codec / bit rate tables (pure, tested)
