@@ -202,7 +202,7 @@ Item {
     // shrink and grow with the host's system as it revolves around a group.
     readonly property real ringScale: (slotMix * depthScale + (1 - slotMix) * (0.66 + 0.34 * signal) * Perspective.lean(depth, profile)) * connectedMix * (scene.glass ? 0.75 : 1) * scene.centre.system.k
     readonly property real baseScale: focused ? 1 : ringScale + (roleDiameter / diameter - ringScale) * roleMix
-    readonly property bool hovered: mouse.containsMouse && !scene.focusBody && !scene.hiddenOpen
+    readonly property bool hovered: mouse.containsMouse && !scene.cardOpen
     // How whole it is drawn: a copy behind the source of a group is drawn over it, so
     // it keeps only a dashed outline there (whole again when it is picked: the
     // focus card shows it big)
@@ -217,7 +217,7 @@ Item {
     // Bodies on the far side of the ring pass behind the host core (z 50); in
     // the profile view everything sorts by height (Centre.bodyZ)
     z: focused ? 20000 : dragging ? 10000 : Centre.bodyZ(body, scene.centre.grouped, scene.centre.groupZ)
-    opacity: leaving ? 0 : (spawned ? 1 : 0) * ((scene.focusBody && scene.focusBody !== body) || scene.hiddenOpen ? 0.1 : 1) * (inSlot ? 1 : dormant ? 0.75 : 0.8 + 0.2 * signal)
+    opacity: leaving ? 0 : (spawned ? 1 : 0) * ((scene.cardOpen && !focused) ? 0.1 : 1) * (inSlot ? 1 : dormant ? 0.75 : 0.8 + 0.2 * signal)
 
     Behavior on opacity {
         NumberAnimation {

@@ -67,6 +67,8 @@ Item {
         property bool hiddenOpen: false
         property bool renaming: false
         property bool menuOpen: false
+        // A card is up over the sky (what the bodies read)
+        readonly property bool cardOpen: !!focusBody || hiddenOpen || radar.open
         // The volume radar: stepBack closes it before anything else. Closed in these parts (its own test opens a real one)
         readonly property var radar: QtObject {
             property bool open: false

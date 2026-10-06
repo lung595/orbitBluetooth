@@ -68,6 +68,7 @@ Item {
     readonly property alias focusGlyphScale: focusLayout.glyphScale
     readonly property alias focusGlyphLift: focusLayout.glyphLift
     readonly property alias focusOverlap: focusLayout.overlap
+    readonly property alias focusFullOverlap: focusLayout.fullOverlap
     readonly property alias focusHeadroom: focusLayout.headroom
     readonly property alias focusFitHeight: focusLayout.fitHeight
 
@@ -76,7 +77,14 @@ Item {
     // Names of connected devices read stronger than the others; with nothing
     // connected there is no hierarchy to show, so every name is lifted
     readonly property alias anyConnected: devices.anyConnected
+    // The body that flew to the card: the detail card's device, or the radar's hero
+    // when it is a Bluetooth member
     property var focusBody: null
+    // A card is up over the sky (the detail card, the hidden list, the radar): the
+    // sky steps back, whichever it is. The detail card is the one that is the
+    // device's, and not the radar's flown hero.
+    readonly property bool cardOpen: !!focusBody || hiddenOpen || radar.open
+    readonly property bool detailOpen: !!focusBody && !radar.open
     property var dragBody: null
     property real dragX: 0
     property real dragY: 0
@@ -111,7 +119,7 @@ Item {
     readonly property bool screenAsleep: SessionService.locked || IdleService.isShellLocked || IdleService.monitorsOff
     // Time-driven motion (orbits, float, twinkles) runs only while awake;
     // otherwise the clock stops as soon as every body has settled.
-    readonly property bool awake: active && visible && width > 0 && !screenAsleep && (!freezeWhenIdle || interacting || (prefs.desktopAmbient && !covered) || !!dragBody || !!focusBody)
+    readonly property bool awake: active && visible && width > 0 && !screenAsleep && (!freezeWhenIdle || interacting || (prefs.desktopAmbient && !covered) || !!dragBody || cardOpen)
     readonly property Item orbitRoot: scene
 
     // --- What the daemon publishes (OrbitDaemonData) -------------------------
@@ -413,7 +421,7 @@ Item {
         id: physics
         scene: orbitRoot
         repeater: worldItem.bodies
-        card: worldItem.focusCard
+        card: worldItem.cardSlide
         centre: centreCtl
         ghost: ghostCtl
     }

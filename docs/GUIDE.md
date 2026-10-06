@@ -346,21 +346,21 @@ When something is wrong, a short note says it in these words and links here:
 
 ### The volume radar
 
-Tap the group's icons (the row of discs under it), or click one of its members (a Bluetooth device or a wired output): a radar opens over the sky, on a **glass card** like the device's detail card (smoked glass in a dark theme, soft off-white in a light one, always in your DMS colors).
+Tap the group's icons (the row of discs under it), or click one of its members (a Bluetooth device or a wired output): a radar rises from the bottom of the orbit in the **same card as a device's detail card**: same frame, same rise and fade, narrow and centred (smoked glass in a dark theme, soft off-white in a light one, always in your DMS colors). The other planets step back, as they do for a detail card. When the big dial is a Bluetooth member, its planet flies up to the card and grows on its top edge like a device's; for the group and a wired output, the card carries their picture there.
 
-- **The header** names the big dial (*Group*, or the member's name) with a line under it: how many outputs the group has, or *Bluetooth* or *Wired*. The round ✕ on the right closes the radar; when a member is the big dial, a round back arrow on the left goes back to the group's level.
+- **The header** names the big dial (*Group*, or the member's name) under that picture, with a line under it: how many outputs the group has, or *Bluetooth* or *Wired*. The round ✕ on the right closes the radar; when a member is the big dial, a round back arrow on the left goes back to the group's level.
 - **The big dial** is the level you asked for: the group's (the one shared level, the same as the ring's) or the member's own. Its ring has tick marks and a soft glow under the lit part; the level is written big in the middle, with the picture of what it is above. Drag the ring to set the level, turn the wheel to step it. The **mute pill** in the gauge's opening mutes it (*Mute*, then *Muted*): a ring ripples out of it and the arc dims.
 - **The small dials** are every other level, around the big one, each with its name under it. Hover one and its ring lights up; tap it to make it the big one. They answer the same gestures: drag, wheel, mute.
 
-Under the big dial, the actions that go with it, as glass pills (the destructive one is tinted red):
+Under the big dial, the actions that go with it, as glass pills in rows of two (the destructive one is tinted red):
 
 - a Bluetooth member: *Disconnect*, *Remove from group*, *Hide* and *Details* (its detail card);
 - a wired member: *Disconnect* (it leaves the group and stays plugged in) and *Hide*;
 - the group: *Add a device…* and *Stop group*.
 
-A member whose device keeps no level of its own says so instead of staying silent (see [The volume at the center](#the-volume-at-the-center)). <kbd>Esc</kbd> or the ✕ closes the radar, at once. The card fills the orbit edge to edge, so the frame around it is the orbit's own, and the big dial's name is written just under it.
+A member whose device keeps no level of its own says so instead of staying silent (see [The volume at the center](#the-volume-at-the-center)). <kbd>Esc</kbd> or the ✕ closes the radar, at once. The card rises like the detail card's (480 ms, fading in over 300 ms) and goes down the same way.
 
-**What moves**: when it opens, the card fades and grows in, the big dial's arc sweeps up to its level and the small dials pop in one after the other. Tap a small dial and the dials glide to their new places: the one you tapped grows into the middle while the old big one shrinks into its place. A level glides to its new value instead of jumping, so a drag feels smooth (the number always shows the real value). Muting sends a ring out of the speaker.
+**What moves**: when it opens, the card rises, the big dial's arc sweeps up to its level and the small dials pop in one after the other. Tap a small dial and the dials glide to their new places: the one you tapped grows into the middle while the old big one shrinks into its place. A level glides to its new value instead of jumping, so a drag feels smooth (the number always shows the real value). Muting sends a ring out of the speaker.
 
 **What it costs**: all of that runs on **one clock of about 60 Hz that runs only while something moves**. Once the dials have settled, nothing runs; while the radar is closed, nothing of it exists. With *Reduce motion* everything jumps straight to its place and the clock never starts.
 

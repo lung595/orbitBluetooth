@@ -37,7 +37,7 @@ Item {
         // While a group has the centre, the devices around the sun keep quiet
         // (their names would crowd the small system): a name shows on hover or drag
         readonly property real quiet: caption.body.hovered || caption.body.dragging ? 0 : caption.body.scene.centre.away
-        opacity: caption.body.scene.focusBody || caption.body.scene.hiddenOpen || caption.body.swallowing || caption.body.hideArmed ? 0 : 1 - quiet
+        opacity: caption.body.scene.cardOpen || caption.body.swallowing || caption.body.hideArmed ? 0 : 1 - quiet
 
         StyledText {
             anchors.horizontalCenter: parent.horizontalCenter

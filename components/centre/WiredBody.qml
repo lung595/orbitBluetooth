@@ -54,7 +54,7 @@ Item {
     property bool armed: false
     property bool hideArmed: false
     readonly property alias pointer: mouse
-    readonly property bool hovered: mouse.containsMouse && !scene.focusBody && !scene.hiddenOpen
+    readonly property bool hovered: mouse.containsMouse && !scene.cardOpen
     // How whole it is drawn: a copy behind the source is drawn over it, so it keeps
     // only a dashed outline there
     readonly property real solid: Centre.solidity(role, depth, 1)

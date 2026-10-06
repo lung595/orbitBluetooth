@@ -12,7 +12,7 @@ StyledText {
     anchors.horizontalCenter: parent.horizontalCenter
     anchors.bottom: parent.bottom
     anchors.bottomMargin: hint.scene.glass ? Math.round(hint.scene.height * 0.1) : Theme.spacingS
-    opacity: hint.scene.focusBody || hint.scene.hiddenOpen ? 0 : hint.text ? 0.6 : 0
+    opacity: hint.scene.cardOpen ? 0 : hint.text ? 0.6 : 0
     color: "white"
     font.pixelSize: Theme.fontSizeSmall - 1
     font.letterSpacing: 0.4

@@ -2,7 +2,6 @@ import QtQuick
 import qs.Common
 import "../centre/MemberGlyph.js" as MemberGlyph
 import "../common/Guide.js" as Guide
-import "../radar"
 import "../radar/Radar.js" as Radar
 import "../together/Member.js" as Member
 
@@ -10,7 +9,7 @@ import "../together/Member.js" as Member
 // from one of its members, it shows one level big (the hero: the group's, or the
 // member's that was clicked) and the others small around it, all within reach.
 // This is its state and what its gestures and actions do; RadarView draws it.
-// Nothing exists while it is closed (the Loader), and a level is only read and
+// Nothing exists while it is closed (the world's Loader), and a level is only read and
 // written here, on the hero's or a satellite's gesture.
 Item {
     id: orbit
@@ -46,17 +45,26 @@ Item {
         return scene.world.bodyList().find(b => b.address === id) ?? null;
     }
 
+    // The Bluetooth hero's planet flies to the card like a device's (the scene's
+    // focusBody); a group or a wired output has no planet of its own to fly, and
+    // the card carries its picture (RadarGlyph)
+    readonly property var flier: open && kindOf(heroId) === "bluetooth" ? bodyOf(heroId) : null
+    onFlierChanged: scene.focusBody = flier
+
     function show(id) {
         if (!centre.grouped)
             return;
+        // A detail card of another device gives way
+        if (!open)
+            scene.clearFocus();
         hero = members.indexOf(id) >= 0 ? id : "";
         open = true;
         scene.wake();
         scene.forceActiveFocus();
     }
+    // The hero stays as it was, so the card does not change under its own fade
     function close() {
         open = false;
-        hero = "";
         scene.wake();
     }
 
@@ -167,13 +175,8 @@ Item {
         }
     }
 
-    Loader {
-        anchors.fill: parent
-        active: orbit.open
-        sourceComponent: RadarView {
-            radar: orbit
-        }
-    }
+    // The card itself (RadarView) is drawn in the world, in the detail card's rise
+    // (CardSlide), so the planet that flies to it can sit above it
     // The sky's guided note lies under the veil: it is shown again over it, so a
     // dial that cannot do what was asked never answers with silence (value 10)
     Loader {

@@ -5,7 +5,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## Unreleased
 
-- **The volume radar's card fits the scene exactly, and names the big dial.** The card now covers the sky edge to edge with the sky's own rounded corners, so the frame around it is exactly the one around the orbit (before, a lighter band with other corners lay around it, and a tap on that band closed the radar: it is gone, the ✕ and Escape close it). The big dial's name is written just under it, above the actions, like the small dials' names.
+- **The volume radar opens in the same card as a device's.** It is now a narrow card (at most 360 px, centred, glued to the bottom) with the detail card's own frame, its rise (480 ms) and its fade (300 ms), the name of the big dial and what it is under the picture, and round back and ✕ buttons in the corners. A Bluetooth member's planet flies up to the card and grows on its top edge exactly as it does for a device's detail card; the group and a wired output have no planet to fly, so the card carries their picture there with the same pop. Everything that steps back when a card is up (the other planets, their names and tethers, the hint, the scan chip, the offer card, the backdrop, the host core) now does so for the radar too, through one state. The actions sit in two rows of two so *Disconnect*, *Remove from group*, *Hide* and *Details* all fit. The hidden list shares the rise, so it now moves at the same speed as the other cards (it was a little quicker). The big dial's name is only in the header now (the card replaces the full-sky card of the previous entry).
 
 ### Added
 

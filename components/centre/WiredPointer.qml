@@ -22,7 +22,7 @@ MouseArea {
     hoverEnabled: true
     preventStealing: true
     acceptedButtons: Qt.LeftButton | Qt.RightButton
-    enabled: !pointer.body.scene.focusBody && !pointer.body.scene.hiddenOpen
+    enabled: !pointer.body.scene.cardOpen
     cursorShape: pointer.body.dragging ? Qt.ClosedHandCursor : Qt.PointingHandCursor
     // The shape itself: the box's corners belong to what lies behind. The wheel
     // below is held to the same zone.

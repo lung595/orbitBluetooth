@@ -23,7 +23,7 @@ Item {
     y: centre.host.y - height / 2
     width: core.scene.coreSize
     height: width
-    opacity: (core.scene.focusBody || core.scene.hiddenOpen ? 0.15 : core.scene.btOn ? 1 : 0.45) * (centre.hostAway ? 0.6 : 1)
+    opacity: (core.scene.cardOpen ? 0.15 : core.scene.btOn ? 1 : 0.45) * (centre.hostAway ? 0.6 : 1)
     scale: (core.scene.motion ? 1 + 0.018 * Math.sin(core.scene.clock * 1.3) : 1) * corePulse.value * centre.host.scale
 
     Behavior on opacity {
@@ -100,7 +100,7 @@ Item {
     MouseArea {
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
-        enabled: core.scene.btOn && !core.scene.focusBody
+        enabled: core.scene.btOn && !core.scene.cardOpen
         onPressed: mouse => {
             const inner = Math.hypot(mouse.x - width / 2, mouse.y - height / 2) < width * (core.centre.hostAway ? 0.5 : 0.35);
             const p = mapToItem(core.scene, mouse.x, mouse.y);

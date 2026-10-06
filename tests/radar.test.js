@@ -3,7 +3,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const R = load("Radar.js", ["STYLES", "START", "SWEEP", "styleOf", "layout", "angleOf", "levelAt", "percent", "heroOf", "around", "subtitle", "chips"]);
+const R = load("Radar.js", ["STYLES", "START", "SWEEP", "styleOf", "layout", "angleOf", "levelAt", "percent", "heroOf", "around", "subtitle", "chips", "extent", "sideFor", "blockHeight", "MIN_SIDE", "ACTIONS", "UNDER", "PILL", "GAP", "chipRows"]);
 
 const near = v => Math.round(v * 1000) / 1000;
 const side = 300;
@@ -22,6 +22,17 @@ eq("layout: none touches the hero", [1, 3, 5].map(n => spread(n).every(s => Math
 const reach = n => Math.max(...spread(n).map(s => Math.hypot(s.x, s.y) + s.r));
 eq("layout: all of it fits the radar's side", [1, 5].map(n => reach(n) < side / 2), [true, true]);
 eq("layout: it scales with the side", near(R.layout("hero", 3, 2 * side).satellites[1].y / R.layout("hero", 3, side).satellites[1].y), 2);
+
+// --- how much room the dials take in a card ---------------------------------------
+const room = (n, s) => R.extent("hero", n, s).above + R.extent("hero", n, s).below;
+eq("extent: the satellites reach higher than the hero when there are some, and the actions hang under it", [R.extent("hero", 3, side).above > R.layout("hero", 3, side).hero.r, R.extent("hero", 0, side).above, R.extent("hero", 2, side).below], [true, R.layout("hero", 0, side).hero.r, R.layout("hero", 2, side).hero.r + R.UNDER + R.ACTIONS]);
+eq("block: the widest radar takes the card's inner width but for its margin", near(R.blockHeight("hero", 3, 300)), near(room(3, 300 * 0.92)));
+eq("side: with room to spare it is the widest, with none it shrinks, never past the smallest", [R.sideFor("hero", 3, 300, 900), R.sideFor("hero", 3, 300, 200) < R.sideFor("hero", 3, 300, 900), R.sideFor("hero", 3, 300, 10)], [300 * 0.92, true, R.MIN_SIDE]);
+eq("side: what it takes fits the room it was given", near(room(3, R.sideFor("hero", 3, 300, 220))), 220);
+eq("side: a card too narrow still gets the smallest radar", R.sideFor("hero", 3, 50, 900), R.MIN_SIDE);
+
+eq("actions: in rows of two, which the card has room for: a Bluetooth member has four", [R.chipRows("group").map(r => r.length), R.chipRows("wired").map(r => r.length), R.chipRows("bluetooth").map(r => r.length)], [[2], [2], [2, 2]]);
+eq("actions: the rows keep the order of the actions, and the room is two rows for any hero", [R.chipRows("bluetooth").flat().map(c => c.id).join(), R.ACTIONS], [R.chips("bluetooth").map(c => c.id).join(), 2 * R.PILL + R.GAP]);
 
 // --- a point on a dial is a level ----------------------------------------------
 eq("gauge: it opens at the bottom, 270 degrees from 7:30", [R.START, R.SWEEP], [135, 270]);

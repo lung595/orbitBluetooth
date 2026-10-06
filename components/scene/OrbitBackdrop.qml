@@ -124,7 +124,7 @@ Item {
     // Dims the backdrop in focus mode (elliptical on glass: no hard edge)
     Item {
         anchors.fill: parent
-        opacity: backdrop.scene.focusBody || backdrop.scene.hiddenOpen ? 1 : 0
+        opacity: backdrop.scene.cardOpen ? 1 : 0
         visible: opacity > 0.01
         Behavior on opacity {
             NumberAnimation {

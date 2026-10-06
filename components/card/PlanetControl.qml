@@ -14,7 +14,7 @@ Item {
     id: planet
 
     required property var scene
-    readonly property var body: scene.focusBody
+    readonly property var body: scene.detailOpen ? scene.focusBody : null
     readonly property var route: scene.audioRoute
     readonly property string address: body && body.connected ? body.address : ""
     readonly property bool hasSound: !!route && !!address && !!route.find(address)
