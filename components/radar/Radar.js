@@ -12,9 +12,9 @@ var STYLES = ["hero"];
 
 var START = 135;      // where a dial's gauge starts, in degrees clockwise from 3 o'clock (7:30)
 var SWEEP = 270;      // how far it runs, so it opens at the bottom, where the mute badge sits
-var HERO = 0.22;      // the hero's radius, of the radar's side
+var HERO = 0.2;       // the hero's radius, of the radar's side
 var SATELLITE = 0.085;
-var ORBIT = 0.4;      // the satellites' ring, of the side, from the hero's middle
+var ORBIT = 0.44;     // the satellites' ring, of the side, from the hero's middle
 var SPREAD = 50;      // degrees between two satellites at most
 var ARC = 140;        // degrees they cover at most: the upper side, the hero's name and the chips stay clear
 

@@ -403,7 +403,7 @@ Item {
         focusCtl.clear();
     }
     // Something to step back from: a card, the hidden list, or the group's view
-    readonly property bool canStepBack: !!focusBody || hiddenOpen || radar.open || centre.canRecall
+    readonly property bool canStepBack: cardOpen || centre.canRecall
     function stepBack() {
         focusCtl.stepBack();
     }

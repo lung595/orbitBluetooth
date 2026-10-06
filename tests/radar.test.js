@@ -3,7 +3,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const R = load("Radar.js", ["STYLES", "START", "SWEEP", "styleOf", "layout", "angleOf", "levelAt", "percent", "heroOf", "around", "subtitle", "chips", "extent", "sideFor", "blockHeight", "MIN_SIDE", "ACTIONS", "UNDER", "PILL", "GAP", "chipRows"]);
+const R = load("Radar.js", ["STYLES", "START", "SWEEP", "styleOf", "layout", "angleOf", "levelAt", "percent", "heroOf", "around", "subtitle", "chips", "extent", "sideFor", "blockHeight", "MIN_SIDE", "ACTIONS", "UNDER", "SHARE", "PILL", "GAP", "chipRows"]);
 
 const near = v => Math.round(v * 1000) / 1000;
 const side = 300;
@@ -20,7 +20,8 @@ const apart = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 eq("layout: two satellites never touch, up to the group and four members", [2, 3, 4, 5].map(n => spread(n).every((s, i) => i === 0 || apart(s, spread(n)[i - 1]) > s.r * 2.2)), [true, true, true, true]);
 eq("layout: none touches the hero", [1, 3, 5].map(n => spread(n).every(s => Math.hypot(s.x, s.y) - s.r > R.layout("hero", n, side).hero.r)), [true, true, true]);
 const reach = n => Math.max(...spread(n).map(s => Math.hypot(s.x, s.y) + s.r));
-eq("layout: all of it fits the radar's side", [1, 5].map(n => reach(n) < side / 2), [true, true]);
+// The radar's side is SHARE of the card's inner width, so the dials may reach past the side but not the card
+eq("layout: all of it fits the card's inner width", [1, 5].map(n => reach(n) < side / 2 / R.SHARE), [true, true]);
 eq("layout: it scales with the side", near(R.layout("hero", 3, 2 * side).satellites[1].y / R.layout("hero", 3, side).satellites[1].y), 2);
 
 // --- how much room the dials take in a card ---------------------------------------

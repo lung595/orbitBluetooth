@@ -176,7 +176,8 @@ Item {
     }
 
     // The card itself (RadarView) is drawn in the world, in the detail card's rise
-    // (CardSlide), so the planet that flies to it can sit above it
+    // (CardSlide), so the planet that flies to it can sit above it.
+
     // The sky's guided note lies under the veil: it is shown again over it, so a
     // dial that cannot do what was asked never answers with silence (value 10)
     Loader {

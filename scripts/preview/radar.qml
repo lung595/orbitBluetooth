@@ -103,7 +103,7 @@ Window {
     }
     Timer {
         id: grab
-        interval: 500
+        interval: 1500
         onTriggered: win.contentItem.grabToImage(r => {
             r.saveToFile(win.out);
             Qt.quit();

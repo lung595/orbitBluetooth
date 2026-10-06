@@ -8,10 +8,10 @@ import "RadarMotion.js" as Motion
 // The volume radar, drawn: the detail card's own card (RadarCard, in the same rise,
 // see CardSlide), the hero's big dial in the middle with its actions under it (its
 // name is the card's header), and the other levels as small dials around it, each a
-// tap from being the hero. What it shows and
-// does is the state's (OrbitRadar); this places the dials, passes the gestures on and
-// owns the motion: one clock that runs only while something moves (the entrance, a
-// hero swap, a level gliding, the mute ring) and never with Reduce motion.
+// tap from being the hero. What it shows and does is the state's (OrbitRadar); this
+// places the dials, passes the gestures on and owns the motion: one clock that runs
+// only while something moves (the entrance, a hero swap, a level gliding, the mute
+// ring) and never with Reduce motion.
 // Made only while the radar is open, so nothing here exists at rest.
 Item {
     id: view
