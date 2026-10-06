@@ -52,6 +52,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Fixed
 
+- **A wired output's cable follows it when you pull it out of the group.** Dragging a wired member (the rounded square) away used to leave its cable behind, pointing at the place it came from; the cable's end now follows the pointer for the whole drag and goes back on release. It is read from the drag state, so nothing runs at rest.
 - **The headset's own volume is found again on BlueZ 5.87.** That version lists the audio link directly under the device (`…/fd0`) instead of under a remote endpoint (`…/sep1/fd0`); Orbit did not see it, took the headset for one without its own volume and started no PC-level filter, so the two volumes collapsed into one. Both forms are read now.
 - **The audiophile details no longer open by themselves.** The info line under the volume pop-up stays folded each time the pop-up opens; what you unfolded last time is not kept.
 - **No volume pill left behind after a screenshot.** A screenshot makes DMS fold the Dank Island straight away; Orbit's face went with it, but DMS's own compact volume pill (speaker, blue slider and percentage, which looks like DMS's OSD) was left up with no timer to remove it, until the next click. Orbit now sends the island home when DMS folds it behind the face. DMS's own volume OSD was off all along: nothing about it changed.

@@ -207,6 +207,32 @@ Item {
             }
         },
         {
+            // The cable follows the disc while it is carried out of the group, and goes back to its place when it is let go
+            "then": 100,
+            "run": () => {
+                const w = h.disc(h.dac), c = h.cable(h.dac), home = [Math.round(w.px), Math.round(w.py)];
+                scene.beginDrag(w, {
+                    "x": w.px,
+                    "y": w.py
+                });
+                scene.updateDrag({
+                    "x": w.px - 120,
+                    "y": w.py + 90
+                });
+                check("the cable's far end is where the carried disc is, not where it was", [Math.round(c.end.x), Math.round(c.end.y), Math.round(w.px), Math.round(w.py)], [home[0] - 120, home[1] + 90, home[0] - 120, home[1] + 90]);
+                scene.updateDrag({
+                    "x": w.px + 40,
+                    "y": w.py - 30
+                });
+                check("and it keeps following the pointer", [Math.round(c.end.x), Math.round(c.end.y)], [home[0] - 80, home[1] + 60]);
+                scene.dragBody = null;
+                w.dragging = false;
+                w.armed = false;
+                scene.holeFeed = 0;
+                check("let go, the cable is back on the disc's place (counter-proof)", [Math.round(c.end.x), Math.round(c.end.y)], home);
+            }
+        },
+        {
             // A device carried over the wired disc is taken as a drop on it
             "then": 300,
             "run": () => {
