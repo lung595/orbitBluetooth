@@ -112,7 +112,7 @@ Open a **connected** audio device (headphones, speaker, earbuds, TV…) and its 
 - **Click an icon** to mute that level. **Click the planet** to mute too: with one audio device connected it mutes this PC, with several it mutes that device only.
 - **Scroll over the planet** to change the level you hear move first (the device's own when it has one).
 - **A device with no level of its own** (no *absolute volume* over Bluetooth): its volume is this PC's, so the screen shows this PC's half circle alone and says *Its volume follows this PC*.
-- **Volume tick**: a soft, short tick plays at each 5 % step you make, so you hear the level where it matters: on the card, in the volume scope (the Dank Island or the pop-up), with the volume keys and in the [radar](#the-volume-radar). It plays **in the output whose level you change**, and only there, so turning one speaker does not make the whole room tick. When you change the **group's** level (the ring at the center, the group's arc, the radar's group dial) it plays in **every** output of the group at once. Turn it off in **Sound → Volume tick**. It needs `pw-play` (part of PipeWire). DMS's own volume sound waits while you change a level in Orbit, so only the tick plays: see [Orbit's tick only](#orbits-tick-only).
+- **Volume tick**: a soft, short tick plays at each 5 % step you make, so you hear the level where it matters: on the card, in the volume scope (the Dank Island or the pop-up), with the volume keys and in the [radar](#the-volume-radar). It plays **in the output whose level you change**, and only there, so turning one speaker does not make the whole room tick. When you change the **group's** level (the ring at the center, the group's arc, the radar's group dial) it plays in **every** output of the group at once. Turn it off in **Scanning → Volume tick**. It needs `pw-play` (part of PipeWire). DMS's own volume sound waits while you change a level in Orbit, so only the tick plays: see [Orbit's tick only](#orbits-tick-only).
 - Devices that are not connected, or have no sound output, show no screen: scrolling over a connected keyboard or mouse says **…has no volume** instead of doing nothing. Right after a headset connects, its audio can take a second to appear.
 
 Everything talks to the local sound server (PipeWire) only. The picture of the sound is read with `cava` from the device's output, only while the card is open; with *Reduce motion* it does not run and the levels change at once.
@@ -132,7 +132,7 @@ Devices that follow this PC's level have one level only, whatever this setting s
 
 DMS plays a sound of its own when a volume changes (*Settings → Sounds → Volume Changed*). Next to Orbit's [volume tick](#the-two-volumes) that is two sounds for one change, so Orbit asks DMS's to wait while it moves a level.
 
-- **On by default**, in **Sound → Orbit's tick only**. The row is shown only while **Volume tick** is on: without the tick, DMS's sound is the only one there is.
+- **On by default**, in **Scanning → Orbit's tick only**. The row is shown only while **Volume tick** is on: without the tick, DMS's sound is the only one there is.
 - **Only around Orbit's own changes.** DMS's sound waits from the moment Orbit writes a level (a drag on the card, the pop-up or the radar, a scroll, the volume keys you gave to Orbit, a command line call) until about 0.4 second after the last one. DMS's own sliders and keys, and anything else that changes a volume, keep their sound.
 - **It is done in memory.** Orbit holds DMS's *Volume Changed* switch off, and DMS's own value comes back by itself 0.4 second later, when you turn the row off, when the plugin is turned off or when it is removed. Orbit writes nothing of DMS's, and nothing runs when no level moves.
 - **DMS's saves are guarded**, as for [DMS's own volume OSD](#dmss-own-volume-osd): Orbit lets go of the switch for a quarter of a second around each save DMS makes, so the file keeps your own value and removing Orbit leaves nothing behind. In that moment DMS's sound could play along with the tick.
@@ -696,6 +696,10 @@ Grouped in tabs: **Orbit** (with Reset), **Scanning**, **Headphones** (with devi
 | | Background scan interval | Every minute | 30 s, 1, 2 or 5 min (shown once *Background scan* is on) |
 | | No background scan below | 30 % | Battery of this computer, when unplugged (shown once *Background scan* is on) |
 | | Scan duration | 45 s | 20 s, 45 s, 90 s or *While open* ⚡ |
+| | Sounds | Off | Short cues on snap, connect and disconnect |
+| | Volume tick | On | A soft tick in the device at each 5 % step made on its [card](#the-two-volumes) |
+| | Orbit's tick only | On | DMS's own volume sound waits while you change a level in Orbit, see [Orbit's tick only](#orbits-tick-only); shown with *Volume tick* |
+| | Volume | 60 % | Of the short cues |
 | Headphones | Noise control | On | Supported headphones (needs Python 3) |
 | | Turn off conversation awareness on disconnect | On | Turns *Conversation* off before Orbit disconnects a headset, and after it reconnects |
 | | Pause when you take the headset off | On | Sony headsets with a wearing sensor, see [Pause when you take the headset off](#pause-when-you-take-the-headset-off); keeps one control connection open |
@@ -711,10 +715,6 @@ Grouped in tabs: **Orbit** (with Reset), **Scanning**, **Headphones** (with devi
 | | Audio details | Line: connection, codec, sample rate, bit depth; unfolded: all | Two switches per fact, *on the line* and *more info*, see [What really plays](#what-really-plays) |
 | | Visualizer | Points | Points, Rays, Waves or None |
 | | Visualizer motion | Light | Light (30 images/s) or Smooth (60) |
-| | Sounds | Off | Short cues on snap, connect and disconnect |
-| | Volume tick | On | A soft tick in the device at each 5 % step made on its [card](#the-two-volumes) |
-| | Orbit's tick only | On | DMS's own volume sound waits while you change a level in Orbit, see [Orbit's tick only](#orbits-tick-only); shown with *Volume tick* |
-| | Volume | 60 % | Of the short cues |
 | Desktop widget | Displays | All | Which displays show the desktop widget |
 | | Backdrop | 72 % | Depth of the veil behind the orbit |
 | | Ambient motion | Off | Keep orbits moving when the pointer is away ⚡ (paused while windows hide the desktop) |

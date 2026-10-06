@@ -95,7 +95,7 @@ Column {
         visible: volumeTick.value
         settingKey: "tickAlone"
         label: "Orbit's tick only"
-        description: "While you change a level in Orbit, DMS's own volume sound waits, so only the tick plays. DMS's own sliders and keys keep their sound"
+        description: "While you change a level in Orbit, DMS's own volume sound waits, so only the tick plays. DMS's own sliders and keys keep their sound. DMS's sound is held off in memory only: Orbit writes nothing of DMS's, and it comes back when Orbit stops or this is off"
         anchor: "orbits-tick-only"
         defaultValue: true
     }

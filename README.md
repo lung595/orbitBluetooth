@@ -153,6 +153,9 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Background scan (Orbit searches by itself) ⚡ | Off |
 | | Background scan interval / battery threshold (shown when the scan is on) | Every minute / 30 % |
 | | Scan duration: 20 s, 45 s, 90 s or *While open* ⚡ | 45 s |
+| | Sounds (short cues) / their volume | Off / 60 % |
+| | Volume tick (a soft tick in the output whose volume you change, in every output for the group's) | On |
+| | Orbit's tick only (while you change a level in Orbit, DMS's own volume sound waits; shown with *Volume tick*, [more](docs/GUIDE.md#orbits-tick-only)) | On |
 | Headphones | Noise control | On |
 | | Turn off conversation awareness on disconnect | On |
 | | Pause when you take the headset off (Sony with a wearing sensor; keeps a control connection open, [more](docs/GUIDE.md#pause-when-you-take-the-headset-off)) | On |
@@ -164,10 +167,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Pop-up screens: *Where I am* (only the focused screen) or *Every screen* ([more](docs/GUIDE.md#volume-pop-up)) | Where I am |
 | | Pop-up size: Compact, Medium or Large | Medium |
 | | Visualizer: Points, Rays, Waves or None / motion: Smooth or Light | Points / Smooth |
-| | Sounds (short cues) / their volume | Off / 60 % |
 | | Audio details: per fact (connection, profile, codec, bit rate, sample rate, bit depth, channels, latency, quantum, resampling), on the line / when unfolded ([more](docs/GUIDE.md#what-really-plays)) | Line: connection, codec, sample rate, bit depth; unfolded: all |
-| | Volume tick (a soft tick in the output whose volume you change, in every output for the group's) | On |
-| | Orbit's tick only (while you change a level in Orbit, DMS's own volume sound waits; shown with *Volume tick*, [more](docs/GUIDE.md#orbits-tick-only)) | On |
 | Desktop widget | Displays | All |
 | | Backdrop | 72 % |
 | | Ambient motion ⚡ | Off |
@@ -229,7 +229,7 @@ Bind the commands in your compositor, for example in niri: `Mod+N { spawn "dms" 
 | Volume keys still use smart steps after removing Orbit while DMS was not running | They still work (they fall back to DMS); give them back: `dms keybinds set niri XF86AudioRaiseVolume "spawn dms ipc call audio increment 3" --allow-when-locked`, same with `XF86AudioLowerVolume` and `decrement`, see [Volume keys](docs/GUIDE.md#volume-keys) |
 | DMS's volume OSD stays off after removing Orbit | DMS saved its settings while Orbit held that switch off: turn **Volume** back on in DMS's *Settings → On-screen Displays*, see [DMS's own volume OSD](docs/GUIDE.md#dmss-own-volume-osd) |
 | DMS's volume sound stays off after removing Orbit | DMS saved its settings while Orbit held that switch off: turn **Volume Changed** back on in DMS's *Settings → Sounds*, see [Orbit's tick only](docs/GUIDE.md#orbits-tick-only) |
-| Two sounds play when I change a volume | Turn on **Sound → Orbit's tick only** (it needs *Volume tick*), see [Orbit's tick only](docs/GUIDE.md#orbits-tick-only) |
+| Two sounds play when I change a volume | Turn on **Scanning → Orbit's tick only** (it needs *Volume tick*), see [Orbit's tick only](docs/GUIDE.md#orbits-tick-only) |
 | Listen together refuses a device | A short note says why (not connected or not plugged in, no sound output yet, on a call profile, four already) and the GitHub mark opens [Listen together](docs/GUIDE.md#listen-together) |
 | An output orbiting the center ignores the wheel | It has no volume of its own (it follows this PC's level): a note says so, turn the gauge around the center, see [The volume at the center](docs/GUIDE.md#the-volume-at-the-center) |
 | The outputs of Listen together are not in sync | Hold the early one back with `togetherDelay`, see [Limits](docs/GUIDE.md#limits) |
