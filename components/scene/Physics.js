@@ -126,16 +126,26 @@ function dropRadius(o) {
 // (D254). null for anything else. `anyone`: an unconnected body counts too,
 // so that dropping it on the listening group can say it must be connected
 // first.
+// A body whose disc is under the pointer comes first, and among those the one
+// drawn on top (`z`): a copy overlapping its source is nearer the source's
+// centre than its own, and must still take the drop. Off every disc, the
+// nearest centre within a drop radius wins.
 function dropOnto(b, all, x, y, anyone) {
     if (!b.connected && !anyone)
         return null;
-    let best = null, bestD = Infinity;
+    let best = null, bestUnder = false, bestZ = -Infinity, bestD = Infinity;
     for (const o of all) {
         if (o === b || o.leaving || !o.connected)
             continue;
         const d = Math.hypot(x - o.px, y - o.py);
-        if (d < dropRadius(o) && d < bestD) {
+        if (d >= dropRadius(o))
+            continue;
+        const under = d < hitDiameter(o) / 2, z = o.z || 0;
+        const wins = under !== bestUnder ? under : under && z !== bestZ ? z > bestZ : d < bestD;
+        if (wins) {
             best = o;
+            bestUnder = under;
+            bestZ = z;
             bestD = d;
         }
     }
