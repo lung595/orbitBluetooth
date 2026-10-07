@@ -52,6 +52,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Fixed
 
+- **An open radar on a Bluetooth device no longer keeps the scene stepping at 60 Hz.** The flown planet counted as a detail card for the effects clock, so the scene never settled (offscreen, about 8.6 % of a core against 4.5 % on the previous release, now 4–5 %). Only the device's own detail card keeps that clock running.
 - **A wired output's cable follows it when you pull it out of the group.** Dragging a wired member (the rounded square) away used to leave its cable behind, pointing at the place it came from; the cable's end now follows the pointer for the whole drag and goes back on release. It is read from the drag state, so nothing runs at rest.
 - **The headset's own volume is found again on BlueZ 5.87.** That version lists the audio link directly under the device (`…/fd0`) instead of under a remote endpoint (`…/sep1/fd0`); Orbit did not see it, took the headset for one without its own volume and started no PC-level filter, so the two volumes collapsed into one. Both forms are read now.
 - **The audiophile details no longer open by themselves.** The info line under the volume pop-up stays folded each time the pop-up opens; what you unfolded last time is not kept.
