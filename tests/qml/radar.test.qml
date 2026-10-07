@@ -85,6 +85,17 @@ Item {
     readonly property bool landed: scene.centre.grouping === 1 && !scene.centre.travelling
     readonly property var radar: scene.radar
 
+    // The effects clock moves once per physics step: counting its changes counts the steps
+    property bool counting: false
+    property int stepsCounted: 0
+    Connections {
+        target: scene
+        function onFxTimeChanged() {
+            if (h.counting)
+                h.stepsCounted++;
+        }
+    }
+
     readonly property var steps: [
         {
             "then": 100,
@@ -256,6 +267,50 @@ Item {
                 check("with Reduce motion the clock never runs", [v.motion, v.entering, v.clock.running], [false, false, false]);
                 h.radar.show(h.headset);
                 check("and a hero swap is instant", [v.morphing, v.clock.running, JSON.stringify(v.slotOf(h.headset)) === JSON.stringify(v.targets[h.headset])], [false, false, true]);
+                h.radar.show("");
+            }
+        },
+        {
+            // With motion on, a Bluetooth member's planet flies to the radar's card. The
+            // flown hero is a focusBody too, but only a device's own detail card asks for
+            // the effects clock and its 16 ms step: once the planet has landed, an open
+            // radar must step at the slow rate, or it costs a few per cent of a core for
+            // nothing (NAK-29). The scene cannot settle here (a card keeps it awake, so
+            // the orbits drift), hence the steps are counted instead
+            "then": 100,
+            "until": () => !h.view(scene),
+            "run": () => {
+                SettingsData.reduceMotion = false;
+                h.radar.close();
+            }
+        },
+        {
+            "then": 100,
+            "until": () => {
+                const b = scene.focusBody;
+                return !!b && b.focused;
+            },
+            "run": () => h.radar.show(h.headset)
+        },
+        {
+            // The flight and the card's slide are over by then
+            "then": 3000,
+            "run": () => {}
+        },
+        {
+            "then": 1000,
+            "run": () => {
+                h.stepsCounted = 0;
+                h.counting = true;
+            }
+        },
+        {
+            "then": 100,
+            "run": () => {
+                h.counting = false;
+                check("the planet has landed on the open radar, not on a detail card", [h.radar.open, !!scene.focusBody && scene.focusBody.focused, scene.detailOpen], [true, true, false]);
+                print("steps in 1 s with the radar open: " + h.stepsCounted);
+                check("an open radar steps at the slow rate (the 16 ms one is the detail card's)", [h.stepsCounted > 0, h.stepsCounted < 40], [true, true]);
                 h.radar.show("");
             }
         },
