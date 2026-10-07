@@ -15,6 +15,10 @@ import "mock/State.js" as State
 // Modes: group (the group's level is the hero), bluetooth (a Bluetooth member),
 //        wired (a wired output), four (four members, the hero among them)
 // Suffixes: "-light" renders with a light theme's accent colors
+// Bench suffixes (run until stopped, nothing saved, motion as users see it):
+//        "-rest" lands the group and never opens the radar, "-hold" opens it
+//        and keeps it open, "-loop" opens then closes it every 3 s (the
+//        action measured per D272: open at 0 s, close at 1.5 s)
 Window {
     id: win
     readonly property var args: Qt.application.arguments
@@ -22,6 +26,7 @@ Window {
     readonly property var parts: rawMode.split("-")
     readonly property string mode: parts[0]
     readonly property bool light: parts.indexOf("light") > 0
+    readonly property string bench: ["rest", "hold", "loop"].find(b => parts.indexOf(b) > 0) ?? ""
     readonly property string out: args[args.length - 1]
 
     readonly property string headset: "02:00:00:00:10:06"
@@ -56,7 +61,8 @@ Window {
             Theme.error = "#BA1A1A";
             Theme.errorText = "#FFFFFF";
         }
-        SettingsData.reduceMotion = true;
+        // Stills skip the motion; a bench keeps it, since it is part of the cost
+        SettingsData.reduceMotion = !bench;
         Pipewire.playing = false;
         BluetoothService.available = true;
         BluetoothService.enabled = true;
@@ -96,8 +102,12 @@ Window {
         onTriggered: {
             if (win.landed && !win.shown) {
                 win.shown = true;
-                scene.radar.show(win.heroes[win.mode] ?? "");
-                grab.start();
+                if (win.bench === "loop")
+                    cycle.start();
+                else if (win.bench !== "rest")
+                    scene.radar.show(win.heroes[win.mode] ?? "");
+                if (!win.bench)
+                    grab.start();
             }
         }
     }
@@ -109,10 +119,23 @@ Window {
             Qt.quit();
         })
     }
+    // The bench action: open, then close half a period later, for ever
+    Timer {
+        id: cycle
+        interval: 1500
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: {
+            if (scene.radar.open)
+                scene.radar.close();
+            else
+                scene.radar.show(win.heroes[win.mode] ?? "");
+        }
+    }
     // Nothing may keep the render waiting for ever
     Timer {
         interval: 40000
-        running: true
+        running: !win.shown
         onTriggered: {
             console.warn("radar preview: the group never landed");
             Qt.exit(1);
