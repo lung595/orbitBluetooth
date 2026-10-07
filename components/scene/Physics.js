@@ -141,7 +141,14 @@ function dropOnto(b, all, x, y, anyone) {
         if (d >= dropRadius(o))
             continue;
         const under = d < hitDiameter(o) / 2, z = o.z || 0;
-        const wins = under !== bestUnder ? under : under && z !== bestZ ? z > bestZ : d < bestD;
+        // Under the pointer beats not under, then the higher z, then the nearer centre.
+        let wins;
+        if (under !== bestUnder)
+            wins = under;
+        else if (under && z !== bestZ)
+            wins = z > bestZ;
+        else
+            wins = d < bestD;
         if (wins) {
             best = o;
             bestUnder = under;
