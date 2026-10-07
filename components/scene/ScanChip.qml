@@ -19,7 +19,7 @@ Rectangle {
     color: scene.glass ? (chipArea.containsMouse ? Qt.tint(scene.night.smoke(0.78), scene.night.ink(0.06)) : scene.night.smoke(0.6)) : chipArea.containsMouse ? scene.night.ink(0.12) : scene.night.ink(0.06)
     border.width: scene.glass ? 1 : 0
     border.color: scene.night.ink(0.08)
-    readonly property bool shown: scene.btOn && !scene.focusBody && !scene.hiddenOpen && (!scene.glass || scene.interacting || scene.discovering)
+    readonly property bool shown: scene.btOn && !scene.cardOpen && (!scene.glass || scene.interacting || scene.discovering)
     opacity: shown ? 1 : 0
     visible: opacity > 0.01
     Behavior on opacity {

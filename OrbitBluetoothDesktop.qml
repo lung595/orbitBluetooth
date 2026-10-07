@@ -25,7 +25,7 @@ DesktopPluginComponent {
     // menu), and while a card, a menu or the hidden list is open (the name can be
     // typed with the pointer away). It drops with the pointer, which gives the
     // keyboard back to the window that had it.
-    readonly property bool acceptsKeyboardFocus: hot || !!scene.focusBody || scene.menuOpen || scene.hiddenOpen
+    readonly property bool acceptsKeyboardFocus: hot || scene.cardOpen || scene.menuOpen
     // Keeps discovery alive a little after the pointer leaves
     property bool lingering: false
     // Set by DMS's desktop wrapper: the screen this copy of the widget is on
@@ -42,7 +42,7 @@ DesktopPluginComponent {
             lingering = true;
         } else {
             lingerTimer.restart();
-            if (scene.focusBody || scene.hiddenOpen || scene.menuOpen)
+            if (scene.cardOpen || scene.menuOpen)
                 dismissTimer.restart();
         }
     }

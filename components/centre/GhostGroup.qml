@@ -23,7 +23,7 @@ Item {
 
     // Answers the pointer only while the proposal stands and nothing else has the
     // scene's attention (a card, the hidden list, a device carried)
-    readonly property bool live: ghost.offered && !scene.focusBody && !scene.hiddenOpen && !scene.dragBody
+    readonly property bool live: ghost.offered && !scene.cardOpen && !scene.dragBody
     readonly property bool hovered: pick.containsMouse || badgeArea.containsMouse
     // Its drawn radius on its slot
     readonly property real edge: ghost.diameter / 2

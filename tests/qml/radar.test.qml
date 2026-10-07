@@ -85,6 +85,17 @@ Item {
     readonly property bool landed: scene.centre.grouping === 1 && !scene.centre.travelling
     readonly property var radar: scene.radar
 
+    // The effects clock moves once per physics step: counting its changes counts the steps
+    property bool counting: false
+    property int stepsCounted: 0
+    Connections {
+        target: scene
+        function onFxTimeChanged() {
+            if (h.counting)
+                h.stepsCounted++;
+        }
+    }
+
     readonly property var steps: [
         {
             "then": 100,
@@ -110,9 +121,18 @@ Item {
                 check("its dials are the group's, then each member's", h.radar.ids, ["group", h.headset, h.one, h.dac]);
                 check("it is drawn, with a dial for each", [!!h.view(scene), h.view(scene).children.length > 4], [true, true]);
                 check("Escape's way back sees it", scene.canStepBack, true);
+                check("the group has no planet to fly: the card carries its picture, and the sky steps back as for any card", [scene.focusBody, scene.detailOpen, scene.cardOpen], [null, false, true]);
                 check("the group's actions", [Radar.chips("group").map(c => c.id)], [["add", "stop"]]);
                 h.radar.close();
-                check("closed: gone again", [h.radar.open, h.view(scene)], [false, null]);
+                check("closed: the radar is not open, and the sky is back", [h.radar.open, scene.cardOpen], [false, false]);
+            },
+            // The card slides down and fades like the detail card's, and is made only until it has
+            "until": () => !h.view(scene)
+        },
+        {
+            "then": 100,
+            "run": () => {
+                check("gone again once it has slid away", [h.radar.open, h.view(scene)], [false, null]);
                 h.radar.show("");
                 scene.explain({
                     "title": "A note",
@@ -127,7 +147,24 @@ Item {
         {
             "then": 100,
             "run": () => {
-                check("a click on a Bluetooth member: the radar on its level, no detail card", [h.radar.open, h.radar.heroId, h.radar.kindOf(h.radar.heroId), scene.focusBody], [true, h.one, "bluetooth", null]);
+                check("a click on a Bluetooth member: the radar on its level, no detail card", [h.radar.open, h.radar.heroId, h.radar.kindOf(h.radar.heroId), scene.detailOpen], [true, h.one, "bluetooth", false]);
+                check("its planet flies to the card, like a device's", [scene.focusBody && scene.focusBody.address, scene.focusBody && scene.focusBody.focused, scene.world.cardSlide === scene.world.radarCard.parent], [h.one, true, true]);
+            },
+            // The planet rises to the card and grows, as a device's does
+            "until": () => {
+                const b = scene.focusBody;
+                return !!b && Math.abs(b.focusScale - scene.focusGlyphScale) < 0.01 && Math.abs(b.py - (scene.world.cardSlide.y + scene.focusGlyphLift)) < 2;
+            }
+        },
+        {
+            "then": 100,
+            "run": () => {
+                const slide = scene.world.cardSlide;
+                check("the planet sits on the card's top edge, the glyph's size", [Math.abs(scene.focusBody.py - slide.y - scene.focusGlyphLift) < 3, Math.round(scene.focusBody.width * scene.focusBody.focusScale)], [true, Math.round(scene.focusGlyphSize)]);
+                check("the card is the detail card's: narrow, centred, glued to the bottom", [slide.width <= 360, slide.width === scene.focusCardWidth, Math.round(slide.x * 2 + slide.width), Math.round(slide.y + slide.height + 12)], [true, true, Math.round(scene.width), Math.round(scene.height)]);
+                check("the detail card stays down: it is not the radar's", [scene.world.focusCard.parent.visible, scene.world.cardSlide !== scene.world.focusCard.parent], [false, true]);
+                const other = scene.centre.bodyOf(h.headset);
+                check("the other planets, the host and the hint step back as for a detail card", [other.opacity < 0.5, other.hovered, scene.world.dim], [true, false, 0.12]);
                 h.radar.close();
                 scene.focusOn(h.disc(h.dac));
             }
@@ -135,7 +172,7 @@ Item {
         {
             "then": 100,
             "run": () => {
-                check("a click on a wired member: the radar on its level", [h.radar.open, h.radar.heroId, h.radar.kindOf(h.radar.heroId), scene.focusBody], [true, h.dac, "wired", null]);
+                check("a click on a wired member: the radar on its level, no planet flies", [h.radar.open, h.radar.heroId, h.radar.kindOf(h.radar.heroId), scene.focusBody], [true, h.dac, "wired", null]);
                 // The gestures on the wired member's own level
                 const before = scene.centre.volume.ownLevel(h.dac);
                 h.radar.step(h.dac, 1);
@@ -170,7 +207,7 @@ Item {
                 check("Remove from group: it is out and the others stay", [scene.together.members().includes(h.one), scene.together.count()], [false, 2]);
                 check("the radar goes back to the group's level", [h.radar.open, h.radar.heroId], [true, "group"]);
                 scene.stepBack();
-                check("Escape's way back closes it, and leaves the group's view alone", [h.radar.open, scene.focusBody, scene.centre.recalled], [false, null, false]);
+                check("Escape's way back closes it, the planet comes back, and the group's view is left alone", [h.radar.open, scene.focusBody, scene.centre.recalled], [false, null, false]);
                 h.radar.show("");
             }
         },
@@ -230,6 +267,50 @@ Item {
                 check("with Reduce motion the clock never runs", [v.motion, v.entering, v.clock.running], [false, false, false]);
                 h.radar.show(h.headset);
                 check("and a hero swap is instant", [v.morphing, v.clock.running, JSON.stringify(v.slotOf(h.headset)) === JSON.stringify(v.targets[h.headset])], [false, false, true]);
+                h.radar.show("");
+            }
+        },
+        {
+            // With motion on, a Bluetooth member's planet flies to the radar's card. The
+            // flown hero is a focusBody too, but only a device's own detail card asks for
+            // the effects clock and its 16 ms step: once the planet has landed, an open
+            // radar must step at the slow rate, or it costs a few per cent of a core for
+            // nothing (NAK-29). The scene cannot settle here (a card keeps it awake, so
+            // the orbits drift), hence the steps are counted instead
+            "then": 100,
+            "until": () => !h.view(scene),
+            "run": () => {
+                SettingsData.reduceMotion = false;
+                h.radar.close();
+            }
+        },
+        {
+            "then": 100,
+            "until": () => {
+                const b = scene.focusBody;
+                return !!b && b.focused;
+            },
+            "run": () => h.radar.show(h.headset)
+        },
+        {
+            // The flight and the card's slide are over by then
+            "then": 3000,
+            "run": () => {}
+        },
+        {
+            "then": 1000,
+            "run": () => {
+                h.stepsCounted = 0;
+                h.counting = true;
+            }
+        },
+        {
+            "then": 100,
+            "run": () => {
+                h.counting = false;
+                check("the planet has landed on the open radar, not on a detail card", [h.radar.open, !!scene.focusBody && scene.focusBody.focused, scene.detailOpen], [true, true, false]);
+                print("steps in 1 s with the radar open: " + h.stepsCounted);
+                check("an open radar steps at the slow rate (the 16 ms one is the detail card's)", [h.stepsCounted > 0, h.stepsCounted < 40], [true, true]);
                 h.radar.show("");
             }
         },

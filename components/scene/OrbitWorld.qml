@@ -6,6 +6,7 @@ import qs.Widgets
 import "../card"
 import "../centre"
 import "../device"
+import "../radar"
 import "Depth.js" as Depth
 import "Physics.js" as Physics
 
@@ -26,12 +27,15 @@ Item {
     readonly property alias farOrbit: farOrbitLoader
     readonly property alias nearOrbit: nearOrbitLoader
     readonly property alias focusCard: focusCardItem
+    // The card the flying glyph is carried to: the radar's while it is open, else the detail card's
+    readonly property Item cardSlide: scene.radar.open ? radarSlide : focusSlide
+    readonly property alias radarCard: radarLoader
     readonly property alias tetherLayer: tetherLayerItem
     readonly property alias invitation: inviteLoader
     readonly property alias ring: ringLoader
     readonly property alias ghostView: ghostLoader
 
-    readonly property real dim: world.scene.focusBody || world.scene.hiddenOpen ? 0.12 : 1
+    readonly property real dim: world.scene.cardOpen ? 0.12 : 1
     readonly property var centre: world.scene.centre
     // How far the host's system is from the camera: the camera's progress on the
     // group (a value that follows it, not an animation; Reduce motion: half way)
@@ -310,7 +314,7 @@ Item {
         color: world.scene.night.ink(0.72)
         font.pixelSize: Math.max(9, Math.round(world.scene.coreSize * 0.14))
         font.letterSpacing: 0.6
-        opacity: world.scene.focusBody ? 0 : 1 - world.centre.away
+        opacity: world.scene.cardOpen ? 0 : 1 - world.centre.away
     }
 
     Repeater {
@@ -328,26 +332,17 @@ Item {
     }
 
     // Black hole contents, slides up like the focus card
-    HiddenCard {
+    CardSlide {
         scene: world.scene
+        shown: world.scene.hiddenOpen
         z: 15000
         width: world.scene.focusCardWidth
-        height: Math.min(implicitHeight, world.scene.height - Theme.spacingM * 2)
-        x: (world.scene.width - width) / 2
-        y: world.scene.hiddenOpen ? world.scene.height - height - Theme.spacingM : world.scene.height + 20
-        opacity: world.scene.hiddenOpen ? 1 : 0
-        visible: opacity > 0.01
+        height: Math.min(hiddenCard.implicitHeight, world.scene.height - Theme.spacingM * 2)
 
-        Behavior on y {
-            NumberAnimation {
-                duration: 420
-                easing.type: Easing.OutCubic
-            }
-        }
-        Behavior on opacity {
-            NumberAnimation {
-                duration: 260
-            }
+        HiddenCard {
+            id: hiddenCard
+            anchors.fill: parent
+            scene: world.scene
         }
     }
 
@@ -358,26 +353,38 @@ Item {
         z: 20001
     }
 
-    FocusCard {
-        id: focusCardItem
+    CardSlide {
+        id: focusSlide
         scene: world.scene
+        shown: world.scene.detailOpen
         z: 15000
         width: world.scene.focusCardWidth
-        height: Math.min(implicitHeight, world.scene.height - world.scene.focusHeadroom - Theme.spacingM)
-        x: (world.scene.width - width) / 2
-        y: world.scene.focusBody ? world.scene.height - height - Theme.spacingM : world.scene.height + 20
-        opacity: world.scene.focusBody ? 1 : 0
-        visible: opacity > 0.01
+        height: Math.min(focusCardItem.implicitHeight, world.scene.height - world.scene.focusHeadroom - Theme.spacingM)
 
-        Behavior on y {
-            NumberAnimation {
-                duration: 480
-                easing.type: Easing.OutCubic
-            }
+        FocusCard {
+            id: focusCardItem
+            anchors.fill: parent
+            scene: world.scene
         }
-        Behavior on opacity {
-            NumberAnimation {
-                duration: 300
+    }
+
+    // The volume radar of a listening group, in the same rise as the detail card
+    // (it is made while it is open or on its way out, and not otherwise)
+    CardSlide {
+        id: radarSlide
+        scene: world.scene
+        shown: world.scene.radar.open
+        z: 15000
+        width: world.scene.focusCardWidth
+        height: Math.min(radarLoader.wanted, world.scene.height - world.scene.focusHeadroom - Theme.spacingM)
+
+        Loader {
+            id: radarLoader
+            readonly property real wanted: item ? item.wantedHeight : 0
+            anchors.fill: parent
+            active: world.scene.radar.open || radarSlide.visible
+            sourceComponent: RadarView {
+                radar: world.scene.radar
             }
         }
     }

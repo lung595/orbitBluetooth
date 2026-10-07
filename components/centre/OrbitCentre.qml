@@ -173,7 +173,9 @@ Item {
         return Centre.place(sizes, group, Centre.roleOf(members, source, address), copies.indexOf(address), copies.length, Centre.phaseAt(scene.orbitTime));
     }
     // Where a member is drawn: its body's centre, or its spot for a wired
-    // member (it has no body to carry it there). null when it is not drawn.
+    // member (it has no body to carry it there), or the pointer while that wired
+    // member is dragged out, so its cable follows it. null when it is not drawn.
+    // The drag state is read here, in the binding, so nothing runs at rest.
     function pointOf(address) {
         const b = bodyOf(address);
         if (b)
@@ -181,7 +183,15 @@ Item {
                 "x": b.px,
                 "y": b.py
             };
-        return Member.isWired(address) && members.indexOf(address) >= 0 ? spotOf(address) : null;
+        if (!Member.isWired(address) || members.indexOf(address) < 0)
+            return null;
+        const carried = scene.dragBody;
+        if (carried && carried.wired && carried.address === address)
+            return {
+                "x": scene.dragX,
+                "y": scene.dragY
+            };
+        return spotOf(address);
     }
 
     // Where a Bluetooth member of the group wants to be (null for anyone else),

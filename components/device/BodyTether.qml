@@ -15,7 +15,7 @@ Item {
     x: host.x
     y: host.y
     rotation: Math.atan2(body.py - host.y, body.px - host.x) * 180 / Math.PI
-    opacity: body.leaving || body.focused || body.swallowing ? 0 : tetherAlpha * (body.scene.focusBody || body.scene.hiddenOpen ? 0.15 : 1)
+    opacity: body.leaving || body.focused || body.swallowing ? 0 : tetherAlpha * (body.scene.cardOpen ? 0.15 : 1)
 
     readonly property real dist: Math.hypot(body.px - host.x, body.py - host.y)
     readonly property real tetherAlpha: {

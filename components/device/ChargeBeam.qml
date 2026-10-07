@@ -18,7 +18,7 @@ Item {
     x: host.x
     y: host.y
     // No beam for a member of a Listen together (it has the center)
-    opacity: body.charging && !body.leaving && !body.focused && !body.scene.centre.tetherless(body.address) ? (body.scene.focusBody ? 0.15 : 1) : 0
+    opacity: body.charging && !body.leaving && !body.focused && !body.scene.centre.tetherless(body.address) ? (body.scene.cardOpen ? 0.15 : 1) : 0
     visible: opacity > 0.01
 
     readonly property real start: body.scene.coreSize / 2 * host.scale

@@ -1,16 +1,17 @@
 import QtQuick
+import qs.Common
 import "../card"
 import "../volume"
 import "Radar.js" as Radar
 import "RadarMotion.js" as Motion
 
-// The volume radar, drawn: a glass card like the detail card's that fills the scene
-// exactly (so the host's frame around it is the one around the sky), the hero's big
-// dial in the middle with its name and actions under it, and the other levels as
-// small dials around it, each a tap from being the hero. What it shows and
-// does is the state's (OrbitRadar); this places the dials, passes the gestures on and
-// owns the motion: one clock that runs only while something moves (the entrance, a
-// hero swap, a level gliding, the mute ring) and never with Reduce motion.
+// The volume radar, drawn: the detail card's own card (RadarCard, in the same rise,
+// see CardSlide), the hero's big dial in the middle with its actions under it (its
+// name is the card's header), and the other levels as small dials around it, each a
+// tap from being the hero. What it shows and does is the state's (OrbitRadar); this
+// places the dials, passes the gestures on and owns the motion: one clock that runs
+// only while something moves (the entrance, a hero swap, a level gliding, the mute
+// ring) and never with Reduce motion.
 // Made only while the radar is open, so nothing here exists at rest.
 Item {
     id: view
@@ -22,18 +23,19 @@ Item {
     readonly property alias clock: clock
 
     readonly property real margin: 12
-    readonly property real headerHeight: 58
-    readonly property real chipsHeight: 30
-    // The hero's name, written just under its dial
-    readonly property real nameHeight: 24
-    readonly property real side: Math.max(160, Math.min(width - margin * 2, height - margin * 2 - headerHeight) * 0.92)
+    // The card's header sits over the dials, and the dials keep a margin under them
+    readonly property real headerHeight: frame.headerHeight
+    // The height this radar asks of its card (RadarView does not depend on the
+    // scene's height: the glyph's overhang is the one at full size, as FocusLayout's)
+    readonly property real wantedHeight: radar.scene.focusFullOverlap + frame.titleHeight + Theme.spacingS + Radar.blockHeight(radar.look, radar.ids.length - 1, width - margin * 2) + margin
+    readonly property real room: height - headerHeight - margin
+    readonly property real side: Radar.sideFor(radar.look, radar.ids.length - 1, width - margin * 2, room)
     readonly property var places: Radar.layout(radar.look, radar.ids.length - 1, side)
     // The hero, the small dials above it and the actions under it are centred as one
     // block, under the header
-    readonly property real above: Math.max(places.hero.r, ...places.satellites.map(s => s.r - s.y))
-    readonly property real below: places.hero.r + nameHeight + chipsHeight + 20
+    readonly property var extent: Radar.extent(radar.look, radar.ids.length - 1, side)
     readonly property real cx: width / 2
-    readonly property real cy: margin + headerHeight + (height - margin * 2 - headerHeight + above - below) / 2
+    readonly property real cy: headerHeight + (room - extent.above - extent.below) / 2 + extent.above
 
     // --- What moves, and how far it has come ---------------------------------------
     // Seconds since the radar opened, up to the end of the entrance
@@ -178,14 +180,19 @@ Item {
     }
 
     RadarCard {
-        width: view.width
-        height: view.height
-        radius: view.radar.scene.cornerRadius
+        id: frame
+        anchors.fill: parent
+        scene: view.radar.scene
         paper: view.paper
         title: view.infoOf(view.radar.heroId).name
         subtitle: Radar.subtitle(view.radar.kindOf(view.radar.heroId), view.radar.members.length)
+        heroInfo: view.infoOf(view.radar.heroId)
+        // A Bluetooth member's planet flies to the card (the scene's focusBody); the group and a
+        // wired output have none, so the card carries their picture
+        carried: view.radar.kindOf(view.radar.heroId) !== "bluetooth"
+        round: view.radar.kindOf(view.radar.heroId) === "group"
+        heroKey: view.radar.heroId
         canGoBack: view.radar.heroId !== "group"
-        opacity: view.cardIn
         onBack: view.radar.show("")
         onClosed: view.radar.close()
     }
@@ -217,12 +224,11 @@ Item {
 
     RadarChips {
         id: chips
-        width: Math.min(view.width - view.margin * 2 - 24, chips.natural)
         x: view.cx - width / 2
-        y: view.cy + view.places.hero.r + view.nameHeight + 14
+        y: view.cy + view.places.hero.r + Radar.UNDER
         paper: view.paper
         opacity: view.cardIn
-        model: Radar.chips(view.radar.kindOf(view.radar.heroId))
+        rows: Radar.chipRows(view.radar.kindOf(view.radar.heroId))
         onChosen: id => view.radar.choose(id)
     }
 }

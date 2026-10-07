@@ -217,10 +217,12 @@ Item {
 
         // Visible effects keep the steps coming: a comet while connecting (even
         // with Reduce motion, it is the progress indicator), the rest only
-        // with motion on
+        // with motion on. The radar's flown hero is a focusBody too, but its card
+        // has no effect on the effects clock: only the device's own detail card
+        // (detailOpen) does, so an open radar lets the scene settle.
         let fx = false, comet = false;
         if (s.awake) {
-            fx = (s.discovering || !!s.focusBody) && s.motion;
+            fx = (s.discovering || s.detailOpen) && s.motion;
             for (const b of all) {
                 if (b.phase === "connecting")
                     comet = true;
@@ -229,7 +231,7 @@ Item {
             }
             fx = fx || comet;
         }
-        const fast = comet || !!s.focusBody || centre.travelling || ghost.fading;
+        const fast = comet || s.detailOpen || centre.travelling || ghost.fading;
         if (_fxFast !== fast)
             _fxFast = fast;
         // Ambient's slow drift on the desktop with nobody around: bodies move

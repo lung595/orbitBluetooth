@@ -16,7 +16,7 @@ MouseArea {
     hoverEnabled: true
     preventStealing: true
     acceptedButtons: Qt.LeftButton | Qt.RightButton
-    enabled: !pointer.body.leaving && !pointer.body.swallowing && !pointer.body.scene.focusBody && !pointer.body.scene.hiddenOpen
+    enabled: !pointer.body.leaving && !pointer.body.swallowing && !pointer.body.scene.cardOpen
     cursorShape: pointer.body.dragging ? Qt.ClosedHandCursor : Qt.OpenHandCursor
     // The disc itself: the square's corners belong to what lies behind
     containmentMask: QtObject {

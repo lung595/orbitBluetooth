@@ -73,7 +73,7 @@ Item {
     // back from.
     Shortcut {
         sequence: "Escape"
-        enabled: focusCtl.scene.active && (focusCtl.scene.menuOpen || focusCtl.scene.radar.open || focusCtl.scene.hiddenOpen || !!focusCtl.scene.focusBody)
+        enabled: focusCtl.scene.active && (focusCtl.scene.menuOpen || focusCtl.scene.cardOpen)
         onActivated: {
             if (focusCtl.scene.renaming)
                 focusCtl.scene.renaming = false;

@@ -3,53 +3,85 @@ import qs.Common
 import qs.Widgets
 import "../card"
 
-// The radar's glass card, like the detail card's: a frosted surface, the hero's
-// name and what it is in the header, a way back to the group's level when the
-// hero is a member, and a way out that can always be seen. It only draws, and
-// says which button was pressed. It fills the scene exactly (same rounded
-// rectangle, so the host's frame around it is the one around the sky).
+// The radar's card, the detail card's frame: the same rounded rectangle and edge,
+// the picture of the hero breaking out of its top edge, its name and what it is
+// under it, round buttons in the corners (back to the group's level when the hero
+// is a member, and a way out that can always be seen). It only draws, and says
+// which button was pressed. The dials go in the space under the header; the
+// view that holds it places them.
 Item {
     id: card
 
+    required property var scene
     required property PaperColors paper
-    // The scene's own corner radius, so the card's edge is the scene's edge
-    property real radius: 0
+    // What the hero is, and the picture to carry when it has no planet to fly (the
+    // radar's hero is a group or a wired output: RadarGlyph)
     property string title: ""
     property string subtitle: ""
+    property var heroInfo: ({})
+    property bool carried: false
+    property bool round: true
+    property string heroKey: ""
     // Whether the way back to the group's level is offered
     property bool canGoBack: false
+
+    // Where the dials start: under the picture and the two lines of the header
+    readonly property real titleHeight: heading.implicitHeight
+    readonly property real headerHeight: scene.focusOverlap + titleHeight + Theme.spacingS
 
     signal back
     signal closed
 
-    Rectangle {
-        anchors.fill: parent
-        radius: card.radius
-        color: card.paper.fill(0.95)
-        border.width: 1
-        border.color: card.paper.fg(0.07)
-    }
     // A click on the card is not a click beside it: it does not close the radar
     MouseArea {
         anchors.fill: parent
     }
+    Rectangle {
+        anchors.fill: parent
+        radius: Math.round(width * 0.075)
+        color: card.paper.fill(0.86)
+        border.width: 1
+        border.color: card.paper.fg(0.07)
+    }
+
+    RadarGlyph {
+        x: (card.width - width) / 2
+        y: card.scene.focusGlyphLift - height / 2
+        z: 1
+        night: card.scene.night
+        info: card.heroInfo
+        size: card.scene.focusGlyphSize
+        round: card.round
+        carried: card.carried
+        key: card.heroKey
+        motion: card.scene.motion
+    }
 
     CardButton {
-        id: backButton
         visible: card.canGoBack
         paper: card.paper
         icon: "arrow_back"
-        x: Theme.spacingL
-        y: Theme.spacingL
+        x: Theme.spacingM
+        y: Theme.spacingM
         onClicked: card.back()
     }
+    CardButton {
+        paper: card.paper
+        icon: "close"
+        x: parent.width - width - Theme.spacingM
+        y: Theme.spacingM
+        onClicked: card.closed()
+    }
+
     Column {
-        x: card.canGoBack ? backButton.x + backButton.width + Theme.spacingS : Theme.spacingL
-        y: Theme.spacingL
-        width: parent.width - x - closeButton.width - Theme.spacingL - Theme.spacingS
-        spacing: 1
+        id: heading
+        x: Theme.spacingL
+        y: card.scene.focusOverlap
+        width: parent.width - Theme.spacingL * 2
+        spacing: 2
         StyledText {
             width: parent.width
+            horizontalAlignment: Text.AlignHCenter
             elide: Text.ElideRight
             text: card.title
             color: card.paper.ink
@@ -58,18 +90,11 @@ Item {
         }
         StyledText {
             width: parent.width
+            horizontalAlignment: Text.AlignHCenter
             elide: Text.ElideRight
             text: card.subtitle
-            color: card.paper.fg(0.5)
+            color: card.paper.fg(0.42)
             font.pixelSize: Theme.fontSizeSmall
         }
-    }
-    CardButton {
-        id: closeButton
-        paper: card.paper
-        icon: "close"
-        x: parent.width - width - Theme.spacingL
-        y: Theme.spacingL
-        onClicked: card.closed()
     }
 }
