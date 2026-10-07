@@ -45,14 +45,8 @@ Item {
             route.writeLevel(nodes[0], to);
             return;
         }
-        const before = level;
-        const next = Master.scale(levels, level, to);
-        nodes.forEach((n, i) => {
-            n.audio.muted = false;
-            n.audio.volume = next[i];
-        });
-        // The group's level: everyone hears the tick
-        route.tickNodes(nodes, before, to);
+        // The members keep their gaps; the group's level is everyone's tick
+        route.writeLevels(nodes, Master.scale(levels, level, to), level, to);
     }
 
     // One smart step of the general level (the wheel, D264)

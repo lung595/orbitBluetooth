@@ -11,7 +11,7 @@ import "Route.js" as Route
 // device's own buttons through AVRCP, DMS's slider, another app), the two
 // volumes show on the screen you are on (or every screen, D286), in place of
 // DMS's OSD, which is switched off
-// (DmsOsdOff, D273): inside the Dank Island where there is one (IslandFace,
+// (DmsQuiet, D273): inside the Dank Island where there is one (IslandFace,
 // D263), else in a VolumePopup. Event-driven: it listens to PipeWire's
 // change signals, nothing polls.
 // Hidden, nothing runs: the pop-ups' content is unloaded and the one sound
@@ -26,11 +26,22 @@ TwoLevels {
     readonly property string mode: prefs.popupMode
     readonly property string size: prefs.popupSize
 
-    // One pop-up on screen, and it is Orbit's: DMS's volume OSD stays off
-    // unless the user turned Orbit's pop-up off (D273)
-    DmsOsdOff {
+    // DMS's own answers to a volume change stay quiet. One pop-up on screen,
+    // and it is Orbit's: DMS's volume OSD stays off unless the user turned
+    // Orbit's pop-up off (D273). One sound, and it is Orbit's tick: DMS's
+    // volume sound waits while Orbit moves a level, if the user chose the
+    // tick alone (D360)
+    DmsQuiet {
+        id: quiet
         settings: SettingsData
-        active: root.mode !== "off"
+        osd: root.mode !== "off"
+        replaceSound: root.prefs.volumeTick && root.prefs.tickAlone
+    }
+    Connections {
+        target: root.route
+        function onLevelWriting() {
+            quiet.hold();
+        }
     }
 
     // The Bluetooth device in use, or null for any other output (sound

@@ -153,6 +153,9 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Background scan (Orbit searches by itself) ⚡ | Off |
 | | Background scan interval / battery threshold (shown when the scan is on) | Every minute / 30 % |
 | | Scan duration: 20 s, 45 s, 90 s or *While open* ⚡ | 45 s |
+| | Sounds (short cues) / their volume | Off / 60 % |
+| | Volume tick (a soft tick in the output whose volume you change, in every output for the group's) | On |
+| | Orbit's tick only (while you change a level in Orbit, DMS's own volume sound waits; shown with *Volume tick*, [more](docs/GUIDE.md#orbits-tick-only)) | On |
 | Headphones | Noise control | On |
 | | Turn off conversation awareness on disconnect | On |
 | | Pause when you take the headset off (Sony with a wearing sensor; keeps a control connection open, [more](docs/GUIDE.md#pause-when-you-take-the-headset-off)) | On |
@@ -164,9 +167,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Pop-up screens: *Where I am* (only the focused screen) or *Every screen* ([more](docs/GUIDE.md#volume-pop-up)) | Where I am |
 | | Pop-up size: Compact, Medium or Large | Medium |
 | | Visualizer: Points, Rays, Waves or None / motion: Smooth or Light | Points / Smooth |
-| | Sounds (short cues) / their volume | Off / 60 % |
 | | Audio details: per fact (connection, profile, codec, bit rate, sample rate, bit depth, channels, latency, quantum, resampling), on the line / when unfolded ([more](docs/GUIDE.md#what-really-plays)) | Line: connection, codec, sample rate, bit depth; unfolded: all |
-| | Volume tick (a soft tick in the output whose volume you change, in every output for the group's) | On |
 | Desktop widget | Displays | All |
 | | Backdrop | 72 % |
 | | Ambient motion ⚡ | Off |
@@ -227,6 +228,8 @@ Bind the commands in your compositor, for example in niri: `Mod+N { spawn "dms" 
 | Settings or widgets of Orbit left after removing it while DMS was not running | Install it again, then remove it from DMS while it runs: it cleans up after itself, see [Uninstalling](docs/GUIDE.md#uninstalling) |
 | Volume keys still use smart steps after removing Orbit while DMS was not running | They still work (they fall back to DMS); give them back: `dms keybinds set niri XF86AudioRaiseVolume "spawn dms ipc call audio increment 3" --allow-when-locked`, same with `XF86AudioLowerVolume` and `decrement`, see [Volume keys](docs/GUIDE.md#volume-keys) |
 | DMS's volume OSD stays off after removing Orbit | DMS saved its settings while Orbit held that switch off: turn **Volume** back on in DMS's *Settings → On-screen Displays*, see [DMS's own volume OSD](docs/GUIDE.md#dmss-own-volume-osd) |
+| DMS's volume sound stays off after removing Orbit | DMS saved its settings while Orbit held that switch off: turn **Volume Changed** back on in DMS's *Settings → Sounds*, see [Orbit's tick only](docs/GUIDE.md#orbits-tick-only) |
+| Two sounds play when I change a volume | Turn on **Scanning → Orbit's tick only** (it needs *Volume tick*), see [Orbit's tick only](docs/GUIDE.md#orbits-tick-only) |
 | Listen together refuses a device | A short note says why (not connected or not plugged in, no sound output yet, on a call profile, four already) and the GitHub mark opens [Listen together](docs/GUIDE.md#listen-together) |
 | An output orbiting the center ignores the wheel | It has no volume of its own (it follows this PC's level): a note says so, turn the gauge around the center, see [The volume at the center](docs/GUIDE.md#the-volume-at-the-center) |
 | The outputs of Listen together are not in sync | Hold the early one back with `togetherDelay`, see [Limits](docs/GUIDE.md#limits) |
@@ -247,7 +250,7 @@ Some Sony headsets do not report charging, or drop Bluetooth while charging: thi
 - **Listen together**: one small local sound process per output beyond the first, only while a group listens; it talks to PipeWire only, saves no session, no device list and no address (what it learns is the next line), logs nothing, and ends with the shell. Wired outputs are listed with `pactl list sinks` only when something asks (the *Create a group…* list, the suggested group) and kept in memory; a wired member's name is kept in memory for the session, and the groups you turn down are remembered in memory only, until the shell ends. The **Wired delay** nudge is one number in Orbit's own settings. Nothing is sent. [More](docs/GUIDE.md#listen-together)
 - **Learned groups**: with **Learn my groups** on (default), Orbit keeps in its own settings, for at most 8 groups, only short hashes of the outputs you listened to together (no name, no address), how many times and the day of the last time; it never leaves your computer, **Forget what Orbit learned** or switching it off erases it at once, and uninstalling Orbit erases it with the rest. [More](docs/GUIDE.md#learn-my-groups)
 - **Audio details**: read from PipeWire (`pactl list sinks`) while the card or the pop-up shows, only if a fact is chosen; kept in memory, dropped when it closes. Latency and bit rate also read the graph once with `pw-dump`, and the quantum once with `pw-top` (about 2 s), only while the details are unfolded (or the fact is on the line). Orbit never writes to PipeWire or to the headset.
-- **DMS's volume OSD**: while Orbit's pop-up is on, Orbit holds DMS's *Volume* switch off, in memory only, and lets go of it around each of DMS's own saves, so nothing of it reaches DMS's files. [More](docs/GUIDE.md#dmss-own-volume-osd)
+- **DMS's volume OSD and sound**: while Orbit's pop-up is on, Orbit holds DMS's *Volume* switch (`osdVolumeEnabled`) off, and with **Orbit's tick only** it holds DMS's *Volume Changed* sound (`soundVolumeChanged`) off for the moment Orbit moves a level. Both are held in memory only, and Orbit lets go of them around each of DMS's own saves, so nothing of it reaches DMS's files. [OSD](docs/GUIDE.md#dmss-own-volume-osd), [sound](docs/GUIDE.md#orbits-tick-only)
 - **Volume keys**: only if you click *Enable*, Orbit asks DMS (`dms keybinds`) to bind them; *Undo* and uninstalling give them back exactly. [More](docs/GUIDE.md#volume-keys)
 - **Guide links**: the GitHub mark opens the guide in your browser only when you click it; Orbit itself makes no request.
 - **Network: only one opt-in feature, off by default.** **Real device pictures** sends only the *model name* of devices you have paired, never a stranger's device nearby, never the Bluetooth address. It contacts `commons.wikimedia.org`, then `api.sketchfab.com`, and downloads the picture from `upload.wikimedia.org` or `media.sketchfab.com`. Pictures are credited in the card, kept in `~/.cache/orbitBluetooth/pictures` (readable by you only) and erased when you turn the option off or from the settings.

@@ -58,6 +58,9 @@ QtObject {
     readonly property bool sounds: _get("sounds", false)
     // A soft tick in the device on each 5 % volume step: on, since you asked for the volume yourself
     readonly property bool volumeTick: _get("volumeTick", true)
+    // While Orbit moves a level, DMS's own volume sound waits, so the tick is
+    // the one sound (D360). On: two sounds for one change is noise
+    readonly property bool tickAlone: _get("tickAlone", true)
     readonly property real soundVolume: _get("soundVolume", 60) / 100
     readonly property bool shootingStars: _get("shootingStars", true)
     readonly property string starDensity: _get("starDensity", "normal")
