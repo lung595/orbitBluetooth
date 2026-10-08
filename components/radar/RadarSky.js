@@ -1,7 +1,7 @@
 .pragma library
 .import "Radar.js" as Radar
 
-// The sky behind the radar's dials (« Ciel d'Orbit », variant C): a few faint stars
+// The sky behind the radar's dials (Orbit's sky, variant C): a few faint stars
 // and two nebulae, and the full circle the small dials orbit on, all kept clear of
 // whatever has to be read. Pure: where the stars fall, which dashes the orbit has
 // and how bright each is. RadarSky.qml only paints what is here, once per opening.

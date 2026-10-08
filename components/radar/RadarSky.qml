@@ -103,5 +103,8 @@ Canvas {
     onTintChanged: requestPaint()
     onTint2Changed: requestPaint()
     onPlacesChanged: requestPaint()
+    // actionsY is chips.y = cy + hero.r + UNDER, so it also moves whenever cy, the hero's
+    // radius or the header (skyTop) change: those feed the paint but need no trigger of
+    // their own. Cooperative coalesces the calls. If RadarChips stops following cy, add them here.
     onActionsYChanged: requestPaint()
 }

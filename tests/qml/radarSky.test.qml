@@ -153,7 +153,7 @@ Item {
         {
             "then": 300,
             "run": () => {
-                check("a new size repaints it", h.paints >= 1, true);
+                check("a new size repaints it once", h.paints, 1);
                 h.radar.close();
             }
         }
