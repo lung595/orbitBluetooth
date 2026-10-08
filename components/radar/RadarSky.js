@@ -1,5 +1,6 @@
 .pragma library
 .import "Radar.js" as Radar
+.import "RadarRandom.js" as Rand
 
 // The sky behind the radar's dials (Orbit's sky, variant C): a few faint stars
 // and two nebulae, and the full circle the small dials orbit on, all kept clear of
@@ -29,18 +30,6 @@ function top(headerHeight) {
 
 function starCount(width, bodyHeight) {
     return Math.min(MAX_STARS, Math.round(width * bodyHeight / DENSITY));
-}
-
-// mulberry32: a small seeded generator, so a sky is the same each time it is drawn
-function random(seed) {
-    let s = seed >>> 0;
-    return () => {
-        s = (s + 0x6D2B79F5) >>> 0;
-        let t = s;
-        t = Math.imul(t ^ (t >>> 15), t | 1);
-        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
 }
 
 // What the sky keeps clear, from the radar's places (Radar.layout, `cx`, `cy` the
@@ -74,7 +63,7 @@ function isClear(c, x, y, pad) {
 // [{ x, y, r, a, tinted }]. A star that falls in a clearing is dropped and another
 // drawn, up to TRIES draws per star wanted.
 function stars(width, skyTop, bodyHeight, c) {
-    const rand = random(SEED);
+    const rand = Rand.random(SEED);
     const wanted = starCount(width, bodyHeight);
     const out = [];
     for (let tries = 0; out.length < wanted && tries < wanted * TRIES; tries++) {
