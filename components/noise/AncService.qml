@@ -4,6 +4,7 @@ import Quickshell.Io
 import qs.Common
 import "Anc.js" as Anc
 import "AncSnapshot.js" as Snapshot
+import "../wear/Wear.js" as Wear
 
 // Runs the Python helper (anc/orbit_anc.py) that speaks each headset's
 // vendor protocol, and publishes what it reports to every surface.
@@ -13,6 +14,9 @@ import "AncSnapshot.js" as Snapshot
 //   the headset is open, or for the second it takes to apply a command.
 // - "live": one session per connected supported headset, so changes made
 //   with the headset's own buttons show up immediately.
+// - Wear pause (setting, Sony headsets that report wearing): the session
+//   also stays open while the headset is connected, whatever the engine,
+//   so that taking it off is noticed at once (see components/wear/).
 // Nothing runs while no supported headset is connected.
 Item {
     id: root
@@ -29,6 +33,11 @@ Item {
     // or disconnected elsewhere). The noise-control mode is never touched.
     property bool chatOffOnDisconnect: true
 
+    // Keep a session open for the wearing sensor of Sony headsets. Costs one
+    // open control connection per such headset, nothing else (no polling):
+    // the headset reports by itself
+    property bool wearPause: false
+
     // address -> last snapshot {status, error, model, features, state, live}
     property var snapshots: ({})
     // address -> number of open detail cards showing it
@@ -39,6 +48,8 @@ Item {
     property var _queue: ({})
     // address -> true while a disconnect waits for conversation awareness to go off
     property var _leaving: ({})
+    // Addresses connected a moment ago, whose vendor channel is still settling
+    property var _reconnected: []
 
     readonly property string _helper: Paths.strip(Qt.resolvedUrl("../../anc/orbit_anc.py"))
 
@@ -67,9 +78,12 @@ Item {
         publish(snapshots);
     }
 
-    // Keep a session only while it is wanted by the engine or a viewer
+    // Keep a session only while it is wanted by the engine, a viewer or the
+    // wearing sensor (not while the link settles, nor while it is leaving)
     function _wanted(address) {
-        return supported(address) && (engine === "live" || (_viewers[address] || 0) > 0);
+        if (!supported(address) || _leaving[address])
+            return false;
+        return engine === "live" || (_viewers[address] || 0) > 0 || (_reconnected.indexOf(address) < 0 && Wear.sessionWanted(wearPause, familyFor(deviceFor(address)), snapshots[address]));
     }
 
     function _open(address) {
@@ -86,6 +100,9 @@ Item {
             }
         });
         _sessions = Snapshot.put(_sessions, address, proc);
+        // The helper starts the reports once the headset has said it can
+        if (Wear.eligible(wearPause, familyFor(deviceFor(address))))
+            proc.write("set wear on\n");
         return proc;
     }
 
@@ -101,6 +118,12 @@ Item {
             _open(address);
         else
             _release(address);
+    }
+
+    function _syncAll() {
+        const list = Bluetooth.devices.values;
+        for (let i = 0; i < list.length; i++)
+            _sync(list[i].address);
     }
 
     function watch(address, on) {
@@ -140,12 +163,19 @@ Item {
         const known = snapshots[address];
         // Known not to have the feature, or known to be off: nothing to undo
         const needless = known && known.features && (!known.features.chat || (known.state && known.state.chat === false));
-        if (!chatOffOnDisconnect || needless || !send(address, "chat", "off")) {
+        if (!chatOffOnDisconnect || needless) {
             device.disconnect();
             return;
         }
+        // Marked first: a session that only stays open for the wearing
+        // sensor must close once the command is confirmed
         _leaving = Snapshot.put(_leaving, address, true);
-        leaveTimer.restart();
+        if (send(address, "chat", "off")) {
+            leaveTimer.restart();
+        } else {
+            _leaving = Snapshot.put(_leaving, address, null);
+            device.disconnect();
+        }
     }
 
     function _finishLeaving(address) {
@@ -175,20 +205,20 @@ Item {
         return !!proc;
     }
 
-    // First connected headset that can be controlled (for IPC)
-    function primary() {
+    // First connected headset that can be controlled (for IPC), of the
+    // given brand family when one is asked for
+    function primary(family) {
         const list = Bluetooth.devices.values;
         for (let i = 0; i < list.length; i++)
-            if (list[i].connected && familyFor(list[i]))
+            if (list[i].connected && familyFor(list[i]) && (!family || familyFor(list[i]) === family))
                 return list[i].address;
         return "";
     }
 
     // The vendor channel is not ready the instant BlueZ reports the link, and
     // the pairing/audio setup is still busy: wait a little before talking
-    property var _reconnected: []
     function _chatOffLater(address) {
-        if (!chatOffOnDisconnect || _reconnected.indexOf(address) >= 0)
+        if ((!chatOffOnDisconnect && !wearPause) || _reconnected.indexOf(address) >= 0)
             return;
         _reconnected = _reconnected.concat([address]);
         reconnectTimer.restart();
@@ -206,14 +236,27 @@ Item {
             list.forEach(a => {
                 if (root.chatOffOnDisconnect && root.supported(a))
                     root.send(a, "chat", "off");
+                else
+                    root._sync(a);
             });
         }
     }
 
-    function _onLine(address, line) {
+    function _onLine(proc, line) {
+        const address = proc.address;
+        // A line from a headset that just left (its error, typically) must
+        // not bring back the state its disconnection cleared: an error
+        // snapshot would keep every session closed after it reconnects
+        if (!deviceFor(address)?.connected)
+            return;
         const next = Snapshot.merge(snapshots[address], line, (_queue[address] || []).length > 0, Date.now());
-        if (next)
-            _setState(address, next);
+        if (!next)
+            return;
+        proc.reached = proc.reached || next.status === "ready";
+        _setState(address, next);
+        // A session kept only to look for the wearing sensor ends as soon
+        // as the headset shows it has none
+        _release(address);
     }
 
     function _onExit(proc) {
@@ -226,22 +269,34 @@ Item {
                 "live": false
             }));
         proc.destroy();
+        const leaving = !!_leaving[address];
         _finishLeaving(address);
         const queued = _queue[address] || [];
         _queue = Snapshot.put(_queue, address, null);
         // After an error, stay quiet until the user asks again (no retry loop)
         if (prev && prev.status === "error")
             return;
-        if (queued.length) {
+        if (queued.length && !leaving) {
             const again = _open(address);
             if (again)
                 queued.forEach(l => again.write(l));
         }
-        _sync(address);
+        // Reopen by itself only after a session that got as far as a ready
+        // headset: a helper that cannot even start must not loop
+        if (proc.reached && !leaving)
+            _sync(address);
     }
 
     onEngineChanged: Object.keys(Object.assign({}, _viewers, _sessions)).forEach(_sync)
-    onEnabledChanged: Object.keys(_sessions).forEach(_sync)
+    onActiveChanged: _syncAll()
+
+    // Tells the sessions already open; the others open or close by the rules above
+    onWearPauseChanged: {
+        for (const a in _sessions)
+            if (_sessions[a].stdinEnabled && Wear.eligible(true, familyFor(deviceFor(a))))
+                _sessions[a].write("set wear " + (wearPause ? "on" : "off") + "\n");
+        _syncAll();
+    }
 
     Component {
         id: sessionComponent
@@ -249,10 +304,12 @@ Item {
         Process {
             id: proc
             property string address: ""
+            // Whether the headset ever answered as ready in this session
+            property bool reached: false
             running: true
             stdinEnabled: true
             stdout: SplitParser {
-                onRead: data => root._onLine(address, data)
+                onRead: data => root._onLine(proc, data)
             }
             onExited: root._onExit(proc)
         }

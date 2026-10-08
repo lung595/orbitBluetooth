@@ -1,3 +1,5 @@
 module qs.Widgets
 StyledText 1.0 StyledText.qml
 DankIcon 1.0 DankIcon.qml
+DankSlider 1.0 DankSlider.qml
+DankToggle 1.0 DankToggle.qml

@@ -1,0 +1,27 @@
+[
+  {
+    "index": 62,
+    "state": "SUSPENDED",
+    "name": "alsa_output.usb-Acme_Studio_2x2-00.HiFi__Line1__sink",
+    "description": "Acme Studio 2x2 Line Out",
+    "ports": [
+      {
+        "name": "[Out] Line1",
+        "description": "Line Out",
+        "priority": 100,
+        "availability_group": "",
+        "availability": "availability unknown",
+        "type": "Line"
+      }
+    ],
+    "active_port": "[Out] Line1",
+    "properties": {
+      "media.class": "Audio/Sink",
+      "device.api": "alsa",
+      "device.class": "sound",
+      "device.bus": "usb",
+      "device.icon_name": "audio-speakers",
+      "api.alsa.card": "2"
+    }
+  }
+]

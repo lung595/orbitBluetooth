@@ -6,6 +6,8 @@ import unittest
 import orbit_uninstall as U
 
 ID = "orbitBluetooth"
+# What the ghost group learned (D299): hashed members, a use count and a day
+HABIT_TAGS = "1a2b3c4d,9f8e7d6c"
 
 
 def write(path, data):
@@ -33,7 +35,11 @@ class Shell:
         self.settings = os.path.join(root, "settings.json")
         self.plugin_settings = os.path.join(root, "plugin_settings.json")
         self.session = os.path.join(root, "session.json")
-        write(self.plugin_settings, {ID: {"enabled": True, "pcLevels": {}}, "abyss": {"enabled": True}})
+        write(self.plugin_settings, {
+            ID: {"enabled": True, "pcLevels": {}, "learnHabits": True,
+                 "togetherHabits": {HABIT_TAGS: {"n": 3, "d": 20000}}},
+            "abyss": {"enabled": True},
+        })
         write(self.settings, {
             "barConfigs": [
                 {"id": "default", "leftWidgets": ["clock"], "centerWidgets": [],
@@ -91,6 +97,20 @@ class SweepTest(unittest.TestCase):
         self.assertEqual(s["desktopWidgetInstances"], [{"id": "dw_2", "widgetType": "modernClock"}])
         self.assertEqual(s["theme"], "dark")
         self.assertEqual(read(self.shell.session), {"desktopWidgetInstancePositions": {"dw_2": {"x": 2}}, "other": 1})
+
+    def test_uninstalled_plugin_forgets_what_it_learned(self):
+        os.remove(self.shell.manifest)
+        self.shell.run()
+        for path in (self.shell.settings, self.shell.plugin_settings, self.shell.session):
+            with open(path, encoding="utf-8") as f:
+                text = f.read()
+            self.assertNotIn(HABIT_TAGS, text)
+            self.assertNotIn("togetherHabits", text)
+
+    def test_the_memory_stays_while_the_plugin_is_installed(self):
+        # Counter-proof of the test above: only the missing plugin.json erases it
+        self.assertFalse(self.shell.run())
+        self.assertEqual(read(self.shell.plugin_settings)[ID]["togetherHabits"], {HABIT_TAGS: {"n": 3, "d": 20000}})
 
     def test_folder_cloned_back_during_the_grace_period_keeps_everything(self):
         # Same as an update that re-clones: plugin.json exists again when checked

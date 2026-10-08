@@ -14,6 +14,11 @@ QtObject {
     readonly property color bodyInk: Theme.primary
     readonly property color bodyMuted: Qt.rgba(0.1, 0.12, 0.16, 0.78)
 
+    // How far two colours' hues are, as a share of the colour wheel (0..0.5)
+    function hueApart(a, b) {
+        const d = Math.abs(a.hslHue - b.hslHue);
+        return Math.min(d, 1 - d);
+    }
     function night(c) {
         if (!lift)
             return c;
@@ -25,10 +30,36 @@ QtObject {
     }
 
     readonly property color primary: night(Theme.primary)
+    readonly property color secondary: night(Theme.secondary)
     readonly property color tertiary: night(Theme.tertiary)
     readonly property color error: night(Theme.error)
+    readonly property color success: night(Theme.success)
+    readonly property color warning: night(Theme.warning)
+    // A battery that charges has a colour of its own: not the primary blue (the
+    // volume ring's), not a traffic light. The theme's `info` is a fixed blue;
+    // when the theme's primary is that same blue (a generated theme often is),
+    // its tertiary, the accent that Material You keeps apart from the primary
+    readonly property color charging: night(hueApart(Theme.info, Theme.primary) < 0.08 ? Theme.tertiary : Theme.info)
     readonly property color primaryText: onAccent(Theme.primary, Theme.primaryText)
     readonly property color errorText: onAccent(Theme.error, Theme.errorText)
+
+    // A connected device's disc, its border and its glyph: one definition for
+    // the Bluetooth bodies and the wired members of a group, so that both kinds
+    // read as one family
+    readonly property color connectedFill: whiteBodies ? Qt.tint("#FFFFFF", Theme.withAlpha(Theme.primary, 0.1)) : Qt.tint(Qt.rgba(0.06, 0.07, 0.09, 0.92), Theme.withAlpha(primary, 0.16))
+    readonly property color connectedEdge: Theme.withAlpha(primary, 0.55)
+    readonly property color connectedInk: whiteBodies ? bodyInk : Qt.lighter(primary, 1.12)
+    // What a copy of a group keeps once it is behind the source and its disc has
+    // gone (its dashed outline and its glyph). It is drawn over the source and
+    // over the night sky, so with a light theme (a white source, and the dark
+    // accent of a white disc, which the sky swallows) it is the accent at mid
+    // lightness, which reads on both; with a dark theme it is connectedInk.
+    readonly property color behindInk: whiteBodies ? Qt.hsla(Theme.primary.hslHue, Theme.primary.hslSaturation, 0.5, 1) : Qt.lighter(primary, 1.12)
+    // A member's glyph at a solidity (Centre.solidity): its own colour while whole,
+    // the one above once it is only an outline
+    function memberInk(solid) {
+        return Qt.tint(connectedInk, Theme.withAlpha(behindInk, 1 - solid));
+    }
 
     // The sky itself and the ink drawn on it. The sky is night in every theme
     // on purpose, so these are the one place its constants live; everything

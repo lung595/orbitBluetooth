@@ -57,6 +57,21 @@ Column {
         defaultValue: "auto"
     }
 
+    ToggleSetting {
+        settingKey: "togetherCentre"
+        label: "The listening source takes the center"
+        description: "While Listen together plays, the source sits in the middle and the other outputs orbit it"
+        defaultValue: true
+    }
+
+    FineDelayRow {
+        settings: tab.settings
+    }
+
+    HabitsRow {
+        settings: tab.settings
+    }
+
     // --- Reset -------------------------------------------------------------------
     Section {
         text: "Reset"

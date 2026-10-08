@@ -7,6 +7,8 @@ QtObject {
         property bool enabled: true
     }
     property bool enabled: true
+    property bool available: true
+    property bool discovering: false
     property var log: []
     property bool failPair: false
     function pairDevice(d, cb) {

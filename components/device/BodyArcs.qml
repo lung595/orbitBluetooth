@@ -1,12 +1,34 @@
 import QtQuick
 import QtQuick.Shapes
 import qs.Common
+import "Battery.js" as Battery
 
 // The rings just outside a device's disc: the noise-control halo, the
 // battery level arc and its breathing glow while charging.
 Item {
     id: arcs
     required property var body
+
+    // The battery arc's colour: the theme's tone at each end of the stretch its
+    // level lies on (Battery.stretch), blended, so it drifts from red through
+    // amber to green as the level climbs; and its own colour while charging.
+    // Never the primary of the group's volume ring, which would pass for it.
+    readonly property var tints: ({
+            "ok": body.night.success,
+            "low": body.night.warning,
+            "critical": body.night.error,
+            "charging": body.night.charging
+        })
+    readonly property var stretch: Battery.stretch(body.battery, body.charging)
+    readonly property color tint: blend(tints[stretch.from], tints[stretch.to], stretch.t)
+
+    // Two colours blended by hue, saturation and lightness: a blend of red and
+    // green in RGB goes muddy in the middle, this one stays as vivid as its ends
+    function blend(a, b, t) {
+        if (t === 0)
+            return a;
+        return Qt.hsla(Battery.hueMix(a.hslHue, b.hslHue, t), Battery.along(a.hslSaturation, b.hslSaturation, t), Battery.along(a.hslLightness, b.hslLightness, t), Battery.along(a.a, b.a, t));
+    }
 
     // Noise-control halo: solid = cancelling, dashed = ambient,
     // double = adaptive; nothing when off or unknown. Static art, it only
@@ -81,7 +103,7 @@ Item {
             }
         }
         ShapePath {
-            strokeColor: arcs.body.battery <= 15 ? arcs.body.night.error : arcs.body.night.primary
+            strokeColor: arcs.tint
             strokeWidth: 2
             fillColor: "transparent"
             capStyle: ShapePath.RoundCap
@@ -106,7 +128,7 @@ Item {
         preferredRendererType: Shape.CurveRenderer
 
         ShapePath {
-            strokeColor: Theme.withAlpha(arcs.body.night.primary, 0.55)
+            strokeColor: Theme.withAlpha(arcs.tint, 0.55)
             strokeWidth: 5
             fillColor: "transparent"
             capStyle: ShapePath.RoundCap

@@ -44,6 +44,13 @@ Column {
         defaultValue: true
     }
 
+    ToggleSetting {
+        settingKey: "wearPause"
+        label: "Pause when you take the headset off"
+        description: "Sony headsets with a wearing sensor (such as the WH-1000XM6): pauses what plays on the headset when you take it off, and resumes only that when you put it back on. Keeps one control connection to the headset open while it is connected. Needs Noise control"
+        defaultValue: true
+    }
+
     // --- Pictures ----------------------------------------------------------------
     Section {
         text: "Device pictures"

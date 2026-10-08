@@ -1,14 +1,21 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import qs.Common
 import qs.Widgets
 import "../card"
-import "../noise/Anc.js" as Anc
+import "../together/Choice.js" as Choice
+import "MenuEntries.js" as Entries
 
 // Right-click menu of an orbiting device: connect/disconnect, the headset's
-// noise-control modes when it has them, "Hide" (into the black hole) and
-// "Forget" (unpair), which asks for a second click.
+// noise-control modes when it has them, "Create a group…" (or "Add to the
+// group…") for a device outside the group that can play sound, "Remove from
+// group" for a member (a wired one reads "Disconnect": it leaves and stays
+// plugged in), "Hide" (into the black hole) and "Forget" (unpair), which asks
+// for a second click. Which entries, in which order, is MenuEntries.js; adding
+// a device to the group and stopping it are the group's, not a member's.
 // It lives inside the scene (no extra window) and closes on any choice,
-// a click elsewhere or Escape.
+// a click elsewhere or Escape. "Create a group…" does not close it: the
+// group chooser takes the place of the entries until a group is made.
 Item {
     id: menu
     readonly property PaperColors paper: PaperColors {}
@@ -18,54 +25,32 @@ Item {
     readonly property bool open: !!body
     // "Forget" was clicked once: the next click on it unpairs
     property bool confirmForget: false
+    // The group chooser is open in place of the entries
+    property bool choosing: false
 
     readonly property var entries: {
         const b = body;
         if (!b)
             return [];
-        const list = [];
-        if (b.device)
-            list.push(b.phase === "connecting" ? {
-                "id": "cancel",
-                "icon": "close",
-                "label": "Cancel"
-            } : b.connected ? {
-                "id": "disconnect",
-                "icon": "link_off",
-                "label": "Disconnect"
-            } : {
-                "id": "connect",
-                "icon": "link",
-                "label": "Connect"
-            });
-        if (b.ancCapable) {
-            const info = scene.ancFor(b.address);
-            const modes = Anc.ordered(info?.features?.modes);
-            for (const m of modes)
-                list.push({
-                    "id": "anc:" + m,
-                    "icon": Anc.ICONS[m],
-                    "label": Anc.SHORT[m],
-                    "checked": info?.state?.mode === m
-                });
-        }
-        list.push({
-            "id": "hide",
-            "icon": "visibility_off",
-            "label": "Hide"
+        const info = b.ancCapable ? scene.ancFor(b.address) : null;
+        const member = scene.together.isMember(b.address);
+        return Entries.list({
+            "device": !!b.device,
+            "wired": !!b.wired,
+            "phase": b.phase,
+            "connected": b.connected,
+            "modes": info?.features?.modes,
+            "mode": info?.state?.mode ?? "",
+            "member": member,
+            "groupEntry": scene.together.canGroup(b) ? Choice.labels(scene.together.members(), member).entry : "",
+            "paired": !!(b.device && b.paired),
+            "confirmForget": confirmForget
         });
-        if (b.device && b.paired)
-            list.push({
-                "id": "forget",
-                "icon": confirmForget ? "delete_forever" : "delete",
-                "label": confirmForget ? "Click to forget" : "Forget",
-                "danger": true
-            });
-        return list;
     }
 
     function popup(b, point) {
         confirmForget = false;
+        choosing = false;
         body = b;
         // Keep the menu inside the scene
         panel.x = Math.max(8, Math.min(point.x, scene.width - panel.width - 8));
@@ -76,11 +61,22 @@ Item {
         scene.forceActiveFocus();
     }
 
+    // The group chooser on its own, for the group's radar ("Add a device…"): the
+    // page "Create a group…" opens, without the entries before it
+    function addDevices(b, point) {
+        popup(b, point);
+        choosing = true;
+    }
+
     property string _watching: ""
     function close() {
         if (_watching)
             scene.ancWatch(_watching, false);
         _watching = "";
+        if (choosing) {
+            choosing = false;
+            scene.forceActiveFocus();   // the chooser had the keyboard
+        }
         body = null;
     }
 
@@ -88,6 +84,11 @@ Item {
         // Forgetting unpairs: the first click only arms it
         if (id === "forget" && !confirmForget) {
             confirmForget = true;
+            return;
+        }
+        // A group is made on its own page: the menu stays until it is done
+        if (id === "group") {
+            choosing = true;
             return;
         }
         const b = body;
@@ -100,6 +101,8 @@ Item {
             scene.startDisconnect(b);
         else if (id === "cancel")
             scene.cancelConnect(b);
+        else if (id === "leave")
+            scene.together.leave(b.address);
         else if (id === "hide")
             scene.hideBody(b);
         else if (id === "forget")
@@ -120,6 +123,7 @@ Item {
 
     Rectangle {
         id: panel
+        visible: !menu.choosing
         width: 168
         height: menu.entries.length * 32 + 10   // known before layout, for placement
         radius: 14
@@ -148,16 +152,15 @@ Item {
 
                 Rectangle {
                     required property var modelData
-                    required property int index
                     readonly property bool danger: modelData.danger ?? false
                     width: col.width
                     height: 32
                     radius: 10
                     color: danger && menu.confirmForget ? Theme.withAlpha(Theme.error, 0.16) : itemArea.containsMouse ? menu.paper.fg(0.08) : "transparent"
 
-                    // A hairline before "Hide" and before the first mode
+                    // A hairline before the entries that start a section (MenuEntries.ruled)
                     Rectangle {
-                        visible: index > 0 && (modelData.id === "hide" || (modelData.id.startsWith("anc:") && !menu.entries[index - 1].id.startsWith("anc:")))
+                        visible: modelData.rule
                         x: 8
                         width: parent.width - 16
                         height: 1
@@ -198,6 +201,22 @@ Item {
                     }
                 }
             }
+        }
+    }
+
+    // The group chooser, built when "Create a group…" is chosen and gone with it
+    Loader {
+        active: menu.choosing
+        sourceComponent: GroupChooser {
+            scene: menu.scene
+            paper: menu.paper
+            address: menu.body?.address ?? ""
+            origin: Qt.point(panel.x, panel.y)
+            onConfirmed: list => {
+                menu.close();
+                menu.scene.together.groupFrom(list);
+            }
+            onRefused: (why, who) => menu.scene.together.refuse(why, who)
         }
     }
 }

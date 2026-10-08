@@ -8,6 +8,10 @@ QtObject {
     property color secondary: "#BFCBAD"
     property color tertiary: "#9FD3C7"
     property color error: "#FFB4AB"
+    // The shell's own fallbacks for the semantic colours a theme does not set
+    property color success: "#4CAF50"
+    property color warning: "#FF9800"
+    property color info: "#2196F3"
     property color errorText: "#690005"
     property color surface: "#12140E"
     property color surfaceContainer: "#1E201A"

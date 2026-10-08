@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Window
 import qs.Common
 import "../../components/volume"
+import "mock"
 import "../../components/volume/Keys.js" as Keys
 
 // Offscreen render of the volume vectorscope in each visualizer style, at
@@ -31,40 +32,6 @@ Window {
             "l": [0.92, 0.85, 0.8, 0.72, 0.66, 0.62, 0.55, 0.5, 0.44, 0.4, 0.33, 0.28, 0.22, 0.18, 0.12, 0.08],
             "r": [0.9, 0.8, 0.7, 0.66, 0.58, 0.5, 0.47, 0.4, 0.36, 0.3, 0.26, 0.2, 0.16, 0.12, 0.08, 0.05]
         })
-    // What VolumeOverlay gives a ScopeScreen, made up
-    component FakeOverlay: QtObject {
-        property string style: "points"
-        property real deviceLevel: 0.62
-        property real pcLevel: 0.85
-        property bool deviceMuted: false
-        property bool pcMuted: false
-        property string deviceIcon: "speaker"
-        property string pcIcon: "computer"
-        property var picture: null
-        property bool reduceMotion: false
-        property int fps: 60
-        property var note: null
-        property string factsLine: "USB · 192 kHz · 32 bit"
-        property var factsRows: [
-            {
-                "label": "Connection",
-                "text": "USB"
-            },
-            {
-                "label": "Sample rate",
-                "text": "192 kHz"
-            }
-        ]
-        function refreshFacts() {
-        }
-        function noteAction() {
-        }
-        function setLevel(part, level) {
-        }
-        function toggleMute(part) {
-        }
-    }
-
     Grid {
         x: 16
         y: 16

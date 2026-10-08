@@ -9,7 +9,7 @@ Rectangle {
     id: offer
     required property var scene
     readonly property var device: scene.offerAddress ? scene.deviceMap[scene.offerAddress] ?? null : null
-    readonly property bool shown: !!device && !device.connected && !(device.paired || device.bonded) && !scene.focusBody && !scene.hiddenOpen && !scene.dragBody
+    readonly property bool shown: !!device && !device.connected && !(device.paired || device.bonded) && !scene.cardOpen && !scene.dragBody
     anchors.horizontalCenter: parent.horizontalCenter
     anchors.bottom: parent.bottom
     anchors.bottomMargin: (scene.glass ? Math.round(scene.height * 0.1) : Theme.spacingS) + Theme.spacingXL

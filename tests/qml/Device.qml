@@ -18,8 +18,14 @@ QtObject {
     property bool forgotten: false
     // Bluetooth profiles the device exposes (BlueZ Device1.UUIDs)
     property var uuids: ["0000110b-0000-1000-8000-00805f9b34fb"]
+    // BlueZ reports a disconnection a moment after it was asked for: a test
+    // can hold `connected` until it lets go
+    property bool lingers: false
+    property int disconnects: 0
     function disconnect() {
-        connected = false;
+        disconnects++;
+        if (!lingers)
+            connected = false;
     }
     function forget() {
         forgotten = true;

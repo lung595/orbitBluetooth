@@ -1,4 +1,5 @@
 .pragma library
+.import "../device/Battery.js" as Battery
 
 // Charge analysis for one device. Pure: fed by the daemon's battery log
 // ([[epochMs, percent], ...] since connection) and, when the system knows it,
@@ -230,9 +231,10 @@ function footnote(c, charging) {
     return c.source === "estimated" ? "Estimated from level changes" : "";
 }
 
-// Aurora ramp shared by every battery visual: red when critical, through
-// amber and gold, to lime and a cool aqua when full.
-const RAMP = [[0, [255, 84, 104]], [15, [255, 84, 104]], [30, [255, 159, 67]], [50, [255, 214, 92]], [72, [184, 240, 106]], [100, [92, 242, 196]]];
+// Aurora ramp of the card's gauge and the earbuds' bars: red while critical
+// (as long as the arc around the disc is, Battery.js), through amber and gold,
+// to lime and a cool aqua when full.
+const RAMP = [[0, [255, 84, 104]], [Battery.CRITICAL_MAX, [255, 84, 104]], [30, [255, 159, 67]], [50, [255, 214, 92]], [72, [184, 240, 106]], [100, [92, 242, 196]]];
 
 function levelColor(level) {
     const l = Math.max(0, Math.min(100, level));

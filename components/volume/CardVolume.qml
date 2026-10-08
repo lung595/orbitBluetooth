@@ -1,12 +1,9 @@
 import QtQuick
-import Quickshell.Io
-import qs.Common
-import "Volume.js" as Volume
 
 // The two volumes of the device on the detail card (D250): TwoLevels for
-// the card's device, a note when it has no level of its own (D249), the
-// tick played in the device on each 5 % step, and the card's own picture
-// of the sound, which runs only while the card is `live`: nothing at rest.
+// the card's device, a note when it has no level of its own (D249), and the
+// card's own picture of the sound, which runs only while the card is `live`:
+// nothing at rest. The tick on each 5 % step is the route's (VolumeTick).
 TwoLevels {
     id: root
 
@@ -24,32 +21,11 @@ TwoLevels {
     looking: seen && ready
 
     // No level of its own: say why, with the guide's link (value 10)
-    readonly property var note: ready && !deviceAudio ? {
+    readonly property var note: ready && !split && !deviceAudio ? {
         "text": "Its volume follows this PC",
         "action": "",
         "anchor": "the-two-volumes"
     } : null
     function noteAction() {
-    }
-
-    // --- The tick, played in the device on each 5 % step --------------------------
-    readonly property string tickPath: Paths.strip(Qt.resolvedUrl("../../sounds/volume.wav"))
-    property double _lastTick: 0
-    onLevelMoved: (before, after) => {
-        const sink = dev ? dev.sink : null;
-        if (!prefs || !prefs.volumeTick || !sink || !Volume.validSink(sink.name))
-            return;
-        if (Volume.step(before) === Volume.step(after))
-            return;
-        // A fast wheel must not stack sounds: one tick per 45 ms at most
-        const now = Date.now();
-        if (now - _lastTick < 45 || player.running)
-            return;
-        _lastTick = now;
-        player.command = ["pw-play", "--target", sink.name, "--", tickPath];
-        player.running = true;
-    }
-    Process {
-        id: player
     }
 }

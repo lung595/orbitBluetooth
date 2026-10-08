@@ -5,7 +5,7 @@ var GLib = imports.gi.GLib;
 var root = GLib.path_get_dirname(GLib.path_get_dirname(GLib.canonicalize_filename(imports.system.programPath ?? "tests/run.test.js", GLib.get_current_dir())));
 
 // The modules live in feature folders: components/<feature>/<Name>.js
-const features = ["card", "common", "device", "noise", "pairing", "scene", "volume"];
+const features = ["card", "centre", "common", "device", "noise", "pairing", "radar", "radio", "scene", "together", "volume", "wear"];
 function pathOf(file) {
     const folder = features.find(f => GLib.file_test(root + "/components/" + f + "/" + file, GLib.FileTest.EXISTS));
     return root + "/components/" + folder + "/" + file;
@@ -13,13 +13,13 @@ function pathOf(file) {
 
 // QML ".pragma library" files are plain JS once the pragma is removed. One
 // that imports another (`.import "x/Name.js" as Name`) gets it as a constant
-// holding every function the other declares.
+// holding every function and top-level `var` the other declares.
 function load(file, names) {
     const [, bytes] = GLib.file_get_contents(pathOf(file));
     const src = new TextDecoder().decode(bytes)
         .replace(".pragma library", "")
         .replace(/^\.import "(?:[^"]*\/)?([^"\/]+\.js)" as (\w+)$/gm, (_, dep, name) => "const " + name + " = load(" + JSON.stringify(dep) + ");");
-    const declared = [...src.matchAll(/^function (\w+)/gm)].map(m => m[1]);
+    const declared = [...src.matchAll(/^(?:function|var) (\w+)/gm)].map(m => m[1]);
     return new Function("load", src + "; return { " + (names || declared).join(", ") + " };")(load);
 }
 

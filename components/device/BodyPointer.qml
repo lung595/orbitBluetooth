@@ -1,4 +1,5 @@
 import QtQuick
+import "../scene/Physics.js" as Physics
 
 // A device's mouse: a short click focuses it, a drag past 5 px moves it
 // (the scene owns the drag), a right click opens its menu.
@@ -6,12 +7,23 @@ MouseArea {
     id: pointer
     required property var body
 
-    anchors.fill: parent
+    // At least the body, and the whole disc when it is bigger (the source of
+    // a Listen together at the centre): a planet drawn small still has a zone
+    // as large as the one a click is searched in (Physics.hitDiameter)
+    anchors.centerIn: parent
+    width: Physics.hitDiameter(pointer.body)
+    height: width
     hoverEnabled: true
     preventStealing: true
     acceptedButtons: Qt.LeftButton | Qt.RightButton
-    enabled: !pointer.body.leaving && !pointer.body.swallowing && !pointer.body.scene.focusBody && !pointer.body.scene.hiddenOpen
+    enabled: !pointer.body.leaving && !pointer.body.swallowing && !pointer.body.scene.cardOpen
     cursorShape: pointer.body.dragging ? Qt.ClosedHandCursor : Qt.OpenHandCursor
+    // The disc itself: the square's corners belong to what lies behind
+    containmentMask: QtObject {
+        function contains(point: point): bool {
+            return Math.hypot(point.x - pointer.width / 2, point.y - pointer.height / 2) <= pointer.width / 2;
+        }
+    }
 
     property point pressPoint
     property double pressTime: 0

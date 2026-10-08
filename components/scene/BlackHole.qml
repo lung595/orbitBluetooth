@@ -1,6 +1,8 @@
 import QtQuick
 import qs.Common
 import qs.Widgets
+import "../centre/Perspective.js" as Perspective
+import "../centre/Sun.js" as Sun
 import "../device"
 
 // The "Hidden" planet: a small black hole parked in a corner of the scene.
@@ -25,8 +27,14 @@ Item {
     property real spin: 0
     // 0 .. 1: brief glow after swallowing a shooting star
     property real flash: 0
+    // A device is carried towards it from a list (the group chooser): it shows an eye
+    property bool eye: false
 
-    readonly property real horizon: Math.round(scene.bodySize * 0.2)
+    // Seen in profile it is as near or as far as the belt slot it floats in, and as
+    // big or small as a body there (Perspective.leanAt), and it shrinks with the host's
+    // system while a group has the centre (Sun.holeScale); the scene's own view leaves it as it was
+    readonly property real lean: Perspective.leanAt(scene, scene.holeY, scene.centre.profile) * Sun.holeScale(scene.centre.away)
+    readonly property real horizon: Math.round(scene.bodySize * 0.2 * lean)
     readonly property real lensRadius: horizon * 3
     readonly property bool hovered: area.containsMouse
 
@@ -88,11 +96,27 @@ Item {
         y: parent.height / 2 + hole.horizon + 6
         text: hole.count > 0 ? "Hidden · " + hole.count : "Hidden"
         color: Qt.rgba(1, 1, 1, hole.hovered || hole.feed > 0.3 ? 0.88 : 0.7)
-        font.pixelSize: Math.max(9, Math.round(hole.scene.bodySize * 0.2))
+        font.pixelSize: Math.max(9, Math.round(hole.scene.bodySize * 0.2 * hole.lean))
         font.letterSpacing: 0.4
         visible: hole.scene.prefs.showLabels || hole.hovered || hole.feed > 0
         Behavior on color {
             ColorAnimation {
+                duration: 160
+            }
+        }
+    }
+
+    // What a device carried here is going to do: it is hidden
+    DankIcon {
+        anchors.centerIn: parent
+        name: "visibility_off"
+        size: Math.max(12, Math.round(hole.horizon * 1.5))
+        color: Qt.rgba(1, 1, 1, 1)
+        opacity: hole.eye ? 0.3 + 0.7 * hole.feed : 0
+        visible: opacity > 0.01
+        Behavior on opacity {
+            enabled: hole.scene.motion
+            NumberAnimation {
                 duration: 160
             }
         }

@@ -100,11 +100,55 @@ function dragArm(g, holding, x, y) {
     };
 }
 
+// A body is caught within a disc of at least HIT_MIN px however small it is
+// drawn, so a planet far away in the profile view is as easy to click as a near
+// one (D297); wider when it is drawn wider (the source of a group)
+var HIT_MIN = 28;
+
+function hitDiameter(o) {
+    return Math.max(HIT_MIN, o.diameter * Math.max(1, o.baseScale));
+}
+
+// A drop lands within twice a disc's radius of its centre, and never closer
+// than DROP_MIN scene pixels, so a small planet far in the ring is as easy to
+// hit as a big one (D294)
+var DROP_REACH = 2;
+var DROP_MIN = 60;
+
+// How near a body's centre the pointer must be for a drop to listen together
+// with it; the invitation lights up from the same distance
+function dropRadius(o) {
+    return Math.max(DROP_MIN, DROP_REACH * o.diameter * o.baseScale / 2);
+}
+
+// The connected body under a dragged connected one, when the pointer at
+// (x, y) is within its drop radius: what dropping would listen together with
+// (D254). null for anything else. `anyone`: an unconnected body counts too,
+// so that dropping it on the listening group can say it must be connected
+// first.
+function dropOnto(b, all, x, y, anyone) {
+    if (!b.connected && !anyone)
+        return null;
+    let best = null, bestD = Infinity;
+    for (const o of all) {
+        if (o === b || o.leaving || !o.connected)
+            continue;
+        const d = Math.hypot(x - o.px, y - o.py);
+        if (d < dropRadius(o) && d < bestD) {
+            best = o;
+            bestD = d;
+        }
+    }
+    return best;
+}
+
 // Pushes target t away from the other bodies (harder from the dragged one),
 // out of the host core (unless the body rides the ring, which passes behind
 // it) and out of the black hole, which only takes what is dropped in.
 // `focusOpen`: a detail card is open, bodies may overlap the center.
-function separate(g, b, t, all, focusOpen) {
+// `core`: where the host is and how big ({ x, y, r }) when it is not at the
+// center (a Listen together has taken it); omitted, the host sits at the center.
+function separate(g, b, t, all, focusOpen, core) {
     for (const o of all) {
         if (o === b || o.leaving)
             continue;
@@ -119,11 +163,12 @@ function separate(g, b, t, all, focusOpen) {
     }
     if (focusOpen)
         return;
-    const cd = Math.max(0.001, Math.hypot(t.x - g.cx, t.y - g.cy));
-    const minD = g.coreSize * 0.5 + g.bodySize * 0.55;
+    const c = core || { "x": g.cx, "y": g.cy, "r": g.coreSize * 0.5 };
+    const cd = Math.max(0.001, Math.hypot(t.x - c.x, t.y - c.y));
+    const minD = c.r + g.bodySize * 0.55;
     if (cd < minD && !b.inSlot) {
-        t.x = g.cx + (t.x - g.cx) / cd * minD;
-        t.y = g.cy + (t.y - g.cy) / cd * minD;
+        t.x = c.x + (t.x - c.x) / cd * minD;
+        t.y = c.y + (t.y - c.y) / cd * minD;
     }
     const hd = Math.max(0.001, Math.hypot(t.x - g.holeX, t.y - g.holeY));
     const holeD = g.holeHorizon * 2.2 + g.bodySize * 0.6;

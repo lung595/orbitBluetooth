@@ -36,12 +36,14 @@ function globals(mode, t) {
                     "ambientMax": 20,
                     "levelMode": "ambient",
                     "voice": true,
-                    "chat": true
+                    "chat": true,
+                    "chatEnds": true
                 }, {
                     "mode": mode === "ancfocus" ? "ambient" : "nc",
                     "ambient": 14,
                     "voice": true,
                     "chat": false,
+                    "chatEnds": 1,
                     "battery": {}
                 }),
                 // Earbuds: case charging; in "budsdock" both buds charge in it
@@ -86,6 +88,8 @@ var soundFrame = {
 var fakeSinks = {
     "bluez_output.02_00_00_00_10_06.1": {
         "connection": "Bluetooth",
+        "profile": "A2DP",
+        "codecKey": "ldac",
         "codec": "LDAC",
         "rate": 96000,
         "bits": 24,
@@ -99,3 +103,8 @@ var fakeSinks = {
         "channels": 2
     }
 };
+
+// What `pw-dump` and `pw-top` would add for the headset: the delay it
+// reports, LDAC's quality (adaptive), the quantum the graph runs at
+var fakeDump = { "bluez_output.02_00_00_00_10_06.1": { "latencyMs": 184.6, "quality": 0 } };
+var fakeTop = { "bluez_output.02_00_00_00_10_06.1": { "quantum": 1024, "quantumRate": 96000 } };

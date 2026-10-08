@@ -275,6 +275,16 @@ Column {
         }
     }
 
+    // How long a conversation lasts, once the headset has said (Sony)
+    ChatEnds {
+        width: parent.width
+        visible: panel.features?.chatEnds === true && typeof panel.st.chatEnds === "number"
+        paper: panel.paper
+        names: Anc.CHAT_ENDS
+        current: panel.st.chatEnds ?? null
+        onPicked: index => panel.scene.ancSend(panel.address, "chatEnds", index)
+    }
+
     component Chip: Rectangle {
         id: chip
         property string icon: ""

@@ -5,7 +5,7 @@ const { load, eq, done } = imports.lib;
 
 const Cover = load("Cover.js", ["covered"]);
 const Orbit = load("Orbit.js", ["pick", "plan", "changes"]);
-const Physics = load("Physics.js", ["spring", "norm", "ringSlot", "beltSlot", "beltRadius", "dragTarget", "dragArm", "separate", "moving"]);
+const Physics = load("Physics.js", ["spring", "norm", "ringSlot", "beltSlot", "beltRadius", "dragTarget", "dragArm", "HIT_MIN", "hitDiameter", "dropRadius", "dropOnto", "separate", "moving"]);
 
 // Ambient motion pauses on a screen hidden behind windows (P123).
 // Made-up layout: three screens, sizes in logical pixels.
@@ -118,6 +118,12 @@ eq("a window without layout yet does not count", Cover.covered(spaces, [{ worksp
     const slotted = { px: 105, py: 50, inSlot: true }, slot = { x: 105, y: 50 };
     Physics.separate(g, slotted, slot, [slotted], false);
     eq("a body in its ring slot keeps it", slot, { x: 105, y: 50 });
+    // The host away at the back (a Listen together took the centre): it is the keep-out disc that moves
+    const away = { x: 20, y: 50, r: 10 };
+    const atCentre = { x: 105, y: 50 }, atHost = { x: 22, y: 50 };
+    Physics.separate(g, me, atCentre, [me], false, away);
+    Physics.separate(g, me, atHost, [me], false, away);
+    eq("the centre is free once the host is away, the host's own spot is not", [atCentre, r(atHost.x)], [{ x: 105, y: 50 }, r(away.x + away.r + g.bodySize * 0.55)]);
     const nearHole = { x: 140, y: 50 };
     Physics.separate(Object.assign({}, g, { holeX: 150, holeY: 50 }), { px: 0, py: 0 }, nearHole, [], false);
     eq("nothing settles in the black hole's reach", [r(nearHole.x), r(nearHole.y)], [127, 50]);
@@ -132,6 +138,25 @@ eq("a window without layout yet does not count", Cover.covered(spaces, [{ worksp
     eq("drag: over the hole it hides, never connects", Physics.dragArm(hole, true, 160, 50), { hide: true, armed: false, feed: 1 });
     eq("drag: the glow fades with distance", r(Physics.dragArm(hole, false, 150, 90).feed), 0.13);
     eq("drag: the hide reach is at least 3/4 of a body", [Physics.dragArm(hole, false, 164, 50).hide, Physics.dragArm(hole, false, 166, 50).hide], [true, false]);
+    // Listen together: a connected body dropped on another connected one
+    const mate = { px: 100, py: 50, diameter: 40, baseScale: 1, connected: true };
+    const mate2 = { px: 110, py: 50, diameter: 40, baseScale: 1, connected: true };
+    const mover = { px: 0, py: 0, connected: true };
+    // A disc of 40 px is small: the drop radius is its floor (60), not twice its radius (40)
+    eq("drop: the pointer within the drop radius of a connected body", [Physics.dropOnto(mover, [mover, mate], 115, 50) === mate, Physics.dropOnto(mover, [mover, mate], 155, 50) === mate, Physics.dropOnto(mover, [mover, mate], 165, 50)], [true, true, null]);
+    eq("drop: the nearest centre wins", Physics.dropOnto(mover, [mate, mate2], 108, 50) === mate2, true);
+    eq("drop: never on itself, a leaving or an unconnected body", [Physics.dropOnto(mate, [mate], 100, 50), Physics.dropOnto(mover, [Object.assign({}, mate, { leaving: true })], 100, 50), Physics.dropOnto(mover, [Object.assign({}, mate, { connected: false })], 100, 50)], [null, null, null]);
+    eq("drop: an unconnected dragged body listens to nobody", Physics.dropOnto({ connected: false }, [mate], 100, 50), null);
+    eq("drop: with `anyone`, an unconnected dragged body is over the member", Physics.dropOnto({ connected: false }, [mate], 100, 50, true) === mate, true);
+    eq("drop: even with `anyone`, only a connected body can be dropped onto", Physics.dropOnto({ connected: false }, [Object.assign({}, mate, { connected: false })], 100, 50, true), null);
+    // Past the floor the radius is twice the disc's: 200 px wide gives 200, half-scaled 100
+    const big = Object.assign({}, mate, { diameter: 200 });
+    eq("drop: twice the disc's radius once past the floor", [Physics.dropRadius(big), Physics.dropRadius(Object.assign({}, big, { baseScale: 0.5 }))], [200, 100]);
+    eq("drop: a smaller body (far in the ring) has a smaller zone", [Physics.dropOnto(mover, [big], 240, 50) === big, Physics.dropOnto(mover, [Object.assign({}, big, { baseScale: 0.5 })], 240, 50)], [true, null]);
+    eq("drop: a tiny planet keeps the 60 px floor", [Physics.dropRadius(Object.assign({}, mate, { diameter: 10 })), Physics.dropRadius(Object.assign({}, mate, { diameter: 10, baseScale: 0.2 }))], [60, 60]);
+    // The zone a click lands in (D297)
+    eq("hit: at least 28 px, however small the disc is drawn", [Physics.HIT_MIN, Physics.hitDiameter({ diameter: 51, baseScale: 0.2 }), Physics.hitDiameter({ diameter: 20, baseScale: 0.3 })], [28, 51, 28]);
+    eq("hit: as wide as the disc when it is drawn wider than the body", [Physics.hitDiameter({ diameter: 51, baseScale: 1.2 }), Physics.hitDiameter({ diameter: 51, baseScale: 1 })], [51 * 1.2, 51]);
 }
 
 done();

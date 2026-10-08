@@ -15,20 +15,25 @@ QtObject {
     readonly property real glyphScale: glyphSize / scene.bodySize
     readonly property real glyphLift: glyphSize * 0.2      // glyph center relative to card top
     readonly property real overlap: glyphLift + glyphSize * 0.5 + 8
+    // The same at the glyph's width-bound size, which never depends on the scene's height
+    readonly property real fullOverlap: cardWidth * glyphRatio * 0.7 + 8
     // Room above the card for the glyph, which breaks out of its top edge:
     // its center sits 0.2 glyph below the card top, so 0.3 glyph rises
     // above it, plus a margin. Less than this and the window cuts it.
     readonly property real headroom: headroomFor(glyphSize)
-    // Scene height at which the open detail card fits without scrolling (0
+    // Scene height at which the open detail card (or the radar) fits without scrolling (0
     // when none is open): card content, glyph overlap and margins, with the
     // glyph at its width-bound size. It does not depend on the scene's own
     // height, so a host can grow to it without a binding loop.
     readonly property real fitHeight: {
+        const glyph = cardWidth * glyphRatio;
+        // The radar's card, once it is made (its own height asks for the same glyph overhang)
+        if (scene.radar.open)
+            return scene.world.radarCard.wanted + headroomFor(glyph) + Theme.spacingM;
         if (!scene.focusBody)
             return 0;
-        const glyph = cardWidth * glyphRatio;
         const content = scene.world.focusCard.implicitHeight - overlap - Theme.spacingL;
-        return content + glyph * 0.7 + 8 + Theme.spacingL + headroomFor(glyph) + Theme.spacingM;
+        return content + fullOverlap + Theme.spacingL + headroomFor(glyph) + Theme.spacingM;
     }
 
     function headroomFor(glyph) {

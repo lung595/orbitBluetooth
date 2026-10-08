@@ -1,0 +1,15 @@
+[
+  {
+    "index": 90,
+    "state": "RUNNING",
+    "name": "alsa_output.usb-Acme_Studio_2x2-00.HiFi__Line1__sink.monitor",
+    "description": "Monitor of Acme Studio 2x2 Line Out",
+    "ports": [],
+    "active_port": null,
+    "properties": {
+      "media.class": "Audio/Sink",
+      "device.class": "monitor",
+      "device.bus": "usb"
+    }
+  }
+]

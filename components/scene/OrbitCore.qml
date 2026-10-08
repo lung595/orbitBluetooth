@@ -5,7 +5,8 @@ import "../device"
 
 // The host at the orbit's center: this computer's glyph on a soft glow. It
 // breathes with the scene clock, pulses when a device connects, and its
-// inner part starts a scan.
+// inner part starts a scan. While a Listen together has the center it sits
+// small and dimmed at the back, and a click brings it back for a moment.
 Item {
     id: core
     required property var scene
@@ -17,12 +18,13 @@ Item {
         corePulseAnim.restart();
     }
 
-    x: core.scene.cx - width / 2
-    y: core.scene.cy - height / 2
+    readonly property var centre: core.scene.centre
+    x: centre.host.x - width / 2
+    y: centre.host.y - height / 2
     width: core.scene.coreSize
     height: width
-    opacity: core.scene.focusBody || core.scene.hiddenOpen ? 0.15 : core.scene.btOn ? 1 : 0.45
-    scale: (core.scene.motion ? 1 + 0.018 * Math.sin(core.scene.clock * 1.3) : 1) * corePulse.value
+    opacity: (core.scene.cardOpen ? 0.15 : core.scene.btOn ? 1 : 0.45) * (centre.hostAway ? 0.6 : 1)
+    scale: (core.scene.motion ? 1 + 0.018 * Math.sin(core.scene.clock * 1.3) : 1) * corePulse.value * centre.host.scale
 
     Behavior on opacity {
         NumberAnimation {
@@ -93,17 +95,22 @@ Item {
         stroke: 1.4
     }
 
-    // Only the inner 70% starts a scan, and never over a device
+    // Only the inner 70% starts a scan, and never over a device. Small at
+    // the back it is all one target: a click brings it to the center.
     MouseArea {
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
-        enabled: core.scene.btOn && !core.scene.focusBody
+        enabled: core.scene.btOn && !core.scene.cardOpen
         onPressed: mouse => {
-            const inner = Math.hypot(mouse.x - width / 2, mouse.y - height / 2) < width * 0.35;
+            const inner = Math.hypot(mouse.x - width / 2, mouse.y - height / 2) < width * (core.centre.hostAway ? 0.5 : 0.35);
             const p = mapToItem(core.scene, mouse.x, mouse.y);
             mouse.accepted = inner && !core.world.bodyAt(p.x, p.y);
         }
         onClicked: {
+            if (core.centre.hostAway) {
+                core.centre.recall();
+                return;
+            }
             core.scene.startScan();
             core.scene.emitWave(true);
         }

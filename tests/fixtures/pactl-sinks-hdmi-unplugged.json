@@ -1,0 +1,27 @@
+[
+  {
+    "index": 52,
+    "state": "SUSPENDED",
+    "name": "alsa_output.pci-0000_01_00.1.hdmi-stereo",
+    "description": "Acme Graphics Digital Stereo (HDMI)",
+    "ports": [
+      {
+        "name": "hdmi-output-0",
+        "description": "HDMI / DisplayPort",
+        "priority": 5900,
+        "availability_group": "Legacy 1",
+        "availability": "not available",
+        "type": "HDMI"
+      }
+    ],
+    "active_port": "hdmi-output-0",
+    "properties": {
+      "media.class": "Audio/Sink",
+      "device.api": "alsa",
+      "device.class": "sound",
+      "device.bus": "pci",
+      "device.icon_name": "audio-card-analog",
+      "api.alsa.card": "1"
+    }
+  }
+]

@@ -54,9 +54,12 @@ Item {
         if (c.inputSuspended || (c.expanded && c.activeActivity !== "volume"))
             return false;
         layerHold.hold();
+        // Not ours to watch while the island is being asked for the sheet
+        _opened = false;
         const ok = c.requestSystemActivity("volume");
         if (ok) {
             c.expanded = true;
+            _opened = true;
             hide.restart();
         }
         // The island never showed us: let go of its motion
@@ -72,8 +75,23 @@ Item {
     // Shrinks back to whatever the island showed before
     function close() {
         hide.stop();
-        if (mine && controller.expanded)
+        _opened = false;
+        if (mine)
             controller.requestCollapse();
+    }
+
+    // The island can fold on its own while our sheet is up (a screenshot
+    // suspends its input and folds it, P148). It is left on its compact
+    // volume face with no timer to send it home: DMS's own pill (an OSD
+    // look-alike) would stay on screen after the capture. The island is sent
+    // home as soon as it folds behind our back.
+    property bool _opened: false
+    Connections {
+        target: face.controller
+        function onExpandedChanged() {
+            if (face._opened && !face.controller.expanded)
+                face.close();
+        }
     }
 
     // As long as DMS's own OSD would stay, longer while the pointer is on it

@@ -40,7 +40,14 @@ var paths = {
     glasses: "M2.5 10.5h19 M3.5 10.5V12a3.5 3.5 0 0 0 7 0v-1.5 M13.5 10.5V12a3.5 3.5 0 0 0 7 0v-1.5",
     vr: "M3 9.5A2.5 2.5 0 0 1 5.5 7h13A2.5 2.5 0 0 1 21 9.5v5a2.5 2.5 0 0 1-2.5 2.5h-3l-2-2.5h-3L8.5 17h-3A2.5 2.5 0 0 1 3 14.5z",
     tv: "M2.5 6A1.5 1.5 0 0 1 4 4.5h16A1.5 1.5 0 0 1 21.5 6v10a1.5 1.5 0 0 1-1.5 1.5H4A1.5 1.5 0 0 1 2.5 16z M8 20.5h8",
-    car: "M5 16.5v2 M19 16.5v2 M3.5 16.5v-4l2-5A2 2 0 0 1 7.4 6h9.2a2 2 0 0 1 1.9 1.5l2 5v4z M3.5 12.5h17 M7 14.5h.01 M17 14.5h.01"
+    car: "M5 16.5v2 M19 16.5v2 M3.5 16.5v-4l2-5A2 2 0 0 1 7.4 6h9.2a2 2 0 0 1 1.9 1.5l2 5v4z M3.5 12.5h17 M7 14.5h.01 M17 14.5h.01",
+
+    // The pictures of wired outputs (D298), not in `labels`: they are not a
+    // choice for the glyph picker. wired() maps an output's kind to one.
+    wiredUsb: "M12 17.6V6.8 M10.3 6.8l1.7-3.1 1.7 3.1z M12 13.6l-4.4-2.8V8.9 M6.1 7.4a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M12 11l4.4-2.8V6.7 M15.2 4.3h2.4v2.4h-2.4z M10.2 19.4a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0",
+    wiredHdmi: "M3.5 7.5h17v5.2l-3 4.3h-11l-3-4.3z M7 10.8h.01 M9.5 10.8h.01 M12 10.8h.01 M14.5 10.8h.01 M17 10.8h.01",
+    wiredAnalog: "M2.5 12h3.5 M6 9h4.5v6H6z M10.5 10.2h8a1.8 1.8 0 0 1 0 3.6h-8z M14 10.2v3.6",
+    wiredOther: "M9 3.5v4 M15 3.5v4 M6.5 7.5h11v3.5a5.5 5.5 0 0 1-11 0z M12 16.5v4"
 };
 
 // Human readable names, also used as the glyph picker order.
@@ -83,4 +90,12 @@ function path(kind) {
 
 function label(kind) {
     return labels[kind] || labels.bluetooth;
+}
+
+// The glyph of a wired output from its kind ("usb", "hdmi", "analog", as
+// Wired.kindOf says; anything else is the generic plug)
+var wiredGlyphs = { "usb": "wiredUsb", "hdmi": "wiredHdmi", "analog": "wiredAnalog" };
+
+function wired(kind) {
+    return wiredGlyphs.hasOwnProperty(kind) ? wiredGlyphs[kind] : "wiredOther";
 }

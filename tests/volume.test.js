@@ -4,11 +4,11 @@ imports.searchPath.unshift(imports.system.programPath ? imports.system.programPa
 const { load, eq, done } = imports.lib;
 
 const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNote", "stuckNote", "levelNote"]);
-const Volume = load("Volume.js", ["clamp", "step", "validSink"]);
-const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "arc", "end", "point", "angleOf", "valueAt", "zone", "wheelPart", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
+const Volume = load("Volume.js", ["clamp", "step", "validSink", "crosses", "tickSinks", "MAX_TICKS"]);
+const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "slices", "sliceAt", "partOf", "indexOf", "arc", "end", "point", "angleOf", "valueAt", "zone", "wheelPart", "iconSpot", "legendSpot", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
 const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded", "note"]);
-const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "filterArgs", "muteTarget", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "shownLevels"]);
+const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "loopbackArgs", "filterArgs", "muteTarget", "levelNodes", "writeLevel", "writeMuted", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "popupScreen", "shownLevels"]);
 
 // --- Volume tick (Volume.js) ------------------------------------------------------
 eq("same step: no tick", Volume.step(0.61) === Volume.step(0.62), true);
@@ -17,6 +17,13 @@ eq("levels are clamped", [Volume.clamp(-1), Volume.clamp(2), Volume.clamp("x")],
 eq("node name ok for pw-play", Volume.validSink("bluez_output.02_00_00_00_10_06.1"), true);
 eq("no shell characters", Volume.validSink("x; rm -rf ~"), false);
 eq("no option smuggling", Volume.validSink("--target=x y"), false);
+// Where the tick plays: the output whose level moved, or every member's for the group's
+eq("inside one step: no tick, across a step: a tick", [Volume.crosses(0.61, 0.62), Volume.crosses(0.62, 0.68)], [false, true]);
+eq("one output: its own sink only", Volume.tickSinks(["bluez_output.AA_BB_CC_DD_EE_01.1"]), ["bluez_output.AA_BB_CC_DD_EE_01.1"]);
+eq("the group: every member's sink, each once", Volume.tickSinks(["a.1", "b.2", "a.1", "c.3"]), ["a.1", "b.2", "c.3"]);
+eq("never more than four outputs at once", [Volume.MAX_TICKS, Volume.tickSinks(["a", "b", "c", "d", "e", "f"])], [4, ["a", "b", "c", "d"]]);
+eq("a name that is not plain is dropped, the others stay", Volume.tickSinks(["x; rm -rf ~", "--target=y z", "ok.1", "", null, undefined, 7]), ["ok.1"]);
+eq("nothing to tick in", [Volume.tickSinks(null), Volume.tickSinks([])], [[], []]);
 
 // Two volumes (D249, D255): this PC's level lives on a virtual sink in front of
 // the device. Made-up address and names.
@@ -47,6 +54,20 @@ eq("smart filter: targets the device, nothing remembered", [/filter\.smart\.targ
 eq("smart filter: quotes stripped from the name", /description="Buds Pro \(Orbit\)"/.test(filter[4]), true);
 eq("bad master or address: no command", [Route.filterArgs(MAC, "x y", "B"), Route.filterArgs("nope", "bluez_output.AA_BB_CC_DD_EE_01.1", "B")], [null, null]);
 eq("mute: one device mutes this PC, two mute the device", [Route.muteTarget(1), Route.muteTarget(2), Route.muteTarget(0)], ["pc", "device", "pc"]);
+// A level written on the shared PC half reaches every member's copy (D254), nothing else
+const node = (volume, muted) => ({ "audio": { "volume": volume, "muted": !!muted } });
+const sharedA = node(0.85), sharedB = node(0.85, true), sharedC = node(0.4), own = node(0.3, true);
+const shared = [sharedA, sharedB, sharedC];
+eq("a shared node reaches all the shared ones", Route.levelNodes(shared, sharedB), shared);
+eq("another node reaches only itself", Route.levelNodes(shared, own), [own]);
+eq("with nothing shared, only itself", Route.levelNodes([], own), [own]);
+Route.writeLevel(shared, sharedC, 0.5);
+eq("a level written is on every copy, unmuted", shared.map(n => [n.audio.volume, n.audio.muted]), [[0.5, false], [0.5, false], [0.5, false]]);
+eq("and the node outside is left alone", [own.audio.volume, own.audio.muted], [0.3, true]);
+Route.writeMuted(shared, sharedA, true);
+eq("a mute is on every copy", shared.map(n => n.audio.muted), [true, true, true]);
+Route.writeLevel(shared, own, 0.9);
+eq("a level on its own node unmutes only it", [own.audio.volume, own.audio.muted, sharedA.audio.volume, sharedA.audio.muted], [0.9, false, 0.5, true]);
 eq("ipc up/down in 5 % steps", [Route.ipcLevel("up", 0.5), Route.ipcLevel("down", 0.5), Route.ipcLevel("UP", 0.52)], [0.55, 0.45, 0.55]);
 eq("ipc capped at the ends", [Route.ipcLevel("up", 1), Route.ipcLevel("down", 0), Route.ipcLevel("+20", 0.9), Route.ipcLevel("-20", 0.1)], [1, 0, 1, 0]);
 eq("ipc absolute and relative", [Route.ipcLevel("40", 0.9), Route.ipcLevel("40%", 0), Route.ipcLevel("+5", 0.4), Route.ipcLevel("-10", 0.4)], [0.4, 0.4, 0.45, 0.3]);
@@ -54,28 +75,59 @@ eq("ipc rejects the rest", [Route.ipcLevel("150", 0), Route.ipcLevel("", 0), Rou
 const DEV = "/org/bluez/hci0/dev_AA_BB_CC_DD_EE_01";
 const tree = "/org/bluez\n/org/bluez/hci0\n" + DEV + "\n" + DEV + "/sep1\n" + DEV + "/sep1/fd0\n/org/bluez/hci0/dev_AA_BB_CC_DD_EE_02/sep1/fd1\n";
 eq("transport of the device", Route.transportPath(tree, DEV), DEV + "/sep1/fd0");
+// BlueZ 5.87 lists the transport right under the device, the remote endpoints beside it (P162)
+const flat = "/org/bluez\n/org/bluez/hci0\n" + DEV + "\n" + DEV + "/fd0\n" + DEV + "/sep1\n" + DEV + "/sep2\n";
+eq("transport right under the device", Route.transportPath(flat, DEV), DEV + "/fd0");
+eq("an endpoint is not a transport", Route.transportPath("/org/bluez\n" + DEV + "\n" + DEV + "/sep1\n", DEV), "");
 eq("no transport: no absolute volume", [Route.transportPath("/org/bluez\n" + DEV + "\n", DEV), Route.transportPath(tree, "/org/bluez/hci0/dev_x")], ["", ""]);
 eq("transport volume", [Route.transportVolume('{"type":"q","data":65}'), Route.transportVolume("oops"), Route.transportVolume('{"type":"q","data":300}')], [65, -1, -1]);
 eq("level notes say why", [Guide.levelNote("no-device").length > 0, Guide.levelNote("bad-level").indexOf("0 to 100") > 0], [true, true]);
-
-// Polar vectorscope (D250, D254): angles clockwise from the right, top = 270
-eq("outer arc lights from the left", [Polar.arc("outer", 0.5), Polar.arc("inner", 2)], [{ start: 180, sweep: 90 }, { start: 180, sweep: 180 }]);
-eq("split: each quarter from its bottom corner", [Polar.arc("d1", 1), Polar.arc("d2", 0.5)], [{ start: 180, sweep: 90 }, { start: 360, sweep: -45 }]);
-eq("moons", [Polar.end("outer", 0), Polar.end("outer", 1), Polar.end("d2", 1)], [180, 360, 270]);
+// Polar vectorscope (D250, D254, D277): angles clockwise from the right, top = 270
+const one = Polar.slices(1)[0];
+eq("one outer arc is the whole half circle, lit from the left", [Polar.slices(1), Polar.arc(one, 0.5), Polar.arc(one, 2)], [[{ start: 180, end: 360, reverse: false }], { start: 180, sweep: 90 }, { start: 180, sweep: 180 }]);
+eq("two arcs: a gap at the top, the right one lit from its foot", [Polar.slices(2), Polar.arc(Polar.slices(2)[0], 1), Polar.arc(Polar.slices(2)[1], 0.5)], [[{ start: 180, end: 268, reverse: false }, { start: 272, end: 360, reverse: true }], { start: 180, sweep: 88 }, { start: 360, sweep: -44 }]);
+eq("three arcs: the middle one lights from the left, the ends toward it",
+    Polar.slices(3).map(s => [s.reverse, s.end - s.start]), [[false, 58], [false, 56], [true, 58]]);
+eq("four arcs meet in pairs at the top", Polar.slices(4).map(s => [s.start, s.end, s.reverse]),
+    [[180, 223, false], [227, 268, false], [272, 313, true], [317, 360, true]]);
+eq("a count out of range is clamped", [Polar.slices(0).length, Polar.slices(9).length, Polar.slices(2.9).length], [1, 4, 2]);
+eq("every arc's moon starts at its foot and ends at its top end", Polar.slices(4).map(s => [Polar.end(s, 0), Polar.end(s, 1)]), [[180, 223], [227, 268], [313, 272], [360, 317]]);
 const pTop = Polar.point(100, 100, 50, 270);
 eq("top point", [Math.round(pTop.x), Math.round(pTop.y)], [100, 50]);
-eq("drag value", [Polar.valueAt("outer", -10, 0), Polar.valueAt("outer", 0, -10), Polar.valueAt("outer", 10, 0), Polar.valueAt("inner", 7, -7)], [0, 0.5, 1, 0.75]);
-eq("below the baseline snaps to the nearer end", [Polar.valueAt("outer", 10, 5), Polar.valueAt("outer", -10, 5)], [1, 0]);
-eq("split drag", [Polar.valueAt("d1", 0, -10), Polar.valueAt("d1", -10, -10), Polar.valueAt("d2", 10, -10), Polar.valueAt("d2", -10, -10)], [1, 0.5, 0.5, 1]);
-eq("zones", [Polar.zone(0, -100, 100, 40, 10, false), Polar.zone(0, -42, 100, 40, 10, false), Polar.zone(0, -70, 100, 40, 10, false), Polar.zone(0, 30, 100, 40, 10, false)], ["outer", "inner", "", ""]);
+eq("which arc an angle belongs to", [Polar.sliceAt(180, 1), Polar.sliceAt(359, 1), Polar.sliceAt(200, 2), Polar.sliceAt(270, 2), Polar.sliceAt(250, 3), Polar.sliceAt(300, 3), Polar.sliceAt(360, 4), Polar.sliceAt(100, 4)], [0, 0, 0, 1, 1, 2, 3, 0]);
+eq("parts: the device's own, or one per output", [Polar.partOf(0, 1), Polar.partOf(0, 2), Polar.partOf(3, 4)], ["device", "m0", "m3"]);
+eq("arc of a part", ["device", "m0", "m3", "pc", "m4", "second", ""].map(Polar.indexOf), [0, 0, 3, -1, -1, -1, -1]);
+eq("drag value", [Polar.valueAt(one, -10, 0), Polar.valueAt(one, 0, -10), Polar.valueAt(one, 10, 0), Polar.valueAt(Polar.slices(1)[0], 7, -7)], [0, 0.5, 1, 0.75]);
+eq("below the baseline snaps to the nearer end", [Polar.valueAt(one, 10, 5), Polar.valueAt(one, -10, 5)], [1, 0]);
+const two = Polar.slices(2);
+eq("two outputs drag: each arc from its foot to the top", [Polar.valueAt(two[0], -10, 0), Polar.valueAt(two[0], 0, -10), Polar.valueAt(two[1], 10, 0), Polar.valueAt(two[1], 0, -10), Math.round(Polar.valueAt(two[0], -10, -10) * 100) / 100, Math.round(Polar.valueAt(two[1], 10, -10) * 100) / 100], [0, 1, 0, 1, 0.51, 0.51]);
+eq("zones", [Polar.zone(0, -100, 100, 40, 10, 1), Polar.zone(0, -42, 100, 40, 10, 1), Polar.zone(0, -70, 100, 40, 10, 1), Polar.zone(0, 30, 100, 40, 10, 1)], ["device", "pc", "", ""]);
+eq("zones with no outer arc: only this PC's", [Polar.zone(0, -100, 100, 82, 10, 0), Polar.zone(0, -82, 100, 82, 10, 0)], ["", "pc"]);
+// A point in the middle of each of four arcs, at the outer radius
+const mids = [200, 250, 290, 340].map(d => Polar.point(0, 0, 100, d));
+eq("zones: one part per output", mids.map(m => Polar.zone(m.x, m.y, 100, 40, 10, 4)), ["m0", "m1", "m2", "m3"]);
 // The wheel: arcs, icons at the feet, numbers beside the half circles and the gaps all pick a side
-eq("wheel on the arcs", [Polar.wheelPart(0, -100, 100, 44, false, true), Polar.wheelPart(0, -44, 100, 44, false, true)], ["device", "pc"]);
-eq("wheel on the icons at the feet", [Polar.wheelPart(-100, 14, 100, 44, false, true), Polar.wheelPart(-44, 14, 100, 44, false, true)], ["device", "pc"]);
-eq("wheel in the gaps: the nearer arc", [Polar.wheelPart(0, -80, 100, 44, false, true), Polar.wheelPart(0, -60, 100, 44, false, true), Polar.wheelPart(0, -10, 100, 44, false, true), Polar.wheelPart(0, -140, 100, 44, false, true)], ["device", "pc", "pc", "device"]);
-eq("wheel on the numbers beside: left device, right this PC", [Polar.wheelPart(-150, -60, 100, 44, true, true), Polar.wheelPart(150, -60, 100, 44, true, true)], ["device", "pc"]);
-eq("wheel beside without numbers: the nearer arc", [Polar.wheelPart(-150, -60, 100, 44, false, true), Polar.wheelPart(150, -60, 100, 44, false, true)], ["device", "device"]);
-eq("wheel with no device level: always this PC", [Polar.wheelPart(0, -100, 80, 66, false, false), Polar.wheelPart(-150, -60, 80, 66, true, false)], ["pc", "pc"]);
-eq("split zones", [Polar.zone(-60, -80, 100, 40, 10, true), Polar.zone(60, -80, 100, 40, 10, true)], ["d1", "d2"]);
+eq("wheel on the arcs", [Polar.wheelPart(0, -100, 100, 44, false, 1), Polar.wheelPart(0, -44, 100, 44, false, 1)], ["device", "pc"]);
+eq("wheel on the icons at the feet", [Polar.wheelPart(-100, 14, 100, 44, false, 1), Polar.wheelPart(-44, 14, 100, 44, false, 1)], ["device", "pc"]);
+eq("wheel in the gaps: the nearer arc", [Polar.wheelPart(0, -80, 100, 44, false, 1), Polar.wheelPart(0, -60, 100, 44, false, 1), Polar.wheelPart(0, -10, 100, 44, false, 1), Polar.wheelPart(0, -140, 100, 44, false, 1)], ["device", "pc", "pc", "device"]);
+eq("wheel on the numbers beside: left device, right this PC", [Polar.wheelPart(-150, -60, 100, 44, true, 1), Polar.wheelPart(150, -60, 100, 44, true, 1)], ["device", "pc"]);
+eq("wheel beside without numbers: the nearer arc", [Polar.wheelPart(-150, -60, 100, 44, false, 1), Polar.wheelPart(150, -60, 100, 44, false, 1)], ["device", "device"]);
+eq("wheel with two outputs: each half and its side", [Polar.wheelPart(30, -100, 100, 44, false, 2), Polar.wheelPart(-30, -100, 100, 44, false, 2), Polar.wheelPart(150, -60, 100, 44, true, 2), Polar.wheelPart(-150, -60, 100, 44, true, 2), Polar.wheelPart(30, -44, 100, 44, false, 2)], ["m1", "m0", "m1", "m0", "pc"]);
+eq("wheel with four outputs: one per arc", mids.map(m => Polar.wheelPart(m.x, m.y, 100, 44, false, 4)), ["m0", "m1", "m2", "m3"]);
+eq("wheel with no device level: always this PC", [Polar.wheelPart(0, -100, 80, 66, false, 0), Polar.wheelPart(-150, -60, 80, 66, true, 0)], ["pc", "pc"]);
+// Icons: the first and the last arc at the feet, the others inside their arc by the end they light from
+const spots = [0, 1, 2, 3].map(i => Polar.iconSpot(i, 4, 200, 300, 100, 20));
+eq("icons: feet for the ends", [spots[0], spots[3]], [{ x: 100, y: 316 }, { x: 300, y: 316 }]);
+eq("icons: the middle ones are inside their arc, above the baseline", spots.slice(1, 3).map(s => s.y < 300 && Math.hypot(s.x - 200, s.y - 300) < 100), [true, true]);
+eq("icons: the middle ones flank the top", spots[1].x < 200 && spots[2].x > 200, true);
+// The legend: outside each arc, leaning away from the centre, one place per arc whatever the levels
+const legend = n => [0, 1, 2, 3].slice(0, n).map(i => Polar.legendSpot(i, n, 200, 300, 100, 14));
+eq("legend, four outputs: left pair leans left, right pair leans right", legend(4).map(l => l.align), ["right", "right", "left", "left"]);
+eq("legend, three outputs: the middle one is centred above the top", legend(3).map(l => l.align), ["right", "center", "left"]);
+eq("legend: every label sits just outside its arc", legend(4).concat(legend(3)).map(l => Math.round(Math.hypot(l.x - 200, l.y - 300))), [114, 114, 114, 114, 114, 114, 114]);
+eq("legend: the middle label is straight above the centre", [Math.round(legend(3)[1].x), Math.round(legend(3)[1].y)], [200, 186]);
+eq("legend: an arc that is gone answers with the last one's place", [Polar.legendSpot(7, 3, 200, 300, 100, 14), Polar.legendSpot(-1, 3, 200, 300, 100, 14)], [Polar.legendSpot(2, 3, 200, 300, 100, 14), Polar.legendSpot(0, 3, 200, 300, 100, 14)]);
+eq("legend: no two labels share a place", new Set(legend(4).map(l => Math.round(l.x) + "," + Math.round(l.y))).size, 4);
 const fr = Polar.parseFrame("9;35;30;45;100;80;3;0;0;3;80;100;45;30;35;9;", 8);
 eq("cava frame: left reversed, low notes first", [fr.l, fr.r], [[0, 0.03, 0.8, 1, 0.45, 0.3, 0.35, 0.09], [0, 0.03, 0.8, 1, 0.45, 0.3, 0.35, 0.09]]);
 eq("bad frames", [Polar.parseFrame("1;2;3;", 8), Polar.parseFrame("a;b;c;d;e;f;g;h;i;j;k;l;m;n;o;p;", 8), Polar.parseFrame("", 8), Polar.parseFrame("0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;101;", 8)], [null, null, null, null]);
@@ -107,6 +159,10 @@ eq("foot icons", [Route.iconFor("headphonesPremium"), Route.iconFor("earbudsStem
 eq("pop-up sizes, medium by default", [Route.popupSize("compact"), Route.popupSize("x"), Route.popupSize("large").h], [{ w: 300, h: 172 }, { w: 420, h: 236 }, 300]);
 
 // The volume pop-up (D258): where it stands, which levels it shows
+// The screen it shows on (D286): the focused one, never nowhere
+eq("pop-up on the focused screen only", Route.popupScreen("focused", "DP-2", ["HDMI-A-1", "DP-2"]), "DP-2");
+eq("pop-up on every screen when asked", Route.popupScreen("all", "DP-2", ["HDMI-A-1", "DP-2"]), "");
+eq("pop-up on every screen when the focus is unknown or has no pop-up", [Route.popupScreen("focused", "", ["DP-2"]), Route.popupScreen("focused", "eDP-1", ["DP-2"]), Route.popupScreen("focused", "DP-2", [])], ["", "", ""]);
 eq("pop-up lies flat in place of DMS's OSD", Route.popupLayout("replace", false, false, "medium"), { w: 420, h: 236, upright: false, rotation: 0 });
 eq("upright on the right edge, flat side against it", Route.popupLayout("edge", false, false, "large"), { w: 300, h: 540, upright: true, rotation: -90 });
 // Smart volume steps (D264), rhythms taken from a real recording

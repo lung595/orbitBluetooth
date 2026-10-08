@@ -14,12 +14,14 @@ Item {
     // Above the host's halo, below every device
     parent: body.scene.world
     z: 60
-    x: body.scene.cx
-    y: body.scene.cy
-    opacity: body.charging && !body.leaving && !body.focused ? (body.scene.focusBody ? 0.15 : 1) : 0
+    readonly property var host: body.scene.centre.host
+    x: host.x
+    y: host.y
+    // No beam for a member of a Listen together (it has the center)
+    opacity: body.charging && !body.leaving && !body.focused && !body.scene.centre.tetherless(body.address) ? (body.scene.cardOpen ? 0.15 : 1) : 0
     visible: opacity > 0.01
 
-    readonly property real start: body.scene.coreSize / 2
+    readonly property real start: body.scene.coreSize / 2 * host.scale
     readonly property real span: Math.max(0, chargeFlow.dist - start - body.diameter * body.baseScale / 2)
     readonly property bool running: visible && body.scene.awake && body.scene.motion
     readonly property color glow: body.night.primary

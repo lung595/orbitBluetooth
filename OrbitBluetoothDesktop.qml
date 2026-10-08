@@ -18,9 +18,14 @@ DesktopPluginComponent {
     property real defaultHeight: 380
 
     readonly property bool hot: hover.hovered
-    // A desktop layer gets no keyboard by default. While the detail card is
-    // open it may take it on click (DMS: OnDemand), so the name can be typed.
-    readonly property bool acceptsKeyboardFocus: !!scene.focusBody
+    // A desktop layer gets no keyboard by default. DMS can give it on demand,
+    // but the compositor hands it over on a click and only if the mode is
+    // already on when the click lands: so it is on while the pointer is over the
+    // widget (the press that opens a menu then takes it, and Escape closes the
+    // menu), and while a card, a menu or the hidden list is open (the name can be
+    // typed with the pointer away). It drops with the pointer, which gives the
+    // keyboard back to the window that had it.
+    readonly property bool acceptsKeyboardFocus: hot || scene.cardOpen || scene.menuOpen
     // Keeps discovery alive a little after the pointer leaves
     property bool lingering: false
     // Set by DMS's desktop wrapper: the screen this copy of the widget is on
@@ -37,7 +42,7 @@ DesktopPluginComponent {
             lingering = true;
         } else {
             lingerTimer.restart();
-            if (scene.focusBody || scene.hiddenOpen || scene.menuOpen)
+            if (scene.cardOpen || scene.menuOpen)
                 dismissTimer.restart();
         }
     }

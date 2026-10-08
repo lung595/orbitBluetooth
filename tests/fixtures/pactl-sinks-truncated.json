@@ -1,0 +1,10 @@
+[
+  {
+    "index": 61,
+    "state": "SUSPENDED",
+    "name": "alsa_output.usb-Acme_Pulse_Headset_0000-00.analog-stereo",
+    "description": "Acme Pulse Headset Analog Stereo",
+    "ports": [
+      {
+        "name": "analog-output-headphones",
+        "description": "Headph

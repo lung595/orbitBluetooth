@@ -4,12 +4,14 @@ import Quickshell.Services.Pipewire
 import qs.Common
 import qs.Services
 import "Keys.js" as Keys
+import "Route.js" as Route
 
 // The volume pop-up, without opening anything (D252, D258): whenever a
 // level of the output in use changes (volume keys, `dms ipc call`, the
 // device's own buttons through AVRCP, DMS's slider, another app), the two
-// volumes show on every screen, in place of DMS's OSD, which is switched off
-// (DmsOsdOff, D273): inside the Dank Island where there is one (IslandFace,
+// volumes show on the screen you are on (or every screen, D286), in place of
+// DMS's OSD, which is switched off
+// (DmsQuiet, D273): inside the Dank Island where there is one (IslandFace,
 // D263), else in a VolumePopup. Event-driven: it listens to PipeWire's
 // change signals, nothing polls.
 // Hidden, nothing runs: the pop-ups' content is unloaded and the one sound
@@ -24,11 +26,22 @@ TwoLevels {
     readonly property string mode: prefs.popupMode
     readonly property string size: prefs.popupSize
 
-    // One pop-up on screen, and it is Orbit's: DMS's volume OSD stays off
-    // unless the user turned Orbit's pop-up off (D273)
-    DmsOsdOff {
+    // DMS's own answers to a volume change stay quiet. One pop-up on screen,
+    // and it is Orbit's: DMS's volume OSD stays off unless the user turned
+    // Orbit's pop-up off (D273). One sound, and it is Orbit's tick: DMS's
+    // volume sound waits while Orbit moves a level, if the user chose the
+    // tick alone (D360)
+    DmsQuiet {
+        id: quiet
         settings: SettingsData
-        active: root.mode !== "off"
+        osd: root.mode !== "off"
+        replaceSound: root.prefs.volumeTick && root.prefs.tickAlone
+    }
+    Connections {
+        target: root.route
+        function onLevelWriting() {
+            quiet.hold();
+        }
     }
 
     // The Bluetooth device in use, or null for any other output (sound
@@ -105,10 +118,16 @@ TwoLevels {
     }
     function _showAll() {
         _offerKeys();
+        _target = Route.popupScreen(prefs.popupScreens, CompositorService.getFocusedScreen()?.name ?? "", screens.map(s => s.name));
         const inIsland = _showInIslands();
         const list = popups.instances;
         for (let i = 0; i < list.length; i++) {
             const p = list[i];
+            if (!_wanted(p.modelData)) {
+                if (p.shouldBeVisible)
+                    p.hide();
+                continue;
+            }
             if (inIsland.indexOf(p.modelData) !== -1) {
                 if (p.shouldBeVisible)
                     p.hide();
@@ -123,6 +142,13 @@ TwoLevels {
             }
         }
         _quietIsland();
+    }
+
+    // The screen this burst shows on, "" for every screen (D286): read once
+    // per burst, so a pop-up never hops screens while it is up
+    property string _target: ""
+    function _wanted(screen) {
+        return _target === "" || screen.name === _target;
     }
 
     // --- Inside the Dank Island (D263) ----------------------------------------------
@@ -141,7 +167,9 @@ TwoLevels {
             const c = host?.islandController;
             if (!c)
                 continue;
-            const face = mode === "replace" ? _faceFor(host) : null;
+            const face = mode === "replace" && _wanted(host.screen) ? _faceFor(host) : null;
+            if (!_wanted(host.screen))
+                _closeFace(host);
             if (face) {
                 if (SessionData.suppressOSD)
                     face.keep();
@@ -157,6 +185,13 @@ TwoLevels {
             }
         }
         return done;
+    }
+
+    // A face left open on a screen the user has since left
+    function _closeFace(host) {
+        const face = _faces.find(f => !!f && f.controller === host.islandController);
+        if (face)
+            face.close();
     }
 
     function _faceFor(host) {
@@ -238,22 +273,19 @@ TwoLevels {
         _faces = [];
     }
 
-    Connections {
-        target: root.deviceAudio
-        function onVolumeChanged() {
-            root.poke();
-        }
-        function onMutedChanged() {
-            root.poke();
-        }
-    }
-    Connections {
-        target: root.pcAudio
-        function onVolumeChanged() {
-            root.poke();
-        }
-        function onMutedChanged() {
-            root.poke();
+    // Any level or mute that moves, the device's, this PC's or a member's,
+    // raises the pop-up
+    Instantiator {
+        model: root.audios
+        delegate: Connections {
+            required property var modelData
+            target: modelData
+            function onVolumeChanged() {
+                root.poke();
+            }
+            function onMutedChanged() {
+                root.poke();
+            }
         }
     }
 

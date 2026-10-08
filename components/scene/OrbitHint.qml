@@ -12,19 +12,25 @@ StyledText {
     anchors.horizontalCenter: parent.horizontalCenter
     anchors.bottom: parent.bottom
     anchors.bottomMargin: hint.scene.glass ? Math.round(hint.scene.height * 0.1) : Theme.spacingS
-    opacity: hint.scene.focusBody || hint.scene.hiddenOpen ? 0 : hint.text ? 0.6 : 0
+    opacity: hint.scene.cardOpen ? 0 : hint.text ? 0.6 : 0
     color: "white"
     font.pixelSize: Theme.fontSizeSmall - 1
     font.letterSpacing: 0.4
     text: {
         const b = hint.scene.dragBody;
         if (b && b.hideArmed)
-            return "Release to hide";
+            return hint.scene.together.isMember(b.address) ? "It listens together: pull it out of the group first" : "Release to hide";
+        if (b && hint.scene.togetherDrop)
+            return hint.scene.together.hint(b, hint.scene.togetherDrop);
         if (b) {
             if (b.phase === "connecting")
                 return b.armed ? "Release to cancel" : "Pull away to cancel";
-            if (b.connected)
-                return b.armed ? "Release to disconnect" : "Pull away to disconnect";
+            if (b.connected) {
+                const what = hint.scene.together.isMember(b.address) ? "leave the group" : "disconnect";
+                if (!b.armed && hint.scene.together.candidates(b).length)
+                    return "Drop it on another device to listen together, or pull away to " + what;
+                return (b.armed ? "Release to " : "Pull away to ") + what;
+            }
             return b.armed ? "Release to connect" : "Bring it closer to connect";
         }
         if (!hint.scene.btOn)

@@ -3,8 +3,9 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const Charge = load("Charge.js", ["analyze", "formatShort", "timeText", "levelText", "statItems", "footnote"]);
+const Charge = load("Charge.js", ["analyze", "formatShort", "timeText", "levelText", "statItems", "footnote", "levelColor"]);
 const Endurance = load("Endurance.js", ["ratedHours"]);
+const Battery = load("Battery.js", ["CRITICAL_MAX", "LOW_AT", "stretch", "along", "hueMix"]);
 
 // Time left: rated life at first, then the measured drain takes over
 const now = Date.UTC(2026, 8, 26, 12, 0, 0);
@@ -39,5 +40,30 @@ eq("ready at, reported: no ≈", tiles[0].value.startsWith("≈"), false);
 eq("tiles, full", Charge.statItems({ source: "system", state: "full", health: 0 }, false, now).length, 0);
 eq("footnote, reported", Charge.footnote(fill, true), "Reported by the device");
 eq("footnote, rated", Charge.footnote(drain, false), "From the rated battery life · refines as it drains");
+
+// The arc around a disc: a colour that drifts with the level (red, amber, green), its own look while charging
+const stretchAt = (l, charging) => Battery.stretch(l, charging || false);
+eq("charging is its own tone, whatever the level", [100, 40, 15, 0].map(l => stretchAt(l, true)), Array(4).fill({ from: "charging", to: "charging", t: 0 }));
+eq("15 % and down is plain red", [15, 5, 0].map(l => stretchAt(l)), Array(3).fill({ from: "critical", to: "critical", t: 0 }));
+eq("from red toward amber, amber reached at 35 %", [16, 25, 35].map(l => stretchAt(l)), [{ from: "critical", to: "low", t: 0.05 }, { from: "critical", to: "low", t: 0.5 }, { from: "critical", to: "low", t: 1 }]);
+eq("from amber toward green, green reached at 100 %", [36, 67.5, 100].map(l => stretchAt(l).to + ":" + Math.round(stretchAt(l).t * 1000)), ["ok:15", "ok:500", "ok:1000"]);
+eq("above 35 % it starts from amber", stretchAt(36).from, "low");
+eq("a level out of range is held to the ends", [stretchAt(-4), stretchAt(140)], [{ from: "critical", to: "critical", t: 0 }, { from: "low", to: "ok", t: 1 }]);
+eq("the amber is the same seen from both sides of 35 %", [stretchAt(Battery.LOW_AT).to, stretchAt(Battery.LOW_AT + 1).from], ["low", "low"]);
+// Where a level lies on the red-amber-green line (0..2): it climbs with the level, one point
+// never jumps it by more than the steepest stretch does, where three steps would jump by a whole tone
+const rank = { "critical": 0, "low": 1, "ok": 2 };
+const spot = l => { const s = stretchAt(l); return rank[s.from] + (s.to === s.from ? 0 : s.t); };
+const spots = Array.from({ length: 101 }, (_, l) => spot(l));
+const gaps = spots.slice(1).map((v, i) => v - spots[i]);
+eq("the colour never goes back as the level climbs", gaps.every(g => g >= 0), true);
+eq("and never jumps: no step is bigger than one point of the steepest stretch", gaps.every(g => g <= 1 / (Battery.LOW_AT - Battery.CRITICAL_MAX) + 1e-9), true);
+eq("the line runs from red to green", [spots[0], spots[100]], [0, 2]);
+const round3 = v => Math.round(v * 1000) / 1000;
+eq("along: a share of the way from one number to another", [Battery.along(10, 20, 0), Battery.along(10, 20, 0.25), Battery.along(1, 0, 1)], [10, 12.5, 0]);
+eq("hueMix: straight when the short way is", [round3(Battery.hueMix(0, 0.12, 0.5)), round3(Battery.hueMix(0.3, 0.1, 0.5))], [0.06, 0.2]);
+eq("hueMix: a red just under the wheel's end and an amber just past it meet through orange, not cyan", [0, 0.5, 1].map(t => round3(Battery.hueMix(0.98, 0.1, t))), [0.98, 0.04, 0.1]);
+eq("hueMix: a grey has no hue, the other one's is kept", [Battery.hueMix(-1, 0.3, 0.5), Battery.hueMix(0.3, -1, 0.5)], [0.3, 0.3]);
+eq("the card's ramp stays red as long as the arc does", [Charge.levelColor(0), Charge.levelColor(Battery.CRITICAL_MAX), Charge.levelColor(Battery.CRITICAL_MAX + 1) !== Charge.levelColor(0)], ["#ff5468", "#ff5468", true]);
 
 done();

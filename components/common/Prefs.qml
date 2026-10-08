@@ -1,6 +1,8 @@
 import QtQuick
 import qs.Common
 import qs.Services
+import "../together/Delay.js" as Delay
+import "Hidden.js" as Hidden
 import "../volume/Audiophile.js" as Audiophile
 import "../volume/Polar.js" as Polar
 import "../volume/Steps.js" as Steps
@@ -21,7 +23,7 @@ QtObject {
     // The settings that hold a map change only when their content does: a
     // fresh object on every save (a volume level, a hidden device) would
     // wake every view bound to any of them (P137)
-    readonly property var _maps: ["ignoredDevices", "glyphOverrides", "hiddenDevices", "pcLevels"]
+    readonly property var _maps: ["ignoredDevices", "glyphOverrides", "hiddenDevices", "pcLevels", "togetherHabits"]
     function _load() {
         _data = SettingsData.getPluginSettingsForPlugin(pluginId) || ({});
         for (const key of _maps) {
@@ -56,18 +58,36 @@ QtObject {
     readonly property bool sounds: _get("sounds", false)
     // A soft tick in the device on each 5 % volume step: on, since you asked for the volume yourself
     readonly property bool volumeTick: _get("volumeTick", true)
+    // While Orbit moves a level, DMS's own volume sound waits, so the tick is
+    // the one sound (D360). On: two sounds for one change is noise
+    readonly property bool tickAlone: _get("tickAlone", true)
     readonly property real soundVolume: _get("soundVolume", 60) / 100
     readonly property bool shootingStars: _get("shootingStars", true)
     readonly property string starDensity: _get("starDensity", "normal")
     readonly property bool desktopAmbient: _get("desktopAmbient", false)
     readonly property real desktopBackdrop: _get("desktopBackdrop", 72) / 100
     readonly property string hostGlyph: _get("hostGlyph", "auto")
+    // While a Listen together session plays, the source takes the center and
+    // the other outputs orbit it (off: the scene keeps its usual layout)
+    readonly property bool togetherCentre: _get("togetherCentre", true)
+    // Listen together: a nudge (ms, -100..100) on the automatic wait of the
+    // wired outputs, for what the figures cannot know (a speaker's own delay)
+    readonly property int togetherFineDelay: Delay.cleanFine(Number(_get("togetherFineDelay", 0)))
+    // The ghost group learns which outputs are listened to together (D299): on
+    // by default since it is only hashes, capped and local; off erases it
+    readonly property bool learnHabits: _get("learnHabits", true)
+    // What it learned: a group of hashed members -> { n: uses, d: day of the last }
+    property var togetherHabits: ({})
     readonly property string imageFolder: _get("imageFolder", "")
     property var glyphOverrides: ({})
     readonly property bool ancEnabled: _get("ancEnabled", true)
     readonly property string ancEngine: _get("ancEngine", "demand")
     // Turn conversation awareness off when a headset disconnects or reconnects
     readonly property bool ancChatOff: _get("ancChatOff", true)
+    // Pause what plays on a Sony headset when it is taken off, resume it
+    // when it is put back (D277). On by default: it only acts on its own
+    // pauses, and costs one open control connection per such headset
+    readonly property bool wearPause: _get("wearPause", true)
     // Look up real pictures of device models online (the only use of the
     // network, off by default, see pictures/orbit_pictures.py)
     readonly property bool realPictures: _get("realPictures", false)
@@ -90,6 +110,8 @@ QtObject {
     readonly property string popupMode: _get("popupMode", "replace")
     // "compact", "medium" or "large"
     readonly property string popupSize: _get("popupSize", "medium")
+    // The screens it shows on (D286): "focused" (where you are) or "all"
+    readonly property string popupScreens: _get("popupScreens", "focused") === "all" ? "all" : "focused"
     // The vectorscope's cloud: 60 frames a second ("Smooth") or 30 ("Light")
     readonly property int scopeFps: parseInt(_get("scopeFps", "30")) === 60 ? 60 : 30
     // How the vectorscope draws the sound: "points", "rays", "waves", "none"
@@ -141,16 +163,11 @@ QtObject {
     }
 
     function isHidden(address) {
-        return !!address && hiddenDevices[address] !== undefined;
+        return Hidden.isHidden(hiddenDevices, address);
     }
 
     function setHidden(address, name, hidden) {
-        const next = Object.assign({}, hiddenDevices);
-        if (hidden)
-            next[address] = name || address;
-        else
-            delete next[address];
-        set("hiddenDevices", next);
+        set("hiddenDevices", Hidden.set(hiddenDevices, address, name, hidden));
     }
 
     function imageFor(device) {

@@ -10,14 +10,16 @@ Item {
     id: line
     objectName: "factsLine" // found by the offscreen previews
 
-    // TwoLevels: factsLine, factsRows, refreshFacts()
+    // TwoLevels: factsLine, factsRows, unfolded, refreshFacts()
     required property var source
     property color ink: Theme.surfaceText
     property color muted: Theme.surfaceVariantText
     // A pill behind the line (over the scope), or none (on the card)
     property color fill: "transparent"
     property color stroke: "transparent"
-    property bool expanded: false
+    // The details are unfolded: one state in the source, so every screen
+    // that shows the output unfolds together and the graph is read once
+    property bool expanded: source.unfolded
     // The details unfold above the line (over the scope's foot) or below it
     property bool up: false
     // A click: the caller keeps itself open a while longer
@@ -101,7 +103,7 @@ Item {
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: {
-                        line.expanded = !line.expanded;
+                        line.source.unfolded = !line.source.unfolded;
                         line.source.refreshFacts();
                         line.touched();
                     }

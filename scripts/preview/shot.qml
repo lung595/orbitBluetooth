@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Window
+import Quickshell.Services.Pipewire
 import qs.Common
 import qs.Services
 import "../../components/scene"
@@ -12,7 +13,10 @@ import "mock/State.js" as State
 // Usage: QT_QPA_PLATFORM=offscreen qml -I imports shot.qml -- <mode> <out.png>
 // Modes: orbit, zoom, orbitfocus, volumefocus (the card with its two volumes), desktop, desktopfocus, ancfocus,
 //        buds, budsdock, hole, holetess, hiddencard, hiddenempty, connecting, menu, feed,
-//        btblocked (Turn on did nothing: note), noadapter
+//        btblocked (Turn on did nothing: note), noadapter,
+//        together2, together3, together4 (the headset and 1 to 3 speakers listen
+//        together: the source takes the center), togetherback (the host was
+//        clicked: it is back at the center and the group has stepped back)
 Window {
     id: win
     readonly property var args: Qt.application.arguments
@@ -21,6 +25,14 @@ Window {
     // hardest case for label contrast), "-none" disconnects every device,
     // "-fit" sizes the window like the bar popout (grows to the open card),
     // "-cc" like the Control Center tile (same, from a smaller minimum),
+    // "-silent" stops the made-up sound (the beams of a group do not pulse),
+    // "-reduce" turns Reduce motion on, "-glass" shows any shot as the desktop
+    // widget (the veil over a wallpaper), "-bench" takes no picture: once the
+    // scene has settled it counts the frames drawn over 6 s and quits
+    // (see depth-bench.sh), "-feed" carries a device to the black hole in the
+    // "together" shots (the hole is lit up while the sky is out of focus),
+    // "-sun90" puts the host's system at that angle of its path in the "together"
+    // shots (90 near and in front, 270 far and behind, 0 right, 180 left),
     // "-follow" gives the headset no level of its own (no absolute volume),
     // "-fold" starts the card's volumes folded, as in the menus, and
     // "-unfold" shows them unfolded there, "-facts" opens the audio details
@@ -32,12 +44,25 @@ Window {
     readonly property bool cc: parts.indexOf("cc") > 0
     readonly property bool fit: parts.indexOf("fit") > 0 || cc
     readonly property bool follow: parts.indexOf("follow") > 0
+    readonly property bool silent: parts.indexOf("silent") > 0
+    readonly property bool reduce: parts.indexOf("reduce") > 0
+    readonly property bool bench: parts.indexOf("bench") > 0
+    readonly property bool feed: parts.indexOf("feed") > 0
+    readonly property var sunAngle: parts.find(p => /^sun\d+$/.test(p))
+    // "-level35" sets the group's general volume before the group forms (the
+    // gauge shows no reading), "-read35" sets it while the picture is taken (the
+    // gauge writes its level out), "-muted" mutes the group the same way
+    readonly property var levelPart: parts.find(p => /^level\d+$/.test(p))
+    readonly property var readPart: parts.find(p => /^read\d+$/.test(p))
+    readonly property bool muted: parts.indexOf("muted") > 0
+    // Speakers that listen together with the headset in the "together" shots
+    readonly property int outputs: mode.startsWith("together") && mode !== "togetherback" ? Number(mode.slice(8)) - 1 : mode === "togetherback" ? 2 : 0
     readonly property bool fold: parts.indexOf("fold") > 0 || unfold
     readonly property bool unfold: parts.indexOf("unfold") > 0
     readonly property bool facts: parts.indexOf("facts") > 0
     readonly property string mode: parts[0]
     readonly property string out: args[args.length - 1]
-    readonly property bool glass: mode.startsWith("desktop")
+    readonly property bool glass: mode.startsWith("desktop") || parts.indexOf("glass") > 0
     // Control Center sized shots for the black hole, menu and comet
     readonly property bool compact: ["buds", "budsdock", "hole", "holetess", "hiddencard", "hiddenempty", "connecting", "menu", "feed"].indexOf(mode) >= 0
     width: glass ? 760 : (mode === "zoom" ? 900 : compact ? 540 : 560)
@@ -47,7 +72,7 @@ Window {
 
     readonly property double t: Date.now()
 
-    readonly property var devices: Devices.list(none)
+    readonly property var devices: Devices.list(none, outputs)
 
     Component.onCompleted: {
         if (light) {
@@ -69,6 +94,8 @@ Window {
                 "holeStyle": mode === "holetess" ? "tesseract" : "blackhole",
                 "desktopBackdrop": bright ? 50 : 72
             });
+        SettingsData.reduceMotion = reduce;
+        Pipewire.playing = !silent;
         BluetoothService.discovering = mode === "orbit";
         // btblocked: "Turn on" pressed, nothing changed (note shown);
         // noadapter: no adapter at all
@@ -109,6 +136,7 @@ Window {
         id: fakeRoute
         focusDevice: scene.focusBody ? scene.focusBody.device : null
         follow: win.follow
+        sharing: win.outputs > 0 ? ["02:00:00:00:10:06", "02:00:00:00:20:01", "02:00:00:00:20:02", "02:00:00:00:20:03"].slice(0, win.outputs + 1) : []
     }
 
     // The scene object a shot acts on, by its Bluetooth address
@@ -116,8 +144,26 @@ Window {
         return scene.world.children.find(c => c.address === address);
     }
 
+    // The group's volume (the gauge): quiet before the group forms, or heard just before the picture
+    Timer {
+        running: !!win.levelPart
+        interval: 1
+        onTriggered: fakeRoute.writeLevel(fakeRoute.shared, Number(win.levelPart.slice(5)) / 100)
+    }
+    Timer {
+        id: reader
+        interval: 900
+        onTriggered: {
+            if (win.readPart)
+                fakeRoute.writeLevel(fakeRoute.shared, Number(win.readPart.slice(4)) / 100);
+            if (win.muted)
+                fakeRoute.writeMuted(fakeRoute.shared, true);
+        }
+    }
+
     // Puts the scene in the state the mode shows (opens a card, a menu, a drag…)
     function stage() {
+        reader.start();
         if (mode.startsWith("buds")) {
             const b = bodyOf("00:11:22:33:44:55");
             if (b)
@@ -126,6 +172,12 @@ Window {
             const b = bodyOf("02:00:00:00:10:06");
             if (b)
                 scene.focusOn(b);
+        } else if (mode === "togetherback") {
+            scene.centre.recall();
+        } else if (mode.startsWith("together") && feed) {
+            carryToHole();
+        } else if (mode.startsWith("together") && sunAngle) {
+            scene.centre.sunPhase = Number(sunAngle.slice(3)) * Math.PI / 180;
         } else if (mode === "hiddencard" || mode === "hiddenempty") {
             scene.openHidden();
         } else if (mode === "btblocked") {
@@ -139,21 +191,31 @@ Window {
             if (b)
                 scene.openMenu(b, Qt.point(b.px + 14, b.py + 6));
         } else if (mode === "feed") {
-            const b = bodyOf("D4:1A:88:10:5B:77");
-            if (b) {
-                scene.beginDrag(b, Qt.point(b.px, b.py));
-                scene.updateDrag(Qt.point(scene.holeX + 26, scene.holeY - 22));
-            }
+            carryToHole();
+        }
+    }
+
+    // A device is carried to the black hole, which lights up for it
+    function carryToHole() {
+        const b = bodyOf("D4:1A:88:10:5B:77");
+        if (b) {
+            scene.beginDrag(b, Qt.point(b.px, b.py));
+            scene.updateDrag(Qt.point(scene.holeX + 26, scene.holeY - 22));
         }
     }
 
     // How long the staged scene needs to settle before the capture (ms)
     function settleTime() {
+        // The audio details: after the made-up graph answer (4000 + 1200 ms)
+        if (facts)
+            return 6200;
         if (mode.startsWith("buds"))
             return 2600;
         if (mode === "volumefocus")
             return 1760;
         if (mode.endsWith("focus") || mode.startsWith("hidden"))
+            return 1800;
+        if (mode.startsWith("together"))
             return 1800;
         if (mode === "connecting")
             return 700;
@@ -198,12 +260,49 @@ Window {
                 facts._all = State.fakeSinks;
             const line = win.findNamed(win.contentItem, "factsLine");
             if (line)
-                line.expanded = win.facts;
+                line.source.unfolded = win.facts;
+            graphTimer.start();
+        }
+    }
+    // The graph's answer, made up, once the real (read-only) commands that
+    // unfolding started have ended: they would replace it
+    Timer {
+        id: graphTimer
+        interval: 1200
+        onTriggered: {
+            const graph = win.findNamed(win.contentItem, "audioGraph");
+            if (graph) {
+                graph._dumped = State.fakeDump;
+                graph._topped = State.fakeTop;
+            }
+        }
+    }
+    // Bench: the frames the window swapped, counted from the start of the window
+    readonly property int benchMs: 6000
+    property int frames: 0
+    Connections {
+        target: win
+        function onFrameSwapped() {
+            win.frames++;
+        }
+    }
+    Timer {
+        id: benchEnd
+        interval: win.benchMs
+        onTriggered: {
+            print("bench", win.mode, "frames", win.frames, "in", win.benchMs, "ms");
+            Qt.quit();
         }
     }
     Timer {
         id: grabTimer
         onTriggered: {
+            if (win.bench) {
+                win.frames = 0;
+                print("bench start");
+                benchEnd.start();
+                return;
+            }
             // Where the drifting black hole ended up (to crop close-ups)
             console.info("hole", scene.holeX + frame.x, scene.holeY + frame.y);
             win.contentItem.grabToImage(r => {
