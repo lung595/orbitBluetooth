@@ -7,6 +7,7 @@ import "../../components/scene"
 import "mock"
 import "mock/Devices.js" as Devices
 import "mock/State.js" as State
+import "../../components/centre/Gauge.js" as Gauge
 
 // Offscreen bench of "Orbit's tick only" (D360): a Listen together group at
 // the centre, DMS's sound held back by DmsQuiet on a made-up settings object,
@@ -14,7 +15,10 @@ import "mock/State.js" as State
 // it runs until the bench stops it. Made-up devices and outputs only.
 // Usage: QT_QPA_PLATFORM=offscreen qml -I imports tick.qml -- <mode> /dev/null
 // Modes: rest (the group landed, nothing moves), loop (the wheel on the
-//        group's level, one step every 150 ms, up then down)
+//        group's level, one step every 150 ms, up then down), drag (the
+//        pointer held on the gauge and swept along its arc at 60 Hz, up then
+//        down, through the ring's own press/drag), hidden (the group landed,
+//        then the view frozen as when it is covered)
 Window {
     id: win
     readonly property var args: Qt.application.arguments
@@ -43,7 +47,8 @@ Window {
         OrbitScene {
             id: scene
             anchors.fill: parent
-            active: true
+            // hidden: frozen once the group has landed, as a covered view
+            active: !(win.mode === "hidden" && win.landed)
             autoScan: false
             previewDevices: Devices.list(false, 2)
             audioRoute: fakeRoute
@@ -107,5 +112,40 @@ Window {
         interval: 5000
         running: true
         onTriggered: console.warn("tick bench:", win.mode, "landed", win.landed, "ready", win.volume.ready, "steps", win.steps, "level", win.volume.level.toFixed(2), "quiet", quiet.item ? (quiet.item.hold ? "DmsQuiet" : "DmsOsdOff") : "none", "wait", quiet.item && quiet.item.wait ? quiet.item.wait.running : "-", "sound", dmsSettings.soundVolumeChanged)
+    }
+
+    // The ring that carries the gauge, found by what it does (its press and
+    // drag), so the scene runs on revisions that name it or not
+    function findRing(item) {
+        if (typeof item.drag === "function" && typeof item.press === "function" && item.held !== undefined)
+            return item;
+        for (const c of item.children) {
+            const r = findRing(c);
+            if (r)
+                return r;
+        }
+        return null;
+    }
+    property var ring: null
+    property real sweep: 0
+    // A held pointer swept along the arc at 60 Hz, 0 to 1 and back over 4 s,
+    // never across the gap: the same calls the gauge's mouse area makes
+    Timer {
+        interval: 16
+        repeat: true
+        running: win.mode === "drag" && win.landed && win.volume.ready
+        onTriggered: {
+            if (!win.ring) {
+                win.ring = win.findRing(scene);
+                if (!win.ring)
+                    return;
+                win.ring.press(win.ring.width / 2, 0);
+            }
+            win.sweep = (win.sweep + 16 / 2000) % 2;
+            const v = win.sweep < 1 ? win.sweep : 2 - win.sweep;
+            const p = Gauge.pointAt(win.ring.width / 2, win.ring.height / 2, win.ring.radius, v);
+            win.ring.drag(p.x, p.y);
+            win.steps++;
+        }
     }
 }
