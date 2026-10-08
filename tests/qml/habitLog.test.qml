@@ -44,6 +44,17 @@ Item {
         }
     }
     property double now: 1000000000000
+    Component {
+        id: logComponent
+        HabitLog {
+            session: h.fakeSession
+            prefs: h.fakePrefs
+            clock: () => h.now
+        }
+    }
+    // The ids, reachable from inside the component (a property of the same name hides them there)
+    readonly property var fakeSession: session
+    readonly property var fakePrefs: prefs
     HabitLog {
         id: log
         session: session
@@ -131,6 +142,28 @@ Item {
         check("a session started again with the same members: the first one counted", groups()[0].n, 3);
         session.members = [];
 
+        // A session still going when the shell stops is counted; one too short is not.
+        // destroy() runs on the next event loop turn, so the checks wait for it
+        const before = groups()[0].n;
+        const stopping = logComponent.createObject(h);
+        const brief = logComponent.createObject(h);
+        session.members = [b, c];
+        wait(90);
+        stopping.destroy();
+        Qt.callLater(() => {
+            check("a session still active when the shell stops is counted", groups()[0].n, before + 1);
+            const writesNow = prefs.writes.length;
+            // Back to 10 s into the session: too short to count
+            wait(-80);
+            brief.destroy();
+            Qt.callLater(() => {
+                check("counter-proof: a session shorter than a minute is not counted at the stop", prefs.writes.length, writesNow);
+                finish();
+            });
+        });
+    }
+
+    function finish() {
         Qt.callLater(() => {
             print(failures ? failures + " failure(s)" : "all passed");
             Qt.exit(failures ? 1 : 0);

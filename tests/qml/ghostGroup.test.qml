@@ -641,8 +641,10 @@ Item {
             // The cross is a click of its own: it does not start the group below it
             "until": () => scene.settled,
             "run": () => {
+                // Read before the click: once it is turned down the best learned group leaves nothing to propose
+                const shown = scene.ghost.key;
                 h.clickCross();
-                check("the cross turns it down, and starts nothing", [route.together.isDeclined(scene.ghost.key), scene.ghost.offered, route.sharing], [true, false, []]);
+                check("the cross turns it down, and starts nothing", [shown !== "", route.together.isDeclined(shown), scene.ghost.offered, route.sharing], [true, true, false, []]);
                 route.audio = [route.headset, route.known(h.one), route.known(h.two)];
                 h.learn([h.dongle, h.headset, h.one, h.two]);
             }

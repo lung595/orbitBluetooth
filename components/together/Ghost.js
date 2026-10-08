@@ -71,9 +71,12 @@ function proposal(facts, check) {
         return null;
     const bluetooth = shown(f.bluetooth, f.hidden);
     const wired = shown(f.wired, f.hidden);
-    const learned = Habits.choose(f.habits, f.day, output, bluetooth.concat(wired), list => !isDeclined(f.declined, key(list)) && !check(list));
+    const learned = Habits.choose(f.habits, f.day, output, bluetooth.concat(wired), list => !check(list));
+    // A no to the best learned group is a no to learned suggestions: falling
+    // through to the next group or to a pair would keep offering what the user
+    // just turned down in another shape
     if (learned)
-        return { "members": learned, "key": key(learned) };
+        return isDeclined(f.declined, key(learned)) ? null : { "members": learned, "key": key(learned) };
     for (const who of Habits.bestFirst(f.habits, f.day, output, others(output, Member.isWired(output) ? bluetooth : wired)))
         if (!check([output, who]))
             return { "members": [output, who], "key": key([output, who]) };

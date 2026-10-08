@@ -30,6 +30,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   split (16 cores, 7 to 8 passes per side): view at rest 2.29 % → 2.36 % of a
   core, a card opened and closed every 1.5 s 4.79 % → 4.79 %, the volume radar
   held open 4.93 % → 4.96 %, all under the noise.
+- **A no to the best learned group is a no.** When you turn down the group Orbit learned you listen to most, the ghost planet no longer falls back on the next learned group or on a pair: it suggests nothing (until the shell restarts, or the devices that are there change so that the best group is another one). A refusal of a lesser group leaves the best one suggested. [Guide](docs/GUIDE.md#suggested-groups)
+- **A session that lasts until the shell stops is counted.** A Listen together session still going when the shell restarts or reloads now counts as a use of its group (if it lasted a minute), where it used to be lost because only the end of a session was recorded. Still no timer: one count, at the stop. A shell killed outright cannot count it. [Guide](docs/GUIDE.md#learn-my-groups)
 
 ### Fixed
 
@@ -41,6 +43,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - `tests/qml/gaugePointer.test.qml` drives the real gauge with synthetic mouse events off screen (QtTest): hover writes the level out only on the band, a press lands where the pointer is, a drag follows it both ways and holds at the end it came from across the gap, a release ends the drag, a press in the gap does nothing, and the speaker mutes without dragging to zero. It fails when the grab area stops excluding the gap. The gauge has still not been tried with a physical pointer in the real shell.
 - `tests/qml/robustness.test.qml` tests components against hard cases (disconnect, destruction, empty values).
 - `tests/qml/robustViews.test.qml` tests the real scene with the detail card and radar open while devices disconnect and go away.
+
+### Decided
+- **No salt on the learned groups' hashes**, and the 30-day half-life and one-minute threshold are not re-tuned for now. Nothing changes in what is stored, so the README's Privacy section is unchanged.
 
 ## 1.14.0 - 2026-10-08
 
