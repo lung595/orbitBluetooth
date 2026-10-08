@@ -4,6 +4,7 @@ import qs.Common
 import qs.Widgets
 import "../card"
 import "../card/Charge.js" as Charge
+import "../scene"
 import "Earbuds.js" as Earbuds
 
 // Earbuds with a case: the case in the middle of a small orbit, the left
@@ -15,6 +16,8 @@ import "Earbuds.js" as Earbuds
 Item {
     id: trio
     readonly property PaperColors paper: PaperColors {}
+    // Cards are paper: the charge colour is the theme's own tone, not the night-sky lift
+    readonly property NightColors night: NightColors {}
 
     property var parts: ({})              // { left, right, case: { level, charging } }
     property string name: ""
@@ -105,7 +108,7 @@ Item {
             height: 26
             amplitude: 1.4
             wavelength: 14
-            color: Theme.primary
+            color: trio.night.chargingTheme
             whiteCore: trio.paper.light ? 0 : 1
             running: trio.animate
             time: trio.time
@@ -228,7 +231,7 @@ Item {
                     visible: piece.info?.charging ?? false
                     name: "bolt"
                     size: Theme.fontSizeSmall
-                    color: Theme.primary
+                    color: trio.night.chargingTheme
                 }
             }
         }

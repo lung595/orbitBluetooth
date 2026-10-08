@@ -24,7 +24,7 @@ Item {
     readonly property real start: body.scene.coreSize / 2 * host.scale
     readonly property real span: Math.max(0, chargeFlow.dist - start - body.diameter * body.baseScale / 2)
     readonly property bool running: visible && body.scene.awake && body.scene.motion
-    readonly property color glow: body.night.primary
+    readonly property color glow: body.night.charging
 
     Behavior on opacity {
         NumberAnimation {

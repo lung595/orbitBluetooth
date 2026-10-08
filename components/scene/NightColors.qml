@@ -38,8 +38,18 @@ QtObject {
     // A battery that charges has a colour of its own: not the primary blue (the
     // volume ring's), not a traffic light. The theme's `info` is a fixed blue;
     // when the theme's primary is that same blue (a generated theme often is),
-    // its tertiary, the accent that Material You keeps apart from the primary
-    readonly property color charging: night(hueApart(Theme.info, Theme.primary) < 0.08 ? Theme.tertiary : Theme.info)
+    // its tertiary, the accent that Material You keeps apart from the primary.
+    // `chargingTheme` is the theme's own tone (cards are paper, they use it as
+    // it is); `charging` is lifted for the night sky. The beam, the bolt and the
+    // battery arc all read these two, so the charge has one colour everywhere.
+    readonly property color chargingTheme: hueApart(Theme.info, Theme.primary) < apartMin ? Theme.tertiary : Theme.info
+    readonly property color charging: night(chargingTheme)
+    // In the stock Blue and Cyan themes neither choice leaves the primary's hue
+    // (their tertiary is a paler blue): the colour alone no longer says
+    // "charging", so the arc carries a bolt marker (BodyArcs) instead of a
+    // shifted, off-theme hue
+    readonly property real apartMin: 0.08
+    readonly property bool chargingApart: hueApart(chargingTheme, Theme.primary) >= apartMin
     readonly property color primaryText: onAccent(Theme.primary, Theme.primaryText)
     readonly property color errorText: onAccent(Theme.error, Theme.errorText)
 

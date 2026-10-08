@@ -23,3 +23,4 @@ run budsdock earbuds-dock.png
 run orbit-light light.png
 run orbitfocus-light light-detail.png
 run btblocked bluetooth-off.png
+QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=rhi QSG_RHI_BACKEND=opengl qml-qt6 -I imports charge.qml -- "$(realpath "$out")/charging-marker.png" blue
