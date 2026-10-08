@@ -35,7 +35,9 @@ Window {
     // shots (90 near and in front, 270 far and behind, 0 right, 180 left),
     // "-follow" gives the headset no level of its own (no absolute volume),
     // "-fold" starts the card's volumes folded, as in the menus, and
-    // "-unfold" shows them unfolded there, "-facts" opens the audio details
+    // "-unfold" shows them unfolded there, "-facts" opens the audio details,
+    // "-loop" takes no picture: once staged, the mode's card closes and opens
+    // again every 1.5 s until the process is stopped (CPU bench of the action)
     readonly property string rawMode: args[args.length - 2]
     readonly property var parts: rawMode.split("-")
     readonly property bool bright: parts.indexOf("bright") > 0
@@ -47,6 +49,7 @@ Window {
     readonly property bool silent: parts.indexOf("silent") > 0
     readonly property bool reduce: parts.indexOf("reduce") > 0
     readonly property bool bench: parts.indexOf("bench") > 0
+    readonly property bool loop: parts.indexOf("loop") > 0
     readonly property bool feed: parts.indexOf("feed") > 0
     readonly property var sunAngle: parts.find(p => /^sun\d+$/.test(p))
     // "-level35" sets the group's general volume before the group forms (the
@@ -294,9 +297,20 @@ Window {
             Qt.quit();
         }
     }
+    // "-loop": the card the mode stages closes, then opens again, forever
+    Timer {
+        id: cardLoop
+        interval: 1500
+        repeat: true
+        onTriggered: scene.cardOpen ? scene.clearFocus() : win.stage()
+    }
     Timer {
         id: grabTimer
         onTriggered: {
+            if (win.loop) {
+                cardLoop.start();
+                return;
+            }
             if (win.bench) {
                 win.frames = 0;
                 print("bench start");
