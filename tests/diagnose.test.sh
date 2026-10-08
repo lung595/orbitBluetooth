@@ -55,4 +55,19 @@ check "without the plugin the fallback report says so" "$(echo "$out" | grep -c 
 check "the fallback holds the DMS version" "$(echo "$out" | grep -c 'DMS          : dms v1.6.3')" 1
 check "the fallback leaks nothing either" "$(echo "$out" | grep -ciE 'bobby|bobs-pc|/home/')" 0
 
+# A host name is text, not a pattern: "." is a dot and "/" or "&" cannot bend the filter
+mkdir -p "$work/odd"
+cat >"$work/odd/hostname" <<'SH'
+#!/bin/sh
+echo 'a.b/c&d'
+SH
+cat >"$work/odd/dms" <<'SH'
+#!/bin/sh
+[ "$1" = "version" ] && { echo "dms v1.6.3 on a.b/c&d, not aXb/c&d"; exit 0; }
+exit 1
+SH
+chmod +x "$work/odd/hostname" "$work/odd/dms"
+out=$(HOME="$work/home/bobby" PATH="$work/odd:$work/bin:$PATH" sh "$script" 2>&1)
+check "an odd host name is hidden as written" "$(echo "$out" | grep -c 'dms v1.6.3 on host, not aXb/c&d')" 1
+
 [ "$fails" -eq 0 ] && echo "diagnose.sh: all passed" || exit 1

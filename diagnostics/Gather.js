@@ -74,11 +74,10 @@ function settingsOf(read) {
     return out;
 }
 
-// A copy tool that could not be started (not installed) ends with a negative
-// status or the shell's "cannot execute" (126) and "not found" (127); any
-// other failure means it ran and refused.
+// A copy tool that could not be started (not installed) ends with -1, which
+// is what ToolProcess reports; any other failure means it ran and refused.
 function missing(code) {
-    return code < 0 || code >= 126;
+    return code < 0;
 }
 
 // The report as the IPC call hands it back, capped

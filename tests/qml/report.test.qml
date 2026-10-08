@@ -47,6 +47,7 @@ Item {
     function answer(text) {
         const p = running()[0];
         const program = p.command[0];
+        p.started();
         p.stdout.text = text;
         p.running = false;
         p.exited(0);
@@ -105,9 +106,9 @@ Item {
         first.started();
         check("the text goes in by standard input, which is then closed", [first.written, first.stdinEnabled], [["REPORT"], false]);
         first.running = false;
-        first.exited(127);
+        first.exited(1);
         const second = running()[0];
-        check("wl-copy missing: DMS's own copy takes over", second.command, ["dms", "clipboard", "copy"]);
+        check("wl-copy refuses: DMS's own copy takes over", second.command, ["dms", "clipboard", "copy"]);
         second.started();
         second.running = false;
         second.exited(0);
@@ -125,7 +126,46 @@ Item {
             tool.running = false;
             tool.exited(1);
         }
-        check("neither tool works: a guided state, nothing running", [copier.result, running().length], ["none", 0]);
+        check("both refuse: a guided state, nothing running", [copier.result, running().length], ["none", 0]);
+        // Quickshell sends neither `started` nor `exited` for a program that is
+        // not installed: `running` just goes back to false
+        copier.copy("ABSENT");
+        for (let i = 0; i < 2; i++)
+            running()[0].running = false;
+        check("neither tool installed: the same guided state, nothing running", [copier.result, running().length], ["none", 0]);
+        copier.copy("AGAIN");
+        check("a new copy is not refused afterwards", running().length, 1);
+        running()[0].running = false;
+        running()[0].running = false;
+        missingProbe();
+    }
+
+    // A tool that is not installed (rpm off Fedora) must not stop the report
+    function missingProbe() {
+        check("a second request starts", svc.request("ipc"), true);
+        afterMissing.start();
+    }
+
+    Timer {
+        id: afterMissing
+        interval: 1150
+        onTriggered: {
+            let missed = 0;
+            while (h.running().length > 0 && missed < 10) {
+                const p = h.running()[0];
+                if (p.command[0] === "rpm") {
+                    p.running = false;
+                    missed++;
+                } else {
+                    h.answer(h.tools[p.command[0]] || "");
+                }
+            }
+            h.check("a missing tool: the request still ends with the others' answers", [missed, svc.busy, /DMS +: 1\.6\.3/.test(h.built)], [1, false, true]);
+            h.end();
+        }
+    }
+
+    function end() {
         print(h.failures ? h.failures + " failure(s)" : "all passed");
         Qt.exit(h.failures ? 1 : 0);
     }

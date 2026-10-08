@@ -10,33 +10,41 @@
 # name, the host name, addresses and long secrets-looking runs are replaced.
 set -u
 
+# Replaces every occurrence of a fixed text (not a pattern: a "." in a host
+# name or a "/" in a path must mean itself). The text travels in the
+# environment, so no program is ever built from it. Under 3 characters it
+# would hide too much, so it is left alone.
+replace_fixed() {
+    FROM="$1" TO="$2" awk '
+        BEGIN { from = ENVIRON["FROM"]; to = ENVIRON["TO"]; n = length(from) }
+        n < 3 { print; next }
+        {
+            out = ""
+            while ((i = index($0, from)) > 0) {
+                out = out substr($0, 1, i - 1) to
+                $0 = substr($0, i + n)
+            }
+            print out $0
+        }'
+}
+
 # The reduction, as a filter. The plugin's own report is already clean; this
 # is the second wall for what only the shell or the journal knows.
 reduce() {
     user=$(id -un 2>/dev/null || echo "")
     host=$(hostname 2>/dev/null || echo "")
-    sed -E \
-        -e "s#${HOME:-/nonexistent}#~#g" \
-        -e 's#(/var)?/home/[^/ :"]+#~#g' \
-        -e 's#/run/user/[0-9]+#/run/user/<uid>#g' \
-        -e 's#^([A-Z][a-z]{2} [ 0-9][0-9] [0-9:]{8}) [^ ]+ #\1 #' \
-        -e 's#([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}#<mac>#g' \
-        -e 's#([0-9A-Fa-f]{2}_){5}[0-9A-Fa-f]{2}#<mac>#g' \
-        -e 's#([0-9]{1,3}\.){3}[0-9]{1,3}#<ip>#g' \
-        -e 's#[A-Za-z0-9+_-]{40,}#<secret>#g' \
-        -e 's#[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}#<email>#g' |
-        {
-            # A login or host name shorter than 3 characters would hide too much
-            if [ "${#user}" -ge 3 ] && [ "${#host}" -ge 3 ]; then
-                sed -e "s/${user}/user/g" -e "s/${host}/host/g"
-            elif [ "${#user}" -ge 3 ]; then
-                sed -e "s/${user}/user/g"
-            elif [ "${#host}" -ge 3 ]; then
-                sed -e "s/${host}/host/g"
-            else
-                cat
-            fi
-        }
+    replace_fixed "${HOME:-}" "~" |
+        sed -E \
+            -e 's#(/var)?/home/[^/ :"]+#~#g' \
+            -e 's#/run/user/[0-9]+#/run/user/<uid>#g' \
+            -e 's#^([A-Z][a-z]{2} [ 0-9][0-9] [0-9:]{8}) [^ ]+ #\1 #' \
+            -e 's#([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}#<mac>#g' \
+            -e 's#([0-9A-Fa-f]{2}_){5}[0-9A-Fa-f]{2}#<mac>#g' \
+            -e 's#([0-9]{1,3}\.){3}[0-9]{1,3}#<ip>#g' \
+            -e 's#[A-Za-z0-9+_-]{40,}#<secret>#g' \
+            -e 's#[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}#<email>#g' |
+        replace_fixed "$user" "user" |
+        replace_fixed "$host" "host"
 }
 
 # The plugin's own report: the first call starts it, the second hands it over

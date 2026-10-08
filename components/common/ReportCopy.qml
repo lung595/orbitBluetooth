@@ -1,5 +1,4 @@
 import QtQuick
-import Quickshell.Io
 import "../../diagnostics/Gather.js" as Gather
 import "../../diagnostics/Log.js" as Log
 
@@ -30,9 +29,8 @@ Item {
 
     function _try(index) {
         _tool = index;
-        run.command = Gather.COPY_TOOLS[index].command;
         run.stdinEnabled = true;
-        run.running = true;
+        run.launch(Gather.COPY_TOOLS[index].command);
     }
 
     function _failed(code) {
@@ -54,15 +52,15 @@ Item {
         result = "none";
     }
 
-    Process {
+    ToolProcess {
         id: run
         // Closing standard input ends the copy; wl-copy then serves the text
         // from the background and this process returns
-        onStarted: {
+        onLaunched: {
             write(root._text);
             stdinEnabled = false;
         }
-        onExited: code => {
+        onFinished: code => {
             if (code !== 0) {
                 root._failed(code);
                 return;

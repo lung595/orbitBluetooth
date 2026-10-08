@@ -281,7 +281,7 @@ eq("an os-release without a pretty name gives nothing", Gather.parse("distro", "
 eq("the journal is kept as non-empty lines", Gather.parse("journal", "a\n\nb\n"), ["a", "b"]);
 eq("the plugin version is read from plugin.json, or empty", [Gather.pluginVersion('{"version":"1.14.0"}'), Gather.pluginVersion("not json"), Gather.pluginVersion('{"version":3}')], ["1.14.0", "", ""]);
 eq("only declared settings are read, an unknown value is skipped", Gather.settingsOf(k => k === "sounds" ? true : k === "maxDevices" ? 8 : undefined), { "maxDevices": 8, "sounds": true });
-eq("a copy tool that is not installed is told from one that refused", [Gather.missing(-1), Gather.missing(127), Gather.missing(126), Gather.missing(1)], [true, true, true, false]);
+eq("a copy tool that is not installed is told from one that refused", [Gather.missing(-1), Gather.missing(1), Gather.missing(127)], [true, false, false]);
 eq("the sensitive copy comes first and nothing is an argument but flags", Gather.COPY_TOOLS.map(t => t.command), [["wl-copy", "--sensitive"], ["dms", "clipboard", "copy"]]);
 eq("every probe is an argument list that starts with a program", Gather.PROBES.every(p => Array.isArray(p.command) && /^[a-z]+$/.test(p.command[0])), true);
 eq("a long report is cut for the IPC answer", [Gather.capped("x".repeat(30000)).length, Gather.capped("short")], [Gather.MAX_REPORT, "short"]);

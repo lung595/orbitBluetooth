@@ -98,8 +98,7 @@ Item {
             _finish();
             return;
         }
-        probe.command = Gather.PROBES[_probe].command;
-        probe.running = true;
+        probe.launch(Gather.PROBES[_probe].command);
     }
 
     function _finish() {
@@ -156,15 +155,17 @@ Item {
         }
     }
 
-    Process {
+    ToolProcess {
         id: probe
         stdout: StdioCollector {
             id: answer
         }
-        onExited: {
+        // A tool that is not installed (rpm off Fedora, niri under another
+        // compositor) answers nothing: the report says "unknown" for it
+        onFinished: code => {
             const spec = Gather.PROBES[root._probe];
             const answers = root._answers;
-            answers[spec.key] = Gather.parse(spec.key, answer.text);
+            answers[spec.key] = Gather.parse(spec.key, code === -1 ? "" : answer.text);
             root._answers = answers;
             root._probe++;
             root._next();
