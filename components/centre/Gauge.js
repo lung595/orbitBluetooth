@@ -49,6 +49,19 @@ function hit(cx, cy, x, y, radius, band) {
     return t <= SWEEP + SLOP || t >= 360 - SLOP;
 }
 
+// The conical gradient that follows the arc. Qt's ConicalGradient counts its
+// angle counter-clockwise (y up) and runs counter-clockwise, the opposite of
+// the rest of this file, so it is mapped here once: the seam (position 0 and 1)
+// sits in the middle of the gap, clear of both round caps. From the seam the
+// END colour holds up to `edge` (the arc's end), the START colour holds from
+// 1 - `edge` (the arc's start), and between them the colour runs one way with
+// no jump: start colour at the arc's start, end colour at its end, clockwise.
+function conic() {
+    const gap = 360 - SWEEP;
+    const gapMiddle = (START + SWEEP + gap / 2) % 360;
+    return { "angle": (360 - gapMiddle) % 360, "edge": gap / 2 / 360 };
+}
+
 const p = pt => Math.round(pt.x * 100) / 100 + " " + Math.round(pt.y * 100) / 100;
 
 // The outline of the band of width `w` around the circle of radius `r`, from

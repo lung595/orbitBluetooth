@@ -165,6 +165,7 @@ Item {
     // enough that the chip clears the gauge whichever side the thumb is on
     Rectangle {
         id: tag
+        objectName: "reading"
         readonly property real turn: Gauge.angleOf(ring.volume.level)
         readonly property real push: ring.lineWidth / 2 + 14 + Math.abs(Math.cos(turn)) * width / 2 + Math.abs(Math.sin(turn)) * height / 2
         visible: ring.volume.ready && (grab.containsMouse || grab.pressed || ring.recent)

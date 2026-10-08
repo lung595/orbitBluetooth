@@ -39,4 +39,6 @@ const lengthOf = (path, i) => { const [a, b] = path.split("M ").filter(m => m)[i
 const all = G.ticks(0, 0, 60, 3, 1, true);
 eq("ticks: longer at 0, 50 and 100 %", [lengthOf(all, 0), lengthOf(all, 1), lengthOf(all, 5), lengthOf(all, 10)], [5.1, 3, 5.1, 5.1]);
 
+eq("conic: the seam sits in the middle of the gap, in Qt's counter-clockwise angle, and each colour holds over half the gap", [G.conic().angle, G.conic().edge], [270, 0.125]);
+
 done();
