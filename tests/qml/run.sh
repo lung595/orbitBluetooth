@@ -5,6 +5,7 @@
 # Bluetooth adapter: stubs/ stands in for Quickshell and the DMS services,
 # Device.qml for a BlueZ device, and NewDeviceWindow.qml replaces the real
 # layer-shell window. Needs Qt 6 (qml, qml6, qml-qt6 or PySide6).
+# A QML warning or TypeError printed by a test fails the run (NAK-60).
 # Run from anywhere: sh tests/qml/run.sh [name]   (a name keeps only the tests whose file name contains it)
 # The stubs come last: the last import path wins, and the preview imports
 # (Theme, StyledText) have their own, smaller qs.Services.
@@ -29,8 +30,18 @@ export QT_FORCE_STDERR_LOGGING=1 QT_LOGGING_RULES='qml.debug=true;js.debug=true'
 # Fedora keeps Qt 6's tools out of PATH
 for tool in qml6 qml-qt6 qml /usr/lib64/qt6/bin/qml; do
     if command -v "$tool" >/dev/null 2>&1; then
+        out="$work/out.txt"
         for test in "$work"/*"${1:-}"*.test.qml; do
-            "$tool" -I "$root/scripts/preview/imports" -I "$here/stubs" "$test"
+            status=0
+            "$tool" -I "$root/scripts/preview/imports" -I "$here/stubs" "$test" >"$out" 2>&1 || status=$?
+            cat "$out"
+            [ "$status" -eq 0 ] || exit "$status"
+            # A QML warning or TypeError fails the test too: print() lines
+            # start with "qml:", everything else is the engine speaking
+            if grep -v '^qml: ' "$out" | grep -qE 'Warning|TypeError|ReferenceError|Unable to assign|is not a function|Binding loop|Cannot (read|call|assign)'; then
+                echo "FAIL ${test##*/}: QML warnings (listed in the output above)" >&2
+                exit 1
+            fi
         done
         exit 0
     fi

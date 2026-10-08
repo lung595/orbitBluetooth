@@ -99,7 +99,8 @@ Rectangle {
                 icon: out ? out.icon : strip.levels.deviceIcon
                 level: out ? out.level : Math.max(0, strip.levels.deviceLevel)
                 muted: out ? out.muted : strip.levels.deviceMuted
-                tint: strip.tones.colors[index]
+                // A row still on screen while the group ends: the palette has already shrunk
+                tint: strip.tones.colors[index] ?? strip.tones.pc
                 barWidth: row.barWidth
                 compact: row.compact
             }

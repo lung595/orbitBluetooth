@@ -33,7 +33,8 @@ Tools: `gjs` (JS tests), Python 3 (helper and its tests), `ffmpeg` (GIFs), Qt 6 
 
 | Component | File | Role |
 | --- | --- | --- |
-| Daemon | `OrbitBluetoothDaemon.qml` | One instance, shared by every surface. BlueZ exposes no connection time, charging state or discharge rate, so it records them: connection times, battery log, UPower bridge |
+| Daemon | `OrbitBluetoothDaemon.qml` | One instance, shared by every surface. BlueZ exposes no connection time, charging state or discharge rate, so it records them (see the Device log row) |
+| Device log | `components/common/DeviceLog.qml` | The daemon's bookkeeping, in its own file so a test can run it alone: connection times, battery log, UPower bridge. Run by `tests/qml/robustness.test.qml`, which also plays the hard cases for empty values (a headset gone mid-play, an output without a name, a helper that dies); `tests/qml/robustViews.test.qml` does the same against the real scene with a detail card and a radar open. `tests/qml/run.sh` fails any QML warning |
 | Widget | `OrbitBluetoothWidget.qml` | Bar pill, bar popout and Control Center tile |
 | Desktop | `OrbitBluetoothDesktop.qml` | Desktop widget, frozen until the pointer is over it |
 | Settings | `OrbitBluetoothSettings.qml` | Settings page |

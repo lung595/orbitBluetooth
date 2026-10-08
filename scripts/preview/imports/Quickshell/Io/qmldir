@@ -3,3 +3,4 @@ Process 1.0 Process.qml
 StdioCollector 1.0 StdioCollector.qml
 SplitParser 1.0 SplitParser.qml
 singleton ProcessLog 1.0 ProcessLog.qml
+FileView 1.0 FileView.qml
