@@ -9,9 +9,10 @@ import "Volume.js" as Volume
 // level moved, or every member's when it is the group's. A tick plays for
 // each step crossed (1 % or 5 %, Prefs.tickEvery); a jump is a run of ticks,
 // one every Volume.TICK_MS and no more than Volume.MAX_QUEUE of them, so it
-// is heard as a run, never swallowed and never a burst at once. A pw-play
-// lives for the length of the sound and the pacing timer runs only while
-// ticks wait, so nothing runs between two changes.
+// is heard as a run and never as a burst at once. A tick is only dropped when
+// every slot of its output is still sounding (see _fire). A pw-play lives for
+// the length of the sound and the pacing timer runs only while ticks wait, so
+// nothing runs between two changes.
 Item {
     id: tick
 
@@ -44,6 +45,8 @@ Item {
     // sounding is left alone: the slots below are all busy only when the
     // pacing outruns the sound, and then that tick is the one dropped.
     function _fire() {
+        if (_pending <= 0)
+            return;
         _pending--;
         Volume.tickSinks(_nodes.map(n => n ? n.name : "")).forEach((name, i) => {
             for (let slot = 0; slot < Volume.OVERLAP; slot++) {

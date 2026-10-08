@@ -95,7 +95,7 @@ Item {
         check("when none waits the timer is stopped: nothing runs at rest", tick.pacing, false);
 
         // Two ticks of the same output ring together, up to the overlap
-        tick.play([node("a.1")], 0.5, 0.52);
+        tick.play([node("a.1")], 0.5, 0.54);
         tick._fire();
         tick._fire();
         check("ticks overlapping in one output use its slots", h.started().length, 3);
