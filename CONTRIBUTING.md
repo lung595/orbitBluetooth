@@ -207,6 +207,7 @@ orbitBluetooth/
 │   ├── gen_sounds.py            # synthesizes sounds/*.wav
 │   └── preview/                 # offscreen renderer: shot.qml (modes), mock/ (devices, state, route, wallpaper), imports/ (mock services)
 ├── screenshots/                 # images used by the docs
+├── tick/                        # orbit_tick.py: resident volume-tick player (one PipeWire stream per output, mixes the ticks)
 ├── sounds/
 └── docs/GUIDE.md                # user guide
 ```
@@ -217,6 +218,7 @@ orbitBluetooth/
 (cd anc && python3 -m unittest discover -s tests -t .)   # noise-control protocols
 (cd pictures && python3 -m unittest discover -s tests -t .)   # picture lookup, without network
 (cd uninstall && python3 -m unittest discover -s tests -t .)  # uninstall sweep, on fake shell files
+(cd tick && python3 -m unittest discover -s tests -t .)       # volume-tick mixer and a whole session against a stand-in pw-cat
 sh tests/qml/run.sh                                       # new-device pop-up scenario, polar scope, audio facts, control sessions, pause on removal, Listen together session, center, group chooser, ghost group and wired members (Qt 6); one test: sh tests/qml/run.sh centreLoop
 sh tests/run.sh                                          # every pure .js module, one test file per role (or gjs tests/volume.test.js for one)
 ```
@@ -229,6 +231,8 @@ Run them all before every commit. A new headphone brand needs a module in `anc/p
 scripts/preview/render.sh          # PNG screenshots (mock devices, no real data)
 scripts/preview/record.sh          # all GIFs (needs ffmpeg)
 scripts/preview/record.sh beam     # one of: beam, gauge, focus, connect
+# Bench scenes, offscreen: tick.qml is the whole scene, volumetick.qml the volume tick alone
+# (modes rest, sweep1, sweep4, burst1, burst4; stand-in players, shell side only)
 shaders/build.sh                   # recompile after editing shaders/*.frag (needs qsb)
 python3 scripts/gen_sounds.py      # regenerate sounds/*.wav
 ```

@@ -4,7 +4,7 @@ imports.searchPath.unshift(imports.system.programPath ? imports.system.programPa
 const { load, eq, done } = imports.lib;
 
 const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNote", "stuckNote", "levelNote"]);
-const Volume = load("Volume.js", ["clamp", "step", "validSink", "stepSize", "stepsCrossed", "queued", "tickSinks", "MAX_TICKS", "TICK_MS", "MAX_QUEUE", "OVERLAP"]);
+const Volume = load("Volume.js", ["clamp", "step", "validSink", "stepSize", "stepsCrossed", "queued", "tickSinks", "MAX_TICKS", "TICK_MS", "MAX_QUEUE", "IDLE_MS"]);
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "slices", "sliceAt", "partOf", "indexOf", "arc", "end", "point", "angleOf", "valueAt", "zone", "wheelPart", "iconSpot", "legendSpot", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
 const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded", "note"]);
@@ -28,7 +28,7 @@ eq("one tick every 25 ms is 40 a second", 1000 / Volume.TICK_MS, 40);
 eq("ticks waiting add up, never beyond the cap", [Volume.queued(0, 3), Volume.queued(3, 4), Volume.queued(0, 30), Volume.queued(10, 5)], [3, 7, Volume.MAX_QUEUE, Volume.MAX_QUEUE]);
 eq("the longest run lasts 300 ms", Volume.MAX_QUEUE * Volume.TICK_MS, 300);
 eq("a negative or broken backlog counts as none", Volume.queued(-5, 2), 2);
-eq("enough rings at once for the overlap of 70 ms ticks", Volume.OVERLAP * Volume.TICK_MS >= 70, true);
+eq("a player outlasts the gap between two ticks of a run", Volume.IDLE_MS > Volume.TICK_MS * 10, true);
 eq("one output: its own sink only", Volume.tickSinks(["bluez_output.AA_BB_CC_DD_EE_01.1"]), ["bluez_output.AA_BB_CC_DD_EE_01.1"]);
 eq("the group: every member's sink, each once", Volume.tickSinks(["a.1", "b.2", "a.1", "c.3"]), ["a.1", "b.2", "c.3"]);
 eq("never more than four outputs at once", [Volume.MAX_TICKS, Volume.tickSinks(["a", "b", "c", "d", "e", "f"])], [4, ["a", "b", "c", "d"]]);

@@ -45,9 +45,10 @@ function queued(pending, crossed) {
     return Math.min(MAX_QUEUE, Math.max(0, pending) + crossed);
 }
 
-// Ticks still ringing at once in one output: one lasts 70 ms, so with a tick
-// every TICK_MS about three overlap
-var OVERLAP = 4;
+// How long a player stays open after the last tick: a stream kept for ever
+// would hold a Bluetooth output awake, one closed too soon costs a start for
+// the next run of ticks
+var IDLE_MS = 2000;
 
 // The sinks a tick plays in, from the node names a change reached: only plain
 // names, each once, MAX_TICKS at most

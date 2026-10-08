@@ -4,10 +4,10 @@ import Quickshell.Io
 import "../../components/volume"
 
 // Offscreen bench of VolumeTick alone (NAK-8): the level is moved by the
-// scene and the tick paced as the component decides. The player is the
-// preview's stand-in Process (nothing is spawned, no sound is played), so
-// this measures the shell's side only; each stand-in is let go after 70 ms,
-// the length of the real sound. Made-up sink names only. Never quits.
+// scene and the tick paced as the component decides. The resident players are
+// the preview's stand-in Process (nothing is spawned, no sound is played), so
+// this measures the shell's side only; what they were sent is let go every
+// second so a long run does not grow. Made-up sink names only. Never quits.
 // Usage: QT_QPA_PLATFORM=offscreen qml -I imports volumetick.qml -- <mode> /dev/null
 // Modes: rest (nothing moves), sweep1 / sweep4 (one 1 % step every 25 ms,
 //        40 a second, up then down, into 1 or 4 outputs), burst1 / burst4
@@ -35,7 +35,6 @@ Window {
     VolumeTick {
         id: tick
         prefs: prefs
-        player: "true"
     }
 
     // The level in whole percents, so a sweep never drifts
@@ -63,11 +62,11 @@ Window {
         running: win.mode.startsWith("burst")
         onTriggered: win.move(5)
     }
-    // A stand-in process ends as the 70 ms sound would
+    // The stand-ins keep every line sent to them: forget them as they come
     Timer {
-        interval: 70
+        interval: 1000
         repeat: true
         running: win.mode !== "rest"
-        onTriggered: ProcessLog.live.forEach(p => p.running = false)
+        onTriggered: ProcessLog.live.forEach(p => p.written = [])
     }
 }
