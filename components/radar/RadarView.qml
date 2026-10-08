@@ -197,6 +197,21 @@ Item {
         onClosed: view.radar.close()
     }
 
+    // The night sky seen through the card's glass, under the dials
+    RadarSky {
+        anchors.fill: parent
+        opacity: view.cardIn
+        paper: view.paper
+        colors: palette.colors
+        fallback: view.night.tertiary
+        places: view.places
+        cx: view.cx
+        cy: view.cy
+        side: view.side
+        actionsY: chips.y
+        headerHeight: view.headerHeight
+    }
+
     Repeater {
         model: view.radar.ids
         delegate: RadarDial {

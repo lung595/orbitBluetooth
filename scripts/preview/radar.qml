@@ -13,7 +13,9 @@ import "mock/State.js" as State
 // under it. Made-up devices and outputs only.
 // Usage: QT_QPA_PLATFORM=offscreen qml -I imports radar.qml -- <mode> <out.png>
 // Modes: group (the group's level is the hero), bluetooth (a Bluetooth member),
-//        wired (a wired output), four (four members, the hero among them)
+//        wired (a wired output), four (four members, the hero among them),
+//        two (two members, the group's level), fourgroup (four members, the
+//        group's level), member (four members, a Bluetooth member)
 // Suffixes: "-light" renders with a light theme's accent colors
 // Bench suffixes (run until stopped, nothing saved, motion as users see it):
 //        "-rest" lands the group and never opens the radar, "-hold" opens it
@@ -37,13 +39,19 @@ Window {
             "group": [headset, speaker, dac],
             "bluetooth": [headset, speaker, dac],
             "wired": [headset, speaker, dac],
-            "four": [headset, speaker, dac, screen]
+            "four": [headset, speaker, dac, screen],
+            "two": [headset, speaker],
+            "fourgroup": [headset, speaker, dac, screen],
+            "member": [headset, speaker, dac, screen]
         })
     readonly property var heroes: ({
             "group": "",
             "bluetooth": speaker,
             "wired": dac,
-            "four": screen
+            "four": screen,
+            "two": "",
+            "fourgroup": "",
+            "member": speaker
         })
 
     width: 560
