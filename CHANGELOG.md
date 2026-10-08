@@ -35,6 +35,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   held open 4.93 % → 4.96 %, all under the noise.
 - **A no to the best learned group is a no.** When you turn down the group Orbit learned you listen to most, the ghost planet no longer falls back on the next learned group or on a pair: it suggests nothing (until the shell restarts, or the devices that are there change so that the best group is another one). A refusal of a lesser group leaves the best one suggested. [Guide](docs/GUIDE.md#suggested-groups)
 - **A session that lasts until the shell stops is counted.** A Listen together session still going when the shell restarts or reloads now counts as a use of its group (if it lasted a minute), where it used to be lost because only the end of a session was recorded. Still no timer: one count, at the stop. A shell killed outright cannot count it. [Guide](docs/GUIDE.md#learn-my-groups)
+- **A lighter download.** The README and guide screenshots are recompressed losslessly (oxipng, gifsicle): same names, sizes, frames and timing, every visible pixel identical. `screenshots/` 6.86 MB → 4.98 MB, a shallow clone 16.8 MB → 13.4 MB. The published history is kept, so a full clone still holds the older images.
 
 ### Added
 
