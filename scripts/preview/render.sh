@@ -8,7 +8,8 @@ out=../../screenshots
 mkdir -p "$out"
 # GPU rendering (OpenGL) is needed for the black hole shader; the default
 # offscreen backend is software-only and skips shaders.
-run() { QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=rhi QSG_RHI_BACKEND=opengl qml-qt6 -I imports shot.qml -- "$1" "$(realpath "$out")/$2"; }
+qml() { QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=rhi QSG_RHI_BACKEND=opengl qml-qt6 -I imports "$@"; }
+run() { qml shot.qml -- "$1" "$(realpath "$out")/$2"; }
 run orbit orbit.png
 run zoom charging.png
 run orbitfocus detail-charging.png
@@ -23,4 +24,4 @@ run budsdock earbuds-dock.png
 run orbit-light light.png
 run orbitfocus-light light-detail.png
 run btblocked bluetooth-off.png
-QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=rhi QSG_RHI_BACKEND=opengl qml-qt6 -I imports charge.qml -- "$(realpath "$out")/charging-marker.png" blue
+qml charge.qml -- "$(realpath "$out")/charging-marker.png" blue

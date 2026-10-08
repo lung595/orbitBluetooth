@@ -586,7 +586,7 @@ The arc around a connected device's disc tells the level at a glance by its colo
 | Green | 100 % |
 | Blue-violet, breathing | Charging, whatever the level |
 
-A point of level moves the color a little, so you read a 60 % battery as different from a 45 % one without a number. The blend is made on hue, saturation and lightness, so the middle of the way stays as vivid as its ends (a mix of red and green in RGB would go muddy). The charging color is your theme's *info* blue; when your theme's primary is that same blue (a theme generated from a blue wallpaper often is), it is the theme's *tertiary* accent instead, so it is never mistaken for the volume gauge. The beam of energy, the arc's glow and the lightning bolt of the lightning bolt of the earbuds' case view all use that same charging color.
+A point of level moves the color a little, so you read a 60 % battery as different from a 45 % one without a number. The blend is made on hue, saturation and lightness, so the middle of the way stays as vivid as its ends (a mix of red and green in RGB would go muddy). The charging color is your theme's *info* blue; when your theme's primary is that same blue (a theme generated from a blue wallpaper often is), it is the theme's *tertiary* accent instead, so it is never mistaken for the volume gauge. The beam of energy, the arc's glow and the lightning bolt of the earbuds' case view all use that same charging color.
 
 ### A bolt on the arc, in Blue and Cyan
 

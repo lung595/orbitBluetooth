@@ -25,6 +25,11 @@ Item {
     readonly property var stretch: Battery.stretch(body.battery, body.charging)
     readonly property color tint: blend(tints[stretch.from], tints[stretch.to], stretch.t)
 
+    // Geometry shared by the level arc, its glow and the marker on its head:
+    // the sweep never drops under 2 % so a near-empty battery still shows a dot
+    readonly property real levelSweep: 360 * Math.max(0.02, body.battery / 100)
+    readonly property real arcRadius: (body.diameter + 7) / 2 - 1
+
     // Two colours blended by hue, saturation and lightness: a blend of red and
     // green in RGB goes muddy in the middle, this one stays as vivid as its ends
     function blend(a, b, t) {
@@ -85,6 +90,7 @@ Item {
 
     // Battery arc (connected devices that report a level)
     Shape {
+        id: levelRing
         anchors.centerIn: parent
         width: parent.width + 7
         height: width
@@ -116,7 +122,7 @@ Item {
                 radiusX: centerX - 1
                 radiusY: radiusX
                 startAngle: -90
-                sweepAngle: 360 * Math.max(0.02, arcs.body.battery / 100)
+                sweepAngle: arcs.levelSweep
             }
         }
     }
@@ -141,7 +147,7 @@ Item {
                 radiusX: centerX - 1
                 radiusY: radiusX
                 startAngle: -90
-                sweepAngle: 360 * Math.max(0.02, arcs.body.battery / 100)
+                sweepAngle: arcs.levelSweep
             }
         }
 
@@ -149,27 +155,28 @@ Item {
     }
 
     // Marker for a charge the colour cannot tell: a bolt on a night-sky disc
-    // at the head of the level arc. Static (it moves only when the level
-    // does), so it costs no frame.
-    Rectangle {
-        id: marker
-        readonly property real orbit: arcs.body.diameter / 2 + 2.5
-        readonly property real angle: (-90 + 360 * Math.max(0.02, arcs.body.battery / 100)) * Math.PI / 180
-        width: 13
-        height: width
-        radius: width / 2
-        x: arcs.width / 2 + orbit * Math.cos(angle) - width / 2
-        y: arcs.height / 2 + orbit * Math.sin(angle) - height / 2
-        visible: arcs.body.charging && arcs.body.connected && arcs.body.battery >= 0 && !arcs.body.focused && !arcs.body.night.chargingApart
-        color: arcs.body.night.sky
-        border.width: 1.5
-        border.color: arcs.tint
+    // at the head of the level arc. Built only while it shows, and static (it
+    // moves only when the level does), so it costs no frame.
+    Loader {
+        active: levelRing.visible && arcs.body.charging && !arcs.body.night.chargingApart
+        // No anchors: a sized Loader would stretch the marker to its own size
+        sourceComponent: Rectangle {
+            readonly property real angle: (-90 + arcs.levelSweep) * Math.PI / 180
+            width: 13
+            height: width
+            radius: width / 2
+            x: arcs.width / 2 + arcs.arcRadius * Math.cos(angle) - width / 2
+            y: arcs.height / 2 + arcs.arcRadius * Math.sin(angle) - height / 2
+            color: arcs.body.night.sky
+            border.width: 1.5
+            border.color: arcs.tint
 
-        DankIcon {
-            anchors.centerIn: parent
-            name: "bolt"
-            size: parent.width - 3
-            color: arcs.tint
+            DankIcon {
+                anchors.centerIn: parent
+                name: "bolt"
+                size: parent.width - 3
+                color: arcs.tint
+            }
         }
     }
 }

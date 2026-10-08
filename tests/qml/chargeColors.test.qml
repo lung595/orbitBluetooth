@@ -60,11 +60,19 @@ Item {
         const a = lum(c), b = lum(tones.sky);
         return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
     }
-    function apart(a, b) {
-        return Math.hypot(a.r - b.r, a.g - b.g, a.b - b.b);
-    }
+    // The marker lives in a Loader: null while it is not built
     function marker() {
-        return arcs.children.find(c => c.orbit !== undefined);
+        return arcs.children.find(c => c.item !== undefined)?.item ?? null;
+    }
+    function find(root, test) {
+        if (test(root))
+            return root;
+        for (const c of root.children) {
+            const hit = find(c, test);
+            if (hit)
+                return hit;
+        }
+        return null;
     }
     function theme(light, primary, secondary) {
         Theme.isLightMode = light;
@@ -74,25 +82,41 @@ Item {
         Theme.info = "#2196F3";
     }
 
+    EarbudsTrio {
+        id: trio
+        width: 300
+        parts: ({
+                "case": {
+                    "level": 80,
+                    "charging": true
+                },
+                "left": {
+                    "level": 50,
+                    "charging": true
+                }
+            })
+    }
+
     Component.onCompleted: {
         // [name, light, primary, secondary, a tone of its own?]
         const stock = [["lime (the preview's default)", false, "#C5E66A", "#BFCBAD", true], ["Blue dark", false, "#42a5f5", "#8ab4f8", false], ["Blue light", true, "#1976d2", "#42a5f5", false], ["Cyan dark", false, "#00bcd4", "#4dd0e1", false], ["Cyan light", true, "#0097a7", "#00bcd4", false]];
         for (const [name, light, primary, secondary, own] of stock) {
             theme(light, primary, secondary);
-            check(name + ": the arc, the beam and the card's bolt share one tone", [arcs.tint === tones.charging, beam.color === tones.charging, tones.night(tones.chargingTheme) === tones.charging], [true, true, true]);
+            check(name + ": the arc, the beam and the card's bolt share one tone (the card's bolt and beam read the theme's own)", [arcs.tint === tones.charging, beam.color === tones.charging, find(trio, c => c.name === "bolt")?.color === trio.night.chargingTheme, find(trio, c => c.whiteCore !== undefined)?.color === trio.night.chargingTheme], [true, true, true, true]);
             check(name + ": the charge reads on the night sky (contrast >= 3)", contrastOnSky(tones.charging) >= 3, true);
             check(name + ": a tone of its own is told from the primary: " + own, tones.chargingApart, own);
-            check(name + ": the bolt marker shows only where the tone is not its own", marker().visible, !own);
+            check(name + ": the bolt marker shows only where the tone is not its own", marker() !== null, !own);
             check(name + ": the marker reads on the sky too", contrastOnSky(arcs.tint) >= 3, true);
         }
 
         theme(false, "#42a5f5", "#8ab4f8");
         fake.charging = false;
-        check("not charging: no marker, even in Blue", marker().visible, false);
+        check("not charging: no marker, even in Blue", marker() !== null, false);
         fake.charging = true;
         fake.focused = true;
-        check("a focused device draws no ring and no marker", marker().visible, false);
+        check("a focused device draws no ring and no marker", marker() !== null, false);
         fake.focused = false;
+        check("the marker keeps its own size (a sized Loader would stretch it)", marker().width, 13);
         fake.battery = 25;
         const lowAngle = marker().angle;
         fake.battery = 75;
