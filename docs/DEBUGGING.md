@@ -22,7 +22,13 @@ The CPU figure is the **whole shell** (DMS and every plugin together) over one s
 
 ## Getting your report
 
-The report is built by `diagnostics/Report.js`. The ways to ask for it (a button in the settings, `dms ipc call orbitBluetooth diagnostics`, `scripts/diagnose.sh`) are not wired in yet: they come with the next release (see the [roadmap](../ROADMAP.md)). Until then the journal lines below are the part you can copy by hand.
+The report is built by `diagnostics/Report.js` and gathered by `ReportService.qml`, only when asked. Three ways to ask (see [Report a problem](GUIDE.md#report-a-problem)):
+
+- **Settings → Orbit → Copy report**: about two seconds, then the report is on the clipboard (`wl-copy --sensitive` through standard input, so DMS's history does not keep it; DMS's own copy if `wl-copy` is missing, which the message then admits).
+- **`dms ipc call orbitBluetooth diagnostics`**: the first call starts it, the same call two seconds later hands it over.
+- **`sh scripts/diagnose.sh`**: both calls, plus the latest Quickshell crash folder with your login and home folder replaced.
+
+Each ask logs `ORB-I030` with `via`. The journal lines below are also yours to copy by hand.
 
 ## Reading the journal yourself
 

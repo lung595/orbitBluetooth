@@ -3,12 +3,21 @@ import qs.Common
 import qs.Widgets
 import qs.Modules.Plugins
 import "components/settings"
+import "diagnostics/Log.js" as Log
 
 // Plugin settings, grouped by what they change. Every option works out of
 // the box; descriptions stay one short line, and options that cost battery
 // say so ("⚡ Uses more battery").
 PluginSettings {
     id: root
+
+    // One memory write each way: which surfaces are alive shows in a report
+    Component.onCompleted: Log.event("ORB-I020", {
+        "surface": "settings"
+    })
+    Component.onDestruction: Log.event("ORB-I021", {
+        "surface": "settings"
+    })
     pluginId: "orbitBluetooth"
 
     readonly property string batteryNote: "⚡ Uses more battery"

@@ -1,6 +1,7 @@
 import Quickshell
 import Quickshell.Io
 import "Guide.js" as Guide
+import "../../diagnostics/Gather.js" as Gather
 import "Text.js" as Text
 import "../together/Delay.js" as Delay
 import "../together/Together.js" as Together
@@ -21,6 +22,8 @@ import "../noise/Anc.js" as Anc
 //   separate | togetherStatus | togetherDelay <device> <ms>
 //   togetherOutputs | wiredDelay up | down | +10 | -10 | 20 | reset | status
 //   (a device is a Bluetooth address or a wired output's node name)
+//   diagnostics   the anonymous report: the first call starts it, the next one (a
+//                 couple of seconds later) hands it over (scripts/diagnose.sh does both)
 // Every argument is checked and capped before it is used, and an answer never
 // repeats what it was given: a name it shows is one the daemon knows, as one
 // clean line (value 11).
@@ -33,6 +36,7 @@ Scope {
     required property var keys
     required property var newDevices
     required property var prefs
+    required property var report
 
     // What a refusal says: the note, then the guide section that explains it
     function _say(note) {
@@ -234,6 +238,21 @@ Scope {
                 return "Use: togetherDelay <device> 0.." + Together.MAX_DELAY_MS + " (milliseconds) · " + Guide.url("listen-together");
             session.setDelay(who, parseInt(ms, 10));
             return "OK";
+        }
+
+        // The anonymous report (docs/DEBUGGING.md). It takes about two seconds
+        // (one second of CPU measure, then a few short tools), and a call must
+        // answer at once: the first call starts it, a call while it runs says
+        // so, and the next one hands it over, once. Nothing is measured unless
+        // this is called, and no argument is read.
+        function diagnostics(): string {
+            const report = ipc.report;
+            if (report.report)
+                return Gather.capped(report.takeReport());
+            if (report.busy)
+                return "Still collecting, ask again in a moment · " + Guide.url("report-a-problem");
+            report.request("ipc");
+            return "Collecting (about 2 s): run the same command again · " + Guide.url("report-a-problem");
         }
 
         function ancStatus(): string {

@@ -1,5 +1,6 @@
 import QtQuick
 import "../centre"
+import "../../diagnostics/Log.js" as Log
 
 // The planetary Bluetooth scene shared by the Control Center panel, the bar
 // popout and the desktop widget.
@@ -107,7 +108,13 @@ OrbitState {
 
     onWidthChanged: wake()
     onHeightChanged: wake()
-    onAwakeChanged: wake()
+    onAwakeChanged: {
+        wake();
+        Log.event("ORB-D040", {
+            "state": awake ? (freezeWhenIdle && !interacting ? "ambient" : "visible") : "hidden",
+            "count": devices.model.count
+        });
+    }
     onActiveChanged: {
         wake();
         refresh();

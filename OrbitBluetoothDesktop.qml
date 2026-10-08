@@ -5,12 +5,21 @@ import qs.Modules.Plugins
 import qs.Services
 import "components/scene"
 import "components/scene/Cover.js" as Cover
+import "diagnostics/Log.js" as Log
 
 // Desktop surface: a frameless orbit that dissolves into the wallpaper.
 // Idle by default: the scene freezes (zero frames) until the pointer is over
 // it, chrome only appears while in use, and scanning only runs meanwhile.
 DesktopPluginComponent {
     id: root
+
+    // One memory write each way: which surfaces are alive shows in a report
+    Component.onCompleted: Log.event("ORB-I020", {
+        "surface": "desktop"
+    })
+    Component.onDestruction: Log.event("ORB-I021", {
+        "surface": "desktop"
+    })
 
     minWidth: 300
     minHeight: 240

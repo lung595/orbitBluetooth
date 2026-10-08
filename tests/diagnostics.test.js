@@ -13,6 +13,7 @@ const Codes = load("Codes.js");
 const Log = load("Log.js");
 const Cpu = load("Cpu.js");
 const Report = load("Report.js");
+const Gather = load("Gather.js");
 const Glyphs = load("Glyphs.js");
 
 // --- Allow.js: the allowlist -------------------------------------------------------
@@ -259,5 +260,31 @@ for (const key in keysFound) {
 eq("every setting of the pages is in Codes.SETTINGS with its real words", settingsDrift, []);
 eq("the check really read the pages", Object.keys(keysFound).length > 30, true);
 eq("Codes.SETTINGS holds no key the pages no longer have", Object.keys(Codes.SETTINGS).filter(k => !(k in keysFound) && KEPT_PREFS.indexOf(k) < 0), []);
+
+// The QML engine of Quickshell rejects lookbehind patterns that gjs accepts, which broke
+// Redact.js the first time QML loaded it: no diagnostics file may use one.
+const diagDir = GLib.path_get_dirname(GLib.path_get_dirname(GLib.canonicalize_filename(imports.system.programPath, GLib.get_current_dir()))) + "/diagnostics";
+const lookbehind = [];
+const diagEnum = Gio.File.new_for_path(diagDir).enumerate_children("standard::name", 0, null);
+for (let info = diagEnum.next_file(null); info; info = diagEnum.next_file(null)) {
+    const code = new TextDecoder().decode(GLib.file_get_contents(diagDir + "/" + info.get_name())[1]);
+    if (code.indexOf("(?<" + "!") >= 0 || code.indexOf("(?<" + "=") >= 0)
+        lookbehind.push(info.get_name());
+}
+eq("no diagnostics file uses a regular expression lookbehind (QML cannot parse it)", lookbehind, []);
+
+// --- Gather.js: what the report is made of -----------------------------------------
+eq("versions come out of each tool's own line", [Gather.parse("dms", "dms v1.6.3\n"), Gather.parse("niri", "niri 26.04 (8ed0da4)"), Gather.parse("quickshell", "Quickshell 0.3.1 (revision , distributed by Someone)")], ["1.6.3", "26.04", "0.3.1"]);
+eq("a tool that said nothing usable gives an empty version", [Gather.parse("dms", ""), Gather.parse("niri", "error: /home/bob/x not found"), Gather.parse("dms", null)], ["", "", ""]);
+eq("the distribution is the pretty name of os-release", Gather.parse("distro", 'NAME="Fedora Linux"\nPRETTY_NAME="Fedora Linux 44 (Workstation Edition)"\nID=fedora\n'), "Fedora Linux 44 (Workstation Edition)");
+eq("an os-release without a pretty name gives nothing", Gather.parse("distro", "ID=fedora\n"), "");
+eq("the journal is kept as non-empty lines", Gather.parse("journal", "a\n\nb\n"), ["a", "b"]);
+eq("the plugin version is read from plugin.json, or empty", [Gather.pluginVersion('{"version":"1.14.0"}'), Gather.pluginVersion("not json"), Gather.pluginVersion('{"version":3}')], ["1.14.0", "", ""]);
+eq("only declared settings are read, an unknown value is skipped", Gather.settingsOf(k => k === "sounds" ? true : k === "maxDevices" ? 8 : undefined), { "maxDevices": 8, "sounds": true });
+eq("a copy tool that is not installed is told from one that refused", [Gather.missing(-1), Gather.missing(127), Gather.missing(126), Gather.missing(1)], [true, true, true, false]);
+eq("the sensitive copy comes first and nothing is an argument but flags", Gather.COPY_TOOLS.map(t => t.command), [["wl-copy", "--sensitive"], ["dms", "clipboard", "copy"]]);
+eq("every probe is an argument list that starts with a program", Gather.PROBES.every(p => Array.isArray(p.command) && /^[a-z]+$/.test(p.command[0])), true);
+eq("a long report is cut for the IPC answer", [Gather.capped("x".repeat(30000)).length, Gather.capped("short")], [Gather.MAX_REPORT, "short"]);
+eq("a report built from probe answers holds no path of the home folder", /home|bob/i.test(Report.build({ "now": 0, "plugin": Gather.pluginVersion('{"version":"1.0.0"}'), "versions": { "dms": Gather.parse("dms", "dms v1.6.3"), "distro": Gather.parse("distro", 'PRETTY_NAME="Fedora Linux 44"') }, "journal": ["Oct 08 12:00:00 bobs-pc qs[1]: [orbit] ORB-E001 failed at /home/bob/.cache/x"] })), false);
 
 done();

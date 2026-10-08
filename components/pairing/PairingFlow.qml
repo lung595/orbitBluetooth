@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Services
 import "../device/DeviceCatalog.js" as Catalog
+import "../../diagnostics/Log.js" as Log
 
 // The pairing steps of the "new device" pop-up for one device: pair, check
 // it cannot also type (ProfileCheck, P115), trust and connect, with the
@@ -59,8 +60,10 @@ Item {
                 return;
             if (res && res.error) {
                 flow.lastError = String(res.error);
-                // A fixed line: the error text may carry a device name or address (value 11)
-                console.warn("orbitBluetooth: pairing failed while " + flow.phase);
+                // A fixed code: the error text may carry a device name or address (value 11)
+                Log.event("ORB-E002", {
+                    "reason": "unknown"
+                });
                 flow.phase = "failed";
                 timeout.stop();
                 return;
@@ -153,6 +156,9 @@ Item {
         interval: 45000
         onTriggered: if (flow.phase === "pairing" || flow.phase === "connecting") {
             flow.lastError = "timed out in " + flow.phase;
+            Log.event("ORB-E002", {
+                "reason": "timeout"
+            });
             flow.phase = "failed";
         }
     }

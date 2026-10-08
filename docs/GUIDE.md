@@ -18,7 +18,7 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 - [Real device pictures](#real-device-pictures)
 - [Device icons](#device-icons)
 - [Light theme](#light-theme)
-- [Settings](#settings)
+- [Settings](#settings) · [Report a problem](#report-a-problem)
 - [Privacy](#privacy)
 - [Performance](#performance)
 
@@ -728,6 +728,18 @@ Grouped in tabs: **Orbit** (with Reset), **Scanning**, **Headphones** (with devi
 
 Three buttons at the end reset custom device icons, bring back every hidden device and offer ignored devices again. DMS's *Reduce motion* is respected.
 
+## Report a problem
+
+When something does not work, Orbit can give you a short report to paste in a GitHub issue. It holds versions (Orbit, DMS, Quickshell, Qt, niri, your distribution), which parts of Orbit are loaded, the settings that choose a behaviour, a few counts, the shell's CPU over one second and the last events as codes. It holds **no device name, no Bluetooth address, no login, no home folder**: every line is cleaned twice before it is shown. It is built only when you ask and costs nothing the rest of the time. The codes are explained in [Debugging Orbit](DEBUGGING.md).
+
+- **Settings → Orbit → Copy report.** Takes about two seconds (the button says so), then the report is on your clipboard. Orbit uses `wl-copy --sensitive` so DMS's clipboard history does not keep it; without `wl-clipboard` it falls back to DMS's own copy, and then the history may hold the text (the message says so). With neither, the message tells you to install `wl-clipboard` or use the command line. Read the report before you paste it.
+- **`dms ipc call orbitBluetooth diagnostics`.** The first call starts the report and answers at once; run it again about two seconds later to get the text (once; the next call starts a new one).
+- **`sh scripts/diagnose.sh`** from the plugin folder does both calls and also adds the latest Quickshell crash folder, if there is one, with your home folder and login replaced. Nothing is written to disk and nothing is sent.
+
+Then open a [bug report](https://github.com/lung595/orbitBluetooth/issues/new?template=bug.yml) and paste the report in its last field.
+
+The CPU figure is the whole shell (DMS and every plugin), not Orbit's share.
+
 ## Privacy
 
 - **No telemetry. No network access, except one opt-in feature, off by default**: [Real device pictures](#real-device-pictures), which sends only the model name of paired devices to `commons.wikimedia.org` and `api.sketchfab.com`.
@@ -737,6 +749,7 @@ Three buttons at the end reset custom device icons, bring back every hidden devi
 - **Hidden devices**: the list of what you hid in the black hole, Bluetooth devices and wired outputs (an address or a node name and the name it had, at most 64), is kept in Orbit's own settings; **Show** or the buttons of the settings empty it. [More](#hiding-devices-the-black-hole)
 - **The two volumes** talk to the local sound server (PipeWire) only; the tick is a sound file shipped with Orbit, played with `pw-play`, and the picture of the sound is read locally with `cava`.
 - **One helper process**: the noise-control helper opens a local Bluetooth socket to your headset and nothing else, only while needed: while a card is open, or, with [Pause when you take the headset off](#pause-when-you-take-the-headset-off) on, for as long as a Sony headset with a wearing sensor is connected. That option reads and pauses your media players through MPRIS on the local D-Bus; it keeps nothing and sends nothing. `ORBIT_ANC_DEBUG=1` prints its raw packets on stderr; nothing is logged to a file.
+- **The anonymous report** is built in memory only when you ask for it ([Report a problem](#report-a-problem)); the 200 last events vanish with the shell and nothing is written to disk.
 - **Nothing written to disk by Orbit**, except the pictures cache of that opt-in feature (`~/.cache/orbitBluetooth/pictures`): connection times and battery history live in memory for the session.
 - **Files read**: only the sysfs `uevent` of kernel batteries, once each.
 - **Settings** (choices, custom icons, hidden devices, learned groups) are stored by DMS with your other plugin settings.

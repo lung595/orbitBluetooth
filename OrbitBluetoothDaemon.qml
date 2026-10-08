@@ -6,6 +6,7 @@ import "components/pairing"
 import "components/together"
 import "components/volume"
 import "components/wear"
+import "diagnostics/Log.js" as Log
 
 // Event-driven bookkeeping shared by every surface. BlueZ exposes neither a
 // connection timestamp, a charging state nor a discharge rate, so we record
@@ -22,6 +23,14 @@ import "components/wear"
 // devices (and of headphones the new-device pop-up offers) online and keeps the pictures in ~/.cache/orbitBluetooth.
 Item {
     id: root
+
+    // One memory write each way: which surfaces are alive shows in a report
+    Component.onCompleted: Log.event("ORB-I020", {
+        "surface": "daemon"
+    })
+    Component.onDestruction: Log.event("ORB-I021", {
+        "surface": "daemon"
+    })
 
     property var pluginService: null
     property string pluginId: "orbitBluetooth"
@@ -127,6 +136,15 @@ Item {
         }
     }
 
+    // The anonymous report, built only when asked for (docs/DEBUGGING.md)
+    ReportService {
+        id: reportService
+        prefs: prefs
+        surfaces: ({
+                "daemon": true
+            })
+    }
+
     // The commands of `dms ipc call orbitBluetooth` (OrbitIpc)
     OrbitIpc {
         ancService: ancService
@@ -135,6 +153,7 @@ Item {
         keys: keyBinder
         newDevices: newDeviceWatch
         prefs: prefs
+        report: reportService
     }
 
     function _publish(name, value) {

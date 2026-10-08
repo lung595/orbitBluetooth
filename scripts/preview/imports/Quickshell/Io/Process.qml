@@ -14,6 +14,7 @@ QtObject {
     property QtObject stdout: null
     property QtObject stderr: null
     property var written: []
+    signal started
     signal exited(int code)
 
     function write(data) {

@@ -36,6 +36,10 @@ function _escape(s) {
     return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+// No lookbehind in these patterns on purpose: the QML engine of Quickshell
+// rejects "(?<" ("Invalid regular expression") although gjs accepts it, so
+// the character before a match is captured and given back instead.
+
 // Hard cap on a line: a report is read by a person, not a parser
 var MAX_LINE = 240;
 
@@ -55,10 +59,10 @@ var _RULES = [
     // Hardware and network addresses: Bluetooth (colon, dash and BlueZ
     // underscore forms), IPv6 then IPv4, host names of a private network
     [new RegExp("\\b(?:" + _HEX2 + "[:-]){5}" + _HEX2 + "\\b", "g"), "<mac>"],
-    [new RegExp("(?<![0-9A-Za-z])(?:" + _HEX2 + "_){5}" + _HEX2 + "(?![0-9A-Za-z])", "g"), "<mac>"],
-    [/(?<![0-9A-Za-z:])(?:[0-9a-f]{1,4}:){7}[0-9a-f]{1,4}(?![0-9A-Za-z:])/gi, "<ip>"],
-    [/(?<![0-9A-Za-z:])(?:[0-9a-f]{1,4}:){1,7}:(?:[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){0,6})?(?:%[0-9A-Za-z]+)?(?![0-9A-Za-z:])/gi, "<ip>"],
-    [/(?<![0-9A-Za-z:])::(?:[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){0,6})(?![0-9A-Za-z:])/gi, "<ip>"],
+    [new RegExp("(^|[^0-9A-Za-z])(?:" + _HEX2 + "_){5}" + _HEX2 + "(?![0-9A-Za-z])", "g"), "$1<mac>"],
+    [/(^|[^0-9A-Za-z:])(?:[0-9a-f]{1,4}:){7}[0-9a-f]{1,4}(?![0-9A-Za-z:])/gi, "$1<ip>"],
+    [/(^|[^0-9A-Za-z:])(?:[0-9a-f]{1,4}:){1,7}:(?:[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){0,6})?(?:%[0-9A-Za-z]+)?(?![0-9A-Za-z:])/gi, "$1<ip>"],
+    [/(^|[^0-9A-Za-z:])::(?:[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){0,6})(?![0-9A-Za-z:])/gi, "$1<ip>"],
     // A four-part version (1.0.0.1) looks like an address and is hidden too: the safe side
     [/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, "<ip>"],
     [/\b[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.(?:local|lan|home|internal|localdomain|home\.arpa|ts\.net)\b/gi, "<host>"],

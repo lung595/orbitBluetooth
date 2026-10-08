@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell.Io
 import Quickshell.Services.Pipewire
 import "Route.js" as Route
+import "../../diagnostics/Log.js" as Log
 
 // One Bluetooth device, as AudioRoute sees it. When its sound output shows
 // up, finds out whether the device has a volume of its own (absolute
@@ -109,7 +110,10 @@ Item {
         stdinEnabled: true
         onExited: code => {
             if (dev.wanted && code !== 0)
-                console.warn("Orbit: the filter for this PC's level stopped, code", code);
+                Log.event("ORB-E003", {
+                    "tool": "pw_loopback",
+                    "code": code
+                });
         }
     }
 
