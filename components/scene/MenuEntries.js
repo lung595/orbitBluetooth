@@ -4,8 +4,9 @@
 // What the right-click menu of an orbiting device offers, in order (OrbitMenu).
 // Pure: the QML gathers the facts, this decides the entries, so a change of
 // wording or of order is tested. Short on purpose: a member of a group can
-// leave it (and a Bluetooth one be hidden), nothing more; adding a device and stopping the group
-// belong to the group itself (its radar), not to one of its members.
+// leave it (a Bluetooth one also shows Hide, which only explains, Q83),
+// nothing more; adding a device and stopping the group belong to the group
+// itself (its radar), not to one of its members.
 // Tested by tests/menuEntries.test.js.
 //
 // `f` is the facts about the body: `device` (a Bluetooth device: a wired output

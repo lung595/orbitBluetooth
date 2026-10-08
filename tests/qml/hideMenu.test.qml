@@ -220,7 +220,7 @@ Item {
                 h.line(h.usb).eye();
                 check("brought back: the store is empty again", h.stored(), {});
                 h.reload();
-                check("it is in Wired again, and the Hidden section is gone, folded", [h.ids("wired"), c.anyHidden, c.hiddenOpen, scene.hiddenCount], [[h.hdmi, h.usb], false, false, 0]);
+                check("it is in Wired again, and the Hidden section is gone, the open choice kept", [h.ids("wired"), c.anyHidden, c.hiddenOpen, scene.hiddenCount], [[h.hdmi, h.usb], false, true, 0]);
                 c.press(Qt.Key_Down);
             }
         },
@@ -233,8 +233,8 @@ Item {
                 c.press(Qt.Key_H);
                 check("H hides the row under the cursor", Object.keys(h.stored()), [h.hdmi]);
                 h.reload();
-                check("hiding again does not open it by itself: it was chosen already", [c.hiddenOpen, c.anyHidden], [false, true]);
-                check("the Hidden section is there; Right opens it, Left folds it", [c.press(Qt.Key_Right), c.hiddenOpen, h.ids("hidden"), c.press(Qt.Key_Left), c.hiddenOpen], [true, true, [h.hdmi], true, false]);
+                check("hiding again in the same chooser keeps the open choice (D368)", [c.hiddenOpen, c.anyHidden, h.ids("hidden")], [true, true, [h.hdmi]]);
+                check("the Hidden section is there; Left folds it, Right opens it", [c.press(Qt.Key_Left), c.hiddenOpen, c.press(Qt.Key_Right), c.hiddenOpen, h.ids("hidden")], [true, false, true, true, [h.hdmi]]);
                 h.line(h.usb).hovered();
                 h.line(h.usb).eye();
                 h.reload();

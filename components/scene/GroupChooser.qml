@@ -120,10 +120,9 @@ Rectangle {
             chooser._hiddenChanged();
         }
     }
-    // A hidden output is back; the section folds again once it is empty
+    // A hidden output is back; the section keeps the user's choice even when it
+    // empties (its heading only shows while something is hidden)
     function bringBack(row) {
-        if (view.sections.find(s => s.id === "hidden").count <= 1)
-            hiddenOpen = false;
         scene.unhide(row.id);
     }
     // A row is carried and the pointer is at `at` in `line`: the chip follows it
