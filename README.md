@@ -108,7 +108,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 | Drag a device inside the inner ring | Pair and connect |
 | Drag a connected device outward | Disconnect (a device of a listening group only leaves the group) |
 | Click a device | Open its detail card |
-| Scroll over a half circle, its icon or its percentage, or drag a moon | That level: the device's or this PC's, with smart steps; a soft tick plays in that device every 5 % ([more](docs/GUIDE.md#the-two-volumes)) |
+| Scroll over a half circle, its icon or its percentage, or drag a moon | That level: the device's or this PC's, with smart steps; a soft tick plays in that device at each step, every 1 % by default ([more](docs/GUIDE.md#the-two-volumes)) |
 | Click the planet of an open audio device | Mute or unmute |
 | Drag a connected audio device onto another (or onto any device already in the group) | Listen together: the same sound on both, up to 4 outputs ([more](docs/GUIDE.md#listen-together)) |
 | Tap the group's icons, or click a member of the group | The volume radar: that level big in the middle, the others around it, with *Disconnect*, *Remove from group*, *Hide*, *Details* ([more](docs/GUIDE.md#the-volume-radar)) |
@@ -155,6 +155,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Scan duration: 20 s, 45 s, 90 s or *While open* ⚡ | 45 s |
 | | Sounds (short cues) / their volume | Off / 60 % |
 | | Volume tick (a soft tick in the output whose volume you change, in every output for the group's) | On |
+| | Tick every (*1 %* or *5 %*; shown with *Volume tick*, [more](docs/GUIDE.md#the-two-volumes)) | 1 % |
 | | Orbit's tick only (while you change a level in Orbit, DMS's own volume sound waits; shown with *Volume tick*, [more](docs/GUIDE.md#orbits-tick-only)) | On |
 | Headphones | Noise control | On |
 | | Turn off conversation awareness on disconnect | On |

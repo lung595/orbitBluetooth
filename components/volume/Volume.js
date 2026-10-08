@@ -2,16 +2,19 @@
 
 // Pure logic of the volume tick (VolumeTick.qml), tested in tests/*.test.js.
 
-// One step of the tick: a soft sound plays each time the level crosses one
-var stepSize = 0.05;
+// The level a tick stands for, from the setting "Tick every 1 % / 5 %" (a
+// string, as the settings page stores it): 1 % unless it says 5
+function stepSize(setting) {
+    return String(setting) === "5" ? 0.05 : 0.01;
+}
 
 function clamp(v) {
     return Math.max(0, Math.min(1, Number(v) || 0));
 }
 
-// Index of the 5 % step a level falls in: a tick plays when it changes
-function step(v) {
-    return Math.round(clamp(v) / stepSize);
+// Index of the step a level falls in: a tick plays for each one crossed
+function step(v, size) {
+    return Math.round(clamp(v) / size);
 }
 
 // Only a plain node name is ever passed to pw-play (value 11)
@@ -22,10 +25,29 @@ function validSink(name) {
 // A tick plays in at most this many outputs at once: a group has four at most
 var MAX_TICKS = 4;
 
-// Whether a change of level crosses a step, so that it is worth a tick
-function crosses(before, after) {
-    return step(before) !== step(after);
+// How many steps a change of level crosses, so how many ticks it is worth:
+// a jump of 30 % is 30 of them, not one
+function stepsCrossed(before, after, size) {
+    return Math.abs(step(after, size) - step(before, size));
 }
+
+// Ticks are played one every TICK_MS (about 40 a second): faster would blur
+// into a buzz, and a jump must be heard as a run, not as a burst at once
+var TICK_MS = 25;
+
+// Ticks waiting for their turn never exceed this: a full sweep of the dial
+// (100 steps) is heard for 300 ms at most instead of 2.5 s after the hand
+// stopped
+var MAX_QUEUE = 12;
+
+// The ticks still to play once a change that crosses `crossed` steps is added
+function queued(pending, crossed) {
+    return Math.min(MAX_QUEUE, Math.max(0, pending) + crossed);
+}
+
+// Ticks still ringing at once in one output: one lasts 70 ms, so with a tick
+// every TICK_MS about three overlap
+var OVERLAP = 4;
 
 // The sinks a tick plays in, from the node names a change reached: only plain
 // names, each once, MAX_TICKS at most

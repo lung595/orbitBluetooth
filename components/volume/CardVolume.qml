@@ -3,7 +3,7 @@ import QtQuick
 // The two volumes of the device on the detail card (D250): TwoLevels for
 // the card's device, a note when it has no level of its own (D249), and the
 // card's own picture of the sound, which runs only while the card is `live`:
-// nothing at rest. The tick on each 5 % step is the route's (VolumeTick).
+// nothing at rest. The tick on each step is the route's (VolumeTick).
 TwoLevels {
     id: root
 

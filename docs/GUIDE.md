@@ -112,7 +112,7 @@ Open a **connected** audio device (headphones, speaker, earbuds, TV…) and its 
 - **Click an icon** to mute that level. **Click the planet** to mute too: with one audio device connected it mutes this PC, with several it mutes that device only.
 - **Scroll over the planet** to change the level you hear move first (the device's own when it has one).
 - **A device with no level of its own** (no *absolute volume* over Bluetooth): its volume is this PC's, so the screen shows this PC's half circle alone and says *Its volume follows this PC*.
-- **Volume tick**: a soft, short tick plays at each 5 % step you make, so you hear the level where it matters: on the card, in the volume scope (the Dank Island or the pop-up), with the volume keys and in the [radar](#the-volume-radar). It plays **in the output whose level you change**, and only there, so turning one speaker does not make the whole room tick. When you change the **group's** level (the ring at the center, the group's arc, the radar's group dial) it plays in **every** output of the group at once. Turn it off in **Scanning → Volume tick**. It needs `pw-play` (part of PipeWire). DMS's own volume sound waits while you change a level in Orbit, so only the tick plays: see [Orbit's tick only](#orbits-tick-only).
+- **Volume tick**: a soft, short tick plays at each step you make (every 1 % by default, or every 5 %: **Scanning → Tick every**), one for each step crossed, so a fast change is a run of ticks (about 40 a second, 12 at most) and not a single one, so you hear the level where it matters: on the card, in the volume scope (the Dank Island or the pop-up), with the volume keys and in the [radar](#the-volume-radar). It plays **in the output whose level you change**, and only there, so turning one speaker does not make the whole room tick. When you change the **group's** level (the ring at the center, the group's arc, the radar's group dial) it plays in **every** output of the group at once. Turn it off in **Scanning → Volume tick**. It needs `pw-play` (part of PipeWire). DMS's own volume sound waits while you change a level in Orbit, so only the tick plays: see [Orbit's tick only](#orbits-tick-only).
 - Devices that are not connected, or have no sound output, show no screen: scrolling over a connected keyboard or mouse says **…has no volume** instead of doing nothing. Right after a headset connects, its audio can take a second to appear.
 
 Everything talks to the local sound server (PipeWire) only. The picture of the sound is read with `cava` from the device's output, only while the card is open; with *Reduce motion* it does not run and the levels change at once.
@@ -709,7 +709,8 @@ Grouped in tabs: **Orbit** (with Reset), **Scanning**, **Headphones** (with devi
 | | No background scan below | 30 % | Battery of this computer, when unplugged (shown once *Background scan* is on) |
 | | Scan duration | 45 s | 20 s, 45 s, 90 s or *While open* ⚡ |
 | | Sounds | Off | Short cues on snap, connect and disconnect |
-| | Volume tick | On | A soft tick in the device at each 5 % step made on its [card](#the-two-volumes) |
+| | Volume tick | On | A soft tick in the device at each step made on its [card](#the-two-volumes) |
+| | Tick every | 1 % | The size of a step: *1 %* or *5 %*; shown with *Volume tick* |
 | | Orbit's tick only | On | DMS's own volume sound waits while you change a level in Orbit, see [Orbit's tick only](#orbits-tick-only); shown with *Volume tick* |
 | | Volume | 60 % | Of the short cues |
 | Headphones | Noise control | On | Supported headphones (needs Python 3) |

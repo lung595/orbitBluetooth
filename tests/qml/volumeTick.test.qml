@@ -2,18 +2,21 @@ import QtQuick
 import Quickshell.Io
 import "components/volume"
 
-// Test of VolumeTick: where the tick plays when a level changes. One output
-// whose own level moved: that sink only; the group's level: every member's
-// sink, four at most; nothing inside one 5 % step, nothing when the option is
-// off, nothing twice within 45 ms, and a name that is not plain never reaches
-// the player. The player is a harmless program and the processes are the
-// stand-in of Quickshell.Io listed in ProcessLog. Run with tests/qml/run.sh.
+// Test of VolumeTick: where and when the tick plays when a level changes.
+// One output whose own level moved: that sink only; the group's level: every
+// member's sink, four at most; one tick per step crossed (5 % or 1 %), the
+// first at once and the rest paced on a timer that stops when they are done,
+// never more than the cap; nothing inside one step, nothing when the option is
+// off, and a name that is not plain never reaches the player. The player is a
+// harmless program and the processes are the stand-in of Quickshell.Io listed
+// in ProcessLog. Run with tests/qml/run.sh.
 Item {
     id: h
 
     QtObject {
         id: prefs
         property bool volumeTick: true
+        property string tickEvery: "5"
     }
     VolumeTick {
         id: tick
@@ -35,11 +38,10 @@ Item {
     function sinks() {
         return started().map(p => p.command[2]);
     }
-    // Lets the previous tick end (the processes and the 45 ms limit)
+    // Lets the previous tick end: its processes and the ticks still waiting
     function settle() {
         ProcessLog.live.forEach(p => p.running = false);
-        const end = Date.now() + 60;
-        while (Date.now() < end) {}
+        tick._pending = 0;
     }
     function node(name) {
         return {
@@ -71,11 +73,34 @@ Item {
         h.settle();
         check("a tick that ended leaves nothing running", h.started().length, 0);
 
+        // 1 %: a jump of 5 steps is 5 ticks, the first now, the others paced
+        h.settle();
+        prefs.tickEvery = "1";
         tick.play([node("a.1")], 0.5, 0.55);
-        const first = h.started().length;
-        ProcessLog.live.forEach(p => p.running = false);
-        tick.play([node("b.2")], 0.5, 0.55);
-        check("a second one within 45 ms is skipped", [first, h.started().length], [1, 0]);
+        check("1 %: the first tick is at once, four wait", [h.started().length, tick._pending], [1, 4]);
+        check("the pacing timer runs while ticks wait", tick.pacing, true);
+
+        h.settle();
+        tick.play([node("a.1")], 0.5, 0.504);
+        check("1 %: half a percent is no step, no tick", h.started().length, 0);
+        h.settle();
+        tick.play([node("a.1")], 0.5, 0.51);
+        check("1 %: one percent is a tick", h.started().length, 1);
+
+        h.settle();
+        tick.play([node("a.1")], 0.1, 0.9);
+        check("a sweep of the dial waits for no more than the cap", tick._pending, 11);
+
+        h.settle();
+        check("when none waits the timer is stopped: nothing runs at rest", tick.pacing, false);
+
+        // Two ticks of the same output ring together, up to the overlap
+        tick.play([node("a.1")], 0.5, 0.52);
+        tick._fire();
+        tick._fire();
+        check("ticks overlapping in one output use its slots", h.started().length, 3);
+        h.settle();
+        prefs.tickEvery = "5";
 
         h.settle();
         tick.play([node("x; rm -rf ~"), null, node("--target=y z"), node("ok.1")], 0.5, 0.55);

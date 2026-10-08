@@ -4,21 +4,31 @@ imports.searchPath.unshift(imports.system.programPath ? imports.system.programPa
 const { load, eq, done } = imports.lib;
 
 const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNote", "stuckNote", "levelNote"]);
-const Volume = load("Volume.js", ["clamp", "step", "validSink", "crosses", "tickSinks", "MAX_TICKS"]);
+const Volume = load("Volume.js", ["clamp", "step", "validSink", "stepSize", "stepsCrossed", "queued", "tickSinks", "MAX_TICKS", "TICK_MS", "MAX_QUEUE", "OVERLAP"]);
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "slices", "sliceAt", "partOf", "indexOf", "arc", "end", "point", "angleOf", "valueAt", "zone", "wheelPart", "iconSpot", "legendSpot", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
 const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded", "note"]);
 const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "loopbackArgs", "filterArgs", "muteTarget", "levelNodes", "writeLevel", "writeMuted", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "popupScreen", "shownLevels"]);
 
 // --- Volume tick (Volume.js) ------------------------------------------------------
-eq("same step: no tick", Volume.step(0.61) === Volume.step(0.62), true);
-eq("next step: tick", Volume.step(0.62) === Volume.step(0.68), false);
+eq("the setting: 1 % by default, 5 % when it says so", [Volume.stepSize("1"), Volume.stepSize("5"), Volume.stepSize(undefined), Volume.stepSize("7")], [0.01, 0.05, 0.01, 0.01]);
+eq("a rounding error does not move a step (0.57 is step 57)", [Volume.step(0.57, 0.01), Volume.step(0.29, 0.01), Volume.step(0.35, 0.05)], [57, 29, 7]);
 eq("levels are clamped", [Volume.clamp(-1), Volume.clamp(2), Volume.clamp("x")], [0, 1, 0]);
 eq("node name ok for pw-play", Volume.validSink("bluez_output.02_00_00_00_10_06.1"), true);
 eq("no shell characters", Volume.validSink("x; rm -rf ~"), false);
 eq("no option smuggling", Volume.validSink("--target=x y"), false);
 // Where the tick plays: the output whose level moved, or every member's for the group's
-eq("inside one step: no tick, across a step: a tick", [Volume.crosses(0.61, 0.62), Volume.crosses(0.62, 0.68)], [false, true]);
+const tickOne = Volume.stepSize("1"), tickFive = Volume.stepSize("5");
+eq("1 %: a tick per percent crossed, up or down", [Volume.stepsCrossed(0.5, 0.5, tickOne), Volume.stepsCrossed(0.5, 0.51, tickOne), Volume.stepsCrossed(0.5, 0.45, tickOne), Volume.stepsCrossed(0.2, 0.5, tickOne)], [0, 1, 5, 30]);
+eq("1 %: a change under half a percent crosses nothing", Volume.stepsCrossed(0.5, 0.504, tickOne), 0);
+eq("5 %: inside one step no tick, one tick per step across (0.62 is step 12, 0.68 is step 14)", [Volume.stepsCrossed(0.61, 0.62, tickFive), Volume.stepsCrossed(0.62, 0.68, tickFive), Volume.stepsCrossed(0.2, 0.5, tickFive)], [0, 2, 6]);
+eq("the ends of the dial are steps too (and levels are clamped)", [Volume.stepsCrossed(0.98, 1.2, tickOne), Volume.stepsCrossed(0.03, -1, tickOne)], [2, 3]);
+// Pacing: about 40 a second, a jump is a run that never outlasts 300 ms
+eq("one tick every 25 ms is 40 a second", 1000 / Volume.TICK_MS, 40);
+eq("ticks waiting add up, never beyond the cap", [Volume.queued(0, 3), Volume.queued(3, 4), Volume.queued(0, 30), Volume.queued(10, 5)], [3, 7, Volume.MAX_QUEUE, Volume.MAX_QUEUE]);
+eq("the longest run lasts 300 ms", Volume.MAX_QUEUE * Volume.TICK_MS, 300);
+eq("a negative or broken backlog counts as none", Volume.queued(-5, 2), 2);
+eq("enough rings at once for the overlap of 70 ms ticks", Volume.OVERLAP * Volume.TICK_MS >= 70, true);
 eq("one output: its own sink only", Volume.tickSinks(["bluez_output.AA_BB_CC_DD_EE_01.1"]), ["bluez_output.AA_BB_CC_DD_EE_01.1"]);
 eq("the group: every member's sink, each once", Volume.tickSinks(["a.1", "b.2", "a.1", "c.3"]), ["a.1", "b.2", "c.3"]);
 eq("never more than four outputs at once", [Volume.MAX_TICKS, Volume.tickSinks(["a", "b", "c", "d", "e", "f"])], [4, ["a", "b", "c", "d"]]);
