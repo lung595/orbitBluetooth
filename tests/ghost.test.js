@@ -80,7 +80,9 @@ eq("a partner learned with another output is no better than the others", members
 eq("the order the memory comes in does not change the group", propose(IFACE, [XM, AV, SP1], [], { "habits": learn([[IFACE, SP1, AV], 2]) }), propose(IFACE, [SP1, AV, XM], [], { "habits": learn([[AV, IFACE, SP1], 2]) }));
 eq("the group's key is the same as for the refusal", propose(IFACE, [AV, SP1], [], { "habits": habit }).key, Ghost.key([IFACE, AV, SP1]));
 eq("the session refuses a member of the learned group: the next one is tried", members(IFACE, [CALL, AV, XM], [], { "habits": learn([[IFACE, CALL, AV], 5], [[IFACE, XM], 1]) }), [IFACE, XM]);
-eq("a learned group the user turned down gives way to the next one", members(IFACE, [XM, AV, SP1], [], { "habits": learn([[IFACE, AV, SP1], 5], [[IFACE, XM], 1]), "declined": Ghost.withDeclined({}, Ghost.key([IFACE, AV, SP1])) }), [IFACE, XM]);
+eq("the best learned group turned down: nothing, not the next group nor a pair", members(IFACE, [XM, AV, SP1], [], { "habits": learn([[IFACE, AV, SP1], 5], [[IFACE, XM], 1]), "declined": Ghost.withDeclined({}, Ghost.key([IFACE, AV, SP1])) }), null);
+eq("counter-proof: a refusal of another group leaves the best one proposed", members(IFACE, [XM, AV, SP1], [], { "habits": learn([[IFACE, AV, SP1], 5], [[IFACE, XM], 1]), "declined": Ghost.withDeclined({}, Ghost.key([IFACE, XM])) }), [IFACE, AV, SP1]);
+eq("the best group is not complete: the next learned group is still proposed", members(IFACE, [XM], [], { "habits": learn([[IFACE, AV, SP1], 5], [[IFACE, XM], 1]), "declined": Ghost.withDeclined({}, Ghost.key([IFACE, AV, SP1])) }), [IFACE, XM]);
 eq("a memory that is not one is ignored", [null, undefined, "x", 7, [], { "x": 1 }, { "aaaaaaaa,bbbbbbbb": { "n": -1, "d": 1 } }].map(h => members(IFACE, [XM, AV], [], { "habits": h })), Array(7).fill([IFACE, XM]));
 
 // --- What the user hid (D299) ------------------------------------------------------------------------------------------

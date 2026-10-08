@@ -6,7 +6,8 @@ import "Habits.js" as Habits
 // session (Habits.MIN_USE_MS), so the group the user ends up with is what is
 // learned: taking a member out right after the group was made leaves the
 // group without it as the one that counts. The time is read when the members
-// change or the session ends, never by a timer: at rest this holds one number.
+// change, the session ends or the shell stops, never by a timer: at rest this
+// holds one number.
 // Switching learning off erases the memory at once, and nothing is recorded
 // while it is off (value 5).
 QtObject {
@@ -23,10 +24,15 @@ QtObject {
     property var _members: []
     property double _since: 0
 
-    function _settle() {
-        const now = log.clock();
+    // The group in force counts once, if it lasted long enough
+    function _count(now) {
         if (prefs.learnHabits && _since > 0 && now - _since >= Habits.MIN_USE_MS)
             prefs.set("togetherHabits", Habits.record(prefs.togetherHabits, _members, now));
+    }
+
+    function _settle() {
+        const now = log.clock();
+        _count(now);
         _members = session.active ? session.members : [];
         _since = session.active ? now : 0;
     }
@@ -51,4 +57,8 @@ QtObject {
         }
     }
     Component.onCompleted: _sweep()
+    // A session still going when the shell stops (a restart, a reload) is
+    // counted too: it would never see its end otherwise. Once, at the very
+    // end, so there is still no timer at rest.
+    Component.onDestruction: _count(log.clock())
 }
