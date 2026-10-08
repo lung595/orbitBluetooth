@@ -1,7 +1,4 @@
 import QtQuick
-import qs.Common
-import qs.Services
-import "../common"
 import "../centre"
 
 // The planetary Bluetooth scene shared by the Control Center panel, the bar
@@ -14,48 +11,16 @@ import "../centre"
 //  - static art (stars, nebulae, orbit rings) is painted once;
 //  - discovery only runs while the scene is open and stops on its own.
 //
-// This file holds the state every part shares and wires the parts, each in
-// its own file: the device list (OrbitDevices), discovery, the new-device
-// offer, the connection flow, the drag, hiding and focus gestures, noise
-// control, the daemon's data, the physics, the sky (OrbitBackdrop), the
-// orbit with its bodies and cards (OrbitWorld) and what floats above it
-// (OrbitChrome). The parts reach each other through the scene's functions.
-Item {
+// This file wires the parts, each in its own file, and gives them the
+// entry points they call on each other: the device list (OrbitDevices),
+// discovery, the new-device offer, the connection flow, the drag, hiding and
+// focus gestures, noise control, the daemon's data, the physics, the sky
+// (OrbitBackdrop), the orbit with its bodies and cards (OrbitWorld) and what
+// floats above it (OrbitChrome). Its own state (inputs, geometry, clocks,
+// black hole, preferences) is in the base type, OrbitState; what reads a
+// part (cardOpen, awake, the aliases) stays here.
+OrbitState {
     id: scene
-    readonly property NightColors night: NightColors {}
-
-    // --- Inputs ----------------------------------------------------------------
-    property bool active: true               // visible to the user right now
-    property bool autoScan: true             // start discovery when active
-    property bool freezeWhenIdle: false      // desktop: stop animating when idle
-    property bool covered: false             // desktop: hidden behind a window, Ambient pauses
-    property bool interacting: false         // desktop: pointer is over the widget
-    property bool glass: false               // desktop: frameless, fades into the wallpaper
-    property bool foldVolume: false          // menus: the card's two volumes start folded into a thin line
-    property bool volumeUnfolded: false      // ...until clicked; kept while the shell runs, never saved
-    property real cornerRadius: 0            // rounded hosts (Control Center, popout)
-    property var previewDevices: []          // fake device objects, for previews and tests
-    readonly property alias prefs: prefsObj
-    readonly property alias sounds: soundFx
-
-    // --- Geometry --------------------------------------------------------------
-    readonly property real cx: width / 2
-    readonly property real cy: height / 2
-    readonly property real rx: Math.max(40, width / 2 - bodySize * 0.8)
-    readonly property real ry: Math.max(30, height / 2 - bodySize * 1.25)
-    readonly property real innerNorm: 0.56     // connected orbit
-    // Perspective: a tilted circle is still an ellipse, just shifted. The
-    // connected ring keeps its near (bottom) edge and its far (top) edge
-    // reaches the host core's edge, so devices on the far side pass behind it
-    readonly property real innerFrontRy: ry * innerNorm
-    readonly property real innerBackRy: Math.min(innerFrontRy, coreSize * 0.5)
-    readonly property real ringRy: (innerFrontRy + innerBackRy) / 2
-    readonly property real ringCy: cy + (innerFrontRy - innerBackRy) / 2
-    readonly property real outerMinNorm: 0.8  // strongest signal
-    readonly property real snapNorm: 0.7      // magnet engages inside this
-    readonly property real detachNorm: Math.max(0.8, innerNorm + 0.1)   // pulling a connected device past this disconnects
-    readonly property real coreSize: Math.round(Math.min(width, height) * 0.17)
-    readonly property real bodySize: Math.round(Math.max(34, Math.min(width, height) * 0.135))
 
     // The detail card's measures (FocusLayout), read by the world, the bodies
     // and the hosts
@@ -72,51 +37,20 @@ Item {
     readonly property alias focusHeadroom: focusLayout.headroom
     readonly property alias focusFitHeight: focusLayout.fitHeight
 
-    // --- State -----------------------------------------------------------------
+    // --- State that reads a part ---------------------------------------------------
     readonly property alias deviceMap: devices.deviceMap
     // Names of connected devices read stronger than the others; with nothing
     // connected there is no hierarchy to show, so every name is lifted
     readonly property alias anyConnected: devices.anyConnected
-    // The body that flew to the card: the detail card's device, or the radar's hero
-    // when it is a Bluetooth member
-    property var focusBody: null
     // A card is up over the sky (the detail card, the hidden list, the radar): the
     // sky steps back, whichever it is. The detail card is the one that is the
     // device's, and not the radar's flown hero.
     readonly property bool cardOpen: !!focusBody || hiddenOpen || radar.open
     readonly property bool detailOpen: !!focusBody && !radar.open
-    property var dragBody: null
-    property real dragX: 0
-    property real dragY: 0
-    property real clock: 0
-    property real fxTime: 0
-    // When the black hole last swallowed a shooting star (effects clock)
-    property real holeFlashAt: -10
-    property real orbitTime: 0
-    property bool settled: false
     readonly property alias world: worldItem
     readonly property alias tetherLayer: worldItem.tetherLayer
-
-    // --- Black hole ("Hidden") -----------------------------------------------
-    // It drifts in the outer belt like a device nobody paired: it takes a
-    // slot there and step() moves it with the same spring as the bodies.
-    property real holeX: cx
-    property real holeY: cy + ry
     readonly property real holeHorizon: backdrop.holeHorizon
-    property bool hiddenOpen: false
-    property real holeFeed: 0      // 0..1, how close the dragged device is
-    property bool holeEye: false   // a device is carried to it from the group chooser
-    property real holeSpin: 0      // tesseract phase (0 = the classic cube-in-cube), advanced by step()
-    // address -> {x, y}: where a device reappears (spat out of the hole)
-    property var spawnFrom: ({})
-    readonly property int hiddenCount: Object.keys(prefs.hiddenDevices).length
 
-    readonly property var adapter: BluetoothService.adapter
-    readonly property bool btOn: BluetoothService.enabled
-    readonly property bool discovering: BluetoothService.discovering
-    readonly property bool motion: !prefs.reduceMotion
-    // Nobody can see the screen: session locked or monitors powered off
-    readonly property bool screenAsleep: SessionService.locked || IdleService.isShellLocked || IdleService.monitorsOff
     // Time-driven motion (orbits, float, twinkles) runs only while awake;
     // otherwise the clock stops as soon as every body has settled.
     readonly property bool awake: active && visible && width > 0 && !screenAsleep && (!freezeWhenIdle || interacting || (prefs.desktopAmbient && !covered) || !!dragBody || cardOpen)
@@ -145,10 +79,6 @@ Item {
         daemon.requestPicture(query);
     }
 
-    // --- The two volumes (the daemon's AudioRoute, D249) ----------------------
-    // Not read-only: the offscreen previews give a made-up one
-    property var audioRoute: PluginService.pluginDaemonInstances[prefs.pluginId]?.route ?? null
-
     // --- Noise control (the daemon runs the helper, see AncService) ----------
     OrbitAnc {
         id: anc
@@ -174,19 +104,6 @@ Item {
 
     clip: true
     focus: active
-
-    Prefs {
-        id: prefsObj
-    }
-    SoundFx {
-        id: soundFx
-        enabled: prefsObj.sounds
-        volume: prefsObj.soundVolume
-    }
-
-    function wake() {
-        settled = false;
-    }
 
     onWidthChanged: wake()
     onHeightChanged: wake()
@@ -281,12 +198,6 @@ Item {
         connections.onBodyConnectionChanged(b, isConnected);
     }
 
-    // What did not work, said under the core (OrbitNote), null when nothing
-    property var note: null
-    function explain(info) {
-        note = info;
-    }
-
     // --- Drag ------------------------------------------------------------------
     OrbitDrag {
         id: drag
@@ -308,9 +219,6 @@ Item {
         scene: orbitRoot
     }
     readonly property alias together: togetherCtl
-    // The device the dragged one is over, when dropping would be about listening together
-    property var togetherDrop: null
-
     // --- The listening source takes the center (OrbitCentre) ----------------------
     OrbitCentre {
         id: centreCtl
@@ -389,7 +297,6 @@ Item {
     }
 
     // --- Focus and rename (the detail card) ----------------------------------
-    property bool renaming: false
     OrbitFocus {
         id: focusCtl
         scene: orbitRoot
