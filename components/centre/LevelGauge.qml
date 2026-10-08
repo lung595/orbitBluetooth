@@ -3,7 +3,7 @@ import QtQuick.Shapes
 import "Gauge.js" as Gauge
 
 // A level drawn as a gauge: an open arc of 270 degrees (Gauge.js) over a faint
-// track, a soft gradient along the level, a glow where it ends, faint marks
+// track, a soft gradient that turns along the arc with the level, a glow where it ends, faint marks
 // every 10 % that light as the level passes them, and a round thumb with a
 // halo. Static art: it is redrawn only when the level or a colour changes, and
 // nothing in it animates.
@@ -92,18 +92,24 @@ Shape {
             sweepAngle: 359.9
         }
     }
-    // The level, filled and not stroked: a stroke cannot take a gradient. A
-    // level of 0 draws nothing, not the round dot of an empty band.
+    // The level, filled and not stroked: a stroke cannot take a gradient. The
+    // gradient is conical, so a place on the arc has the color of its angle, not
+    // of its x (Qt's own gradient, drawn by the curve renderer: no shader of ours,
+    // and static like the rest). A level of 0 draws nothing, not the round dot
+    // of an empty band.
     ShapePath {
         strokeColor: "transparent"
-        fillGradient: LinearGradient {
-            x1: gauge.mid - gauge.radius
-            y1: gauge.mid
-            x2: gauge.mid + gauge.radius
-            y2: gauge.mid
+        fillGradient: ConicalGradient {
+            centerX: gauge.mid
+            centerY: gauge.mid
+            angle: Gauge.conic().from
             GradientStop {
                 position: 0
                 color: gauge.startColor
+            }
+            GradientStop {
+                position: Gauge.conic().to
+                color: gauge.endColor
             }
             GradientStop {
                 position: 1

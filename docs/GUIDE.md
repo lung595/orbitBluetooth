@@ -331,7 +331,7 @@ Under a Listen together group, Orbit shows no name: one small round disc per dev
 
 ### The volume at the center
 
-The gauge around the source is the volume of the whole group. It is an open arc with its gap at the bottom: it starts at the speaker (bottom left), runs clockwise over the top and ends at the bottom right. Marks every 10 % light up as the level passes them.
+The gauge around the source is the volume of the whole group. It is an open arc with its gap at the bottom: it starts at the speaker (bottom left), runs clockwise over the top and ends at the bottom right. Marks every 10 % light up as the level passes them. Its color turns along the arc, from the start color at the speaker to the end color at the far end, so the thumb's color goes with the level; it is the theme's, and flat grey when muted.
 
 - **Drag** anywhere along the arc's band, or **click the track** to jump there. Crossing the gap at the bottom keeps the level at the end you came from; a click in the gap picks the nearer end. The level never wraps from 100 % to 0 %.
 - **Wheel** over the gauge or over the planet moves the group's level by one smart step.

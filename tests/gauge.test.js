@@ -39,4 +39,6 @@ const lengthOf = (path, i) => { const [a, b] = path.split("M ").filter(m => m)[i
 const all = G.ticks(0, 0, 60, 3, 1, true);
 eq("ticks: longer at 0, 50 and 100 %", [lengthOf(all, 0), lengthOf(all, 1), lengthOf(all, 5), lengthOf(all, 10)], [5.1, 3, 5.1, 5.1]);
 
+eq("conic: the gradient starts where the arc does and its stops end at three quarters of the turn", [G.conic().from, G.conic().to], [G.angleOf(0) * 180 / Math.PI, 0.75]);
+
 done();

@@ -49,6 +49,13 @@ function hit(cx, cy, x, y, radius, band) {
     return t <= SWEEP + SLOP || t >= 360 - SLOP;
 }
 
+// The conical gradient that follows the arc: it starts at the arc's start and
+// its stops run over a whole turn, so the arc's end is at `to` (0..1) and the
+// gap is what is past it
+function conic() {
+    return { "from": START, "to": SWEEP / 360 };
+}
+
 const p = pt => Math.round(pt.x * 100) / 100 + " " + Math.round(pt.y * 100) / 100;
 
 // The outline of the band of width `w` around the circle of radius `r`, from
