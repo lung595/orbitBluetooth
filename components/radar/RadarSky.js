@@ -33,11 +33,11 @@ function starCount(width, bodyHeight) {
 }
 
 // What the sky keeps clear, from the radar's places (Radar.layout, `cx`, `cy` the
-// hero's middle): a disc around the hero and each small dial, the strip a small
+// radar's middle, the dials sit at their offsets from it): a disc around the hero and each small dial, the strip a small
 // dial's name takes under it, and the band the actions are laid out in. The band,
 // not the pills on show: it does not move when the hero changes, so neither does the sky.
 function clearings(places, cx, cy, width, actionsY) {
-    const discs = [{ "x": cx, "y": cy, "r": places.hero.r + 8 }];
+    const discs = [{ "x": cx + places.hero.x, "y": cy + places.hero.y, "r": places.hero.r + 8 }];
     const rects = [];
     for (const s of places.satellites) {
         discs.push({ "x": cx + s.x, "y": cy + s.y, "r": s.r + 6 });

@@ -18,7 +18,7 @@ Canvas {
     // The group's colors (MemberPalette) and the one to fall back on for the second nebula
     required property var colors
     required property color fallback
-    // Where the dials are: Radar.layout's places around (cx, cy), at the radar's side
+    // Where the dials are: Radar.layout's places, each offset from the radar's middle (cx, cy), at the radar's side
     required property var places
     required property real cx
     required property real cy

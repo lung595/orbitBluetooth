@@ -24,11 +24,11 @@ eq("count: one star per 2 500 px², at most 60, none for no room", [S.starCount(
 // --- what is kept clear -----------------------------------------------------------------
 const c4 = clear(4);
 eq("clearings: a disc for the hero and one for each small dial, a name strip each and the actions' band", [c4.discs.length, c4.rects.length], [5, 5]);
-eq("clearings: the hero's disc is its ring and 8 px", [c4.discs[0].r, c4.discs[0].x, c4.discs[0].y], [places(4).hero.r + 8, cx, cy]);
+eq("clearings: the hero's disc is its ring and 8 px, on the hero's offset place", [c4.discs[0].r, c4.discs[0].x, c4.discs[0].y], [places(4).hero.r + 8, cx + places(4).hero.x, cy + places(4).hero.y]);
 const s0 = places(4).satellites[0];
 eq("clearings: a small dial's disc is its radius and 6 px, its name strip is 14 px high under it, at least 72 wide", [c4.discs[1].r, c4.rects[0].h - 8, c4.rects[0].w - 8, c4.rects[0].y + 4 - (cy + s0.y + s0.r)], [s0.r + 6, 14, Math.max(72, 3 * s0.r), 2]);
 eq("clearings: the actions' band is the room the card reserves, the card's width across", [c4.rects[4].h - 8, c4.rects[4].y + 4], [R.ACTIONS, actionsY]);
-eq("clearings: they follow the offset places, the orbit's ideal ring is not where the dials are", [c4.discs.slice(1).every((d, k) => d.x === cx + places(4).satellites[k].x && d.y === cy + places(4).satellites[k].y), places(4).satellites.some(s => Math.abs(Math.hypot(s.x, s.y) - R.ORBIT * side) > 1)], [true, true]);
+eq("clearings: they follow the offset places, the orbit's ideal ring is not where the dials are", [c4.discs[0].x === cx + places(4).hero.x && c4.discs[0].y === cy + places(4).hero.y && c4.discs.slice(1).every((d, k) => d.x === cx + places(4).satellites[k].x && d.y === cy + places(4).satellites[k].y), places(4).satellites.some(s => Math.abs(Math.hypot(s.x, s.y) - R.ORBIT * side) > 1)], [true, true]);
 eq("clearings: a lone hero keeps only itself and the band", [clear(0).discs.length, clear(0).rects.length], [1, 1]);
 eq("isClear: the hero's middle, a small dial's name and the actions are not, the corner is", [S.isClear(c4, cx, cy, 0), S.isClear(c4, cx + s0.x, cy + s0.y + s0.r + 8, 0), S.isClear(c4, cx, actionsY + 10, 0), S.isClear(c4, 2, top + 2, 0)], [false, false, false, true]);
 eq("isClear: the margin counts", [S.isClear(c4, cx + c4.discs[0].r + 1, cy, 0), S.isClear(c4, cx + c4.discs[0].r + 1, cy, 2)], [true, false]);
