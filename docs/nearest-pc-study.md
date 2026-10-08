@@ -55,8 +55,9 @@ exchanged between PCs.
   device appears is expected to be enough (to confirm in slice 2).
 - Spread between adapters of different sensitivity, and ties between two PCs
   at equal signal: not measured. A tie keeps both PCs offering, which is
-  today's behavior; the first that pairs wins and the other's sheet closes
-  because the device is then connected.
+  today's behavior; the first that pairs wins; whether the other's sheet then
+  closes depends on the fire-time re-check below, since `connected` is only
+  this adapter's own link.
 - Whether a read of `RSSI` right after `PropertiesChanged: Discovering=true`
   is already filled: not measured.
 - **Main open question for slice 2:** what is observable at fire time on the
