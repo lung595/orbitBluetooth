@@ -5,6 +5,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 const GLib = imports.gi.GLib;
+const Gio = imports.gi.Gio;
 
 const Allow = load("Allow.js");
 const Redact = load("Redact.js");
@@ -12,6 +13,7 @@ const Codes = load("Codes.js");
 const Log = load("Log.js");
 const Cpu = load("Cpu.js");
 const Report = load("Report.js");
+const Glyphs = load("Glyphs.js");
 
 // --- Allow.js: the allowlist -------------------------------------------------------
 eq("a yes/no is written yes or no", [Allow.value("bool", true), Allow.value("bool", false)], ["yes", "no"]);
@@ -82,7 +84,7 @@ eq("a command is reduced to its program", [Redact.command("/usr/bin/wl-copy --se
 eq("an odd command becomes <cmd>", [Redact.command(""), Redact.command(["x y"]), Redact.command(null), Redact.command(["\x2fhome/jdoe/my tool"])], ["<cmd>", "<cmd>", "<cmd>", "<cmd>"]);
 
 // --- Codes.js: the declarations are consistent -------------------------------------
-const wordOk = /^[a-z0-9_.-]{1,24}$/;
+const wordOk = /^[A-Za-z0-9_.-]{1,24}$/;
 const badWords = [];
 for (const key in Codes.FIELDS) {
     if (Array.isArray(Codes.FIELDS[key]))
@@ -159,7 +161,8 @@ const report = Report.build({
         "WARN qml: [orbit] ORB-W010 state=off",
         "ERROR qml: QML OrbitBluetooth at file://\x2fhome/jdoe/.config/DankMaterialShell/plugins/orbitBluetooth/A.qml[4:1]: Bob's AirPods Pro " + MAC + " " + IP4,
         "INFO qml: something unrelated of another plugin 192.168.7.23",
-        "x".repeat(10) + " [orbit] token=tskey-auth-abcdef123456"
+        "x".repeat(10) + " [orbit] token=tskey-auth-abcdef123456",
+        "Oct 08 12:00:00 laptop-jdoe qs[123]: [orbit] ORB-W011 tool=pw_loopback"
     ]
 });
 const expected = [
@@ -179,10 +182,11 @@ const lines = report.split("\n");
 eq("the report's header holds the versions, surfaces, settings, state and CPU", lines.slice(0, 11), expected);
 eq("the events follow, with their time", lines.slice(11, 13).map(l => l.replace(/^ {2}\d\d:\d\d:\d\d /, "  T ")), ["  T ORB-I020 surface=widget", "  T ORB-E003 tool=pw_loopback code=1"]);
 eq("only the plugin's own journal lines are kept, cleaned", lines.slice(13), [
-    "Journal lines (anonymized, 3 kept, last 50 at most):",
+    "Journal lines (anonymized, 4 kept, last 50 at most):",
     "  WARN qml: [orbit] ORB-W010 state=off",
     "  ERROR qml: QML OrbitBluetooth at file://~/.config/DankMaterialShell/plugins/orbitBluetooth/A.qml[4:1]: device#1 <mac> <ip>",
     "  xxxxxxxxxx [orbit] token=<secret>",
+    "  [orbit] ORB-W011 tool=pw_loopback",
     ""
 ]);
 eq("a report ends with a new line", report.endsWith("\n"), true);
@@ -217,5 +221,43 @@ for (const code of Object.keys(Codes.CODES)) {
     }
 }
 eq("every code with every hostile value gives a plain line", dirty, []);
+
+// --- Codes.js against the settings pages: B cannot drift from what the user can pick ---
+// Every settingKey of the pages is either listed in Codes.SETTINGS with exactly the
+// words (or number kind) of its choices, or left out on purpose.
+// Two behaviour flags live in Prefs.qml without a settings control of their own
+const KEPT_PREFS = ["keysOffered", "learnHabits"];
+const OMITTED = ["imageFolder", "factCard_", "factMore_"];
+const settingsDir = GLib.path_get_dirname(GLib.path_get_dirname(GLib.canonicalize_filename(imports.system.programPath, GLib.get_current_dir()))) + "/components/settings";
+const keysFound = {};
+const dirEnum = Gio.File.new_for_path(settingsDir).enumerate_children("standard::name", 0, null);
+for (let info = dirEnum.next_file(null); info; info = dirEnum.next_file(null)) {
+    if (!/\.qml$/.test(info.get_name()))
+        continue;
+    const qml = new TextDecoder().decode(GLib.file_get_contents(settingsDir + "/" + info.get_name())[1]);
+    qml.split(/\n(?=\s*[A-Z]\w+ \{)/).forEach(block => {
+        const key = /(?:settingKey|settingKey: string): "(\w+)"|settingKey: "(\w+)"/.exec(block);
+        if (key)
+            keysFound[key[1] || key[2]] = [...block.matchAll(/value: "([^"]*)"/g)].map(m => m[1]);
+    });
+}
+const glyphWords = ["auto"].concat(Glyphs.order);
+const settingsDrift = [];
+for (const key in keysFound) {
+    if (OMITTED.indexOf(key) >= 0)
+        continue;
+    const spec = Codes.SETTINGS[key];
+    const words = keysFound[key];
+    const numeric = words.length > 0 && words.every(w => /^\d+$/.test(w));
+    if (spec === undefined)
+        settingsDrift.push(key + " is not in Codes.SETTINGS");
+    else if (key === "hostGlyph" ? JSON.stringify(spec) !== JSON.stringify(glyphWords) : (words.length && !numeric && JSON.stringify(spec) !== JSON.stringify(words)))
+        settingsDrift.push(key + " words differ: " + JSON.stringify(words));
+    else if ((numeric || (words.length === 0 && Array.isArray(spec))) && spec !== "int")
+        settingsDrift.push(key + " should be int");
+}
+eq("every setting of the pages is in Codes.SETTINGS with its real words", settingsDrift, []);
+eq("the check really read the pages", Object.keys(keysFound).length > 30, true);
+eq("Codes.SETTINGS holds no key the pages no longer have", Object.keys(Codes.SETTINGS).filter(k => !(k in keysFound) && KEPT_PREFS.indexOf(k) < 0), []);
 
 done();

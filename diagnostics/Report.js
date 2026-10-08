@@ -11,6 +11,9 @@
 // goes through the allowlist and Redact, so what comes out holds versions,
 // states and codes, and nothing that identifies a person or a machine.
 
+// "Oct 08 12:00:00 <host> qs[123]: " as journalctl writes it by default
+var SYSLOG_PREFIX = /^\w{3} [ \d]\d \d\d:\d\d:\d\d \S+ \S+: /;
+
 // A version or a distribution name: letters, digits and a few separators
 function _version(v) {
     var s = typeof v === "string" ? v.trim() : "";
@@ -68,7 +71,10 @@ function build(info) {
         out.push("  " + _clock(events[e].at) + " " + events[e].line);
     var lines = Array.isArray(i.journal) ? i.journal : [];
     // The journal only carries what the plugin tagged, but the engine's own
-    // errors name files and folders: cleaned like everything else
+    // errors name files and folders: cleaned like everything else. The short
+    // journalctl format starts with the machine name, which no pattern could
+    // recognise, so that prefix is cut off first. A device name in an engine
+    // line is hidden only once registered (Redact.register): the caller does so.
     var tag = "[" + Codes.LABEL + "]";
     var kept = lines.filter(function (l) {
         return typeof l === "string" && (l.indexOf(tag) >= 0 || l.indexOf(Codes.PLUGIN) >= 0);
@@ -77,6 +83,6 @@ function build(info) {
     if (!kept.length)
         out.push("  none");
     for (var k = 0; k < kept.length; k++)
-        out.push("  " + Redact.text(kept[k]));
+        out.push("  " + Redact.text(kept[k].replace(SYSLOG_PREFIX, "")));
     return out.join("\n") + "\n";
 }

@@ -59,6 +59,7 @@ var _RULES = [
     [/(?<![0-9A-Za-z:])(?:[0-9a-f]{1,4}:){7}[0-9a-f]{1,4}(?![0-9A-Za-z:])/gi, "<ip>"],
     [/(?<![0-9A-Za-z:])(?:[0-9a-f]{1,4}:){1,7}:(?:[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){0,6})?(?:%[0-9A-Za-z]+)?(?![0-9A-Za-z:])/gi, "<ip>"],
     [/(?<![0-9A-Za-z:])::(?:[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){0,6})(?![0-9A-Za-z:])/gi, "<ip>"],
+    // A four-part version (1.0.0.1) looks like an address and is hidden too: the safe side
     [/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, "<ip>"],
     [/\b[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.(?:local|lan|home|internal|localdomain|home\.arpa|ts\.net)\b/gi, "<host>"],
     // The account name lives in the home folder and in the runtime folder

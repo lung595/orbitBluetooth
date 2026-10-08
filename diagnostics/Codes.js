@@ -65,20 +65,25 @@ var SETTINGS = {
     "togetherCentre": "bool",
     "learnHabits": "bool",
     "ancEnabled": "bool",
-    "ancEngine": ["demand", "always"],
+    "ancEngine": ["demand", "live"],
     "ancChatOff": "bool",
     "wearPause": "bool",
     "realPictures": "bool",
-    "holeStyle": ["blackhole", "star", "none"],
+    "holeStyle": ["blackhole", "tesseract"],
     "separatePc": "bool",
-    "popupMode": ["replace", "stack"],
-    "popupSize": ["small", "medium", "compact", "large"],
+    "popupMode": ["replace", "bar", "edge", "off"],
+    "popupSize": ["compact", "medium", "large"],
     "popupScreens": ["focused", "all"],
     "scopeFps": "int",
     "scopeStyle": ["points", "rays", "waves", "none"],
     "volumeSteps": ["smart", "fixed"],
     "volumeSpeed": ["gentle", "balanced", "fast"],
-    "keysOffered": "bool"
+    "keysOffered": "bool",
+    "desktopBackdrop": "int",
+    "hostGlyph": ["auto", "headphonesSlim", "headphones", "headphonesPremium", "headset", "earbudsStem", "earbudsRound", "earbudsCase", "speaker", "speakerTall", "soundbar", "mouse", "mouseErgo", "mouseGaming", "trackpad", "keyboard", "gamepad", "pen", "phone", "tablet", "watch", "watchRound", "glasses", "vr", "tv", "car", "laptop", "desktop", "bluetooth"],
+    "soundVolume": "int",
+    "togetherFineDelay": "int",
+    "volumeStep": "int"
 };
 
 // What the plugin reports about itself at the moment of the report (counts of

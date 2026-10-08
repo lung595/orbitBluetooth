@@ -20,6 +20,7 @@ function pathOf(file) {
 // One instance per file, like QML's: a module and the modules importing it share
 // the state a ".pragma library" file keeps (the diagnostics' buffer, for one).
 const loaded = {};
+// Extra `names` count only for the first load of a file: it is cached by file name.
 function load(file, names) {
     if (loaded[file])
         return loaded[file];
