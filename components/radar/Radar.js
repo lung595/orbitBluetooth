@@ -1,4 +1,5 @@
 .pragma library
+.import "RadarRandom.js" as Rand
 
 // The volume radar of a Listen together: one level is the hero, drawn big (the
 // group's, or the member that was clicked), and every other level stays around
@@ -18,22 +19,61 @@ var ORBIT = 0.44;     // the satellites' ring, of the side, from the hero's midd
 var SPREAD = 50;      // degrees between two satellites at most
 var ARC = 140;        // degrees they cover at most: the upper side, the hero's name and the chips stay clear
 
+// Every dial sits a little off its ideal place, still and uneven, as if it
+// weighed nothing: no motion, so no cost while the radar is open.
+var DRIFT = 0.018;       // a satellite's largest offset along the orbit, of the side
+var HERO_DRIFT = 0.008;  // the hero's largest offset, of the side: under half a satellite's
+var NAME_GAP = 4;        // how little two names may be apart at least, when they were that far without the offset
+
 function styleOf(name) {
     return STYLES.indexOf(name) >= 0 ? name : STYLES[0];
 }
 
 // Where the hero and `count` satellites sit in a radar `side` px wide, from its
 // middle: { hero: {x, y, r}, satellites: [{x, y, r}] }. The satellites run along
-// the upper arc, left to right.
+// the upper arc, left to right. The offsets come from the rank of a place, never
+// from the device, so a new hero moves no dial's place (and so no clearing of the sky).
 function layout(style, count, side) {
     const n = Math.max(0, count | 0);
+    const spots = amp => places(n, side, amp);
+    // Halve the offset, then drop it, until no two names come closer than they did
+    const plain = spots(0);
+    const amp = [1, 0.5].find(k => namesKept(plain, spots(k))) ?? 0;
+    return { "hero": heroSpot(n, side), "satellites": spots(amp) };
+}
+
+// The satellites with their offset scaled by `k` (0 = on the orbit)
+function places(n, side, k) {
     const step = n > 1 ? Math.min(SPREAD, ARC / (n - 1)) : 0;
-    const satellites = [];
+    const out = [];
     for (let i = 0; i < n; i++) {
         const a = (-90 + (i - (n - 1) / 2) * step) * Math.PI / 180;
-        satellites.push({ "x": Math.cos(a) * ORBIT * side, "y": Math.sin(a) * ORBIT * side, "r": SATELLITE * side });
+        const u = Rand.random(7919 * n + 104729 * (i + 1))();
+        const d = k * (i % 2 ? -1 : 1) * DRIFT * side * (0.55 + 0.45 * u);
+        const reach = ORBIT * side + d;
+        out.push({ "x": Math.cos(a) * reach, "y": Math.sin(a) * reach, "r": SATELLITE * side });
     }
-    return { "hero": { "x": 0, "y": 0, "r": HERO * side }, "satellites": satellites };
+    return out;
+}
+
+function heroSpot(n, side) {
+    const next = Rand.random(7919 * n);
+    const d = HERO_DRIFT * side * (0.6 + 0.4 * next());
+    const a = 2 * Math.PI * next();
+    return { "x": Math.cos(a) * d, "y": Math.sin(a) * d, "r": HERO * side };
+}
+
+// The room between two satellites' names (each `max(72, 3r)` wide and 14 high,
+// right under its dial), 0 when they touch; negative when they overlap
+function nameGap(a, b) {
+    const w = Math.max(72, 3 * a.r);
+    return Math.max(Math.abs(a.x - b.x) - w, Math.abs(a.y - b.y) - 14);
+}
+
+// Whether the moved satellites keep every pair of names as far apart as the
+// ideal ones, up to NAME_GAP
+function namesKept(ideal, moved) {
+    return moved.every((s, i) => i === 0 || nameGap(s, moved[i - 1]) >= Math.min(nameGap(ideal[i], ideal[i - 1]), NAME_GAP));
 }
 
 var PILL = 30;        // the height of one action
@@ -49,7 +89,7 @@ var SHARE = 0.92;     // how much of the card's inner width the radar's side tak
 function extent(style, count, side) {
     const spots = layout(style, count, side);
     return {
-        "above": Math.max(spots.hero.r, ...spots.satellites.map(s => s.r - s.y)),
+        "above": Math.max(spots.hero.r - spots.hero.y, ...spots.satellites.map(s => s.r - s.y)),
         "below": spots.hero.r + UNDER + ACTIONS
     };
 }

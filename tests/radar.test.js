@@ -3,19 +3,19 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const R = load("Radar.js", ["STYLES", "START", "SWEEP", "styleOf", "layout", "angleOf", "levelAt", "percent", "heroOf", "around", "subtitle", "chips", "extent", "sideFor", "blockHeight", "MIN_SIDE", "ACTIONS", "UNDER", "SHARE", "PILL", "GAP", "chipRows"]);
+const R = load("Radar.js", ["STYLES", "START", "SWEEP", "styleOf", "layout", "angleOf", "levelAt", "percent", "heroOf", "around", "subtitle", "chips", "extent", "sideFor", "blockHeight", "MIN_SIDE", "ACTIONS", "UNDER", "SHARE", "PILL", "GAP", "chipRows", "DRIFT", "HERO_DRIFT", "ORBIT", "places"]);
 
 const near = v => Math.round(v * 1000) / 1000;
 const side = 300;
 
 // --- the layout ---------------------------------------------------------------
 eq("style: the hero look is the only one now, and what is not known is it", [R.styleOf("hero"), R.styleOf("rings"), R.styleOf(undefined)], ["hero", "hero", "hero"]);
-eq("layout: the hero sits in the middle and is the biggest dial", [R.layout("hero", 3, side).hero.x, R.layout("hero", 3, side).hero.y, R.layout("hero", 3, side).hero.r > R.layout("hero", 3, side).satellites[0].r * 2], [0, 0, true]);
+eq("layout: the hero sits next to the middle and is the biggest dial", [Math.hypot(R.layout("hero", 3, side).hero.x, R.layout("hero", 3, side).hero.y) <= R.HERO_DRIFT * side, R.layout("hero", 3, side).hero.r > R.layout("hero", 3, side).satellites[0].r * 2], [true, true]);
 eq("layout: one satellite per dial around the hero, none for a hero alone", [0, 1, 2, 3, 4, 5].map(n => R.layout("hero", n, side).satellites.length), [0, 1, 2, 3, 4, 5]);
 eq("layout: a lone satellite is straight above the hero", [near(R.layout("hero", 1, side).satellites[0].x), R.layout("hero", 1, side).satellites[0].y < 0], [0, true]);
 const spread = n => R.layout("hero", n, side).satellites;
 eq("layout: they run left to right along the upper side, never below the hero's middle", [2, 3, 4, 5].map(n => spread(n).every((s, i) => s.y < 0 && (i === 0 || s.x > spread(n)[i - 1].x))), [true, true, true, true]);
-eq("layout: they are centred on the hero's axis", [2, 3, 4, 5].map(n => near(spread(n)[0].x + spread(n)[n - 1].x)), [0, 0, 0, 0]);
+eq("layout: they are centred on the hero's axis, give or take their offset", [2, 3, 4, 5].map(n => Math.abs(spread(n)[0].x + spread(n)[n - 1].x) < 2 * R.DRIFT * side), [true, true, true, true]);
 const apart = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 eq("layout: two satellites never touch, up to the group and four members", [2, 3, 4, 5].map(n => spread(n).every((s, i) => i === 0 || apart(s, spread(n)[i - 1]) > s.r * 2.2)), [true, true, true, true]);
 eq("layout: none touches the hero", [1, 3, 5].map(n => spread(n).every(s => Math.hypot(s.x, s.y) - s.r > R.layout("hero", n, side).hero.r)), [true, true, true]);
@@ -24,9 +24,22 @@ const reach = n => Math.max(...spread(n).map(s => Math.hypot(s.x, s.y) + s.r));
 eq("layout: all of it fits the card's inner width", [1, 5].map(n => reach(n) < side / 2 / R.SHARE), [true, true]);
 eq("layout: it scales with the side", near(R.layout("hero", 3, 2 * side).satellites[1].y / R.layout("hero", 3, side).satellites[1].y), 2);
 
+// --- the offset: still, uneven, and the same for a rank wherever the hero is ----------
+const dist = (s, w = side) => Math.hypot(s.x, s.y) - R.ORBIT * w;
+eq("offset: the same count and side give the same places each time", JSON.stringify(R.layout("hero", 4, side)), JSON.stringify(R.layout("hero", 4, side)));
+eq("offset: a satellite stays within DRIFT of the orbit, the hero within HERO_DRIFT of the middle", [1, 2, 3, 4, 5, 6].every(n => spread(n).every(s => Math.abs(dist(s)) <= R.DRIFT * side + 1e-9) && Math.hypot(R.layout("hero", n, side).hero.x, R.layout("hero", n, side).hero.y) <= R.HERO_DRIFT * side + 1e-9), true);
+eq("offset: it is never nothing, so the dials do not sit on the dashed orbit", [2, 3, 4, 5].every(n => spread(n).every(s => Math.abs(dist(s)) > 0.5 * R.DRIFT * side)), true);
+eq("offset: neighbours alternate outwards and inwards, and the size varies", [spread(4).map(s => dist(s) > 0), new Set(spread(4).map(s => near(Math.abs(dist(s))))).size], [[true, false, true, false], 4]);
+eq("offset: it scales with the side", near(Math.abs(dist(R.layout("hero", 1, 2 * side).satellites[0], 2 * side)) / Math.abs(dist(spread(1)[0]))), 2);
+eq("offset: the hero's offset is keyed on the count of satellites, not on the device: same count, same place, another count, another place", [R.layout("hero", 3, side).hero.x === R.layout("hero", 3, side).hero.x, R.layout("hero", 2, side).hero.x !== R.layout("hero", 3, side).hero.x], [true, true]);
+const gap = (a, b) => Math.max(Math.abs(a.x - b.x) - Math.max(72, 3 * a.r), Math.abs(a.y - b.y) - 14);
+eq("offset: no pair of names comes closer than 4 px or than it was, from 1 to 8 dials at both sizes", [120, 336].every(s => [1, 2, 3, 4, 5, 6, 7, 8].every(n => { const p = R.layout("hero", n, s).satellites, ideal = R.places(n, s, 0); return p.every((q, i) => i === 0 || gap(q, p[i - 1]) >= Math.min(gap(ideal[i], ideal[i - 1]), 4) - 1e-9); })), true);
+eq("offset: the hero's 44 px target and the dials' sizes are untouched", [R.layout("hero", 3, side).hero.r, R.layout("hero", 3, side).satellites[0].r], [0.2 * side, 0.085 * side]);
+eq("extent: it covers the hero's offset and the satellites' above", [1, 2, 3, 5].every(n => R.extent("hero", n, side).above >= R.layout("hero", n, side).hero.r - R.layout("hero", n, side).hero.y && R.extent("hero", n, side).above >= Math.max(...spread(n).map(s => s.r - s.y)) - 1e-9), true);
+
 // --- how much room the dials take in a card ---------------------------------------
 const room = (n, s) => R.extent("hero", n, s).above + R.extent("hero", n, s).below;
-eq("extent: the satellites reach higher than the hero when there are some, and the actions hang under it", [R.extent("hero", 3, side).above > R.layout("hero", 3, side).hero.r, R.extent("hero", 0, side).above, R.extent("hero", 2, side).below], [true, R.layout("hero", 0, side).hero.r, R.layout("hero", 2, side).hero.r + R.UNDER + R.ACTIONS]);
+eq("extent: the satellites reach higher than the hero when there are some, and the actions hang under it", [R.extent("hero", 3, side).above > R.layout("hero", 3, side).hero.r, R.extent("hero", 0, side).above, R.extent("hero", 2, side).below], [true, R.layout("hero", 0, side).hero.r - R.layout("hero", 0, side).hero.y, R.layout("hero", 2, side).hero.r + R.UNDER + R.ACTIONS]);
 eq("block: the widest radar takes the card's inner width but for its margin", near(R.blockHeight("hero", 3, 300)), near(room(3, 300 * 0.92)));
 eq("side: with room to spare it is the widest, with none it shrinks, never past the smallest", [R.sideFor("hero", 3, 300, 900), R.sideFor("hero", 3, 300, 200) < R.sideFor("hero", 3, 300, 900), R.sideFor("hero", 3, 300, 10)], [300 * 0.92, true, R.MIN_SIDE]);
 eq("side: what it takes fits the room it was given", near(room(3, R.sideFor("hero", 3, 300, 220))), 220);

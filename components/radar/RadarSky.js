@@ -1,5 +1,6 @@
 .pragma library
 .import "Radar.js" as Radar
+.import "RadarRandom.js" as Rand
 
 // The sky behind the radar's dials (Orbit's sky, variant C): a few faint stars
 // and two nebulae, and the full circle the small dials orbit on, all kept clear of
@@ -31,24 +32,12 @@ function starCount(width, bodyHeight) {
     return Math.min(MAX_STARS, Math.round(width * bodyHeight / DENSITY));
 }
 
-// mulberry32: a small seeded generator, so a sky is the same each time it is drawn
-function random(seed) {
-    let s = seed >>> 0;
-    return () => {
-        s = (s + 0x6D2B79F5) >>> 0;
-        let t = s;
-        t = Math.imul(t ^ (t >>> 15), t | 1);
-        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-}
-
 // What the sky keeps clear, from the radar's places (Radar.layout, `cx`, `cy` the
-// hero's middle): a disc around the hero and each small dial, the strip a small
+// radar's middle, the dials sit at their offsets from it): a disc around the hero and each small dial, the strip a small
 // dial's name takes under it, and the band the actions are laid out in. The band,
 // not the pills on show: it does not move when the hero changes, so neither does the sky.
 function clearings(places, cx, cy, width, actionsY) {
-    const discs = [{ "x": cx, "y": cy, "r": places.hero.r + 8 }];
+    const discs = [{ "x": cx + places.hero.x, "y": cy + places.hero.y, "r": places.hero.r + 8 }];
     const rects = [];
     for (const s of places.satellites) {
         discs.push({ "x": cx + s.x, "y": cy + s.y, "r": s.r + 6 });
@@ -74,7 +63,7 @@ function isClear(c, x, y, pad) {
 // [{ x, y, r, a, tinted }]. A star that falls in a clearing is dropped and another
 // drawn, up to TRIES draws per star wanted.
 function stars(width, skyTop, bodyHeight, c) {
-    const rand = random(SEED);
+    const rand = Rand.random(SEED);
     const wanted = starCount(width, bodyHeight);
     const out = [];
     for (let tries = 0; out.length < wanted && tries < wanted * TRIES; tries++) {

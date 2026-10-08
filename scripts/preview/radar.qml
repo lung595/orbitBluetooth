@@ -20,7 +20,8 @@ import "mock/State.js" as State
 // Bench suffixes (run until stopped, nothing saved, motion as users see it):
 //        "-rest" lands the group and never opens the radar, "-hold" opens it
 //        and keeps it open, "-loop" opens then closes it every 3 s (the
-//        action measured per D272: open at 0 s, close at 1.5 s)
+//        action measured per D272: open at 0 s, close at 1.5 s), "-swap" opens
+//        it and swaps the hero with the group's level every 1.5 s
 Window {
     id: win
     readonly property var args: Qt.application.arguments
@@ -28,7 +29,7 @@ Window {
     readonly property var parts: rawMode.split("-")
     readonly property string mode: parts[0]
     readonly property bool light: parts.indexOf("light") > 0
-    readonly property string bench: ["rest", "hold", "loop"].find(b => parts.indexOf(b) > 0) ?? ""
+    readonly property string bench: ["rest", "hold", "loop", "swap"].find(b => parts.indexOf(b) > 0) ?? ""
     readonly property string out: args[args.length - 1]
 
     readonly property string headset: "02:00:00:00:10:06"
@@ -110,7 +111,7 @@ Window {
         onTriggered: {
             if (win.landed && !win.shown) {
                 win.shown = true;
-                if (win.bench === "loop")
+                if (win.bench === "loop" || win.bench === "swap")
                     cycle.start();
                 else if (win.bench !== "rest")
                     scene.radar.show(win.heroes[win.mode] ?? "");
@@ -127,14 +128,19 @@ Window {
             Qt.quit();
         })
     }
-    // The bench action: open, then close half a period later, for ever
+    property bool swapped: false
+    // The bench action: open, then close half a period later, for ever; or, for
+    // "-swap", the hero and the group's level taking turns in the middle
     Timer {
         id: cycle
         interval: 1500
         repeat: true
         triggeredOnStart: true
         onTriggered: {
-            if (scene.radar.open)
+            if (win.bench === "swap") {
+                win.swapped = !win.swapped;
+                scene.radar.show(win.swapped ? (win.heroes[win.mode] ?? "") : "");
+            } else if (scene.radar.open)
                 scene.radar.close();
             else
                 scene.radar.show(win.heroes[win.mode] ?? "");
