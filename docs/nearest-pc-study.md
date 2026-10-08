@@ -33,24 +33,17 @@ exchanged between PCs.
   discovering ("only what discovery just found is in range"). This is the
   natural place for the wait of slice 2: it already runs at that moment, so no
   new timer is needed at rest (one single-shot `Timer` per waiting offer).
-- When another PC connects the headphones during the wait, they leave this
-  PC's discovery and `isCandidate` fails (`connected`), so the sheet never
-  opens here. That is the whole "coordination": it uses BlueZ's own state,
-  not a message.
-
-## Rule (`components/pairing/NearestFilter.js`)
-
-1. No usable reading (missing, `0`, positive, `127`, not a number): open at
-   once, as today.
-2. Weaker than the floor: do not open here.
-3. Otherwise wait from 0 (at the "near" level or stronger) growing linearly to
-   the longest wait (at the floor). The nearest PC waits least.
-4. Tie-breakers, small against the signal spread: a screen that is off adds
-   1.5 s, recent use removes 1.5 s; an unknown value counts for nothing.
-
-Starting values (assumption `Q81`): floor −75 dBm, near −45 dBm, longest wait
-6 s, tie-breaker 1.5 s. They are the usual range of a class 2 headset reached
-from a desk (−40 to −60 dBm at arm's reach, −75 and below through a wall).
+- **The wait alone suppresses nothing.** `connected` is this adapter's own
+  link (`Offer.js`, `OfferQueue.qml`): a headset connected to PC A stays in PC
+  B's BlueZ device list until `TemporaryTimeout` (30 s by default,
+  `/etc/bluetooth/main.conf`), longer than the longest wait (6 s + 1.5 s), and
+  the sheet only offers (the user acts on A). So B's wait usually ends first
+  and B opens anyway. Only the signal floor keeps a far PC quiet, unless
+  slice 2 re-checks at fire time (RSSI still present and fresh, device still
+  advertising, or its Device1 object gone).
+- The floor also hides the pop-up for a one-PC user whose headset reads below
+  the floor, a change from today's behavior that slice 2 must decide (for
+  example an option that is off by default).
 
 ## Not measured
 
@@ -66,3 +59,8 @@ from a desk (−40 to −60 dBm at arm's reach, −75 and below through a wall).
   because the device is then connected.
 - Whether a read of `RSSI` right after `PropertiesChanged: Discovering=true`
   is already filled: not measured.
+- **Main open question for slice 2:** what is observable at fire time on the
+  far PC when the headset is connected to another PC (RSSI cleared, device
+  removed, or neither before `TemporaryTimeout`). Without a signal there, the
+  delay only orders PCs that both see the device; it does not silence the
+  farther one.

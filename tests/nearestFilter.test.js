@@ -20,7 +20,7 @@ eq("inverted or broken limits give no wait", [Nearest.delayMs(-60, { "near": -80
 const offer = (rssi, extra) => Nearest.shouldOffer(Object.assign({ "rssi": rssi }, extra));
 eq("a strong signal opens at once", offer(-40), { "offer": true, "delayMs": 0, "reason": "nearest first" });
 eq("a weak signal waits", offer(-70).delayMs > offer(-55).delayMs && offer(-55).delayMs > 0, true);
-eq("just above the floor still offers", offer(d.floor).offer, true);
+eq("right at the floor still offers", offer(d.floor).offer, true);
 eq("below the floor: not here at all", offer(d.floor - 1), { "offer": false, "delayMs": 0, "reason": "below the signal floor" });
 eq("no reading keeps today's behavior", [offer(undefined), offer(null), offer(0), offer(NaN)].map(r => [r.offer, r.delayMs]), [[true, 0], [true, 0], [true, 0], [true, 0]]);
 eq("no context keeps today's behavior", [Nearest.shouldOffer(undefined).offer, Nearest.shouldOffer({}).delayMs], [true, 0]);

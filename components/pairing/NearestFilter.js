@@ -6,9 +6,11 @@
 // Every PC judges alone, from the signal its own adapter reads while it
 // discovers (BlueZ Device1.RSSI): nothing is exchanged between PCs, so there
 // is no message to forge, flood or replay. The nearest PC waits the least and
-// shows the pop-up first; if the device gets connected elsewhere meanwhile it
-// leaves discovery and the later PCs never open theirs. Anything unclear
-// keeps today's behavior: the pop-up opens at once.
+// shows the pop-up first. The wait alone silences no one: a device connected
+// elsewhere stays in this adapter's list until BlueZ's TemporaryTimeout, so
+// only the floor keeps a far PC quiet unless the caller re-checks the device
+// when the wait ends. Anything unclear keeps today's behavior: the pop-up
+// opens at once.
 
 // Starting points, to be measured with real adapters (Q81)
 var defaults = {
