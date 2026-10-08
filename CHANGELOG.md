@@ -13,6 +13,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Fixed
 
+- **A drop on a copy that overlaps its source lands on the copy.** Dropping a device where a copy is drawn over the source used to go to whichever centre was nearer, often the source underneath. The drop now goes to the body drawn on top under the pointer (the copy), and keeps the nearest-centre rule when the pointer is off every disc. It only runs while a device is being dragged, so nothing changes at rest. Covered by `tests/scene.test.js` (red before the fix, green after).
 - **A row of the card's thin volume line no longer warns when a group ends.** A row still on screen read a colour the shrunken palette no longer had (`Unable to assign [undefined] to QColor`, `VolumeStrip.qml`); it now falls back to this PC's colour. Removing that fallback makes `tests/qml/views.test.qml` fail.
 
 ### Tests
@@ -71,7 +72,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Fixed
 
-- **A drop on a copy that overlaps its source lands on the copy.** Dropping a device where a copy is drawn over the source used to go to whichever centre was nearer, often the source underneath. The drop now goes to the body drawn on top under the pointer (the copy), and keeps the nearest-centre rule when the pointer is off every disc. It only runs while a device is being dragged, so nothing changes at rest. Covered by `tests/scene.test.js` (red before the fix, green after).
 - **The *Learn my groups* settings row no longer spills over its neighbours.** Its description wraps onto several lines, and the row was only as tall as the switch beside it, so the text ran over the *Wired delay* slider above and over the *groups remembered* line and the *Forget what Orbit learned* button under it. The row now takes the text's height (tested at the width of a narrow settings page).
 - **An open radar on a Bluetooth device no longer keeps the scene stepping at 60 Hz.** The flown planet counted as a detail card for the effects clock, so the scene never settled (offscreen, about 8.6 % of a core against 4.5 % on the previous release, now 4–5 %). Only the device's own detail card keeps that clock running.
 - **A wired output's cable follows it when you pull it out of the group.** Dragging a wired member (the rounded square) away used to leave its cable behind, pointing at the place it came from; the cable's end now follows the pointer for the whole drag and goes back on release. It is read from the drag state, so nothing runs at rest.
