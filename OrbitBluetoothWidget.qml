@@ -7,12 +7,21 @@ import "components/device"
 import "components/scene"
 import "components/common/Hidden.js" as Hidden
 import "components/device/DeviceCatalog.js" as Catalog
+import "diagnostics/Log.js" as Log
 
 // Bar pill + bar popout + Control Center tile. The Control Center detail is a
 // fresh instance created when the tile expands and destroyed when it
 // collapses, so scanning and animation live exactly as long as the panel.
 PluginComponent {
     id: root
+
+    // One memory write each way: which surfaces are alive shows in a report
+    Component.onCompleted: Log.event("ORB-I020", {
+        "surface": "widget"
+    })
+    Component.onDestruction: Log.event("ORB-I021", {
+        "surface": "widget"
+    })
 
     // The sky color shared with the scene
     readonly property NightColors night: NightColors {}

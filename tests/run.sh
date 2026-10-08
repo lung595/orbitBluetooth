@@ -1,6 +1,6 @@
 #!/bin/sh
-# Runs every pure-logic test file (tests/*.test.js) with gjs and adds up the
-# checks. Run from anywhere: sh tests/run.sh
+# Runs every pure-logic test file (tests/*.test.js) with gjs, then the shell test of
+# scripts/diagnose.sh, and adds up the checks. Run from anywhere: sh tests/run.sh
 here=$(cd "$(dirname "$0")" && pwd)
 total=0
 status=0
@@ -10,5 +10,7 @@ for file in "$here"/*.test.js; do
     n=$(echo "$out" | sed -n 's/^\([0-9]*\) tests passed$/\1/p')
     total=$((total + ${n:-0}))
 done
+out=$(sh "$here/diagnose.test.sh") || status=1
+echo "$out" | grep -v "^ok "
 [ "$status" -eq 0 ] && echo "$total tests passed" || echo "failures (see above)"
 exit $status

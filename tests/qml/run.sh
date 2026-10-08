@@ -16,14 +16,15 @@ work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 # The work folder mirrors the plugin root: components/ as it is, the tests
 # beside it, and two stand-ins over the real window and D-Bus check
-cp -r "$root"/components "$work"/
+cp -r "$root"/components "$root"/diagnostics "$work"/
+cp "$root"/plugin.json "$work"/
 cp "$here"/ProfileCheck.qml "$here"/NewDeviceWindow.qml "$work"/components/pairing/
 cp "$here"/Device.qml "$here"/Player.qml "$here"/*.test.qml "$work"/
 # The preview's made-up route (and overlay) stand in for the daemon's
 mkdir "$work"/mock
 cp "$root"/scripts/preview/mock/*.qml "$root"/scripts/preview/mock/*.js "$work"/mock/
 # Quickshell's device list is a model with .values; the stub keeps a plain list
-sed -i 's/Bluetooth\.devices\.values/Bluetooth.list/g' "$work"/components/pairing/*.qml "$work"/components/noise/*.qml
+sed -i 's/Bluetooth\.devices\.values/Bluetooth.list/g' "$work"/components/pairing/*.qml "$work"/components/noise/*.qml "$work"/components/common/ReportService.qml
 export QT_QPA_PLATFORM=offscreen
 # Print to the terminal, not to journald, including print() lines
 export QT_FORCE_STDERR_LOGGING=1 QT_LOGGING_RULES='qml.debug=true;js.debug=true'

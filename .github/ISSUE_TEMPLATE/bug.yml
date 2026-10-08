@@ -1,0 +1,30 @@
+name: Bug report
+description: Something does not work as the guide says
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. The report below holds versions, states and codes only: no device name, no address, no login. Orbit never sends it anywhere, it is yours to read and paste.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+      description: A sentence or two. Please do not write device names or addresses here.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Open the orbit\n2. Drag a device to the center\n3. ..."
+  - type: textarea
+    id: report
+    attributes:
+      label: Anonymous report
+      description: |
+        In the plugin settings, Orbit tab, press "Copy report" and paste it here. Or run `sh scripts/diagnose.sh`, or `dms ipc call orbitBluetooth diagnostics` twice, two seconds apart. Read it before you send it.
+        See [Debugging Orbit](https://github.com/lung595/orbitBluetooth/blob/main/docs/DEBUGGING.md).
+      render: text
+    validations:
+      required: true

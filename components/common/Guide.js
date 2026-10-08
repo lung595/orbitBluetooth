@@ -116,3 +116,17 @@ function togetherNote(why, name, member) {
     var n = notes[why] || notes["link-stopped"];
     return { "title": n.title, "hint": n.hint, "anchor": n.anchor || "listen-together" };
 }
+
+// What the "Copy report" button says, by what the copy is doing: "idle",
+// "collecting", "copied" (with inHistory: only DMS's own copy worked, so its
+// clipboard history may keep the text) or "none" (no tool could copy it)
+function reportNote(state, inHistory) {
+    var anchor = "report-a-problem";
+    if (state === "collecting")
+        return { "title": "Collecting the report", "hint": "About two seconds", "anchor": anchor };
+    if (state === "copied")
+        return { "title": "Report copied", "hint": inHistory ? "Read it, then paste it in a GitHub issue. It holds nothing personal, but DMS's clipboard history may keep it" : "Read it, then paste it in a GitHub issue", "anchor": anchor };
+    if (state === "none")
+        return { "title": "The report could not be copied", "hint": "Install wl-clipboard, or run dms ipc call orbitBluetooth diagnostics in a terminal", "anchor": anchor };
+    return { "title": "Anonymous report", "hint": "Versions, states and codes only, to paste in a GitHub issue", "anchor": anchor };
+}

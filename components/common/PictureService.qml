@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell.Io
 import qs.Common
+import "../../diagnostics/Log.js" as Log
 
 // Looks up a picture of each device model, only when the user turned on
 // "Real device pictures" (off by default). It runs pictures/orbit_pictures.py,
@@ -66,7 +67,13 @@ Item {
         stdout: SplitParser {
             onRead: data => root._onLine(data)
         }
-        onExited: root._next()
+        onExited: code => {
+            if (code !== 0)
+                Log.event("ORB-E004", {
+                    "reason": "unknown"
+                });
+            root._next();
+        }
     }
 
     Process {

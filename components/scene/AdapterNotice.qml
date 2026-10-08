@@ -4,6 +4,7 @@ import qs.Services
 import qs.Widgets
 import "../common"
 import "../common/Guide.js" as Guide
+import "../../diagnostics/Log.js" as Log
 
 // Bluetooth off / missing adapter. Neither is a dead end (value 10): with
 // no adapter, the GitHub mark opens the guide; if "Turn on" changes nothing
@@ -17,6 +18,10 @@ Column {
     y: scene.cy + scene.coreSize * 0.5 + 26
     spacing: Theme.spacingS
     visible: !scene.btOn
+    onVisibleChanged: if (visible)
+        Log.event("ORB-W010", {
+            "state": BluetoothService.available ? "off" : "missing"
+        })
 
     StyledText {
         anchors.horizontalCenter: parent.horizontalCenter

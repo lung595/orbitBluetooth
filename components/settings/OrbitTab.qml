@@ -95,4 +95,11 @@ Column {
             onClicked: tab.settings.saveValue("ignoredDevices", ({}))
         }
     }
+
+    // --- Support -----------------------------------------------------------------
+    Section {
+        text: "Report a problem"
+    }
+
+    ReportRow {}
 }

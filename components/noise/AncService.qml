@@ -3,6 +3,7 @@ import Quickshell.Bluetooth
 import Quickshell.Io
 import qs.Common
 import "Anc.js" as Anc
+import "../../diagnostics/Log.js" as Log
 import "AncSnapshot.js" as Snapshot
 import "../wear/Wear.js" as Wear
 
@@ -274,8 +275,12 @@ Item {
         const queued = _queue[address] || [];
         _queue = Snapshot.put(_queue, address, null);
         // After an error, stay quiet until the user asks again (no retry loop)
-        if (prev && prev.status === "error")
+        if (prev && prev.status === "error") {
+            Log.event("ORB-E005", {
+                "reason": "unknown"
+            });
             return;
+        }
         if (queued.length && !leaving) {
             const again = _open(address);
             if (again)

@@ -172,6 +172,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Backdrop | 72 % |
 | | Ambient motion ⚡ | Off |
 | Device pictures | Real device pictures (uses the internet) | Off |
+| Orbit | Report a problem: *Copy report* (anonymous, [more](docs/GUIDE.md#report-a-problem)) | — |
 | Look | Black hole: realistic or tesseract | Black hole |
 | | Shooting stars | On |
 | | Stars: Low, Normal or High | Normal |
@@ -201,6 +202,7 @@ dms ipc call orbitBluetooth togetherStatus   # who listens together (JSON, with 
 dms ipc call orbitBluetooth togetherOutputs  # the wired outputs Listen together can take (JSON)
 dms ipc call orbitBluetooth wiredDelay up    # nudge the wired outputs' wait: up, down, +10, -10, 20, reset or status
 dms ipc call orbitBluetooth separate         # end listening together
+dms ipc call orbitBluetooth diagnostics      # the anonymous report: the first call starts it, run it again 2 s later (or sh scripts/diagnose.sh)
 ```
 
 In the group chooser (*Create a group…*): <kbd>↑</kbd> / <kbd>↓</kbd>, <kbd>Space</kbd>, <kbd>Enter</kbd> and <kbd>Esc</kbd>, and <kbd>H</kbd> hides or brings back the output under the cursor (<kbd>→</kbd> and <kbd>←</kbd> open and fold its *Hidden* section).
@@ -211,6 +213,7 @@ Bind the commands in your compositor, for example in niri: `Mod+N { spawn "dms" 
 
 | Problem | Solution |
 | --- | --- |
+| Something else does not work | *Settings → Orbit → Copy report*, then paste it in a [bug report](https://github.com/lung595/orbitBluetooth/issues/new?template=bug.yml); see [Report a problem](docs/GUIDE.md#report-a-problem) |
 | Nothing changed after installing | Add one of its widgets, see [Add a widget](#3-add-a-widget) |
 | Earbuds disconnect after a few seconds | Accept the pairing code dialog once |
 | No pop-up for new headphones | It appears when any tool searches for devices (Orbit's **Scan**, your system settings); turn on **Background scan** to have Orbit search by itself; the pop-up waits for full-screen windows |
@@ -252,6 +255,7 @@ Some Sony headsets do not report charging, or drop Bluetooth while charging: thi
 - **Audio details**: read from PipeWire (`pactl list sinks`) while the card or the pop-up shows, only if a fact is chosen; kept in memory, dropped when it closes. Latency and bit rate also read the graph once with `pw-dump`, and the quantum once with `pw-top` (about 2 s), only while the details are unfolded (or the fact is on the line). Orbit never writes to PipeWire or to the headset.
 - **DMS's volume OSD and sound**: while Orbit's pop-up is on, Orbit holds DMS's *Volume* switch (`osdVolumeEnabled`) off, and with **Orbit's tick only** it holds DMS's *Volume Changed* sound (`soundVolumeChanged`) off for the moment Orbit moves a level. Both are held in memory only, and Orbit lets go of them around each of DMS's own saves, so nothing of it reaches DMS's files. [OSD](docs/GUIDE.md#dmss-own-volume-osd), [sound](docs/GUIDE.md#orbits-tick-only)
 - **Volume keys**: only if you click *Enable*, Orbit asks DMS (`dms keybinds`) to bind them; *Undo* and uninstalling give them back exactly. [More](docs/GUIDE.md#volume-keys)
+- **The anonymous report** (*Settings → Orbit → Copy report*, `dms ipc call orbitBluetooth diagnostics`, `scripts/diagnose.sh`) holds versions, states and codes only; the last 200 events live in memory and vanish with the shell. It is built only when you ask, goes to your clipboard (marked sensitive with `wl-copy`, so DMS's history does not keep it) or your terminal, and is never sent anywhere: you read it, then paste it yourself. [More](docs/GUIDE.md#report-a-problem)
 - **Guide links**: the GitHub mark opens the guide in your browser only when you click it; Orbit itself makes no request.
 - **Network: only one opt-in feature, off by default.** **Real device pictures** sends only the *model name* of devices you have paired, never a stranger's device nearby, never the Bluetooth address. It contacts `commons.wikimedia.org`, then `api.sketchfab.com`, and downloads the picture from `upload.wikimedia.org` or `media.sketchfab.com`. Pictures are credited in the card, kept in `~/.cache/orbitBluetooth/pictures` (readable by you only) and erased when you turn the option off or from the settings.
 

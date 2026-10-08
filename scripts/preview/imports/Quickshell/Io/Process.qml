@@ -3,7 +3,8 @@ import QtQuick
 // Preview stand-in: the screenshots never run a command. Every one is listed
 // in ProcessLog while it exists, and the tests drive a session by hand:
 // `written` records what was sent to its standard input and they raise
-// `exited` themselves.
+// `started` and `exited` themselves. Like Quickshell, a program that is not
+// installed sends neither: a test sets `running` back to false alone.
 QtObject {
     id: process
 
@@ -14,6 +15,7 @@ QtObject {
     property QtObject stdout: null
     property QtObject stderr: null
     property var written: []
+    signal started
     signal exited(int code)
 
     function write(data) {
