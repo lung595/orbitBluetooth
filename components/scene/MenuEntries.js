@@ -4,7 +4,7 @@
 // What the right-click menu of an orbiting device offers, in order (OrbitMenu).
 // Pure: the QML gathers the facts, this decides the entries, so a change of
 // wording or of order is tested. Short on purpose: a member of a group can
-// leave it and be hidden, nothing more; adding a device and stopping the group
+// leave it (and a Bluetooth one be hidden), nothing more; adding a device and stopping the group
 // belong to the group itself (its radar), not to one of its members.
 // Tested by tests/menuEntries.test.js.
 //
@@ -28,7 +28,10 @@ function list(f) {
         out.push({ "id": "group", "icon": "group_add", "label": f.groupEntry });
     if (f.member && !f.wired)
         out.push({ "id": "leave", "icon": "group_remove", "label": "Remove from group" });
-    out.push({ "id": "hide", "icon": "visibility_off", "label": "Hide" });
+    // A member plays on, so hiding it would only explain (OrbitHidden.hide): a wired one has
+    // nothing else to do but leave, so Hide is not offered (a Bluetooth member's is, as before)
+    if (!(f.wired && f.member))
+        out.push({ "id": "hide", "icon": "visibility_off", "label": "Hide" });
     if (f.paired)
         out.push({ "id": "forget", "icon": f.confirmForget ? "delete_forever" : "delete", "label": f.confirmForget ? "Click to forget" : "Forget", "danger": true });
     return ruled(out);

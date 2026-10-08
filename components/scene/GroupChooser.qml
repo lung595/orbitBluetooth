@@ -4,6 +4,7 @@ import qs.Common
 import qs.Widgets
 import "../card"
 import "../together"
+import "../common/Hidden.js" as Hidden
 import "../together/Choice.js" as Choice
 
 // The page of the right-click menu where a Listen together group is made
@@ -41,8 +42,9 @@ Rectangle {
     property string cursorId: ""
     // The cursor was moved by a key: the list scrolls to it
     property bool byKey: false
-    // The Hidden section is open (it starts folded)
-    property bool hiddenOpen: false
+    // The Hidden section is open: as the user left it (folded when never
+    // chosen), and by itself once, the first time something is hidden (D368)
+    property bool hiddenOpen: Hidden.sectionOpen(scene.prefs.hiddenSectionOpen)
     // The row carried to the black hole, where the pointer is (in the chooser's
     // coordinates) and whether letting go there hides it
     property var carrying: null
@@ -99,6 +101,25 @@ Rectangle {
         else
             scene.hideById(row.id, row.label);
     }
+    // The user opens or folds the Hidden section: the choice is kept for the next time
+    function chooseHiddenOpen(open) {
+        hiddenOpen = open;
+        scene.prefs.set("hiddenSectionOpen", open);
+    }
+    // The first time the section has something in it, it opens once, so that it is seen:
+    // when the chooser opens on devices hidden before, or when one is hidden under it
+    property int _hiddenCount: 0
+    function _hiddenChanged() {
+        if (Hidden.opensAfterHide(scene.prefs.hiddenSectionOpen, _hiddenCount, scene.hiddenCount))
+            chooseHiddenOpen(true);
+        _hiddenCount = scene.hiddenCount;
+    }
+    Connections {
+        target: scene
+        function onHiddenCountChanged() {
+            chooser._hiddenChanged();
+        }
+    }
     // A hidden output is back; the section folds again once it is empty
     function bringBack(row) {
         if (view.sections.find(s => s.id === "hidden").count <= 1)
@@ -153,7 +174,7 @@ Rectangle {
             if (row)
                 eyeOf(row);
         } else if ((key === Qt.Key_Right || key === Qt.Key_Left) && anyHidden) {
-            hiddenOpen = key === Qt.Key_Right;
+            chooseHiddenOpen(key === Qt.Key_Right);
         } else {
             return false;
         }
@@ -192,7 +213,10 @@ Rectangle {
     }
     focus: true
     Keys.onPressed: event => event.accepted = chooser.press(event.key)
-    Component.onCompleted: forceActiveFocus()
+    Component.onCompleted: {
+        forceActiveFocus();
+        _hiddenChanged();
+    }
     // Closed while a row is carried: the hole stops feeding
     Component.onDestruction: scene.dropFromHole()
 
@@ -305,7 +329,7 @@ Rectangle {
                                 anchors.fill: parent
                                 enabled: heading.folds
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: chooser.hiddenOpen = !chooser.hiddenOpen
+                                onClicked: chooser.chooseHiddenOpen(!chooser.hiddenOpen)
                             }
                         }
                         Repeater {

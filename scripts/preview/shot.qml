@@ -31,6 +31,8 @@ Window {
     // scene has settled it counts the frames drawn over 6 s and quits
     // (see depth-bench.sh), "-feed" carries a device to the black hole in the
     // "together" shots (the hole is lit up while the sky is out of focus),
+    // "-chooser" opens the group chooser from a device outside the group (the hidden
+    // outputs are in its Hidden section, which opens by itself the first time),
     // "-sun90" puts the host's system at that angle of its path in the "together"
     // shots (90 near and in front, 270 far and behind, 0 right, 180 left),
     // "-follow" gives the headset no level of its own (no absolute volume),
@@ -51,6 +53,7 @@ Window {
     readonly property bool bench: parts.indexOf("bench") > 0
     readonly property bool loop: parts.indexOf("loop") > 0
     readonly property bool feed: parts.indexOf("feed") > 0
+    readonly property bool chooser: parts.indexOf("chooser") > 0
     readonly property var sunAngle: parts.find(p => /^sun\d+$/.test(p))
     // "-level35" sets the group's general volume before the group forms (the
     // gauge shows no reading), "-read35" sets it while the picture is taken (the
@@ -177,6 +180,8 @@ Window {
                 scene.focusOn(b);
         } else if (mode === "togetherback") {
             scene.centre.recall();
+        } else if (mode.startsWith("together") && chooser) {
+            scene.openGroupChooser(bodyOf("D4:1A:88:10:5B:77"), Qt.point(80, 80));
         } else if (mode.startsWith("together") && feed) {
             carryToHole();
         } else if (mode.startsWith("together") && sunAngle) {

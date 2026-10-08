@@ -113,7 +113,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 | Drag a connected audio device onto another (or onto any device already in the group) | Listen together: the same sound on both, up to 4 outputs ([more](docs/GUIDE.md#listen-together)) |
 | Tap the group's icons, or click a member of the group | The volume radar: that level big in the middle, the others around it, with *Disconnect*, *Remove from group*, *Hide*, *Details* ([more](docs/GUIDE.md#the-volume-radar)) |
 | Right-click a connected output, **Create a group…** | A checklist of the wired and Bluetooth outputs to listen together, the one you clicked already ticked ([more](docs/GUIDE.md#create-a-group-from-the-menu)) |
-| In **Create a group…**: the eye of a row (or <kbd>H</kbd>), or drag a row onto the black hole | Hide that output; the *Hidden* section at the bottom brings it back ([more](docs/GUIDE.md#hiding-devices-the-black-hole)) |
+| In **Create a group…**: the eye of a row (or <kbd>H</kbd>), or drag a row onto the black hole | Hide that output; the *Hidden* section at the bottom brings it back; it opens by itself the first time ([more](docs/GUIDE.md#hiding-devices-the-black-hole)) |
 | Click the dotted *ghost planet* on the ring (right-click it, or its ✕, to turn it down) | Start the suggested group, or refuse it until the shell restarts ([more](docs/GUIDE.md#suggested-groups)) |
 | Drag along the gauge around the center planet, click its track, or scroll over it or over the planet | The group's general volume, the gaps between outputs kept; the speaker at its start mutes ([more](docs/GUIDE.md#the-volume-at-the-center)) |
 | Scroll over an output orbiting the center | That output's own volume |
@@ -246,7 +246,7 @@ Some Sony headsets do not report charging, or drop Bluetooth while charging: thi
 ## Privacy
 
 - **Safe pairing.** A new device is only trusted once Orbit has checked it is what it looks like; headphones that can also send key presses (for their buttons) are paired only if you say so. [More](docs/GUIDE.md#pairing-safety)
-- **No telemetry.** Connection times and battery history stay in memory; settings, ignored devices, the hidden list (Bluetooth devices and wired outputs: an address or node name and the name it had, at most 64) and the learned groups are stored by DMS with Orbit's own settings.
+- **No telemetry.** Connection times and battery history stay in memory; settings, ignored devices, the hidden list (Bluetooth devices and wired outputs: an address or node name and the name it had, at most 64), whether its section is left open or folded and the learned groups are stored by DMS with Orbit's own settings.
 - **Noise control**: a small helper talks to your headset over a local Bluetooth socket, only while needed. With **Pause when you take the headset off** on, that connection stays open while a Sony headset with a wearing sensor is connected; Orbit pauses and resumes your players through MPRIS on the local D-Bus, keeps nothing and sends nothing; to the headset it sends one message when the connection opens, the request to log its wearing events.
 - **New headphones pop-up**: by default Orbit only listens to searches you start yourself; nothing runs in the background. The optional **Background scan** (off by default) does a local scan of 8 s about once a minute, only while the screen is on, no Bluetooth audio is connected and the battery is above the threshold.
 - **Two volumes**: talk to the local sound server (PipeWire) only; the tick is a sound file shipped with Orbit, the picture of the sound is read locally with `cava`.
