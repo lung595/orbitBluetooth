@@ -3,10 +3,10 @@ import QtQuick.Shapes
 import "Gauge.js" as Gauge
 
 // A level drawn as a gauge: an open arc of 270 degrees (Gauge.js) over a faint
-// track, a soft gradient that turns along the arc with the level, a glow where it ends, faint marks
-// every 10 % that light as the level passes them, and a round thumb with a
-// halo. Static art: it is redrawn only when the level or a colour changes, and
-// nothing in it animates.
+// track, a soft gradient that turns along the arc with the level, a glow where
+// it ends, faint marks every 10 % that light as the level passes them, and a
+// round thumb with a halo. Static art: it is redrawn only when the level or a
+// colour changes, and nothing in it animates.
 Shape {
     id: gauge
 
@@ -35,6 +35,8 @@ Shape {
     readonly property var end: Gauge.pointAt(mid, mid, radius, level)
     readonly property real glow: lineWidth * 3
     readonly property bool started: level > 0.004
+    // The conical gradient's angle and stops, mapped from the arc once
+    readonly property var sweep: Gauge.conic()
 
     width: (radius + margin) * 2
     height: width
@@ -102,18 +104,22 @@ Shape {
         fillGradient: ConicalGradient {
             centerX: gauge.mid
             centerY: gauge.mid
-            angle: Gauge.conic().from
+            angle: gauge.sweep.angle
             GradientStop {
                 position: 0
+                color: gauge.endColor
+            }
+            GradientStop {
+                position: gauge.sweep.edge
+                color: gauge.endColor
+            }
+            GradientStop {
+                position: 1 - gauge.sweep.edge
                 color: gauge.startColor
             }
             GradientStop {
-                position: Gauge.conic().to
-                color: gauge.endColor
-            }
-            GradientStop {
                 position: 1
-                color: gauge.endColor
+                color: gauge.startColor
             }
         }
         PathSvg {

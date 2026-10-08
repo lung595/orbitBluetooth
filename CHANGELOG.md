@@ -7,7 +7,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 
-- **The group's gauge takes its color from its angle.** The gradient along the level is now conical, turning with the arc from the speaker at its start to its end, instead of linear left to right: a place on the arc has the color of its position, so the thumb's color tells the level wherever the arc bends (the old one gave the whole left side one blue). It is Qt's own gradient drawn by the curve renderer, with no shader of ours, and the gauge stays static art: 0 frames at rest and the same CPU during a sweep as the linear one (measured off screen, OpenGL). Theme colors only; checked on a dark and a light theme. [Guide](docs/GUIDE.md#the-volume-at-the-center)
+- **The group's gauge takes its color from its angle.** The gradient along the level is now conical, turning with the arc from the speaker at its start to its end, instead of linear left to right: a place on the arc has the color of its position, so the thumb's color tells the level wherever the arc bends (the old one gave the whole left side one blue). It is Qt's own gradient drawn by the curve renderer, with no shader of ours, and the gauge stays static art: 0 frames at rest and the same CPU during a sweep as the linear one (measured off screen, OpenGL). Its colors are the night sky's own (`NightColors`), and a render test (`tests/qml/gaugeColors.test.qml`) checks that the colors run from the start color to the end color, one way and with no jump along the band (it fails on the first, mirrored mapping). [Guide](docs/GUIDE.md#the-volume-at-the-center)
 
 ### Tests
 
