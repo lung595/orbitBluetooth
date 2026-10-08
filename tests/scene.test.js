@@ -145,6 +145,15 @@ eq("a window without layout yet does not count", Cover.covered(spaces, [{ worksp
     // A disc of 40 px is small: the drop radius is its floor (60), not twice its radius (40)
     eq("drop: the pointer within the drop radius of a connected body", [Physics.dropOnto(mover, [mover, mate], 115, 50) === mate, Physics.dropOnto(mover, [mover, mate], 155, 50) === mate, Physics.dropOnto(mover, [mover, mate], 165, 50)], [true, true, null]);
     eq("drop: the nearest centre wins", Physics.dropOnto(mover, [mate, mate2], 108, 50) === mate2, true);
+    // A copy drawn over its source: the pointer on the copy's disc is also nearer the
+    // source's centre, yet the drop must land on what is drawn on top (z)
+    const source = { px: 100, py: 50, diameter: 80, baseScale: 1.2, connected: true, z: 5 };
+    const copy = { px: 140, py: 50, diameter: 60, baseScale: 1, connected: true, z: 5.5 };
+    eq("drop: on overlapping discs the topmost wins, not the nearest centre", [Physics.dropOnto(mover, [source, copy], 112, 50) === copy, Physics.dropOnto(mover, [copy, source], 112, 50) === copy], [true, true]);
+    eq("drop: the topmost is the one whose disc is under the pointer", Physics.dropOnto(mover, [source, copy], 60, 50) === source, true);
+    const raised = Object.assign({}, source, { z: 6 });
+    eq("drop: a source drawn on top takes the overlap", Physics.dropOnto(mover, [raised, copy], 112, 50) === raised, true);
+    eq("drop: off every disc, the nearest centre inside a drop zone still wins", Physics.dropOnto(mover, [Object.assign({}, source, { z: 9 }), copy], 190, 50) === copy, true);
     eq("drop: never on itself, a leaving or an unconnected body", [Physics.dropOnto(mate, [mate], 100, 50), Physics.dropOnto(mover, [Object.assign({}, mate, { leaving: true })], 100, 50), Physics.dropOnto(mover, [Object.assign({}, mate, { connected: false })], 100, 50)], [null, null, null]);
     eq("drop: an unconnected dragged body listens to nobody", Physics.dropOnto({ connected: false }, [mate], 100, 50), null);
     eq("drop: with `anyone`, an unconnected dragged body is over the member", Physics.dropOnto({ connected: false }, [mate], 100, 50, true) === mate, true);
