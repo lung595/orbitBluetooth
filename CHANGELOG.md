@@ -16,6 +16,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   geometry, clocks, black hole, preferences) moves to its base type
   `OrbitState.qml` (108 lines), which never reads a part of the scene; a test
   checks that rule. No visible change.
+- `DeviceBody.qml` is split by role (408 → 247 lines): what the body knows
+  about its device moves to its base type `BodyState.qml` (75 lines, reads no
+  part of the body nor its motion, checked by the same test) and the one-shot
+  motions (focus, pop, shake, swallow, tether pulse) to `BodyMotion.qml`
+  (141 lines). No visible change; offscreen A/B against 1.14.0 (16 cores,
+  8 passes per side): view at rest 2.25 % → 2.14 % of a core, a card opened
+  and closed every 1.5 s 4.64 % → 4.64 %, both under the noise.
 
 ### Fixed
 
