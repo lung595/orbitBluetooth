@@ -33,14 +33,15 @@ Window {
             "l": [0.92, 0.85, 0.8, 0.72, 0.66, 0.62, 0.55, 0.5, 0.44, 0.4, 0.33, 0.28, 0.22, 0.18, 0.12, 0.08],
             "r": [0.9, 0.8, 0.7, 0.66, 0.58, 0.5, 0.47, 0.4, 0.36, 0.3, 0.26, 0.2, 0.16, 0.12, 0.08, 0.05]
         })
-    function member(i, level, muted, icon, label) {
+    function member(i, level, muted, icon, label, target) {
         return {
             "part": "m" + i,
             "address": "02:00:00:00:00:0" + i,
             "level": level,
             "muted": muted,
             "icon": icon,
-            "label": label
+            "label": label,
+            "target": target === true
         };
     }
     // Each case: the outputs listening together ([] none), the device's own
@@ -51,7 +52,7 @@ Window {
             "pc": 0.85
         },
         {
-            "members": [member(0, 0.8, false, "headphones", "Studio headphones"), member(1, 0.5, false, "speaker", "Desk speaker"), member(2, 0.3, false, "earbuds", "Earbuds")],
+            "members": [member(0, 0.8, false, "headphones", "Studio headphones"), member(1, 0.5, false, "speaker", "Desk speaker", true), member(2, 0.3, false, "earbuds", "Earbuds")],
             "pc": 0.85
         },
         {

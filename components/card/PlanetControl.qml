@@ -53,6 +53,9 @@ Item {
                 return;
             }
             SessionData.suppressOSDTemporarily();
+            // A member of a group: the keys follow this wheel too (NAK-9)
+            if (planet.route.together.active && planet.route.together.isMember(planet.address))
+                planet.route.touch(planet.address);
             planet.route.setLevel(planet.route.mainPart(planet.address), notches > 0 ? "up" : "down", planet.address);
         }
     }

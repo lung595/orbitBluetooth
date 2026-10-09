@@ -94,6 +94,8 @@ Item {
         }
         function stepNode(node, dir) {
         }
+        function touch(address) {
+        }
     }
     TogetherSession {
         id: session

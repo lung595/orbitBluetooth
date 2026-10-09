@@ -11,7 +11,10 @@ import "../../components/volume"
 // Usage: QT_QPA_PLATFORM=offscreen qml -I imports island.qml -- <mode> /dev/null
 // Modes: rest (the island folded, the face idle), step (one key step every
 //        4 s: the face opens, follows the level, folds back 3 s later),
-//        burst (a run of 8 steps 150 ms apart every 4 s)
+//        burst (a run of 8 steps 150 ms apart every 4 s), burstgroup /
+//        burstmember (the same run with three outputs listening together,
+//        one member's level moving; burstmember lights it as the keys'
+//        target, NAK-9)
 Window {
     id: win
     readonly property var args: Qt.application.arguments
@@ -99,15 +102,38 @@ Window {
         }
     }
 
+    // Outputs listening together: made-up members, the second one moved by
+    // the keys (and lit as their target in burstmember)
+    readonly property bool together: mode === "burstgroup" || mode === "burstmember"
+    property real _level: 0.5
+    function members() {
+        const m = (i, level, icon, label) => ({
+                    "part": "m" + i,
+                    "address": "02:00:00:00:00:0" + i,
+                    "level": level,
+                    "muted": false,
+                    "icon": icon,
+                    "label": label,
+                    "target": i === 1 && mode === "burstmember"
+                });
+        return [m(0, 0.7, "headphones", "Studio headphones"), m(1, _level, "speaker", "Desk speaker"), m(2, 0.3, "earbuds", "Earbuds")];
+    }
+    Component.onCompleted: if (together)
+        overlay.members = members()
+
     // One key step: the level moves 5 %, up then down, and the face opens
     property int _dir: 1
     function step() {
-        let l = overlay.deviceLevel + 0.05 * _dir;
+        let l = _level + 0.05 * _dir;
         if (l > 0.9 || l < 0.1) {
             _dir = -_dir;
-            l = overlay.deviceLevel + 0.05 * _dir;
+            l = _level + 0.05 * _dir;
         }
-        overlay.deviceLevel = l;
+        _level = l;
+        if (together)
+            overlay.members = members();
+        else
+            overlay.deviceLevel = l;
         face.open();
     }
     property int _left: 0
@@ -115,9 +141,9 @@ Window {
         interval: 4000
         repeat: true
         triggeredOnStart: true
-        running: win.mode === "step" || win.mode === "burst"
+        running: win.mode === "step" || win.mode.startsWith("burst")
         onTriggered: {
-            win._left = win.mode === "burst" ? 8 : 1;
+            win._left = win.mode.startsWith("burst") ? 8 : 1;
             run.start();
         }
     }

@@ -283,6 +283,16 @@ QtObject {
     function pcNode(dev) {
         return dev ? (dev.pc || (dev.absolute === 1 ? null : dev.sink)) : null;
     }
+    // The real route's ownNode and touch (NAK-9): a wired output's node, else
+    // the Bluetooth device's own-level node
+    property string touched: ""
+    function touch(address) {
+        touched = address;
+    }
+    function ownNode(address) {
+        const node = _wired[address] || deviceNode(known(address));
+        return node && node.audio ? node : null;
+    }
     function mainPart(address) {
         return "device";
     }
