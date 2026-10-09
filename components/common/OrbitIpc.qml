@@ -7,6 +7,7 @@ import "../together/Delay.js" as Delay
 import "../together/Together.js" as Together
 import "../together/Wired.js" as Wired
 import "../noise/Anc.js" as Anc
+import "../device/BeamStyle.js" as BeamStyle
 
 // The `dms ipc call orbitBluetooth ...` commands, for keyboard shortcuts.
 // Kept apart from the daemon: each command only translates into a call on
@@ -17,6 +18,7 @@ import "../noise/Anc.js" as Anc
 //   chatEnds short | standard | long | never   wearStatus
 //   deviceVolume | pcVolume up | down | +5 | -5 | 40
 //   volume up | down   (smart steps, D264)   volumeKeys on | off | status
+//   beamStyle pulse | filament | chain | horizon | reset   (this session only)
 //   hidden | unhideAll      newDeviceDemo | newDeviceStatus
 //   together <devices, 2 to 4> | togetherAdd <device> | togetherRemove <device>
 //   separate | togetherStatus | togetherDelay <device> <ms>
@@ -37,6 +39,8 @@ Scope {
     required property var newDevices
     required property var prefs
     required property var report
+    // Hands a value to the surfaces (the daemon's PluginService global)
+    required property var publish
 
     // What a refusal says: the note, then the guide section that explains it
     function _say(note) {
@@ -49,6 +53,16 @@ Scope {
 
     IpcHandler {
         target: "orbitBluetooth"
+
+        // Tries a charging beam style until the shell restarts: it is told to
+        // the scene, never saved ("reset" gives the setting back)
+        function beamStyle(style: string): string {
+            const s = String(style || "").trim().toLowerCase();
+            if (s !== "reset" && BeamStyle.STYLES.indexOf(s) < 0)
+                return "Use: beamStyle " + BeamStyle.STYLES.join(" | ") + " | reset · " + Guide.url("charging-beam");
+            ipc.publish("beamStyle", s === "reset" ? "" : s);
+            return "OK";
+        }
 
         // Shows the new-device pop-up with a made-up headset
         function newDeviceDemo(): string {

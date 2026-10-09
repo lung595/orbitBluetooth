@@ -3,8 +3,9 @@ import qs.Common
 import "components/device"
 import "components/scene"
 
-// Test of the charge's colour: the energy beam, the earbuds' bolt (through
-// NightColors.chargingTheme) and the battery arc all read the same tone, and
+// Test of the charge's colour: the energy beam's far end (it shifts from the
+// primary to it), the earbuds' bolt (through NightColors.chargingTheme) and the
+// battery arc all read the same tone, and
 // where the theme has no tone to tell it from the primary (the stock Blue and
 // Cyan, light and dark) the arc carries a bolt marker instead of a shifted hue.
 // The themes below are DMS's stock ones (no tertiary: it falls back to the
@@ -102,7 +103,7 @@ Item {
         const stock = [["lime (the preview's default)", false, "#C5E66A", "#BFCBAD", true], ["Blue dark", false, "#42a5f5", "#8ab4f8", false], ["Blue light", true, "#1976d2", "#42a5f5", false], ["Cyan dark", false, "#00bcd4", "#4dd0e1", false], ["Cyan light", true, "#0097a7", "#00bcd4", false]];
         for (const [name, light, primary, secondary, own] of stock) {
             theme(light, primary, secondary);
-            check(name + ": the arc, the beam and the card's bolt share one tone (the card's bolt and beam read the theme's own)", [arcs.tint === tones.charging, beam.color === tones.charging, find(trio, c => c.name === "bolt")?.color === trio.night.chargingTheme, find(trio, c => c.whiteCore !== undefined)?.color === trio.night.chargingTheme], [true, true, true, true]);
+            check(name + ": the arc, the beam and the card's bolt share one tone (the card's bolt and beam read the theme's own)", [arcs.tint === tones.charging, beam.endColor === tones.charging, find(trio, c => c.name === "bolt")?.color === trio.night.chargingTheme, find(trio, c => c.whiteCore !== undefined)?.endColor === trio.night.chargingTheme], [true, true, true, true]);
             check(name + ": the charge reads on the night sky (contrast >= 3)", contrastOnSky(tones.charging) >= 3, true);
             check(name + ": a tone of its own is told from the primary: " + own, tones.chargingApart, own);
             check(name + ": the bolt marker shows only where the tone is not its own", marker() !== null, !own);

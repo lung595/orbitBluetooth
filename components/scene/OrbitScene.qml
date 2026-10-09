@@ -64,6 +64,8 @@ OrbitState {
     }
     readonly property alias globals: daemon.globals
     readonly property alias now: daemon.now
+    // Look of the charging beams: IPC in memory, else the setting
+    readonly property string beamStyle: daemon.beamStyle
     function sinceFor(address) {
         return daemon.sinceFor(address);
     }

@@ -140,6 +140,7 @@ Item {
                     caption: card.timeText
                     animate: card.scene.awake && card.scene.motion
                     time: card.scene.fxTime
+                    beamStyle: card.scene.beamStyle
                     caseImage: card.scene.prefs.partImageFor(card.device, "case")
                     leftImage: card.scene.prefs.partImageFor(card.device, "left")
                     rightImage: card.scene.prefs.partImageFor(card.device, "right")

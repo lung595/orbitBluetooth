@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Common
 import qs.Services
+import "../device/BeamStyle.js" as BeamStyle
 import "../together/Delay.js" as Delay
 import "Hidden.js" as Hidden
 import "../volume/Audiophile.js" as Audiophile
@@ -103,6 +104,9 @@ QtObject {
     readonly property var hiddenSectionOpen: _get("hiddenSectionOpen", null)
     // Look of the black hole: "blackhole" (realistic) or "tesseract"
     readonly property string holeStyle: _get("holeStyle", "blackhole")
+    // How power flows to a charging device (BeamStyle.STYLES); anything else
+    // is the default
+    readonly property string chargeBeamStyle: BeamStyle.parse(_get("chargeBeamStyle", BeamStyle.DEFAULT))
 
     // Two volumes (D249, D255): this PC's level on a virtual sink in front
     // of a device that has its own volume. Off: one level, as before

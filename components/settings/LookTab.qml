@@ -27,6 +27,31 @@ Column {
         defaultValue: "blackhole"
     }
 
+    SelectionSetting {
+        settingKey: "chargeBeamStyle"
+        label: "Charging beam"
+        description: "How power flows to charging devices."
+        options: [
+            {
+                label: "Pulse",
+                value: "pulse"
+            },
+            {
+                label: "Filament",
+                value: "filament"
+            },
+            {
+                label: "Chain",
+                value: "chain"
+            },
+            {
+                label: "Horizon",
+                value: "horizon"
+            }
+        ]
+        defaultValue: "filament"
+    }
+
     ToggleSetting {
         settingKey: "shootingStars"
         label: "Shooting stars"

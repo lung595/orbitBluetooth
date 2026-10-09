@@ -13,7 +13,7 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 - [Earbuds: the trio](#earbuds-the-trio)
 - [Hiding devices: the black hole](#hiding-devices-the-black-hole)
 - [Noise control](#noise-control) · [Pause when you take the headset off](#pause-when-you-take-the-headset-off) · [How long a conversation lasts](#how-long-a-conversation-lasts)
-- [Charging and battery](#charging-and-battery) · [Battery arc colours](#battery-arc-colours)
+- [Charging and battery](#charging-and-battery) · [Battery arc colours](#battery-arc-colours) · [Charging beam](#charging-beam)
 - [New headphones pop-up](#new-headphones-pop-up)
 - [Pairing safety](#pairing-safety)
 - [Real device pictures](#real-device-pictures)
@@ -562,7 +562,7 @@ On **Sony** headsets the detail card shows a **Conversation ends** row (*Short*,
 
 ## Charging and battery
 
-A charging device gets a lightning badge, a breathing battery arc and a beam of energy from your machine, drawn as magnetic field lines. Under its name you read the level and the time to full, for example `54% · 2h08`. The arc around a connected device is colored by its level, see [Battery arc colours](#battery-arc-colours).
+A charging device gets a lightning badge, a breathing battery arc and a beam of energy from your machine (by default drawn as magnetic field lines, see [Charging beam](#charging-beam)). Under its name you read the level and the time to full, for example `54% · 2h08`. The arc around a connected device is colored by its level, see [Battery arc colours](#battery-arc-colours).
 
 | Charging in orbit | Charging details |
 | --- | --- |
@@ -608,6 +608,26 @@ In the stock Blue and Cyan themes (light and dark) no color of the theme tells t
 ![The battery arc with its bolt marker, and the energy beam, in the Blue theme](../screenshots/charging-marker.png)
 
 The card's gauge keeps its own smooth red-to-aqua ramp, red for as long as the arc is.
+
+### Charging beam
+
+**Look → Charging beam** chooses how power flows from your machine to a charging device. It applies at once, no restart.
+
+| Style | Look |
+| --- | --- |
+| **Pulse** | Three small capsules of light travel along a thin rail to the device. The lightest one: no shader. |
+| **Filament** (default) | Fine strands wave along the link, as before, now shifting from the host's color to the charge color. |
+| **Chain** | Listed, not drawn yet: it shows **Filament** until it arrives. |
+| **Horizon** | Listed, not drawn yet: it shows **Filament** until it arrives. |
+
+![Pulse and Filament, moving and as the still frame of Reduce motion](../screenshots/charging-beams.gif)
+
+- **Colors** come from your theme: the beam starts in the theme's primary at the host and ends in the charging color of the battery arc (see [Battery arc colours](#battery-arc-colours)).
+- **Reduce motion** shows one still frame per style (Pulse: three capsules at rest; Filament: the strands frozen).
+- **Nothing runs** while the beam is not seen: not charging, the detail card open on that device, a Listen together member, the screen locked or off, the orbit covered on the desktop. The style you do not use is never built.
+- **Several devices** do not pulse in unison: each has a small, steady delay of its own. The two buds of an [earbuds trio](#earbuds-the-trio) use the same style, 0.4 s apart.
+- **A value Orbit does not know** (a typo, a style from a newer version) is Filament.
+- **From the command line**: `dms ipc call orbitBluetooth beamStyle pulse` (or `filament`, `chain`, `horizon`) tries a style until the shell restarts, in memory only, nothing is saved; `beamStyle reset` gives the setting back.
 
 ## New headphones pop-up
 
@@ -746,6 +766,7 @@ Grouped in tabs: **Orbit** (with Reset), **Scanning**, **Headphones** (with devi
 | | Ambient motion | Off | Keep orbits moving when the pointer is away ⚡ (paused while windows hide the desktop) |
 | Device pictures | Real device pictures (uses the internet) | Off | Photo of the model instead of an icon, see [Real device pictures](#real-device-pictures) |
 | Look | Black hole | Black hole | Realistic, or the tesseract |
+| | Charging beam | Filament | Pulse, Filament, Chain or Horizon: how power flows to charging devices (Chain and Horizon draw Filament for now) |
 | | Shooting stars | On | A rare meteor (every 12–32 s), bent or swallowed by the black hole |
 | | Stars | Normal | Low, Normal or High |
 | | Custom images folder | — | PNG files that replace built-in icons |

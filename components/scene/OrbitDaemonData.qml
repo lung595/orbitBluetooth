@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Services
+import "../device/BeamStyle.js" as BeamStyle
 
 // What the daemon publishes for the scene (connection times, battery logs,
 // power readings, real device pictures) and the clock that keeps the
@@ -12,6 +13,9 @@ Item {
     readonly property var globals: PluginService.globalVars[scene.prefs.pluginId] || ({})
     readonly property var _pictureService: PluginService.pluginDaemonInstances[scene.prefs.pluginId]?.pictureLookup ?? null
     property double now: Date.now()
+    // The charging beam's style: what `beamStyle` (IPC) last asked for, kept in
+    // memory only, else the saved setting
+    readonly property string beamStyle: BeamStyle.parse(globals.beamStyle || scene.prefs.chargeBeamStyle)
 
     function sinceFor(address) {
         const s = globals.since || {};

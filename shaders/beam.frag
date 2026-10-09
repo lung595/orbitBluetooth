@@ -19,7 +19,8 @@ layout(std140, binding = 0) uniform buf {
     float heightPx;    // item height: the spindle's widest opening
     float amplitude;   // wave height of each line, px
     float wavelength;  // px
-    vec4 color;        // theme primary
+    vec4 color;        // colour at the host
+    vec4 endColor;     // colour at the device: the lines shift from one to the other
     float whiteCore;   // 1: lines glow white-hot, 0: they deepen (light cards)
 } ubuf;
 
@@ -56,7 +57,8 @@ void main() {
     // Brightest where it leaves the charger, softened at the very ends
     float fade = mix(1.0, 0.7, u) * smoothstep(0.0, 6.0, x) * (1.0 - smoothstep(len - 4.0, len, x));
     a = clamp(a * fade, 0.0, 1.0);
-    vec3 hot = mix(ubuf.color.rgb * 0.55, vec3(1.0), ubuf.whiteCore);
-    vec3 rgb = mix(ubuf.color.rgb, hot, clamp(core * 0.5, 0.0, 1.0));
+    vec3 tint = mix(ubuf.color.rgb, ubuf.endColor.rgb, u);
+    vec3 hot = mix(tint * 0.55, vec3(1.0), ubuf.whiteCore);
+    vec3 rgb = mix(tint, hot, clamp(core * 0.5, 0.0, 1.0));
     fragColor = vec4(rgb * a, a) * ubuf.qt_Opacity;
 }

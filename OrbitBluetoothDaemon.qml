@@ -154,6 +154,7 @@ Item {
         newDevices: newDeviceWatch
         prefs: prefs
         report: reportService
+        publish: (name, value) => root._publish(name, value)
     }
 
     function _publish(name, value) {

@@ -1,9 +1,11 @@
 import QtQuick
 import qs.Common
+import "BeamMotion.js" as Motion
 
-// Charging: an energy beam from the host to the device.
-// A softly waving beam (EnergyBeam) with a flare where it leaves the host.
-// It follows the scene's effects clock, only while someone is looking.
+// Charging: an energy beam from the host to the device, in the style of the
+// setting `chargeBeamStyle` (BeamLink picks it), with a flare where it leaves
+// the host. It follows the scene's effects clock, only while someone is
+// looking; with Reduce motion it is a still frame.
 // Its angle (rotation) and length come from the tether.
 Item {
     id: chargeFlow
@@ -24,7 +26,8 @@ Item {
     readonly property real start: body.scene.coreSize / 2 * host.scale
     readonly property real span: Math.max(0, chargeFlow.dist - start - body.diameter * body.baseScale / 2)
     readonly property bool running: visible && body.scene.awake && body.scene.motion
-    readonly property color glow: body.night.charging
+    // The beam shifts from the host's colour to the charge arc's
+    readonly property color glow: body.night.primary
 
     Behavior on opacity {
         NumberAnimation {
@@ -32,17 +35,19 @@ Item {
         }
     }
 
-    // The beam itself: waving light strands with pulses flowing toward
-    // the device (shaders/beam.frag), animated only while visible
-    EnergyBeam {
+    // The beam itself, 44 px high on the axis; only the active style is built
+    // (BeamLink), and none while the beam is hidden
+    BeamLink {
         x: chargeFlow.start
         y: -height / 2
         width: chargeFlow.span
         height: 44
-        amplitude: 2
-        wavelength: 38
+        style: chargeFlow.body.scene.beamStyle
         running: chargeFlow.running
         time: chargeFlow.body.scene.fxTime
+        offset: Motion.deviceOffset(chargeFlow.body.address)
+        startColor: chargeFlow.glow
+        endColor: chargeFlow.body.night.charging
     }
 
     // Source flare where the beam leaves the host
