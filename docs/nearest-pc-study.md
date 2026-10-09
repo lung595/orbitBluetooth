@@ -69,7 +69,7 @@ exchanged between PCs.
 
 ## Slice 2: what was built, what is still open
 
-- One `busctl --json=short get-property -- org.bluez <path> org.bluez.Device1
+- One `busctl --json=short --timeout=2 get-property -- org.bluez <path> org.bluez.Device1
   RSSI` per read, started when a candidate appears and again when its wait
   ends; the process is gone right after, reads go one at a time. Checked on
   this machine: without discovery BlueZ answers "No such property" with exit

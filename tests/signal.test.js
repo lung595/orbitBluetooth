@@ -11,7 +11,7 @@ const Nearest = load("NearestFilter.js");
 const path = n => "/org/bluez/hci0/dev_00_00_00_00_00_" + n;
 
 // --- The command -------------------------------------------------------------------------
-eq("one busctl read of RSSI, path after --", Signal.command(path("01")), ["busctl", "--json=short", "get-property", "--", "org.bluez", path("01"), "org.bluez.Device1", "RSSI"]);
+eq("one busctl read of RSSI, path after --", Signal.command(path("01")), ["busctl", "--json=short", "--timeout=2", "get-property", "--", "org.bluez", path("01"), "org.bluez.Device1", "RSSI"]);
 eq("only a BlueZ device path is accepted", ["", undefined, null, "/org/bluez/hci0", "/org/bluez/hci0/dev_00_00_00_00_00_0G", path("01") + "; rm", "-h", "/etc/passwd", path("01") + "\n"].map(Signal.command), Array(9).fill(null));
 
 // --- The answer, as text ----------------------------------------------------------------------
@@ -23,8 +23,8 @@ eq("no reading: not an int16 below 0", ["", "x", "null", "[]", '{"type":"n","dat
 const dir = GLib.dir_make_tmp("orbit-busctl-XXXXXX");
 const script = dir + "/busctl";
 GLib.file_set_contents(script, `#!/bin/sh
-# $5 is the object path: its last byte picks the answer
-case "$5" in
+# $6 is the object path: its last byte picks the answer
+case "$6" in
 *_01) echo '{"type":"n","data":-40}' ;;
 *_02) echo '{"type":"n","data":-70}' ;;
 *_03) echo '{"type":"n","data":-90}' ;;

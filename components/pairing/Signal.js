@@ -7,10 +7,12 @@
 
 // The one command a read runs: busctl takes the path as data, after "--", and
 // only an object path BlueZ could have given is accepted. null otherwise.
+// --timeout=2 (seconds): a stalled BlueZ must not hold this read, and the reads
+// queued behind it, for sd-bus's default 25 s.
 function command(path) {
     if (!Address.isDevicePath(path))
         return null;
-    return ["busctl", "--json=short", "get-property", "--", "org.bluez", path, "org.bluez.Device1", "RSSI"];
+    return ["busctl", "--json=short", "--timeout=2", "get-property", "--", "org.bluez", path, "org.bluez.Device1", "RSSI"];
 }
 
 // busctl's exit code and output -> dBm, or undefined for "no reading":
