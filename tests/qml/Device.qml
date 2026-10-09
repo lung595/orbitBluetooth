@@ -16,6 +16,8 @@ QtObject {
     property bool blocked: false
     property bool trusted: false
     property bool forgotten: false
+    // Signal strength in dBm as the fake SignalRead reads it, undefined = no reading
+    property var rssi: undefined
     // Bluetooth profiles the device exposes (BlueZ Device1.UUIDs)
     property var uuids: ["0000110b-0000-1000-8000-00805f9b34fb"]
     // BlueZ reports a disconnection a moment after it was asked for: a test

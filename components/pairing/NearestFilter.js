@@ -70,3 +70,16 @@ function shouldOffer(ctx) {
         wait -= tie;
     return { "offer": true, "delayMs": Math.max(0, wait), "reason": "nearest first" };
 }
+
+// The same question when the wait ends (the study's fire-time re-check).
+// ctx: {rssi, discovering, screenOn, recentUse, opts}, read just now.
+// While the adapter still discovers, a device that no longer reports a signal
+// went away or connected to another PC: no pop-up. Once discovery has ended
+// BlueZ clears the reading of every device, so a missing one proves nothing
+// and today's behavior stays. Returns {offer, reason}.
+function recheck(ctx) {
+    if (!ctx || !isReading(ctx.rssi))
+        return ctx && ctx.discovering === true ? { "offer": false, "reason": "signal gone while discovering" } : { "offer": true, "reason": "no signal reading" };
+    const now = shouldOffer(ctx);
+    return { "offer": now.offer, "reason": now.reason };
+}
