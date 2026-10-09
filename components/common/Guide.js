@@ -52,7 +52,8 @@ function stuckNote(name) {
     return { "title": (name || "This device") + " is still connected", "hint": "It may be in use: try again, or turn it off", "anchor": "if-it-does-not-disconnect" };
 }
 
-// A level that cannot be set from the keyboard, by why (AudioRoute.setLevel)
+// A level that cannot be set from the keyboard, by why (AudioRoute.setLevel,
+// GroupVolume.setLevel)
 function levelNote(why) {
     if (why === "no-device")
         return "No Bluetooth audio device connected";
@@ -60,6 +61,8 @@ function levelNote(why) {
         return "This device has no volume of its own: it follows this PC's level";
     if (why === "no-pc-level")
         return "Separate PC volume is off: this device has one level, use deviceVolume";
+    if (why === "no-group")
+        return "No group is playing: use together first";
     return "Use up, down, +5, -5 or a level from 0 to 100";
 }
 

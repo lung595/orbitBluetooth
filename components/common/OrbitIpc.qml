@@ -1,5 +1,6 @@
 import Quickshell
 import Quickshell.Io
+import "../centre"
 import "Guide.js" as Guide
 import "../../diagnostics/Gather.js" as Gather
 import "Text.js" as Text
@@ -16,7 +17,7 @@ import "../device/BeamStyle.js" as BeamStyle
 // on an IpcHandler itself would be listed as IPC signals.
 //   anc nc | ambient | off | adaptive      ancCycle | ancStatus
 //   chatEnds short | standard | long | never   wearStatus
-//   deviceVolume | pcVolume up | down | +5 | -5 | 40
+//   deviceVolume | pcVolume | togetherVolume up | down | +5 | -5 | 40
 //   volume up | down   (smart steps, D264)   volumeKeys on | off | status
 //   beamStyle pulse | filament | chain | horizon | reset   (this session only)
 //   hidden | unhideAll      newDeviceDemo | newDeviceStatus
@@ -41,6 +42,12 @@ Scope {
     required property var report
     // Hands a value to the surfaces (the daemon's PluginService global)
     required property var publish
+
+    // The group's general level, the same one the ring around the center moves
+    GroupVolume {
+        id: group
+        session: ipc.route.together
+    }
 
     // What a refusal says: the note, then the guide section that explains it
     function _say(note) {
@@ -144,6 +151,13 @@ Scope {
         function pcVolume(level: string): string {
             const why = ipc.route.setLevel("pc", level, "");
             return why ? Guide.levelNote(why) + " · " + Guide.url("the-two-volumes") : "OK";
+        }
+
+        // The group's general level (the ring around the center): every output
+        // moves and the gaps between them are kept
+        function togetherVolume(level: string): string {
+            const why = group.setLevel(level);
+            return why ? Guide.levelNote(why) + " · " + Guide.url("the-volume-at-the-center") : "OK";
         }
 
         // The level heard: the device's own when it has one, else this PC's.
