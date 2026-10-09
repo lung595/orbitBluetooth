@@ -1,13 +1,15 @@
 import QtQuick
 import "../scene/Physics.js" as Physics
+import "../scene/Hold.js" as Hold
+import "../scene"
 import "../volume"
 import "WiredSign.js" as Sign
 
 // The mouse and the wheel over a wired member of the group, on the rounded
 // square it is drawn with. A click opens the volume radar on its level, since
 // there is no detail card for an output that is not Bluetooth (D271); a
-// right-click opens its menu, and a drag past 5 px pulls it out of the group like
-// a Bluetooth member (the scene owns the drag), so a group of wired outputs alone
+// right-click, or a press held 500 ms, opens its menu, and a drag past 5 px
+// pulls it out of the group like a Bluetooth member (the scene owns the drag), so a group of wired outputs alone
 // stays in hand and no gesture on it is met with silence (value 10). The wheel
 // sets its level (over the source, the general one), as on any member.
 MouseArea {
@@ -33,6 +35,16 @@ MouseArea {
     }
 
     property point pressPoint
+    property point menuPoint
+
+    HoldRing {
+        id: hold
+        night: pointer.body.scene.night
+        onHeld: pointer.body.scene.openMenu(pointer.body, pointer.menuPoint)
+    }
+    // A card opened in the middle of a press: nothing is left to hold
+    onEnabledChanged: if (!enabled)
+        hold.cancel()
 
     function worldPoint(m) {
         return mapToItem(pointer.body.scene.world, m.x, m.y);
@@ -40,28 +52,41 @@ MouseArea {
 
     onPressed: m => {
         pressPoint = worldPoint(m);
+        menuPoint = mapToItem(pointer.body.scene, m.x, m.y);
         if (m.button === Qt.RightButton)
-            pointer.body.scene.openMenu(pointer.body, mapToItem(pointer.body.scene, m.x, m.y));
+            pointer.body.scene.openMenu(pointer.body, menuPoint);
+        else
+            hold.begin();
     }
     onPositionChanged: m => {
-        if (!pressed || pressedButtons & Qt.RightButton)
+        if (!pressed || pressedButtons & Qt.RightButton || hold.fired)
             return;
         const p = worldPoint(m);
-        if (!pointer.body.dragging && Math.hypot(p.x - pressPoint.x, p.y - pressPoint.y) > 5)
+        if (!pointer.body.dragging && Hold.moved(pressPoint, p)) {
+            hold.cancel();
             pointer.body.scene.beginDrag(pointer.body, p);
+        }
         if (pointer.body.dragging)
             pointer.body.scene.updateDrag(p);
     }
     onReleased: m => {
         if (m.button === Qt.RightButton)
             return;
+        // The release of the press that opened the menu is no click
+        const spent = hold.fired;
+        hold.cancel();
+        if (spent)
+            return;
         if (pointer.body.dragging)
             pointer.body.scene.endDrag();
         else
             pointer.body.scene.focusOn(pointer.body);
     }
-    onCanceled: if (pointer.body.dragging)
-        pointer.body.scene.endDrag()
+    onCanceled: {
+        hold.cancel();
+        if (pointer.body.dragging)
+            pointer.body.scene.endDrag();
+    }
     onContainsMouseChanged: pointer.body.scene.wake()
 
     NotchWheel {

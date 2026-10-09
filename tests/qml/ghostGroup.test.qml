@@ -724,6 +724,29 @@ Item {
                 settleProbe.stop();
                 check("Reduce motion again: the ring stops and so does the loop", [h.settledSeen, scene.ghost.offered], [true, true]);
             }
+        },
+        {
+            // A press held 500 ms acts as a right click (NAK-10, D368): released early it is a plain click
+            "wait": 0,
+            "run": () => {
+                const p = scene.ghost, z = h.view().pointer;
+                h.key = p.key;
+                mouse.mousePress(scene, p.px, p.py);
+                mouse.wait(250);
+                check("held 250 ms: the ring is filling, nothing decided yet", [z.children.find(c => "fired" in c).active, p.offered, route.together.isDeclined(h.key)], [true, true, false]);
+                mouse.mouseMove(scene, p.px + 12, p.py);
+                const hold = z.children.find(c => "fired" in c);
+                mouse.wait(450);
+                // Let go well outside the disc, so that no click follows
+                mouse.mouseMove(scene, p.px + 200, p.py);
+                mouse.mouseRelease(scene, p.px + 200, p.py);
+                check("counter-proof: moved past the threshold, the hold is cancelled and nothing is turned down", [hold.active, p.offered, route.together.isDeclined(h.key)], [false, true, false]);
+                mouse.mousePress(scene, p.px, p.py);
+                mouse.wait(650);
+                check("held 500 ms: it is turned down, like a right click", [route.together.isDeclined(h.key), p.offered], [true, false]);
+                mouse.mouseRelease(scene, p.px, p.py);
+                check("the release after the long press starts no group", route.sharing, []);
+            }
         }
     ]
     property int step: 0

@@ -13,6 +13,7 @@ import "mock/State.js" as State
 // Usage: QT_QPA_PLATFORM=offscreen qml -I imports shot.qml -- <mode> <out.png>
 // Modes: orbit, zoom, orbitfocus, volumefocus (the card with its two volumes), desktop, desktopfocus, ancfocus,
 //        buds, budsdock, hole, holetess, hiddencard, hiddenempty, connecting, menu, feed,
+//        hold (a press held on a device until its menu opens), tap (a plain click on it),
 //        btblocked (Turn on did nothing: note), noadapter,
 //        together2, together3, together4 (the headset and 1 to 3 speakers listen
 //        together: the source takes the center), togetherback (the host was
@@ -206,6 +207,49 @@ Window {
                 scene.openMenu(b, Qt.point(b.px + 14, b.py + 6));
         } else if (mode === "feed") {
             carryToHole();
+        } else if (mode === "hold" || mode === "tap") {
+            press();
+        }
+    }
+
+    // The long-press ring of a device's pointer (D368), or null on a revision
+    // without it: the "hold" and "tap" modes then do what the press did before
+    function holdOf(item) {
+        for (const c of item.children) {
+            if (typeof c.begin === "function" && c.fired !== undefined && c.night !== undefined)
+                return c;
+            const r = holdOf(c);
+            if (r)
+                return r;
+        }
+        return null;
+    }
+    // The left button goes down on a device, as its pointer's onPressed does
+    property var pressedHold: null
+    function press() {
+        const b = bodyOf("02:00:00:00:10:06");
+        if (!b)
+            return;
+        win.pressedHold = holdOf(b);
+        if (win.pressedHold) {
+            win.pressedHold.parent.menuPoint = Qt.point(b.px + 14, b.py + 6);
+            win.pressedHold.begin();
+        }
+        release.start();
+    }
+    // ...and comes up: past the hold the ring has opened the menu (the base
+    // opens it here, as its right click did); a plain click opens the card
+    Timer {
+        id: release
+        interval: win.mode === "hold" ? 600 : 100
+        onTriggered: {
+            const b = win.bodyOf("02:00:00:00:10:06");
+            if (win.pressedHold)
+                win.pressedHold.cancel();
+            if (win.mode === "tap")
+                scene.focusOn(b);
+            else if (!win.pressedHold)
+                scene.openMenu(b, Qt.point(b.px + 14, b.py + 6));
         }
     }
 
@@ -313,7 +357,7 @@ Window {
         id: cardLoop
         interval: 1500
         repeat: true
-        onTriggered: scene.cardOpen ? scene.clearFocus() : win.stage()
+        onTriggered: scene.cardOpen || scene.menuOpen ? scene.dismiss() : win.stage()
     }
     // "-churn": a made-up output goes to the black hole, then comes back, each second
     Timer {
