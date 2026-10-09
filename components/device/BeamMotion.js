@@ -3,7 +3,7 @@
 // Where the moving parts of a charging beam are at a given moment. Every
 // style reads the scene's 30 Hz effects clock through these functions and
 // holds no clock of its own; with Reduce motion (not running) each one answers
-// its still frame. Pure; tested by tests/beamMotion.test.js.
+// its still frame. Pure; tested by tests/beamStyle.test.js.
 
 var PULSE_PERIOD = 1.6;                    // s for a capsule to cross the link
 var PULSE_STILL = [1 / 6, 1 / 2, 5 / 6];   // capsules at rest, and where the motion starts from

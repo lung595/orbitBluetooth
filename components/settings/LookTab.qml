@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Common
 import qs.Modules.Plugins
+import "../device/BeamStyle.js" as BeamStyle
 
 // Look tab: the black hole, stars and custom images.
 Column {
@@ -49,7 +50,7 @@ Column {
                 value: "horizon"
             }
         ]
-        defaultValue: "filament"
+        defaultValue: BeamStyle.DEFAULT
     }
 
     ToggleSetting {

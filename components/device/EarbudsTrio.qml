@@ -5,6 +5,7 @@ import qs.Widgets
 import "../card"
 import "../card/Charge.js" as Charge
 import "../scene"
+import "BeamStyle.js" as BeamStyle
 import "Earbuds.js" as Earbuds
 
 // Earbuds with a case: the case in the middle of a small orbit, the left
@@ -27,7 +28,7 @@ Item {
     property string caption: ""           // e.g. "≈ 4 h 12 left"
     property bool animate: true
     // Look of the charging beams (setting chargeBeamStyle)
-    property string beamStyle: "filament"
+    property string beamStyle: BeamStyle.DEFAULT
     // Effects clock of the scene (seconds): drives the float and the beams
     property real time: 0
 
