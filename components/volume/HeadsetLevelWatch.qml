@@ -13,7 +13,7 @@ Item {
 
     required property string address
     // The member's own level node (AudioRoute.ownNode), or null
-    property var node: null
+    required property var node
     // The levels Orbit wrote lately (AudioRoute), to tell its echo apart
     property var book: ({})
 

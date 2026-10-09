@@ -240,7 +240,7 @@ Item {
 
     // --- The target of the keys (NAK-9, NAK-174) ------------------------------------
     // The member whose own level was touched last: in the scope, the radar or a
-    // card, or with the headset's own buttons (MemberLevel); "" once the group's
+    // card, or with the headset's own buttons (HeadsetLevelWatch); "" once the group's
     // level (or none) was. It stays when the pop-up closes, and goes back to the
     // group when the group ends. It is also cleared when a group starts, so a
     // touch made outside any group cannot apply to it later.
@@ -268,7 +268,7 @@ Item {
     // listens while no group plays
     Instantiator {
         model: root.together.active ? root.together.members : []
-        delegate: MemberLevel {
+        delegate: HeadsetLevelWatch {
             required property string modelData
             address: modelData
             node: root.ownNode(modelData)
