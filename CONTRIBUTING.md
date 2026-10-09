@@ -154,7 +154,8 @@ orbitBluetooth/
 │   │   ├── Members.js, MemberColors.js, MemberPalette.qml  # outputs listening together: levels, cloud sectors, theme colors (pure, tested)
 │   │   ├── ScopeFeed.qml, ScopeModel.qml     # live stereo bands from cava; the picture they move, once for every screen
 │   │   ├── AudioRoute.qml, RouteDevice.qml, Route.js   # the two levels of each output: PC filter, absolute volume, IPC
-│   │   └── VolumeKeys.qml, Keys.js, Steps.js # volume keys through `dms keybinds`, smart steps (pure, tested)
+│   │   ├── VolumeKeys.qml, Keys.js, Steps.js # volume keys through `dms keybinds`, smart steps (pure, tested)
+│   │   └── Target.js, HeadsetLevelWatch.qml  # which member the keys move and the echo guard (pure, `tests/target.test.js`); one watcher per member of a playing group, no timer, listens to the volume PipeWire reports
 │   ├── together/                # Listen together (D254, D277, D279, D298)
 │   │   ├── Together.js          # who may join, where the sound comes from, the copies' commands (pure, tested)
 │   │   ├── TogetherSession.qml  # the members, delays and plan of a session; survives suspend and hand-over
