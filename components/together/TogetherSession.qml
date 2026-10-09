@@ -45,6 +45,9 @@ Item {
     signal ended(string why, string address)
     // A member disconnected and the others go on
     signal memberLeft(string address)
+    // A read of the graph gave no latency for this member: the automatic delay
+    // cannot line it up, and it keeps its own timing (told once per read)
+    signal latencyUnknown(string address)
 
     // The name the user sees, for a note: a device's name, or a wired
     // output's description, as one clean line (Text.line) and never written to
@@ -246,7 +249,9 @@ Item {
     // --- How long each output waits (D298) -------------------------------------------------
     // What each member adds before it is heard, read from PipeWire's graph:
     // once when the session forms and again when a member's output, codec or
-    // profile changes (MemberLatency, which exists only during a session)
+    // profile changes (MemberLatency, which exists only during a session). A
+    // copy waits for what the output heard adds more than it does; the user's
+    // own delay (`delays`) is added to that, so it stays an override.
     readonly property var latencies: latencyLoader.item ? latencyLoader.item.latencies : ({})
     readonly property var _sinks: {
         const out = {};
@@ -268,6 +273,11 @@ Item {
         sourceComponent: MemberLatency {
             sinks: session._sinks
             signature: session._signature
+            onMeasured: {
+                const unknown = Delay.unknownOf(session.members, latencies);
+                if (unknown.length)
+                    session.latencyUnknown(unknown[0]);
+            }
         }
     }
 
@@ -332,23 +342,32 @@ Item {
     // The copy is taken from the source's PC-level filter, before its level,
     // so each member applies the level itself through its own filter and they
     // must all hold the same one: writing one writes them all
-    // (Route.levelNodes). A source without that filter is copied after
-    // its output level (it is the PC level there), so nothing is shared: each
-    // member then plays that sound at its own level. So does a wired source,
-    // whose copies are taken before its output level, and a wired member,
-    // which has no filter of the PC level.
+    // (Route.levelNodes). A wired source has no such filter and its copies are
+    // taken before its output level too (D368): the level the face shows is the
+    // output's own, and writing it also writes the filters of the Bluetooth
+    // members, so the level is shared there as well. A Bluetooth source
+    // without that filter is copied after its output level (it is the PC level
+    // there), so the copy already carries it and nothing more is shared. A
+    // wired member has no filter of the PC level: it keeps its own.
     readonly property var sharedNodes: {
-        const d = active && source ? route.known(source) : null;
-        if (!d || !d.pc)
+        if (!active || !source)
             return [];
-        return members.map(a => {
+        const filters = members.map(a => {
             const m = route.known(a);
             return m ? m.pc : null;
         }).filter(n => !!n && !!n.audio);
+        const d = route.known(source);
+        if (d)
+            return d.pc ? filters : [];
+        const own = Member.isWired(source) ? route.wiredSink(source) : null;
+        return own && own.audio && filters.length ? [own].concat(filters) : [];
     }
-    // Newcomers start at the level the others share, and unmuted as they are
+    // Newcomers start at the level the others share, and unmuted as they are.
+    // A wired source's own level is not copied onto them: a sound card at full
+    // would suddenly make a quiet headset loud. They follow it from the first
+    // time the level is moved.
     function _align(who) {
-        const from = sharedNodes.length ? sharedNode : null;
+        const from = sharedNodes.length && !Member.isWired(source) ? sharedNode : null;
         if (!from || !from.audio)
             return;
         for (const a of who) {

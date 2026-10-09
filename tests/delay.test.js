@@ -1,4 +1,4 @@
-// The automatic delay of Listen together: only a wired copy waits, for what the Bluetooth output adds.
+// The automatic delay of Listen together: a copy waits for what the output heard adds more than it does (D368).
 // Run from the plugin root: gjs tests/delay.test.js (or every file: sh tests/run.sh)
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
@@ -30,14 +30,17 @@ const tap = (member, capture) => ({ "member": member, "capture": capture, "playb
 const plan = { "source": BT1, "taps": [tap(W1, "c"), tap(BT2, "c"), tap(W2, "c")] };
 const latencies = { [BT1]: 200, [BT2]: 250, [W1]: 5, [W2]: 20 };
 
-eq("only the wired copies wait, never the Bluetooth one", Delay.delaysFor(plan, latencies, 0), { [W1]: 195, [W2]: 180 });
+eq("the wired copies wait, a slower Bluetooth copy does not", Delay.delaysFor(plan, latencies, 0), { [W1]: 195, [W2]: 180 });
 eq("the correction applies to every wired copy", Delay.delaysFor(plan, latencies, 10), { [W1]: 205, [W2]: 190 });
-eq("a Bluetooth copy is never in the answer, whatever its latency", Object.keys(Delay.delaysFor(plan, { [BT1]: 1, [BT2]: 9999, [W1]: 0, [W2]: 0 }, 0)).indexOf(BT2), -1);
+eq("a Bluetooth copy slower than the source is left as it is, whatever its latency", Object.keys(Delay.delaysFor(plan, { [BT1]: 1, [BT2]: 9999, [W1]: 0, [W2]: 0 }, 0)).indexOf(BT2), -1);
+eq("a Bluetooth copy quicker than the source waits for the difference", Delay.delaysFor({ "source": BT1, "taps": [tap(BT2, "c")] }, { [BT1]: 250, [BT2]: 60 }, 0), { [BT2]: 190 });
+eq("the correction is for wired copies: a Bluetooth copy takes the figures alone", Delay.delaysFor({ "source": BT1, "taps": [tap(BT2, "c"), tap(W1, "c")] }, { [BT1]: 250, [BT2]: 60, [W1]: 5 }, 20), { [BT2]: 190, [W1]: 265 });
+eq("a Bluetooth copy with no figure keeps its timing", Delay.delaysFor({ "source": BT1, "taps": [tap(BT2, "c")] }, { [BT1]: 250 }, 0), {});
 eq("a wired copy with an unknown latency gets none, the others still do", Delay.delaysFor(plan, { [BT1]: 200, [W1]: 5 }, 0), { [W1]: 195 });
 eq("an unknown source latency: nobody waits", Delay.delaysFor(plan, { [W1]: 5, [W2]: 20 }, 50), {});
 eq("a wired copy as quick as the source is not in the answer", Delay.delaysFor(plan, { [BT1]: 5, [W1]: 5, [W2]: 20 }, 0), {});
 eq("a wired source: its wired copy waits for nothing", Delay.delaysFor({ "source": W1, "taps": [tap(W2, "c"), tap(BT1, "c")] }, { [W1]: 5, [W2]: 5, [BT1]: 200 }, 0), {});
-eq("a session with no wired member has no automatic delay", Delay.delaysFor({ "source": BT1, "taps": [tap(BT2, "c")] }, { [BT1]: 200, [BT2]: 10 }, 0), {});
+eq("two Bluetooth outputs are lined up too", Delay.delaysFor({ "source": BT1, "taps": [tap(BT2, "c")] }, { [BT1]: 200, [BT2]: 10 }, 0), { [BT2]: 190 });
 eq("no plan, no taps, no latencies", [Delay.delaysFor(null, latencies, 0), Delay.delaysFor({ "source": "", "taps": [] }, latencies, 0), Delay.delaysFor(plan, null, 0), Delay.delaysFor(plan, {}, 0), Delay.delaysFor({ "source": BT1 }, latencies, 0), Delay.delaysFor(undefined, undefined, 0)], [{}, {}, {}, {}, {}, {}]);
 eq("the delays are those the copies take", Together.commands({ "source": BT1, "taps": [{ "member": W1, "capture": "orbit_pc_AA_BB_CC_DD_EE_01", "playback": W1 }] }, Delay.delaysFor(plan, latencies, 0))[0].command[6], "0.195");
 
@@ -54,19 +57,20 @@ eq("the delays of a copy are the automatic one and its own", Delay.total({ [W1]:
 eq("the sum is capped like any delay, and a zero is not listed", [Delay.total({ [W1]: 900 }, { [W1]: 900 }), Delay.total({ [W1]: 0 }, { [BT2]: 0 })], [{ [W1]: Together.MAX_DELAY_MS }, {}]);
 eq("no delay of either kind", [Delay.total(null, null), Delay.total({}, undefined), Delay.total(undefined, { [BT2]: 40 })], [{}, {}, { [BT2]: 40 }]);
 
-// --- A wired source waits in its filter, never the Bluetooth outputs ---------------------------
+// --- A wired source waits in its filter for the slowest Bluetooth output ---------------------------
 const wired = { "source": W1, "taps": [tap(BT1, "c"), tap(W2, "c"), tap(BT2, "c")] };
 const heard = { [W1]: 5, [W2]: 5, [BT1]: 200, [BT2]: 250 };
 eq("a Bluetooth source: no source wait, the wired copies wait as before", Delay.waitsFor(plan, latencies, 0), { "source": 0, "taps": { [W1]: 195, [W2]: 180 } });
 eq("a wired source waits for the slowest Bluetooth copy", Delay.waitsFor(wired, heard, 0).source, 245);
-eq("the Bluetooth copies never wait", Object.keys(Delay.waitsFor(wired, heard, 0).taps).filter(m => m === BT1 || m === BT2), []);
-eq("a wired copy beside it waits as long, the source is heard that much later", Delay.waitsFor(wired, heard, 0).taps, { [W2]: 245 });
-eq("the correction moves the source and the wired copy alike", [Delay.waitsFor(wired, heard, 10), Delay.waitsFor(wired, heard, -10)], [{ "source": 255, "taps": { [W2]: 255 } }, { "source": 235, "taps": { [W2]: 235 } }]);
+eq("the slowest Bluetooth copy never waits, a quicker one is lined up with it", Delay.waitsFor(wired, heard, 0).taps[BT2] === undefined && Delay.waitsFor(wired, heard, 0).taps[BT1], 50);
+eq("a wired copy beside it waits as long, the source is heard that much later", Delay.waitsFor(wired, heard, 0).taps[W2], 245);
+eq("the correction moves the source and the wired copy alike, not the Bluetooth one", [Delay.waitsFor(wired, heard, 10), Delay.waitsFor(wired, heard, -10)], [{ "source": 255, "taps": { [BT1]: 50, [W2]: 255 } }, { "source": 235, "taps": { [BT1]: 50, [W2]: 235 } }]);
 eq("a wired copy that is slower than the source is lined up with the Bluetooth one too", Delay.waitsFor({ "source": W1, "taps": [tap(BT1, "c"), tap(W2, "c")] }, { [W1]: 5, [W2]: 40, [BT1]: 200 }, 0), { "source": 195, "taps": { [W2]: 160 } });
-eq("a Bluetooth copy faster than the wired source: nothing waits", Delay.waitsFor({ "source": W1, "taps": [tap(BT1, "c")] }, { [W1]: 30, [BT1]: 10 }, 0), { "source": 0, "taps": {} });
+eq("a Bluetooth copy faster than the wired source waits for it, the source does not", Delay.waitsFor({ "source": W1, "taps": [tap(BT1, "c")] }, { [W1]: 30, [BT1]: 10 }, 0), { "source": 0, "taps": { [BT1]: 20 } });
 eq("a negative correction never makes the wait negative", Delay.waitsFor({ "source": W1, "taps": [tap(BT1, "c")] }, { [W1]: 5, [BT1]: 20 }, -100).source, 0);
 eq("a correction alone lifts a zero on the source when a Bluetooth copy is there", Delay.waitsFor({ "source": W1, "taps": [tap(BT1, "c")] }, { [W1]: 30, [BT1]: 10 }, 15).source, 15);
 eq("only wired copies: the correction moves them and the source stays", Delay.waitsFor({ "source": W1, "taps": [tap(W2, "c")] }, { [W1]: 5, [W2]: 5 }, 20), { "source": 0, "taps": { [W2]: 20 } });
+eq("members with no figure are told apart", [Delay.unknownOf([BT1, BT2, W1], { [BT1]: 200, [W1]: 0 }), Delay.unknownOf([BT1], null), Delay.unknownOf(undefined, {}), Delay.unknownOf([BT1, BT2], { [BT1]: -1, [BT2]: 0 })], [[BT2], [BT1], [], [BT1]]);
 eq("an unknown Bluetooth latency: the source does not wait", Delay.waitsFor(wired, { [W1]: 5, [W2]: 5 }, 30), { "source": 0, "taps": { [W2]: 30 } });
 eq("an unknown source latency: nothing waits", Delay.waitsFor(wired, { [W2]: 5, [BT1]: 200, [BT2]: 250 }, 30), { "source": 0, "taps": {} });
 eq("the wait is capped like every other", Delay.waitsFor({ "source": W1, "taps": [tap(BT1, "c")] }, { [W1]: 0, [BT1]: 9000 }, 0).source, Together.MAX_DELAY_MS);

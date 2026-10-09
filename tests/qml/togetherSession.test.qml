@@ -188,10 +188,14 @@ Item {
 
     property var ends: []
     property var leaves: []
+    property var unknowns: []
     Connections {
         target: session
         function onEnded(why, address) {
             h.ends = h.ends.concat([why + ":" + address.slice(-2)]);
+        }
+        function onLatencyUnknown(address) {
+            h.unknowns = h.unknowns.concat([address.slice(-2)]);
         }
         function onMemberLeft(address) {
             h.leaves = h.leaves.concat([address.slice(-2)]);
@@ -230,7 +234,7 @@ Item {
         }
     }
     Component.onCompleted: {
-        steps = [step1, step2, step3, step4, step5, step6, step7, step8, step9, step10, step11, step12, step13, step14];
+        steps = [step1, step2, step3, step4, step5, step6, step7, step8, step9, step10, step11, step12, step13, step14, step15, step16, step17];
         stepper.start();
     }
 
@@ -433,6 +437,10 @@ Item {
     function filterProcess() {
         return live().find(p => /media\.class=Audio\/Sink/.test(p.command[4])) || null;
     }
+    // The wait of each copy, sorted: a copy that restarts changes places
+    function copyDelays() {
+        return live().filter(p => p.command.length === 7).map(p => p.command[6]).sort();
+    }
     function copyProcess() {
         return live().find(p => !/media\.class=Audio\/Sink/.test(p.command[4])) || null;
     }
@@ -536,9 +544,63 @@ Item {
         session.fineDelayMs = -9999;
         check("a nudge is held within 100 ms either way", copyProcess().command[6], "0.100");
         session.fineDelayMs = 0;
-        check("a Bluetooth copy never waits", [session.join(b, a), copies()], [null, ["02<-01pc", "test_two<-01pc"]]);
-        check("only the wired copy has a delay", live().filter(p => p.command.length === 7).length, 1);
+        h.unknowns = [];
+        check("a Bluetooth copy joins with no figure yet and keeps its timing", [session.join(b, a), copies(), live().filter(p => p.command.length === 7).length], [null, ["02<-01pc", "test_two<-01pc"], 1]);
+        h.wait(500);
+    }
+
+    function step15() {
+        check("the new member is read", readerRunning(), true);
+        check("the graph knows the source and the wired output, not the new member", answerGraph({
+            "bluez_output.AA_BB_CC_DD_EE_01.1": 200000000,
+            "alsa_output.test_two": 0
+        }), true);
+        check("the output without a figure is told, once, and keeps its timing", [h.unknowns, copyDelays()], [["02"], ["0.200"]]);
+        // Its codec shows: the graph is read again, once
+        patch(b, {
+            "sink": {
+                "name": sinkOf(b).name,
+                "properties": {
+                    "api.bluez5.profile": "a2dp-sink",
+                    "api.bluez5.codec": "aac"
+                }
+            }
+        });
+        h.wait(500);
+    }
+
+    function step16() {
+        check("the codec change makes one more read", readerRunning(), true);
+        h.unknowns = [];
+        check("it gives the Bluetooth output 60 ms", answerGraph({
+            "bluez_output.AA_BB_CC_DD_EE_01.1": 200000000,
+            "bluez_output.AA_BB_CC_DD_EE_02.1": 60000000,
+            "alsa_output.test_two": 0
+        }), true);
+        check("the quicker Bluetooth copy waits for the difference, the wired one for the source", [copyDelays(), h.unknowns], [["0.140", "0.200"], []]);
+        session.setDelay(b, 30);
+        check("the user's own delay is added: it stays an override", copyDelays(), ["0.170", "0.200"]);
+        session.fineDelayMs = 20;
+        check("the nudge moves the wired copy only", copyDelays(), ["0.170", "0.220"]);
+        session.fineDelayMs = 0;
+        h.wait(300);
+    }
+
+    function step17() {
+        check("nothing reads the graph once the figures are in", readerRunning(), false);
         session.end("ended", "");
         check("the session ended: nothing is left running", [live().length, ProcessLog.live.length], [0, 0]);
+
+        // A wired source has no filter of the PC level: the level it shows reaches the Bluetooth filters (D368)
+        plug(a, 0.7);
+        plug(b, 0.2);
+        wire(w1, "Studio Interface");
+        session.start([w1, b]);
+        check("a wired source shares its level with the Bluetooth filters", session.sharedNodes.map(n => n.name), [w1, "orbit_pc_" + key(b)]);
+        check("the face shows the output's own level", session.sharedNode === route.wired[w1], true);
+        check("a newcomer is not set to the sound card's level", route.devices[b].pc.audio.volume, 0.2);
+        Route.writeLevel(session.sharedNodes, session.sharedNode, 0.4);
+        check("moving it moves the filter too", [route.wired[w1].audio.volume, route.devices[b].pc.audio.volume], [0.4, 0.4]);
+        session.end("ended", "");
     }
 }

@@ -244,7 +244,7 @@ Bind the commands in your compositor, for example in niri: `Mod+N { spawn "dms" 
 | Two sounds play when I change a volume | Turn on **Scanning → Orbit's tick only** (it needs *Volume tick*), see [Orbit's tick only](docs/GUIDE.md#orbits-tick-only) |
 | Listen together refuses a device | A short note says why (not connected or not plugged in, no sound output yet, on a call profile, four already) and the GitHub mark opens [Listen together](docs/GUIDE.md#listen-together) |
 | An output orbiting the center ignores the wheel | It has no volume of its own (it follows this PC's level): a note says so, turn the gauge around the center, see [The volume at the center](docs/GUIDE.md#the-volume-at-the-center) |
-| The outputs of Listen together are not in sync | Hold the early one back with `togetherDelay`, see [Limits](docs/GUIDE.md#limits) |
+| The outputs of Listen together are not in sync | Orbit lines them up by itself from the delay PipeWire reports; if an output reports none, a note says so: hold the early one back with `togetherDelay`, see [Limits](docs/GUIDE.md#limits) |
 | *Create a group…* is not in the menu | The device must be connected and play sound; a headset gets it a moment after it connects, see [Create a group from the menu](docs/GUIDE.md#create-a-group-from-the-menu) |
 | The list says *No other output yet*, or a wired output is missing from it | Connect another Bluetooth output, or plug in the wired one and let it show in your sound settings, then open the list again: it is read when it opens, see [Wired outputs](docs/GUIDE.md#wired-outputs) |
 | A wired output and a Bluetooth one are not heard together | Nudge **Wired delay** in the settings, see [Wired delay](docs/GUIDE.md#wired-delay) |

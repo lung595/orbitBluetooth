@@ -71,6 +71,7 @@ function wiredNote(why, name) {
     var who = name || "This output";
     var notes = {
         "not-connected": { "title": who + " is not plugged in", "hint": "Plug it in and let it show in the sound settings, then add it again", "anchor": "wired-outputs" },
+        "no-latency": { "title": who + " reports no delay", "hint": "Orbit cannot line it up by itself: if you hear an echo, hold the early output back by hand", "anchor": "limits" },
         "member-out": { "title": who + " was unplugged", "hint": "The others keep listening together", "anchor": "wired-outputs" },
         "member-left": { "title": who + " was unplugged", "hint": "Listening together ended with it", "anchor": "wired-outputs" },
         "source": { "title": who + " is where the sound comes from", "hint": "Orbit sets its wait; nudge it with Wired delay in the settings", "anchor": "wired-delay" }
