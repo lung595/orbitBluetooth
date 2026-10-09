@@ -5,6 +5,7 @@ import qs.Widgets
 import "../card"
 import "../card/Charge.js" as Charge
 import "../scene"
+import "BeamStyle.js" as BeamStyle
 import "Earbuds.js" as Earbuds
 
 // Earbuds with a case: the case in the middle of a small orbit, the left
@@ -26,6 +27,8 @@ Item {
     property string rightImage: ""
     property string caption: ""           // e.g. "≈ 4 h 12 left"
     property bool animate: true
+    // Look of the charging beams (setting chargeBeamStyle)
+    property string beamStyle: BeamStyle.DEFAULT
     // Effects clock of the scene (seconds): drives the float and the beams
     property real time: 0
 
@@ -88,6 +91,8 @@ Item {
         property real side: 1             // -1 left, 1 right
         property real spreadNow: 0
         property bool docked: false
+        // The two buds do not pulse in unison
+        readonly property real delay: side < 0 ? 0 : 0.4
         readonly property real from: trio.caseSize * 0.4
         readonly property real len: Math.max(0, spreadNow - from - trio.budSize * 0.18)
         x: trio.cx
@@ -101,17 +106,21 @@ Item {
             }
         }
 
-        EnergyBeam {
+        BeamLink {
             x: beam.from
             y: -height / 2
             width: beam.len
             height: 26
+            style: trio.beamStyle
             amplitude: 1.4
             wavelength: 14
-            color: trio.night.chargingTheme
+            // The card is paper: the theme's own colours, not the night sky's
+            startColor: Theme.primary
+            endColor: trio.night.chargingTheme
             whiteCore: trio.paper.light ? 0 : 1
             running: trio.animate
             time: trio.time
+            offset: beam.delay
         }
     }
 

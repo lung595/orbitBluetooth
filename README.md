@@ -176,6 +176,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | Device pictures | Real device pictures (uses the internet) | Off |
 | Orbit | Report a problem: *Copy report* (anonymous, [more](docs/GUIDE.md#report-a-problem)) | — |
 | Look | Black hole: realistic or tesseract | Black hole |
+| | Charging beam: Pulse, Filament, Chain or Horizon | Filament |
 | | Shooting stars | On |
 | | Stars: Low, Normal or High | Normal |
 | | Custom images folder | — |
@@ -188,6 +189,7 @@ dms ipc call orbitBluetooth ancCycle     # next noise-control mode
 dms ipc call orbitBluetooth ancStatus    # current noise-control state (JSON)
 dms ipc call orbitBluetooth chatEnds standard  # how long a conversation lasts: short, standard, long or never (Sony)
 dms ipc call orbitBluetooth wearStatus   # worn or removed, and what is held paused (Sony)
+dms ipc call orbitBluetooth beamStyle pulse     # try a charging beam style until restart: pulse, filament, chain, horizon or reset (not saved)
 dms ipc call orbitBluetooth newDeviceDemo    # show the new-headphones pop-up with a made-up headset
 dms ipc call orbitBluetooth newDeviceStatus  # is the background scan running, or why not
 dms ipc call orbitBluetooth hidden       # list hidden devices

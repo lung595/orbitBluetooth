@@ -71,6 +71,7 @@ var SETTINGS = {
     "wearPause": "bool",
     "realPictures": "bool",
     "holeStyle": ["blackhole", "tesseract"],
+    "chargeBeamStyle": ["pulse", "filament", "chain", "horizon"],
     "separatePc": "bool",
     "popupMode": ["replace", "bar", "edge", "off"],
     "popupSize": ["compact", "medium", "large"],

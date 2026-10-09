@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Common
 import qs.Modules.Plugins
+import "../device/BeamStyle.js" as BeamStyle
 
 // Look tab: the black hole, stars and custom images.
 Column {
@@ -25,6 +26,31 @@ Column {
             }
         ]
         defaultValue: "blackhole"
+    }
+
+    SelectionSetting {
+        settingKey: "chargeBeamStyle"
+        label: "Charging beam"
+        description: "How power flows to charging devices."
+        options: [
+            {
+                label: "Pulse",
+                value: "pulse"
+            },
+            {
+                label: "Filament",
+                value: "filament"
+            },
+            {
+                label: "Chain",
+                value: "chain"
+            },
+            {
+                label: "Horizon",
+                value: "horizon"
+            }
+        ]
+        defaultValue: BeamStyle.DEFAULT
     }
 
     ToggleSetting {
