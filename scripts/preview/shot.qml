@@ -39,7 +39,10 @@ Window {
     // "-fold" starts the card's volumes folded, as in the menus, and
     // "-unfold" shows them unfolded there, "-facts" opens the audio details,
     // "-loop" takes no picture: once staged, the mode's card closes and opens
-    // again every 1.5 s until the process is stopped (CPU bench of the action)
+    // again every 1.5 s until the process is stopped (CPU bench of the action),
+    // "-hold" takes no picture and stays staged until stopped (CPU bench at rest),
+    // "-empty" starts with nothing hidden, and "-churn" (implies "-hold") hides
+    // and brings back an output every second (CPU bench of the Hidden section)
     readonly property string rawMode: args[args.length - 2]
     readonly property var parts: rawMode.split("-")
     readonly property bool bright: parts.indexOf("bright") > 0
@@ -54,6 +57,9 @@ Window {
     readonly property bool loop: parts.indexOf("loop") > 0
     readonly property bool feed: parts.indexOf("feed") > 0
     readonly property bool chooser: parts.indexOf("chooser") > 0
+    readonly property bool churn: parts.indexOf("churn") > 0
+    readonly property bool hold: churn || parts.indexOf("hold") > 0
+    readonly property bool empty: parts.indexOf("empty") > 0
     readonly property var sunAngle: parts.find(p => /^sun\d+$/.test(p))
     // "-level35" sets the group's general volume before the group forms (the
     // gauge shows no reading), "-read35" sets it while the picture is taken (the
@@ -91,7 +97,7 @@ Window {
             Theme.errorText = "#FFFFFF";
         }
         // Two made-up devices already swallowed by the black hole
-        if (mode !== "hiddenempty")
+        if (mode !== "hiddenempty" && !empty)
             SettingsData.pluginSettings = Object.assign({}, SettingsData.pluginSettings, {
                 "hiddenDevices": {
                     "3C:8D:20:54:AB:12": "Keychron K3",
@@ -309,9 +315,26 @@ Window {
         repeat: true
         onTriggered: scene.cardOpen ? scene.clearFocus() : win.stage()
     }
+    // "-churn": a made-up output goes to the black hole, then comes back, each second
+    Timer {
+        id: churnTimer
+        interval: 1000
+        repeat: true
+        onTriggered: {
+            const id = "E8:07:BF:6A:19:D4";
+            if (scene.prefs.hiddenDevices[id])
+                scene.unhide(id);
+            else
+                scene.hideById(id, "JBL Flip 6");
+        }
+    }
     Timer {
         id: grabTimer
         onTriggered: {
+            if (win.hold) {
+                churnTimer.running = win.churn;
+                return;
+            }
             if (win.loop) {
                 cardLoop.start();
                 return;
