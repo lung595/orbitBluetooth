@@ -223,6 +223,8 @@ for (const code of Object.keys(Codes.CODES)) {
 }
 eq("every code with every hostile value gives a plain line", dirty, []);
 
+eq("a numeric tickEvery is reported, not shown as ?", Allow.pick(Codes.SETTINGS, { "tickEvery": 1 }), ["tickEvery=1"]);
+
 // --- Codes.js against the settings pages: B cannot drift from what the user can pick ---
 // Every settingKey of the pages is either listed in Codes.SETTINGS with exactly the
 // words (or number kind) of its choices, or left out on purpose.

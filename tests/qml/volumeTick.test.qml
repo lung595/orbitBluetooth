@@ -18,7 +18,7 @@ Item {
     QtObject {
         id: prefs
         property bool volumeTick: true
-        property string tickEvery: "5"
+        property int tickEvery: 5
     }
     VolumeTick {
         id: tick
@@ -84,7 +84,7 @@ Item {
 
         // 1 %: a jump of 5 steps is 5 ticks, the first now, the others paced
         h.settle();
-        prefs.tickEvery = "1";
+        prefs.tickEvery = 1;
         tick.play([node("a.1")], 0.5, 0.55);
         check("1 %: the first tick is at once, four wait", [h.ticks(), tick._pending], [1, 4]);
         check("the pacing timer runs while ticks wait", tick.pacing, true);
@@ -124,7 +124,7 @@ Item {
         tick.play([node("b.2")], 0.5, 0.51);
         check("the next tick starts it on the new output", h.sinks(), ["b.2"]);
         h.settle();
-        prefs.tickEvery = "5";
+        prefs.tickEvery = 5;
 
         h.settle();
         tick.play([node("x; rm -rf ~"), null, node("--target=y z"), node("ok.1")], 0.5, 0.55);

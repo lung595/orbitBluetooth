@@ -12,6 +12,7 @@ const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", 
 
 // --- Volume tick (Volume.js) ------------------------------------------------------
 eq("the setting: 1 % by default, 5 % when it says so", [Volume.stepSize("1"), Volume.stepSize("5"), Volume.stepSize(undefined), Volume.stepSize("7")], [0.01, 0.05, 0.01, 0.01]);
+eq("the setting as a number, as Prefs exposes it", [Volume.stepSize(1), Volume.stepSize(5)], [0.01, 0.05]);
 eq("a rounding error does not move a step (0.57 is step 57)", [Volume.step(0.57, 0.01), Volume.step(0.29, 0.01), Volume.step(0.35, 0.05)], [57, 29, 7]);
 eq("levels are clamped", [Volume.clamp(-1), Volume.clamp(2), Volume.clamp("x")], [0, 1, 0]);
 eq("node name ok for pw-play", Volume.validSink("bluez_output.02_00_00_00_10_06.1"), true);

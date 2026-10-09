@@ -3,7 +3,7 @@
 // Pure logic of the volume tick (VolumeTick.qml), tested in tests/*.test.js.
 
 // The level a tick stands for, from the setting "Tick every 1 % / 5 %" (a
-// string, as the settings page stores it): 1 % unless it says 5
+// number, or the string the settings page stores): 1 % unless it says 5
 function stepSize(setting) {
     return String(setting) === "5" ? 0.05 : 0.01;
 }

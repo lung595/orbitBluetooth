@@ -30,7 +30,7 @@ Window {
     QtObject {
         id: prefs
         property bool volumeTick: true
-        property string tickEvery: "1"
+        property int tickEvery: 1
     }
     VolumeTick {
         id: tick
