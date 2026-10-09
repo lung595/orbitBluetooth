@@ -71,7 +71,7 @@ function wiredNote(why, name) {
     var who = name || "This output";
     var notes = {
         "not-connected": { "title": who + " is not plugged in", "hint": "Plug it in and let it show in the sound settings, then add it again", "anchor": "wired-outputs" },
-        "no-latency": { "title": who + " reports no delay", "hint": "Orbit cannot line it up by itself: if you hear an echo, hold the early output back by hand", "anchor": "limits" },
+        "no-latency": { "title": who + " reports no delay", "hint": "Hold the early output back by hand if you hear an echo", "anchor": "limits" },
         "member-out": { "title": who + " was unplugged", "hint": "The others keep listening together", "anchor": "wired-outputs" },
         "member-left": { "title": who + " was unplugged", "hint": "Listening together ended with it", "anchor": "wired-outputs" },
         "source": { "title": who + " is where the sound comes from", "hint": "Orbit sets its wait; nudge it with Wired delay in the settings", "anchor": "wired-delay" }
@@ -106,7 +106,7 @@ function togetherNote(why, name, member) {
         "no-audio": { "title": who + " has no sound output yet", "hint": "It does not play sound, or its audio is not ready: try again in a moment", "anchor": "works-with-multipoint-headsets" },
         "in-call": { "title": who + " is in call mode", "hint": "A headset on its call profile plays mono: switch it back to music first" },
         "source": { "title": who + " is where the sound comes from", "hint": "Only the other outputs can be held back by hand: make another one the output you hear, or hold the early one back", "anchor": "limits" },
-        "no-latency": { "title": who + " reports no delay", "hint": "Orbit cannot line it up by itself: if you hear an echo, hold the early output back by hand (togetherDelay)", "anchor": "limits" },
+        "no-latency": { "title": who + " reports no delay", "hint": "Hold the early output back by hand if you hear an echo", "anchor": "limits" },
         "member-out": { "title": who + " disconnected", "hint": "The others keep listening together" },
         "member-left": { "title": who + " disconnected", "hint": "Listening together ended with it" },
         "link-stopped": { "title": "Listening together stopped", "hint": "The copy of the sound ended: drag a device onto another to start again" },
