@@ -85,8 +85,27 @@ Column {
         id: volumeTick
         settingKey: "volumeTick"
         label: "Volume tick"
-        description: "A soft tick on each 5 % step, so you hear the level where it plays: in the output whose level you change, and in every output when it is the group's"
+        description: "A soft tick on each step, so you hear the level where it plays: in the output whose level you change, and in every output when it is the group's"
         defaultValue: true
+    }
+
+    SelectionSetting {
+        // Only matters while the tick plays
+        visible: volumeTick.value
+        settingKey: "tickEvery"
+        label: "Tick every"
+        description: "How big a step is. Every 1 % ticks once per percent, so a fast change is a run of ticks (about 40 a second, 12 at most); every 5 % is sparser"
+        options: [
+            {
+                label: "1 %",
+                value: "1"
+            },
+            {
+                label: "5 %",
+                value: "5"
+            }
+        ]
+        defaultValue: "1"
     }
 
     LinkedToggle {

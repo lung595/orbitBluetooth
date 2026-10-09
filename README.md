@@ -22,7 +22,7 @@ Drag a device to the center to connect it, pull it away to disconnect it.
 | DankMaterialShell | 1.6.0 or newer | Everything |
 | BlueZ | Any recent version, adapter powered on | Everything |
 | UPower | Any | *Optional*: real charging states |
-| PipeWire | Any | *Optional*: the two volumes of audio devices (`pw-play` for the tick, `cava` for the picture of the sound) |
+| PipeWire | Any | *Optional*: the two volumes of audio devices (`pw-cat` for the tick, with `python3`, `cava` for the picture of the sound) |
 | Python 3 | Standard library only | *Optional*: headphone noise control |
 
 ### 1. Install
@@ -108,7 +108,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 | Drag a device inside the inner ring | Pair and connect |
 | Drag a connected device outward | Disconnect (a device of a listening group only leaves the group) |
 | Click a device | Open its detail card |
-| Scroll over a half circle, its icon or its percentage, or drag a moon | That level: the device's or this PC's, with smart steps; a soft tick plays in that device every 5 % ([more](docs/GUIDE.md#the-two-volumes)) |
+| Scroll over a half circle, its icon or its percentage, or drag a moon | That level: the device's or this PC's, with smart steps; a soft tick plays in that device at each step, every 1 % by default ([more](docs/GUIDE.md#the-two-volumes)) |
 | Click the planet of an open audio device | Mute or unmute |
 | Drag a connected audio device onto another (or onto any device already in the group) | Listen together: the same sound on both, up to 4 outputs ([more](docs/GUIDE.md#listen-together)) |
 | Tap the group's icons, or click a member of the group | The volume radar: that level big in the middle, the others around it, with *Disconnect*, *Remove from group*, *Hide*, *Details* ([more](docs/GUIDE.md#the-volume-radar)) |
@@ -155,6 +155,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Scan duration: 20 s, 45 s, 90 s or *While open* ⚡ | 45 s |
 | | Sounds (short cues) / their volume | Off / 60 % |
 | | Volume tick (a soft tick in the output whose volume you change, in every output for the group's) | On |
+| | Tick every (*1 %* or *5 %*; shown with *Volume tick*, [more](docs/GUIDE.md#the-two-volumes)) | 1 % |
 | | Orbit's tick only (while you change a level in Orbit, DMS's own volume sound waits; shown with *Volume tick*, [more](docs/GUIDE.md#orbits-tick-only)) | On |
 | Headphones | Noise control | On |
 | | Turn off conversation awareness on disconnect | On |
@@ -249,7 +250,7 @@ Some Sony headsets do not report charging, or drop Bluetooth while charging: thi
 - **No telemetry.** Connection times and battery history stay in memory; settings, ignored devices, the hidden list (Bluetooth devices and wired outputs: an address or node name and the name it had, at most 64), whether its section is left open or folded and the learned groups are stored by DMS with Orbit's own settings.
 - **Noise control**: a small helper talks to your headset over a local Bluetooth socket, only while needed. With **Pause when you take the headset off** on, that connection stays open while a Sony headset with a wearing sensor is connected; Orbit pauses and resumes your players through MPRIS on the local D-Bus, keeps nothing and sends nothing; to the headset it sends one message when the connection opens, the request to log its wearing events.
 - **New headphones pop-up**: by default Orbit only listens to searches you start yourself; nothing runs in the background. The optional **Background scan** (off by default) does a local scan of 8 s about once a minute, only while the screen is on, no Bluetooth audio is connected and the battery is above the threshold.
-- **Two volumes**: talk to the local sound server (PipeWire) only; the tick is a sound file shipped with Orbit, the picture of the sound is read locally with `cava`.
+- **Two volumes**: talk to the local sound server (PipeWire) only; the tick is a sound file shipped with Orbit, played by a small local helper (one stream per output, open only while ticks play, gone with the shell, nothing written to disk), the picture of the sound is read locally with `cava`.
 - **Listen together**: one small local sound process per output beyond the first, only while a group listens; it talks to PipeWire only, saves no session, no device list and no address (what it learns is the next line), logs nothing, and ends with the shell. Wired outputs are listed with `pactl list sinks` only when something asks (the *Create a group…* list, the suggested group) and kept in memory; a wired member's name is kept in memory for the session, and the groups you turn down are remembered in memory only, until the shell ends. The **Wired delay** nudge is one number in Orbit's own settings. Nothing is sent. [More](docs/GUIDE.md#listen-together)
 - **Learned groups**: with **Learn my groups** on (default), Orbit keeps in its own settings, for at most 8 groups, only short hashes of the outputs you listened to together (no name, no address), how many times and the day of the last time; it never leaves your computer, **Forget what Orbit learned** or switching it off erases it at once, and uninstalling Orbit erases it with the rest. [More](docs/GUIDE.md#learn-my-groups)
 - **Audio details**: read from PipeWire (`pactl list sinks`) while the card or the pop-up shows, only if a fact is chosen; kept in memory, dropped when it closes. Latency and bit rate also read the graph once with `pw-dump`, and the quantum once with `pw-top` (about 2 s), only while the details are unfolded (or the fact is on the line). Orbit never writes to PipeWire or to the headset.
