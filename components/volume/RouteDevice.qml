@@ -121,11 +121,16 @@ Item {
     // (a Listen together session then puts it at the shared level, see filterReady)
     readonly property bool pcReady: !!pc && !!pc.audio && pc.ready
     signal filterReady
+    // The level about to be written, so that it is not taken for a change
+    // made elsewhere (AudioRoute's book of echoes)
+    signal levelRestoring(var node, real level)
     onPcReadyChanged: {
         if (!pcReady)
             return;
         const saved = levels[address];
-        pc.audio.volume = typeof saved === "number" ? Math.max(0, Math.min(1, saved)) : 1;
+        const level = typeof saved === "number" ? Math.max(0, Math.min(1, saved)) : 1;
+        levelRestoring(pc, level);
+        pc.audio.volume = level;
         filterReady();
     }
 

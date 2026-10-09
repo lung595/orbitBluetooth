@@ -38,6 +38,7 @@ Window {
     // "-sun90" puts the host's system at that angle of its path in the "together"
     // shots (90 near and in front, 270 far and behind, 0 right, 180 left),
     // "-follow" gives the headset no level of its own (no absolute volume),
+    // "-target" marks a device the volume keys move while it is not the output you hear (NAK-196),
     // "-fold" starts the card's volumes folded, as in the menus, and
     // "-unfold" shows them unfolded there, "-facts" opens the audio details,
     // "-loop" takes no picture: once staged, the mode's card closes and opens
@@ -55,6 +56,7 @@ Window {
     readonly property bool cc: parts.indexOf("cc") > 0
     readonly property bool fit: parts.indexOf("fit") > 0 || cc
     readonly property bool follow: parts.indexOf("follow") > 0
+    readonly property bool targeted: parts.indexOf("target") > 0
     readonly property bool silent: parts.indexOf("silent") > 0
     readonly property bool reduce: parts.indexOf("reduce") > 0
     readonly property bool bench: parts.indexOf("bench") > 0
@@ -153,6 +155,7 @@ Window {
         id: fakeRoute
         focusDevice: scene.focusBody ? scene.focusBody.device : null
         follow: win.follow
+        marked: win.targeted ? "00:11:22:33:44:55" : ""
         sharing: win.outputs > 0 ? ["02:00:00:00:10:06", "02:00:00:00:20:01", "02:00:00:00:20:02", "02:00:00:00:20:03"].slice(0, win.outputs + 1) : []
     }
 

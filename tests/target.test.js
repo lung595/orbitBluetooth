@@ -1,7 +1,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const Target = load("Target.js", ["resolve", "expect", "isEcho", "fromHeadset"]);
+const Target = load("Target.js", ["resolve", "resolveAlone", "marked", "PC", "SETTLE_MS", "expect", "isEcho", "fromHeadset", "settled"]);
 
 const members = ["AA:01", "AA:02", "alsa_output.usb"];
 const all = () => true;
@@ -13,6 +13,19 @@ eq("a member that left: the group", Target.resolve("AA:09", members, all), "");
 eq("a member without its own level: the group", Target.resolve("AA:01", members, id => id !== "AA:01"), "");
 eq("no group left: the group", Target.resolve("AA:01", [], all), "");
 eq("bad input never throws", [Target.resolve(null, members, all), Target.resolve("AA:01", null, all), Target.resolve(undefined, undefined, all)], ["", "", ""]);
+
+// Outside a group (NAK-196)
+const here = a => a === "AA:01" || a === "AA:02";
+eq("alone: nothing touched, the output you hear", Target.resolveAlone("", here, true), "");
+eq("alone: a device touched, that device", Target.resolveAlone("AA:02", here, true), "AA:02");
+eq("alone: this PC's level touched, this PC", Target.resolveAlone(Target.PC, here, true), Target.PC);
+eq("alone: this PC's level gone, the output you hear", Target.resolveAlone(Target.PC, here, false), "");
+eq("alone: the device disconnected, the output you hear", Target.resolveAlone("AA:09", here, true), "");
+eq("alone: bad input never throws", [Target.resolveAlone(null, here, true), Target.resolveAlone(undefined, here, false)], ["", ""]);
+eq("marked: a device that is not the one you hear", Target.marked("AA:02", "AA:01"), "AA:02");
+eq("marked: the output you hear needs no mark", Target.marked("AA:01", "AA:01"), "");
+eq("marked: this PC's level is never marked", Target.marked(Target.PC, "AA:01"), "");
+eq("marked: nothing targeted, nothing marked", [Target.marked("", "AA:01"), Target.marked("AA:02", "")], ["", "AA:02"]);
 
 // A level Orbit or the keys wrote comes back within the window: an echo
 let book = Target.expect({}, "bluez_output.AA_01", 0.5, 1000);
@@ -38,5 +51,11 @@ eq("a level that moved with nobody writing: the headset", Target.fromHeadset({},
 eq("the same level again: nothing", Target.fromHeadset({}, "n", 0.5, 0.5, 5000), false);
 eq("a level Orbit just wrote: not the headset", Target.fromHeadset(book, "n", 0.4, 0.5, 1100), false);
 eq("the same level long after the write: the headset", Target.fromHeadset(book, "n", 0.4, 0.5, 2000), true);
+
+// A node that has just appeared
+eq("a node just read is not settled", Target.settled(1000, 1400, 1500), false);
+eq("after the settling time it is", Target.settled(1000, 2500, 1500), true);
+eq("no settling time: always", Target.settled(1000, 1000, 0), true);
+eq("no settling time given: always", Target.settled(1000, 1000, undefined), true);
 
 done();
