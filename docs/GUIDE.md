@@ -621,6 +621,8 @@ The device falls out of the bar along a comet trail, is caught by an orbit with 
 
 **What is offered**: only named, unpaired audio devices (headphones, earbuds, speakers) found by discovery, so the neighbours' phones and TVs never pop up. Devices BlueZ already knew when the shell started wait 10 minutes before they can be offered.
 
+**Several PCs running Orbit** (nearest first): each PC judges alone, from the signal its own Bluetooth adapter reads for the new device (nothing is sent between PCs). A device at arm's reach opens the sheet at once; a weaker one waits up to 6 s, so the nearest PC shows it first; a device weaker than -75 dBm does not open the sheet on this PC. When the wait ends the signal is read again, and the sheet stays closed if the device went away or connected to another PC meanwhile. A PC whose screen is off waits a little longer. If the signal cannot be read, the sheet opens at once, as before. The signal is read once per new device, nothing runs otherwise. These limits are starting points, still to be tuned with real hardware.
+
 **When it stays quiet**: no sheet while a window is full screen (it waits, then shows), or while the screen is locked or off. On the screen of the active window; with *Reduce motion* it simply appears, without any movement.
 
 **The background scan** is off by default: the sheet already catches what any other search finds, for free. Turned on (**Background scan**), it runs for 8 s every minute (**Background scan interval**: 30 s to 5 min), and only when it is harmless:

@@ -76,6 +76,7 @@ Item {
         prefs: root.prefs
         offering: root.offering
         adapter: root.adapter
+        screenOn: !root.asleep
         current: root.current
         onQueued: root._showNext()
     }

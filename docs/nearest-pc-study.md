@@ -1,7 +1,8 @@
 # Nearest-PC filter: feasibility study
 
-Status: study and pure logic only (NAK-12, slice 1). Nothing is wired into the
-pop-up yet.
+Status: slice 1 (NAK-12) wrote the study and the rule; slice 2 (NAK-110)
+reads the signal and wires the rule into the pop-up (`Signal.js`,
+`SignalRead.qml`, `OfferQueue.qml`). Thresholds are still unmeasured.
 
 Goal: when several PCs run Orbit, only the PC nearest to a new pair of
 headphones opens the pairing sheet. Every PC decides alone; nothing is
@@ -65,3 +66,20 @@ exchanged between PCs.
   removed, or neither before `TemporaryTimeout`). Without a signal there, the
   delay only orders PCs that both see the device; it does not silence the
   farther one.
+
+## Slice 2: what was built, what is still open
+
+- One `busctl --json=short --timeout=2 get-property -- org.bluez <path> org.bluez.Device1
+  RSSI` per read, started when a candidate appears and again when its wait
+  ends; the process is gone right after, reads go one at a time. Checked on
+  this machine: without discovery BlueZ answers "No such property" with exit
+  code 1, which counts as no reading.
+- At the end of the wait (`NearestFilter.recheck`): signal gone while the
+  adapter still discovers means no sheet; once discovery has ended BlueZ
+  clears every reading, so a missing one proves nothing and the sheet opens
+  as today. Still unknown on real hardware: whether a headset connected to
+  another PC keeps a reading on this adapter.
+- Only the screen state feeds the rule so far; recent use is not known to
+  Orbit and counts for nothing.
+- Tests use a fake `busctl` on `PATH` (`tests/signal.test.js`) and a fake
+  reader in the whole pop-up flow (`tests/qml/nearestWindow.test.qml`).

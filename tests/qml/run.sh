@@ -15,10 +15,12 @@ root=$(dirname "$(dirname "$here")")
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 # The work folder mirrors the plugin root: components/ as it is, the tests
-# beside it, and two stand-ins over the real window and D-Bus check
+# beside it, and stand-ins over the real window and the D-Bus reads
 cp -r "$root"/components "$root"/diagnostics "$work"/
 cp "$root"/plugin.json "$work"/
-cp "$here"/ProfileCheck.qml "$here"/NewDeviceWindow.qml "$work"/components/pairing/
+# The real signal reader stays reachable as RealSignalRead for its own test
+cp "$work"/components/pairing/SignalRead.qml "$work"/components/pairing/RealSignalRead.qml
+cp "$here"/ProfileCheck.qml "$here"/SignalRead.qml "$here"/NewDeviceWindow.qml "$work"/components/pairing/
 cp "$here"/Device.qml "$here"/Player.qml "$here"/*.test.qml "$work"/
 # The preview's made-up route (and overlay) stand in for the daemon's
 mkdir "$work"/mock
