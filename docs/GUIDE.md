@@ -424,7 +424,7 @@ A wired output answers in a few milliseconds, a Bluetooth one a good deal later.
 
 **When the sound comes from the wired output** (it is the output you hear), a Bluetooth copy can only arrive later than the wired sound, and nothing can speed a Bluetooth stream up. Orbit then holds the wired output back with a small filter of its own for as long as the group listens together, so both are heard together; the filter goes away with the group. If the wired output reports no latency, or the filter does not come up, the Bluetooth copy stays a little late: nudge it with **Wired delay**. This filter is checked on a simulated sound server only: it is not yet confirmed on real hardware.
 
-**Bluetooth copies are lined up too** (since this version): a Bluetooth copy that PipeWire says is quicker than the output you hear waits for the difference, see [Limits](#limits). The nudge above moves the wired copies only.
+**Bluetooth copies are lined up too**: a Bluetooth copy that PipeWire says is quicker than the output you hear waits for the difference, see [Limits](#limits). The nudge above moves the wired copies only.
 
 **A USB output that reports no latency** counts as 0 ms: Orbit does not guess. Use **Wired delay** to bring it in line by ear.
 

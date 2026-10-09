@@ -84,9 +84,9 @@ function latenciesOf(sinks, graph) {
 
 // What a copy must wait (ms, a whole number, 0..Together.MAX_DELAY_MS): the
 // time the source takes to be heard more than the member does, plus the
-// user's correction (`fineMs`, 0 where it does not apply). 0 when either latency is not known: no figure is made up,
-// so a correction has nothing to correct then (the member's own manual delay
-// is still there).
+// user's correction (`fineMs`, 0 where it does not apply). 0 when either
+// latency is not known: no figure is made up, so a correction has nothing to
+// correct then (the member's own manual delay is still there).
 function autoDelayMs(sourceLatencyMs, memberLatencyMs, fineMs) {
     if (!isLatency(sourceLatencyMs) || !isLatency(memberLatencyMs))
         return 0;

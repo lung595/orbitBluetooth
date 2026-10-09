@@ -234,7 +234,7 @@ Item {
         }
     }
     Component.onCompleted: {
-        steps = [step1, step2, step3, step4, step5, step6, step7, step8, step9, step10, step11, step12, step13, step14, step15, step16, step17];
+        steps = [step1, step2, step3, step4, step5, step6, step7, step8, step9, step10, step11, step12, step13, step14, step15, step16, step17, step18, step19];
         stepper.start();
     }
 
@@ -601,6 +601,25 @@ Item {
         check("a newcomer is not set to the sound card's level", route.devices[b].pc.audio.volume, 0.2);
         Route.writeLevel(session.sharedNodes, session.sharedNode, 0.4);
         check("moving it moves the filter too", [route.wired[w1].audio.volume, route.devices[b].pc.audio.volume], [0.4, 0.4]);
+        h.wait(500);
+    }
+
+    function step18() {
+        check("the first read gives the Bluetooth output its figure", [answerGraph({
+                [w1]: 0,
+                "bluez_output.AA_BB_CC_DD_EE_02.1": 150000000
+            }), session.latencies[b]], [true, 150]);
+        patch(b, {
+            "sink": sinkWith(b, "ldac")
+        });
+        h.wait(500);
+    }
+
+    function step19() {
+        const reader = ProcessLog.live.find(p => p.command[0] === "pw-dump");
+        reader.running = false;
+        reader.exited(1);
+        check("a failed read keeps no figure of the read before", session.latencies, {});
         session.end("ended", "");
     }
 }

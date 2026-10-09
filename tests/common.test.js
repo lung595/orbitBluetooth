@@ -58,6 +58,10 @@ eq("a nameless wired output", [All.togetherNote("member-out", "", WIRED).title, 
 // A Bluetooth device is still connected and disconnected, as before
 eq("a Bluetooth device keeps its own words", [All.togetherNote("member-out", "XM6", PHONES), All.togetherNote("not-connected", "XM6", PHONES).title], [All.togetherNote("member-out", "XM6"), "XM6 is not connected"]);
 eq("a Bluetooth source's note is the one it was", [All.togetherNote("source", "XM6", PHONES).anchor, All.togetherNote("source", "XM6", PHONES).title], ["limits", "XM6 is where the sound comes from"]);
+// An output that reports no delay is told in the same words for either kind, with the same guide link
+eq("a Bluetooth output with no delay is told so", [All.togetherNote("no-latency", "XM6", PHONES).title, All.togetherNote("no-latency", "XM6", PHONES).anchor], ["XM6 reports no delay", "limits"]);
+eq("a Bluetooth output with no delay says what to do by hand", /togetherDelay/.test(All.togetherNote("no-latency", "XM6", PHONES).hint), true);
+eq("a nameless output with no delay", All.togetherNote("no-latency", "", PHONES).title, "This device reports no delay");
 // What a wired output has no other way to say reads the same as for a Bluetooth one
 ["same", "too-few", "too-many", "outside", "already", "in-group", "not-member", "no-session", "no-audio", "in-call", "bad-address", "link-stopped", "none", "unknown"].forEach(w => {
     eq("wired " + w + " reads as it does for any device", All.togetherNote(w, "Interface", WIRED), All.togetherNote(w, "Interface"));

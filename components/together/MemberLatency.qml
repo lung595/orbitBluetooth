@@ -49,9 +49,9 @@ Item {
             id: dumped
         }
         onExited: code => {
-            if (code === 0)
-                root.latencies = Delay.latenciesOf(root.sinks, Graph.parseDump(dumped.text));
-            // A failed read is told as well: every figure is then unknown
+            // A failed read leaves every figure unknown: none is kept from
+            // an earlier read, and the group is told as well
+            root.latencies = code === 0 ? Delay.latenciesOf(root.sinks, Graph.parseDump(dumped.text)) : ({});
             if (!root._again)
                 root.measured();
             // Through the timer: the process is surely over by then
