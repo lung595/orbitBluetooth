@@ -159,11 +159,18 @@ Item {
         const i = Polar.indexOf(part);
         return i >= 0 && i < _memberNodes.length ? _memberNodes[i] : null;
     }
+    // The keys follow the member whose arc was touched last (AudioRoute.touched);
+    // this PC's level, or the one device's, is not a member's
+    function _touch(part) {
+        const i = split ? Polar.indexOf(part) : -1;
+        route.touch(i >= 0 ? memberAddresses[i] : "");
+    }
     function setLevel(part, level) {
         const node = _node(part);
         if (!node || !node.audio)
             return;
         SessionData.suppressOSDTemporarily();
+        _touch(part);
         route.writeLevel(node, Math.max(0, Math.min(1, level)));
     }
     // One wheel notch over the scope: a smart step, as the keys
@@ -172,6 +179,7 @@ Item {
         if (!node || !node.audio)
             return;
         SessionData.suppressOSDTemporarily();
+        _touch(part);
         route.stepNode(node, dir);
     }
     function toggleMute(part) {

@@ -5,7 +5,9 @@ import Quickshell.Bluetooth
 import Quickshell.Services.Pipewire
 import "Route.js" as Route
 import "Steps.js" as Steps
+import "Target.js" as Target
 import "../together"
+import "../together/Member.js" as Member
 import "../together/Wired.js" as Wired
 
 // The two volumes of a Bluetooth audio device (D249): the device's own
@@ -226,12 +228,38 @@ Item {
         writeLevel(node, Steps.apply(now, dir, stepFor(dir, now)));
     }
 
+    // A member's own level: its Bluetooth device's, or its output's when it is
+    // a wired one; null when the device follows this PC and has none
+    function ownNode(address) {
+        const node = Member.isWired(address) ? wiredSink(address) : deviceNode(known(address));
+        return node && node.audio ? node : null;
+    }
+
+    // --- The target of the keys (NAK-9) ---------------------------------------------
+    // The member whose own level was touched last, in the scope, the radar or
+    // a card; "" once the group's level (or none) was. It goes back to the
+    // group when the group ends, and when the pop-up closes (TwoLevels).
+    property string touched: ""
+    function touch(address) {
+        if (touched !== address)
+            touched = address;
+    }
+    Connections {
+        target: root.together
+        function onActiveChanged() {
+            if (!root.together.active)
+                root.touch("");
+        }
+    }
+
     // The volume keys (`dms ipc call orbitBluetooth volume up|down`): the
+    // member touched last while a group plays (Target.resolve), else the
     // output you hear, Bluetooth or not. Never another device: with the
     // sound on a wired output, a connected headset must not move (P136)
     function stepHeard(dir) {
+        const member = together.active ? Target.resolve(touched, together.members, a => !!ownNode(a)) : "";
         const dev = current;
-        const node = deviceNode(dev) || pcNode(dev);
+        const node = member ? ownNode(member) : (deviceNode(dev) || pcNode(dev));
         if (!node || !node.audio)
             return "no-pc-level";
         stepNode(node, dir);

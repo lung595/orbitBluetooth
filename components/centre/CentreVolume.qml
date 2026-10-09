@@ -3,7 +3,6 @@ import qs.Common
 import "MasterVolume.js" as Master
 import "../common/Guide.js" as Guide
 import "../device/DeviceCatalog.js" as Catalog
-import "../together/Member.js" as Member
 import "../volume/Steps.js" as Steps
 
 // The volumes of the listening group at the centre (D284): the general level,
@@ -39,6 +38,7 @@ Item {
         const to = Math.round(Math.max(0, Math.min(1, value)) * 100) / 100;
         if (!ready || Math.abs(to - level) < 0.005)
             return;
+        route.touch("");
         // Orbit shows the level itself: DMS's own pop-up waits a moment
         SessionData.suppressOSDTemporarily();
         if (shared) {
@@ -53,6 +53,7 @@ Item {
     function step(dir) {
         if (!ready)
             return;
+        route.touch("");
         if (shared) {
             SessionData.suppressOSDTemporarily();
             route.stepNode(nodes[0], dir);
@@ -70,15 +71,9 @@ Item {
         nodes.forEach(n => route.writeMuted(n, to));
     }
 
-    // A member's own level: its Bluetooth device's, or its output's when it is
-    // a wired one; null when the device follows this PC and has none
+    // A member's own level node (AudioRoute.ownNode)
     function ownNode(address) {
-        let node = null;
-        if (Member.isWired(address))
-            node = session ? session.memberNode(address) : null;
-        else if (route)
-            node = route.deviceNode(route.known(address));
-        return node && node.audio ? node : null;
+        return route ? route.ownNode(address) : null;
     }
     // Its level 0..1, or -1 when it has none
     function ownLevel(address) {
@@ -96,6 +91,7 @@ Item {
         const node = ownNode(address);
         if (node) {
             SessionData.suppressOSDTemporarily();
+            route.touch(address);
             route.stepNode(node, dir);
         } else if (!scene.note || scene.note.anchor !== "the-volume-at-the-center")
             scene.explain(Guide.copyLevelNote(Catalog.deviceName(scene.deviceMap[address]) || session.nameOf(address)));

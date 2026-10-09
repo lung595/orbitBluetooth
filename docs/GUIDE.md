@@ -209,6 +209,10 @@ How it works:
 - **Undo**, **Give back to DMS** and **uninstalling Orbit** write back the exact line DMS had, only on keys still bound to Orbit.
 - **niri only**: elsewhere the line reads *Bind your keys to Orbit*. Bind them yourself, for example in Hyprland: `binde = , XF86AudioRaiseVolume, exec, dms ipc call orbitBluetooth volume up`.
 
+### Which level the keys move
+
+With a [Listen together](#listen-together) group playing, the keys (and `dms ipc call orbitBluetooth volume up|down`) move **the last member whose own level you touched**: in the volume scope, on the radar or with the wheel over its planet. Touch the group's level, or close the volume pop-up, and they go back to the group. They also go back to the group when the group ends, when that member leaves, or when it has no level of its own (a device that follows this PC). Without a group nothing changes: the keys move the output you hear.
+
 ## What really plays
 
 Under the device's name on its card, and at the foot of the volume pop-up (centered under the screen, for **any** output: a sound card, HDMI, a Bluetooth device), one short line says what the sound is:

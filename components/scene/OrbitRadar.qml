@@ -104,6 +104,7 @@ Item {
         if (Math.abs(to - node.audio.volume) < 0.005)
             return;
         SessionData.suppressOSDTemporarily();
+        route.touch(id);
         route.writeLevel(node, to);
     }
     function step(id, dir) {
@@ -117,6 +118,7 @@ Item {
             return;
         }
         SessionData.suppressOSDTemporarily();
+        route.touch(id);
         route.stepNode(node, dir);
     }
     function toggleMute(id) {
