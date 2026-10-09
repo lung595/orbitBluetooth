@@ -21,10 +21,11 @@ eq("leaving is offered whatever the size of the group (with two, the group ends)
 eq("a headset in the group keeps its noise-control modes, between Disconnect and Remove from group", ids(bt({ "member": true, "modes": ["off", "nc", "ambient"], "mode": "nc" })), ["disconnect", "anc:nc", "anc:ambient", "anc:off", "leave", "hide", "forget"]);
 eq("the current mode is the checked one", Menu.list(bt({ "member": true, "modes": ["off", "nc"], "mode": "nc" })).filter(e => e.checked).map(e => e.id), ["anc:nc"]);
 
-// --- a wired member: it can only leave (and stays plugged in) or be hidden ------------------
-eq("a wired member: Disconnect, Hide", labels(wired()), ["Disconnect", "Hide"]);
+// --- a wired member: it can only leave (and stays plugged in); hiding it would only explain ------------------
+eq("a wired member: Disconnect, no Hide", labels(wired()), ["Disconnect"]);
+eq("a wired output outside a group (no member) can still be hidden", ids(wired({ "member": false, "groupEntry": "" })), ["leave", "hide"]);
 eq("its Disconnect is the leave action, with the unlink icon", Menu.list(wired())[0], { "id": "leave", "icon": "link_off", "label": "Disconnect", "rule": false });
-eq("nothing for a Bluetooth device: no connect, mode, forget, group or stop", ids(wired({ "paired": false })).filter(i => i !== "leave" && i !== "hide"), []);
+eq("nothing for a Bluetooth device: no connect, mode, forget, group or stop", ids(wired({ "paired": false })).filter(i => i !== "leave"), []);
 
 // --- a device outside the group keeps its menu -------------------------------------------
 eq("outside a group: Disconnect, the group entry, Hide, Forget", labels(bt({ "groupEntry": "Create a group…" })), ["Disconnect", "Create a group…", "Hide", "Forget"]);

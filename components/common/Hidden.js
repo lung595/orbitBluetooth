@@ -75,3 +75,15 @@ function entries(hiddenDevices) {
         return x !== y ? (x < y ? -1 : 1) : (a.id < b.id ? -1 : 1);
     });
 }
+
+// The chooser's Hidden section is folded to start with. `pref` is what the user
+// last chose (true open, false folded, null never chosen). It opens by itself
+// once, right after the first device is hidden (`before` -> `after` hidden), so
+// the user sees where it went; any choice afterwards, either way, is kept (D368).
+function sectionOpen(pref) {
+    return pref === true;
+}
+
+function opensAfterHide(pref, before, after) {
+    return pref !== true && pref !== false && after > before;
+}

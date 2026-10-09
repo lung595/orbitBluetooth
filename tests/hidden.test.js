@@ -39,4 +39,10 @@ eq("entries: by name without regard to case, then by id", Hidden.entries({ [XM]:
 eq("entries: a key that is no output is left out, a spelling is made the one", Hidden.entries({ "junk": "x", [XM.toLowerCase()]: "Low" }), [{ "id": XM, "name": "Low" }]);
 eq("entries: no name falls back to the id, no store to nothing", [Hidden.entries({ [XM]: 5 }), Hidden.entries(null), Hidden.entries("x"), Hidden.entries([XM])], [[{ "id": XM, "name": "" }], [], [], []]);
 
+// --- The Hidden section of the chooser: opens by itself once (D368) ----------------------
+eq("sectionOpen: only a choice to open it opens it", [true, false, null, undefined, "yes", 1].map(Hidden.sectionOpen), [true, false, false, false, false, false]);
+eq("opensAfterHide: never chosen, something got hidden: it opens", [null, undefined].map(p => Hidden.opensAfterHide(p, 0, 1)), [true, true]);
+eq("opensAfterHide: nothing newly hidden (same count, or one brought back): no", [Hidden.opensAfterHide(null, 1, 1), Hidden.opensAfterHide(null, 2, 1), Hidden.opensAfterHide(null, 0, 0)], [false, false, false]);
+eq("opensAfterHide: once chosen, either way, the choice is kept", [true, false].map(p => Hidden.opensAfterHide(p, 0, 1)), [false, false]);
+
 done();

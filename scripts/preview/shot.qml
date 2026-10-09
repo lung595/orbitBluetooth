@@ -31,13 +31,18 @@ Window {
     // scene has settled it counts the frames drawn over 6 s and quits
     // (see depth-bench.sh), "-feed" carries a device to the black hole in the
     // "together" shots (the hole is lit up while the sky is out of focus),
+    // "-chooser" opens the group chooser from a device outside the group (the hidden
+    // outputs are in its Hidden section, which opens by itself the first time),
     // "-sun90" puts the host's system at that angle of its path in the "together"
     // shots (90 near and in front, 270 far and behind, 0 right, 180 left),
     // "-follow" gives the headset no level of its own (no absolute volume),
     // "-fold" starts the card's volumes folded, as in the menus, and
     // "-unfold" shows them unfolded there, "-facts" opens the audio details,
     // "-loop" takes no picture: once staged, the mode's card closes and opens
-    // again every 1.5 s until the process is stopped (CPU bench of the action)
+    // again every 1.5 s until the process is stopped (CPU bench of the action),
+    // "-hold" takes no picture and stays staged until stopped (CPU bench at rest),
+    // "-empty" starts with nothing hidden, and "-churn" (implies "-hold") hides
+    // and brings back an output every second (CPU bench of the Hidden section)
     readonly property string rawMode: args[args.length - 2]
     readonly property var parts: rawMode.split("-")
     readonly property bool bright: parts.indexOf("bright") > 0
@@ -51,6 +56,10 @@ Window {
     readonly property bool bench: parts.indexOf("bench") > 0
     readonly property bool loop: parts.indexOf("loop") > 0
     readonly property bool feed: parts.indexOf("feed") > 0
+    readonly property bool chooser: parts.indexOf("chooser") > 0
+    readonly property bool churn: parts.indexOf("churn") > 0
+    readonly property bool hold: churn || parts.indexOf("hold") > 0
+    readonly property bool empty: parts.indexOf("empty") > 0
     readonly property var sunAngle: parts.find(p => /^sun\d+$/.test(p))
     // "-level35" sets the group's general volume before the group forms (the
     // gauge shows no reading), "-read35" sets it while the picture is taken (the
@@ -88,7 +97,7 @@ Window {
             Theme.errorText = "#FFFFFF";
         }
         // Two made-up devices already swallowed by the black hole
-        if (mode !== "hiddenempty")
+        if (mode !== "hiddenempty" && !empty)
             SettingsData.pluginSettings = Object.assign({}, SettingsData.pluginSettings, {
                 "hiddenDevices": {
                     "3C:8D:20:54:AB:12": "Keychron K3",
@@ -177,6 +186,8 @@ Window {
                 scene.focusOn(b);
         } else if (mode === "togetherback") {
             scene.centre.recall();
+        } else if (mode.startsWith("together") && chooser) {
+            scene.openGroupChooser(bodyOf("D4:1A:88:10:5B:77"), Qt.point(80, 80));
         } else if (mode.startsWith("together") && feed) {
             carryToHole();
         } else if (mode.startsWith("together") && sunAngle) {
@@ -304,9 +315,26 @@ Window {
         repeat: true
         onTriggered: scene.cardOpen ? scene.clearFocus() : win.stage()
     }
+    // "-churn": a made-up output goes to the black hole, then comes back, each second
+    Timer {
+        id: churnTimer
+        interval: 1000
+        repeat: true
+        onTriggered: {
+            const id = "E8:07:BF:6A:19:D4";
+            if (scene.prefs.hiddenDevices[id])
+                scene.unhide(id);
+            else
+                scene.hideById(id, "JBL Flip 6");
+        }
+    }
     Timer {
         id: grabTimer
         onTriggered: {
+            if (win.hold) {
+                churnTimer.running = win.churn;
+                return;
+            }
             if (win.loop) {
                 cardLoop.start();
                 return;

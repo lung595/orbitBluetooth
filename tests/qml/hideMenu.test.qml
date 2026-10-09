@@ -134,7 +134,12 @@ Item {
         return PluginService.saved.hiddenDevices ?? ({});
     }
     function reload() {
+        // The settings DMS hands back: the Hidden section's open/closed choice comes with them
+        scene.prefs._data = Object.assign({}, SettingsData.pluginSettings, PluginService.saved);
         scene.prefs.hiddenDevices = stored();
+    }
+    function savedOpen() {
+        return PluginService.saved.hiddenSectionOpen ?? null;
     }
     function section(id) {
         return chooser().view.sections.find(s => s.id === id);
@@ -192,7 +197,7 @@ Item {
                 check("not stored yet by the scene: the list still shows it until DMS hands the settings back", h.ids("wired").indexOf(h.usb) >= 0, true);
                 h.reload();
                 check("then it leaves Wired", h.ids("wired"), [h.hdmi]);
-                check("the Hidden section appears, folded, with its count", [h.section("hidden").count, h.section("hidden").rows.length, c.hiddenOpen], [1, 0, false]);
+                check("the first time, the Hidden section appears open by itself, with its row (D368)", [h.section("hidden").count, h.section("hidden").rows.length, c.hiddenOpen, h.savedOpen()], [1, 1, true, true]);
                 check("the hole's counter counts it too, and its card lists it", [scene.hiddenCount, Object.keys(scene.prefs.hiddenDevices)], [1, [h.usb]]);
                 check("it is not ticked any more, whatever was ticked", c.view.chosen, [h.headset]);
                 check("the chooser stays open", [!!h.chooser(), scene.menuOpen], [true, true]);
@@ -204,7 +209,9 @@ Item {
             "run": () => {
                 const c = h.chooser();
                 h.heading().clicked(null);
-                check("its heading opens it", [c.hiddenOpen, h.ids("hidden")], [true, [h.usb]]);
+                check("its heading folds it, and the choice is kept", [c.hiddenOpen, h.ids("hidden"), h.savedOpen()], [false, [], false]);
+                h.heading().clicked(null);
+                check("and opens it again", [c.hiddenOpen, h.ids("hidden"), h.savedOpen()], [true, [h.usb], true]);
                 const r = h.section("hidden").rows[0];
                 check("a hidden row has the picture and name of the output, and cannot be ticked", [r.icon, r.label, r.ticked, r.why], ["usb", "Interface Stereo", false, "hidden"]);
                 check("it is a row of the keyboard cursor now", c.rows.map(x => x.id).indexOf(h.usb) >= 0, true);
@@ -213,7 +220,7 @@ Item {
                 h.line(h.usb).eye();
                 check("brought back: the store is empty again", h.stored(), {});
                 h.reload();
-                check("it is in Wired again, and the Hidden section is gone, folded", [h.ids("wired"), c.anyHidden, c.hiddenOpen, scene.hiddenCount], [[h.hdmi, h.usb], false, false, 0]);
+                check("it is in Wired again, and the Hidden section is gone, the open choice kept", [h.ids("wired"), c.anyHidden, c.hiddenOpen, scene.hiddenCount], [[h.hdmi, h.usb], false, true, 0]);
                 c.press(Qt.Key_Down);
             }
         },
@@ -226,7 +233,8 @@ Item {
                 c.press(Qt.Key_H);
                 check("H hides the row under the cursor", Object.keys(h.stored()), [h.hdmi]);
                 h.reload();
-                check("the Hidden section is there; Right opens it, Left folds it", [c.press(Qt.Key_Right), c.hiddenOpen, h.ids("hidden"), c.press(Qt.Key_Left), c.hiddenOpen], [true, true, [h.hdmi], true, false]);
+                check("hiding again in the same chooser keeps the open choice (D368)", [c.hiddenOpen, c.anyHidden, h.ids("hidden")], [true, true, [h.hdmi]]);
+                check("the Hidden section is there; Left folds it, Right opens it", [c.press(Qt.Key_Left), c.hiddenOpen, c.press(Qt.Key_Right), c.hiddenOpen, h.ids("hidden")], [true, false, true, true, [h.hdmi]]);
                 h.line(h.usb).hovered();
                 h.line(h.usb).eye();
                 h.reload();

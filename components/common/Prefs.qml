@@ -96,6 +96,9 @@ QtObject {
     // Devices swallowed by the black hole: address -> name (the name keeps
     // the list readable when the device is out of range)
     property var hiddenDevices: ({})
+    // The group chooser's Hidden section, as the user left it: true (open),
+    // false (folded) or null (never chosen: it opens by itself once, D368)
+    readonly property var hiddenSectionOpen: _get("hiddenSectionOpen", null)
     // Look of the black hole: "blackhole" (realistic) or "tesseract"
     readonly property string holeStyle: _get("holeStyle", "blackhole")
 
