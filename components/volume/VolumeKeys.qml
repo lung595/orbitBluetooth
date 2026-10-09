@@ -3,12 +3,17 @@ import Quickshell.Io
 import qs.Services
 import "Keys.js" as Keys
 
-// The volume keys and Orbit's smart steps (D265): reads what the two keys
-// do, binds them to Orbit when the user clicks "Enable" and gives them back
-// to DMS's own action on "Undo", through DMS's own `dms keybinds` command (argument
-// lists only). Runs a command only when asked: nothing at rest.
+// The volume keys and Orbit's smart steps (D265, NAK-214): reads what the two
+// keys do, binds them to Orbit (`claim` at the daemon's start, `enable` on the
+// user's word) and gives them back to DMS's own action, through DMS's own
+// `dms keybinds` command (argument lists only). The user's "give back" is
+// remembered so that Orbit never takes the keys again by itself. Runs a
+// command only at start or when asked: nothing at rest.
 Item {
     id: root
+
+    // The plugin's settings (Prefs): where "given back" is remembered
+    required property var prefs
 
     // "unsupported" (not niri), "unknown" (not read yet or unreadable),
     // "dms" (DMS's default: can be offered), "orbit" or "custom" (the
@@ -38,7 +43,7 @@ Item {
     }
 
     // Points both keys at Orbit, only if they still do DMS's default
-    function enable() {
+    function _bind() {
         refresh(() => {
             if (root.keys !== "dms")
                 return;
@@ -46,8 +51,24 @@ Item {
         });
     }
 
-    // Gives back to DMS, with its own step, every key still bound to Orbit
+    // At the first start: the keys are Orbit's by default, unless the user
+    // gave them back (remembered) or has a shortcut of their own
+    function claim() {
+        if (prefs.keysGivenBack)
+            return;
+        _bind();
+    }
+
+    // The user asks for them (a button, the command line): forget a give-back
+    function enable() {
+        prefs.set("keysGivenBack", false);
+        _bind();
+    }
+
+    // Gives back to DMS, with its own step, every key still bound to Orbit,
+    // and remembers it
     function disable() {
+        prefs.set("keysGivenBack", true);
         refresh(() => {
             if (root._mine.length > 0)
                 root._run(root._mine.map(d => Keys.backArgs(d, root._back[d])));

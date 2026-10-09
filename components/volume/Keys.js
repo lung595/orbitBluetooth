@@ -1,12 +1,13 @@
 .pragma library
 
-// Volume keys bound to Orbit's smart steps, on the user's click only (D265).
-// Orbit cannot catch the shell's own "dms ipc call audio increment" (its
-// IPC target and functions belong to DMS), so the click asks DMS's own
-// keybind command to point the two keys at Orbit, and "Undo" asks it to
-// set them back to DMS's own action. Not `dms keybinds reset`: DMS's
-// binds.kdl is itself the default, so a reset deletes the line and leaves
-// the key doing nothing. Nothing is written by Orbit itself.
+// Volume keys bound to Orbit's smart steps from the first start (D265,
+// NAK-214). Orbit cannot catch the shell's own "dms ipc call audio
+// increment" (its IPC target and functions belong to DMS), and DMS's keys
+// move the default output, never the last device that changed, so Orbit asks
+// DMS's own keybind command to point the two keys at Orbit, and "Give back"
+// (or uninstalling) asks it to set them back to DMS's own action. Not `dms
+// keybinds reset`: DMS's binds.kdl is itself the default, so a reset deletes
+// the line and leaves the key doing nothing. Nothing is written by Orbit itself.
 // Pure: builds argument lists and reads `dms keybinds show niri`.
 
 var PROVIDER = "niri";
@@ -86,7 +87,7 @@ function _dmsStep(a, dir) {
 }
 
 // What the two volume keys do now:
-// - "dms": both still DMS's default: Orbit can offer to take them
+// - "dms": both still DMS's default: Orbit can take them
 // - "orbit": both bound to Orbit
 // - "custom": the user's own shortcut on at least one: Orbit leaves them
 // - "unknown": the listing could not be read
@@ -123,9 +124,9 @@ function succeeded(text) {
 }
 
 // The one-line note in the volume scope (shown once, D265): text and the
-// word to click, or null. Short, to fit beside the mute icons.
+// word to click, or null. Short, to fit beside the mute icons. "done" tells
+// the user that Orbit took the keys, and how to give them back.
 var NOTES = {
-    "offer": { "text": "Smart volume keys?", "action": "Enable" },
     "done": { "text": "Smart volume keys on", "action": "Undo" },
     "undone": { "text": "Volume keys back to DMS", "action": "" },
     "manual": { "text": "Bind your keys to Orbit", "action": "" },

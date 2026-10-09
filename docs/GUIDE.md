@@ -197,16 +197,16 @@ Orbit's own way of stepping the volume, for the wheel over the pop-up and the ca
 
 Your keyboard's volume keys can use Orbit's **smart steps**: 1 % per press when you tap, bigger steps when you hold or press fast, the same as scrolling in Orbit's volume pop-up.
 
-- **The first time** Orbit's volume pop-up opens, one line under the scope offers it: **Smart volume keys? Enable**. Click **Enable** and the line reads **Smart volume keys on · Undo**. It shows only once; nothing changes unless you click.
-- **In the settings**, **Sound** tab, under the volume steps: **Use smart steps** binds them, **Give back to DMS** undoes it. The line next to it says what the keys do now.
-- **From the command line**: `dms ipc call orbitBluetooth volumeKeys on`, `off` or `status`.
+- **From the first start**, with nothing to click: the keys are Orbit's, so they follow the last device whose volume changed (see below). The first time Orbit's volume pop-up opens after that, one line under the scope says **Smart volume keys on · Undo**; it shows only once.
+- **In the settings**, **Sound** tab, under the volume steps: **Give back to DMS** (or **Undo** in that line) gives them back, and Orbit remembers it: it never takes them again by itself. **Use smart steps** binds them again. The line next to it says what the keys do now.
+- **From the command line**: `dms ipc call orbitBluetooth volumeKeys on`, `off` or `status`. `off` is remembered like **Give back to DMS**, `on` forgets it.
 
 How it works:
 
-- Orbit asks DMS's own command, `dms keybinds`, to point the two keys (`XF86AudioRaiseVolume` and `XF86AudioLowerVolume`) at Orbit. Orbit writes nothing itself; this is the one DMS setting it changes, and only when you click.
+- Orbit asks DMS's own command, `dms keybinds`, to point the two keys (`XF86AudioRaiseVolume` and `XF86AudioLowerVolume`) at Orbit. Orbit writes nothing itself; this is the one DMS setting it changes, at its first start and when you ask.
 - It binds them only if they still do **DMS's default** (`dms ipc call audio increment` and `decrement`). If you bound them to something of your own, Orbit leaves them alone.
 - **The keys never stop working.** If Orbit is off, removed, or too old for this command, the keys fall back to DMS's own step (the one they had, 3 % by default).
-- **Undo**, **Give back to DMS** and **uninstalling Orbit** write back the exact line DMS had, only on keys still bound to Orbit.
+- **Undo**, **Give back to DMS** and **uninstalling Orbit** write back the exact line DMS had (its own step included), only on keys still bound to Orbit.
 - **niri only**: elsewhere the line reads *Bind your keys to Orbit*. Bind them yourself, for example in Hyprland: `binde = , XF86AudioRaiseVolume, exec, dms ipc call orbitBluetooth volume up`.
 
 ### Which level the keys move
@@ -841,7 +841,7 @@ Removing Orbit leaves your machine exactly as it was before:
 - Disabling Orbit, reloading or restarting the shell erase nothing.
 - One exception: if DMS saved its settings while Orbit held DMS's volume OSD or its volume sound off, that switch stays off, see [DMS's own volume OSD](#dmss-own-volume-osd) and [Orbit's tick only](#orbits-tick-only).
 
-- If you gave your [volume keys](#volume-keys) to Orbit, they go back to DMS's default.
+- Your [volume keys](#volume-keys), if Orbit bound them, go back to DMS's default, with the step they had.
 
 If you deleted the folder while DMS was not running, Orbit could not clean up: install it again, then remove it from DMS while it runs. Your volume keys keep working meanwhile (they fall back to DMS); to give them back by hand: `dms keybinds set niri XF86AudioRaiseVolume "spawn dms ipc call audio increment 3" --allow-when-locked`, and the same with `XF86AudioLowerVolume` and `decrement`.
 

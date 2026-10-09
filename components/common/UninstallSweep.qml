@@ -13,6 +13,8 @@ import qs.Services
 // folder no longer exists at that point, so the script is read when Orbit
 // loads and handed over from memory. It runs detached (it must outlive the
 // plugin) and waits a little first, since an update may re-clone the folder.
+// The same script gives the volume keys still bound to Orbit back to DMS's
+// own action, reading DMS's listing itself once the wait is over.
 // At rest this costs nothing: no timer, no process, one small string.
 Item {
     id: root

@@ -81,6 +81,7 @@ var SETTINGS = {
     "volumeSteps": ["smart", "fixed"],
     "volumeSpeed": ["gentle", "balanced", "fast"],
     "keysOffered": "bool",
+    "keysGivenBack": "bool",
     "desktopBackdrop": "int",
     "hostGlyph": ["auto", "headphonesSlim", "headphones", "headphonesPremium", "headset", "earbudsStem", "earbudsRound", "earbudsCase", "speaker", "speakerTall", "soundbar", "mouse", "mouseErgo", "mouseGaming", "trackpad", "keyboard", "gamepad", "pen", "phone", "tablet", "watch", "watchRound", "glasses", "vr", "tv", "car", "laptop", "desktop", "bluetooth"],
     "soundVolume": "int",

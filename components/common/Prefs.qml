@@ -144,8 +144,10 @@ QtObject {
     readonly property var factsLine: _facts("factCard_", "card")
     readonly property var factsMore: _facts("factMore_", "more")
 
-    // The volume keys were offered once (D265): never again
+    // The user was told once that Orbit took the volume keys (D265): never again
     readonly property bool keysOffered: _get("keysOffered", false)
+    // The user gave the keys back to DMS: Orbit never takes them by itself
+    readonly property bool keysGivenBack: _get("keysGivenBack", false)
 
     readonly property bool reduceMotion: SettingsData.reduceMotion
 

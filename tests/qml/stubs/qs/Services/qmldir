@@ -6,3 +6,4 @@ singleton ToastService 1.0 ToastService.qml
 singleton PluginService 1.0 PluginService.qml
 singleton BatteryService 1.0 BatteryService.qml
 singleton UserInfoService 1.0 UserInfoService.qml
+singleton CompositorService 1.0 CompositorService.qml

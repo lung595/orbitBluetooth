@@ -91,9 +91,12 @@ Item {
     }
 
     // The pop-up that shows both levels whenever one changes (D252, D258)
-    // The volume keys and Orbit's smart steps, on the user's click (D265)
+    // The volume keys and Orbit's smart steps: Orbit's from the first start
+    // unless the user gave them back (D265, NAK-214)
     VolumeKeys {
         id: keyBinder
+        prefs: prefs
+        Component.onCompleted: claim()
     }
 
     VolumeOverlay {

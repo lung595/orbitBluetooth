@@ -10,10 +10,15 @@ Row {
     width: parent.width
     spacing: Theme.spacingM
 
-    // The volume keys (D265): bound to Orbit on the user's click only,
-    // through DMS's own keybind command; read when this page opens
+    // The volume keys (D265): bound to Orbit from the first start, given back
+    // on the user's click, through DMS's own keybind command; read when this
+    // page opens
+    Prefs {
+        id: keyPrefs
+    }
     VolumeKeys {
         id: keyBinder
+        prefs: keyPrefs
         visible: false
         Component.onCompleted: refresh()
     }
@@ -29,7 +34,7 @@ Row {
                 return "Could not change the volume keys. The guide shows how to bind them by hand";
             switch (keyBinder.keys) {
             case "dms":
-                return "Volume keys: DMS's own steps. Smart steps apply to them only once they are bound to Orbit";
+                return "Volume keys: DMS's own steps. Smart steps apply once they are bound to Orbit";
             case "orbit":
                 return "Volume keys: Orbit's smart steps. If Orbit is turned off they fall back to DMS's steps";
             case "custom":
