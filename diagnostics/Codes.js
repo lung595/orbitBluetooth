@@ -59,6 +59,7 @@ var SETTINGS = {
     "sounds": "bool",
     "volumeTick": "bool",
     "tickAlone": "bool",
+    "tickEvery": "int",
     "shootingStars": "bool",
     "starDensity": ["low", "normal", "high"],
     "desktopAmbient": "bool",

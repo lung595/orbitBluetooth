@@ -59,7 +59,7 @@ Item {
             }
             if (!player.running) {
                 player.sink = name;
-                player.command = ["python3", "-E", "-s", tick.helper, name, tick.path];
+                player.command = ["python3", "-I", tick.helper, name, tick.path];
                 player.stdinEnabled = true;
                 player.running = true;
             }
