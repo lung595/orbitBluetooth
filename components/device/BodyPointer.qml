@@ -4,7 +4,8 @@ import "../scene/Hold.js" as Hold
 import "../scene"
 
 // A device's mouse: a short click focuses it, a drag past 5 px moves it
-// (the scene owns the drag), a right click or a press held 500 ms opens its menu.
+// (the scene owns the drag), a right click or a press held 500 ms opens its
+// menu.
 MouseArea {
     id: pointer
     required property var body

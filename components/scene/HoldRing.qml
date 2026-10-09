@@ -22,7 +22,8 @@ Item {
 
     property bool _fired: false
     property double _start: 0
-    property double elapsed: 0
+    property double _elapsed: 0
+    readonly property double elapsed: hold._elapsed
 
     signal held
 
@@ -31,14 +32,14 @@ Item {
     function begin() {
         hold._fired = false;
         hold._start = Date.now();
-        hold.elapsed = 0;
+        hold._elapsed = 0;
         tick.start();
     }
     // Ends the press: the ring goes, `fired` is forgotten
     function cancel() {
         tick.stop();
         hold._fired = false;
-        hold.elapsed = 0;
+        hold._elapsed = 0;
     }
 
     Timer {
@@ -46,7 +47,7 @@ Item {
         interval: 33
         repeat: true
         onTriggered: {
-            hold.elapsed = Date.now() - hold._start;
+            hold._elapsed = Date.now() - hold._start;
             if (!Hold.done(hold.elapsed))
                 return;
             tick.stop();

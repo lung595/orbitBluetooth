@@ -8,8 +8,8 @@ import "WiredSign.js" as Sign
 // The mouse and the wheel over a wired member of the group, on the rounded
 // square it is drawn with. A click opens the volume radar on its level, since
 // there is no detail card for an output that is not Bluetooth (D271); a
-// right-click, or a press held 500 ms, opens its menu, and a drag past 5 px pulls it out of the group like
-// a Bluetooth member (the scene owns the drag), so a group of wired outputs alone
+// right-click, or a press held 500 ms, opens its menu, and a drag past 5 px
+// pulls it out of the group like a Bluetooth member (the scene owns the drag), so a group of wired outputs alone
 // stays in hand and no gesture on it is met with silence (value 10). The wheel
 // sets its level (over the source, the general one), as on any member.
 MouseArea {

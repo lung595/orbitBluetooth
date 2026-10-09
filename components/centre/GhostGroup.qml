@@ -101,9 +101,8 @@ Item {
         opacity: view.ghost.presence * (view.hovered ? 1 : 0.85)
     }
 
-    // A click makes it a group, a right click or a press held 500 ms (D368) turns it
-    // down. The zone is the
-    // disc, and never smaller than a planet's (Physics.HIT_MIN): far away on the
+    // A click makes it a group, a right click or a press held 500 ms (D368) turns
+    // it down. The zone is the disc, and never smaller than a planet's (Physics.HIT_MIN): far away on the
     // ring it is as easy to click as a near one.
     MouseArea {
         id: pick
@@ -138,6 +137,9 @@ Item {
                 hold.begin();
         }
         onPositionChanged: m => {
+            // Hover moves arrive without a press, and a fired hold must stay fired
+            if (!pressed || hold.fired)
+                return;
             if (Hold.moved(pressAt, Qt.point(m.x, m.y)))
                 hold.cancel();
         }
