@@ -181,7 +181,8 @@ Item {
     }
     // A level written to each of `nodes` on its own, unmuted: the group's
     // general level when the members keep their own levels (and their gaps),
-    // `levels` being what each one gets. Every one of them ticks.
+    // `levels` being what each one gets. Every one of them ticks, each at the
+    // gain its own level allows.
     function writeLevels(nodes, levels, before, after) {
         levelWriting();
         nodes.forEach((n, i) => {
@@ -189,7 +190,7 @@ Item {
             n.audio.muted = false;
             n.audio.volume = levels[i];
         });
-        tick.play(nodes, before, after);
+        tick.play(nodes, before, after, levels);
     }
     function writeMuted(node, muted) {
         Route.writeMuted(together.sharedNodes, node, muted);
