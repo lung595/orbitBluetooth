@@ -42,6 +42,7 @@ Item {
         check("the group touched: cleared", route.touched, "");
         check("an unknown member has no own level", route.ownNode("AA:09"), null);
         check("so the keys move the group, not a node of it", route.stepHeard(1), "no-pc-level");
+        check("no group: nothing is lit", route.target, "");
         Qt.exit(failures === 0 ? 0 : 1);
     }
 }

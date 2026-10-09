@@ -64,6 +64,7 @@ Item {
         return {
             "part": Polar.partOf(i, memberAddresses.length),
             "address": a,
+            "target": route.target === a,
             "level": audio ? Math.min(1, audio.volume) : 0,
             "muted": audio ? audio.muted : false,
             "icon": wired ? Wired.iconOf(Wired.kindOfNode(_memberNodes[i])) : _iconOf(d),

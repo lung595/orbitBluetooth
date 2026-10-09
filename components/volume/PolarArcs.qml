@@ -43,6 +43,9 @@ Item {
         property var slice: arcs.scope.innerSlice
         property real level: 0
         property bool muted: false
+        // The arc the volume keys move (AudioRoute.target): a firmer track
+        // and glow, no animation
+        property bool target: false
         property color tint: "white"
         anchors.fill: parent
         preferredRendererType: Shape.CurveRenderer
@@ -54,15 +57,15 @@ Item {
             radius: half.radius
             start: half._whole.start
             sweep: half._whole.sweep
-            strokeWidth: 1
-            strokeColor: arcs.scope.trackColor
+            strokeWidth: half.target ? 2 : 1
+            strokeColor: half.target ? Theme.withAlpha(half.tint, 0.6) : arcs.scope.trackColor
         }
         Arc {
             radius: half.radius
             start: half._lit.start
             sweep: half._lit.sweep
             strokeWidth: arcs.scope.stroke * 4
-            strokeColor: !half._on ? "transparent" : Theme.withAlpha(half.muted ? arcs.scope.mutedColor : half.tint, 0.07)
+            strokeColor: !half._on ? "transparent" : Theme.withAlpha(half.muted ? arcs.scope.mutedColor : half.tint, half.target ? 0.2 : 0.07)
         }
         Arc {
             radius: half.radius
@@ -81,6 +84,7 @@ Item {
             slice: arcs.scope.sliceOf(index)
             level: arcs.scope.shownAt(index)
             muted: arcs.scope.output(index).muted
+            target: arcs.scope.output(index).target === true
             tint: arcs.scope.output(index).color
         }
     }

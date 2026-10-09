@@ -79,6 +79,7 @@ Item {
                 "part": Polar.partOf(i, Math.min(members.length, Together.MAX_MEMBERS)),
                 "level": m.level,
                 "muted": m.muted,
+                "target": m.target === true,
                 "icon": m.icon,
                 "label": m.label,
                 "color": memberColors[i] || deviceColor

@@ -213,6 +213,8 @@ How it works:
 
 With a [Listen together](#listen-together) group playing, the keys (and `dms ipc call orbitBluetooth volume up|down`) move **the last member whose own level you touched**: in the volume scope, on the radar or with the wheel over its planet. Touch the group's level, or close the volume pop-up, and they go back to the group. They also go back to the group when the group ends, when that member leaves, or when it has no level of its own (a device that follows this PC). Without a group nothing changes: the keys move the output you hear.
 
+The member the keys move is **visible**: in the volume scope its arc has a firmer track and a brighter glow. When no arc is marked, the keys move the group. The tick follows the same target: it plays in the output of the member whose level moved, or in every member's when the group's level moves.
+
 ## What really plays
 
 Under the device's name on its card, and at the foot of the volume pop-up (centered under the screen, for **any** output: a sound card, HDMI, a Bluetooth device), one short line says what the sound is:

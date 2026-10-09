@@ -252,12 +252,17 @@ Item {
         }
     }
 
+    // Who the keys move now: the member touched last while a group plays
+    // (Target.resolve), "" for the group or the output you hear. The scope
+    // lights this member's arc.
+    readonly property string target: together.active ? Target.resolve(touched, together.members, a => !!ownNode(a)) : ""
+
     // The volume keys (`dms ipc call orbitBluetooth volume up|down`): the
-    // member touched last while a group plays (Target.resolve), else the
-    // output you hear, Bluetooth or not. Never another device: with the
-    // sound on a wired output, a connected headset must not move (P136)
+    // target above, else the output you hear, Bluetooth or not. Never another
+    // device: with the sound on a wired output, a connected headset must not
+    // move (P136)
     function stepHeard(dir) {
-        const member = together.active ? Target.resolve(touched, together.members, a => !!ownNode(a)) : "";
+        const member = target;
         const dev = current;
         const node = member ? ownNode(member) : (deviceNode(dev) || pcNode(dev));
         if (!node || !node.audio)
