@@ -38,8 +38,6 @@ Item {
     // Uninstalling erases what DMS keeps for the plugin (value 12, D259)
     UninstallSweep {
         pluginId: root.pluginId
-        // The volume keys go back to DMS's own action with the plugin
-        restore: keyBinder.restore
     }
 
     // Noise control (ANC) for headphones: address -> helper snapshot

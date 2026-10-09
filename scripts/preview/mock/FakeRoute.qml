@@ -293,7 +293,8 @@ QtObject {
         touched = address;
     }
     // AudioRoute.touchLevel: the preview keeps no target
-    function touchLevel(which, dev) {}
+    function touchLevel(which, dev) {
+    }
     function ownNode(address) {
         const node = _wired[address] || deviceNode(known(address));
         return node && node.audio ? node : null;

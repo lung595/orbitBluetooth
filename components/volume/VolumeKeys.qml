@@ -22,12 +22,6 @@ Item {
     readonly property bool busy: _queue.length > 0 || show.running || run.running
     // Last failure, for a short message (value 10)
     property bool failed: false
-    // The step and key of every bind that is Orbit's, to give back for an
-    // uninstall (UninstallSweep), which cannot read them once Orbit is gone
-    readonly property var restore: Keys.restoreArgs(_mine, _back)
-
-    // The keys were just bound by `claim`, once the read confirms it
-    signal claimed
 
     property int _step: Keys.FALLBACK_STEP
     property var _mine: []
@@ -35,7 +29,6 @@ Item {
     property var _queue: []
     // Called once after the next read
     property var _then: null
-    property bool _claiming: false
 
     function refresh(then) {
         if (!CompositorService.isNiri) {
@@ -50,11 +43,10 @@ Item {
     }
 
     // Points both keys at Orbit, only if they still do DMS's default
-    function _bind(announce) {
+    function _bind() {
         refresh(() => {
             if (root.keys !== "dms")
                 return;
-            root._claiming = announce;
             root._run([Keys.setArgs("up", root._step), Keys.setArgs("down", root._step)]);
         });
     }
@@ -64,13 +56,13 @@ Item {
     function claim() {
         if (prefs.keysGivenBack)
             return;
-        _bind(true);
+        _bind();
     }
 
     // The user asks for them (a button, the command line): forget a give-back
     function enable() {
         prefs.set("keysGivenBack", false);
-        _bind(false);
+        _bind();
     }
 
     // Gives back to DMS, with its own step, every key still bound to Orbit,
@@ -90,12 +82,7 @@ Item {
     }
     function _next() {
         if (_queue.length === 0) {
-            const tell = _claiming;
-            _claiming = false;
-            refresh(tell ? () => {
-                if (root.keys === "orbit")
-                    root.claimed();
-            } : null);
+            refresh();
             return;
         }
         run.command = _queue[0];

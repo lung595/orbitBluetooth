@@ -46,22 +46,6 @@ function backArgs(dir, step) {
     return ["dms", "keybinds", "set", PROVIDER, KEYS[dir], dmsAction(dir, step), "--allow-when-locked", "--json"];
 }
 
-// The give-back as one detached command, for an uninstall: the plugin is gone
-// by then, so one shell runs the sets one after the other (two `dms keybinds
-// set` side by side would race on binds.kdl). Data reaches it as positional
-// parameters, key then action, never inside the script.
-var RESTORE_SCRIPT = 'while [ "$#" -ge 2 ]; do dms keybinds set ' + PROVIDER + ' "$1" "$2" --allow-when-locked --json >/dev/null 2>&1; shift 2; done';
-
-// [] when no key is Orbit's: nothing to give back
-function restoreArgs(mine, back) {
-    if (!mine || mine.length === 0)
-        return [];
-    const data = [];
-    for (const dir of mine)
-        data.push(KEYS[dir], dmsAction(dir, back[dir]));
-    return ["sh", "-c", RESTORE_SCRIPT, "orbit"].concat(data);
-}
-
 var SHOW_ARGS = ["dms", "keybinds", "show", PROVIDER];
 
 // Every bind of the provider's listing, flattened: [{key, action, source}]

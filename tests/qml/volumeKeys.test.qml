@@ -1,12 +1,12 @@
 import QtQuick
 import Quickshell.Io
 import "components/volume"
-import "components/volume/Keys.js" as Keys
+import "components/volume/Keys.js" as KeyBinds
 
 // Test of VolumeKeys (NAK-214, D265): on a fresh install the keys become
 // Orbit's at the first start with no click; once the user gave them back, a
 // restart does not take them again; a shortcut of the user's own is left
-// alone; the step to give back is kept ready for the uninstall. `dms
+// alone. The uninstall reads DMS's listing itself (uninstall/ tests). `dms
 // keybinds` is played by hand through the stand-in processes (a listing as
 // DMS prints it, the answer of each `set`). Made-up shortcuts only. Run
 // with tests/qml/run.sh.
@@ -69,8 +69,6 @@ Item {
     VolumeKeys {
         id: keys
         prefs: prefs
-        property int told: 0
-        onClaimed: told++
     }
 
     // One user's story, step by step: each `run` is a turn of the event loop
@@ -82,28 +80,27 @@ Item {
                 check("the first start reads the keys", h.shower().running, true);
                 h.answer(h.shower(), h.listing(h.dmsUp, h.dmsDown));
                 check("DMS's default keys: the up key is set to Orbit, no click", [h.setter().running, h.setter().command.slice(0, 5)], [true, ["dms", "keybinds", "set", "niri", "XF86AudioRaiseVolume"]]);
-                check("with Orbit's action and DMS's own step as the fallback", h.setter().command[5], Keys.action("up", 5));
+                check("with Orbit's action and DMS's own step as the fallback", h.setter().command[5], KeyBinds.action("up", 5));
                 h.answer(h.setter(), '{"success":true}');
                 check("then the down key", h.setter().command[4], "XF86AudioLowerVolume");
                 h.answer(h.setter(), '{"success":true}');
                 check("then one read to confirm", h.shower().running, true);
-                h.answer(h.shower(), h.listing(Keys.action("up", 5), Keys.action("down", 5)));
-                check("the keys are Orbit's, said once, nothing failed", [keys.keys, keys.told, keys.failed], ["orbit", 1, false]);
+                h.answer(h.shower(), h.listing(KeyBinds.action("up", 5), KeyBinds.action("down", 5)));
+                check("the keys are Orbit's, nothing failed", [keys.keys, keys.failed], ["orbit", false]);
                 check("nothing was remembered as given back", [keys.prefs.keysGivenBack, keys.prefs.saved.keysGivenBack], [false, undefined]);
-                check("the uninstall has the give-back ready, with the step", keys.restore.slice(0, 2).concat(keys.restore.slice(4)), ["sh", "-c", "XF86AudioRaiseVolume", h.dmsUp, "XF86AudioLowerVolume", h.dmsDown]);
             }
         },
         {
             "run": () => {
                 keys.disable();
                 check("giving back is remembered", [prefs.saved.keysGivenBack, prefs.keysGivenBack], [true, true]);
-                h.answer(h.shower(), h.listing(Keys.action("up", 5), Keys.action("down", 5)));
+                h.answer(h.shower(), h.listing(KeyBinds.action("up", 5), KeyBinds.action("down", 5)));
                 check("the up key goes back to DMS's own action with its step", h.setter().command[5], h.dmsUp);
                 h.answer(h.setter(), '{"success":true}');
                 check("and the down key", h.setter().command[5], h.dmsDown);
                 h.answer(h.setter(), '{"success":true}');
                 h.answer(h.shower(), h.listing(h.dmsUp, h.dmsDown));
-                check("DMS's keys again, and nothing to give back at uninstall", [keys.keys, keys.restore, keys.told], ["dms", [], 1]);
+                check("DMS's keys again", keys.keys, "dms");
             }
         },
         {
@@ -120,9 +117,7 @@ Item {
                 check("and binds the keys", h.setter().running, true);
                 h.answer(h.setter(), '{"success":false}');
                 check("a refusal of DMS stops there and is said", [keys.failed, h.setter().running], [true, false]);
-                h.answer(h.shower(), h.listing(Keys.action("up", 5), h.dmsDown));
-                check("one key on Orbit is still given back at uninstall", keys.restore.slice(4), ["XF86AudioRaiseVolume", h.dmsUp]);
-                check("a failed claim is not announced", keys.told, 1);
+                h.answer(h.shower(), h.listing(KeyBinds.action("up", 5), h.dmsDown));
             }
         },
         {
@@ -131,7 +126,6 @@ Item {
                 keys.claim();
                 h.answer(h.shower(), h.listing("spawn pamixer -i 5", h.dmsDown));
                 check("the user's own shortcut is left alone", [keys.keys, h.setter().running], ["custom", false]);
-                check("and a claim that did nothing announces nothing", keys.told, 1);
             }
         }
     ]

@@ -13,8 +13,8 @@ import qs.Services
 // folder no longer exists at that point, so the script is read when Orbit
 // loads and handed over from memory. It runs detached (it must outlive the
 // plugin) and waits a little first, since an update may re-clone the folder.
-// The volume keys Orbit bound go back to DMS's own action in the same
-// detached step (`restore`, the argument list VolumeKeys keeps ready).
+// The same script gives the volume keys still bound to Orbit back to DMS's
+// own action, reading DMS's listing itself once the wait is over.
 // At rest this costs nothing: no timer, no process, one small string.
 Item {
     id: root
@@ -24,8 +24,6 @@ Item {
     // Captured while the plugin is loaded: DMS forgets its path on unload
     property string manifest: ""
     property string script: ""
-    // A command that gives the volume keys back, or [] (see VolumeKeys)
-    property var restore: []
 
     // The opt-in picture cache (XDG cache, as pictures/orbit_pictures.py)
     readonly property string cacheDir: Paths.strip(Paths.xdgCache) + "/" + pluginId
@@ -61,8 +59,6 @@ Item {
         if (probe.text() !== "")
             return;
         // An argument list, never a shell string; the script validates them
-        if (restore.length > 0)
-            Quickshell.execDetached(restore);
         Quickshell.execDetached(["python3", "-E", "-s", "-c", script, pluginId, manifest, cacheDir, settingsPath, SettingsData.pluginSettingsPath, sessionPath]);
     }
 }
