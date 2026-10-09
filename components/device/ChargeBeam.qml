@@ -49,6 +49,7 @@ Item {
         offset: Motion.deviceOffset(chargeFlow.body.address)
         startColor: chargeFlow.glow
         endColor: chargeFlow.body.night.charging
+        railColor: chargeFlow.body.night.skyText
         deviceRadius: chargeFlow.radius
         reach: chargeFlow.radius
         heading: chargeFlow.rotation

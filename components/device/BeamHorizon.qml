@@ -23,6 +23,7 @@ Item {
     property real offset: 0
     property color startColor: Theme.primary
     property color endColor: Theme.primary
+    property color railColor: Theme.surfaceText
     // The device the ring circles (px), and how far past the link's end its
     // centre is; no radius, no ring
     property real deviceRadius: 0
@@ -100,7 +101,7 @@ Item {
         Shape {
             preferredRendererType: Shape.CurveRenderer
             ShapePath {
-                strokeColor: Theme.withAlpha(horizon.startColor, 0.3)
+                strokeColor: Theme.withAlpha(horizon.railColor, 0.3)
                 strokeWidth: 1.1
                 fillColor: "transparent"
                 PathAngleArc {

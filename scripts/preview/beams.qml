@@ -31,6 +31,14 @@ Window {
         id: tones
     }
 
+    // grabToImage renders the content item only, not the window colour: without
+    // this backdrop the frames are transparent and the GIF palette drops every
+    // pixel under 50 % alpha (the faint rail, arc, ring and thin strands)
+    Rectangle {
+        anchors.fill: parent
+        color: Theme.surface
+    }
+
     // A disc with a charge arc, standing for a host or a device
     component Disc: Item {
         property bool arc: false
@@ -106,6 +114,7 @@ Window {
                             time: win.clock
                             startColor: tones.primary
                             endColor: tones.charging
+                            railColor: tones.skyText
                         }
                         Disc {
                             x: 48 + win.linkLength + 4

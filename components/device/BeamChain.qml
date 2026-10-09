@@ -18,6 +18,7 @@ Item {
     property real offset: 0
     property color startColor: Theme.primary
     property color endColor: Theme.primary
+    property color railColor: Theme.surfaceText
 
     readonly property real dotSpacing: 9
     readonly property real dotSize: 2.4
@@ -28,7 +29,7 @@ Item {
         anchors.fill: parent
         preferredRendererType: Shape.CurveRenderer
         ShapePath {
-            strokeColor: Theme.withAlpha(chain.startColor, 0.22)
+            strokeColor: Theme.withAlpha(chain.railColor, 0.22)
             strokeWidth: chain.dotSize
             capStyle: ShapePath.RoundCap
             strokeStyle: ShapePath.DashLine

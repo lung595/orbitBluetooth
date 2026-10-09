@@ -21,6 +21,8 @@ Item {
     property real offset: 0
     property color startColor: "transparent"
     property color endColor: "transparent"
+    // Chain and Horizon: the unlit rail and ring (text tone, per the spec)
+    property color railColor: "transparent"
     // Filament only: shape of the strands, and white-hot lines on dark backgrounds
     property real amplitude: 3
     property real wavelength: 38
@@ -65,6 +67,7 @@ Item {
             offset: link.offset
             startColor: link.startColor
             endColor: link.endColor
+            railColor: link.railColor
         }
     }
 
@@ -76,6 +79,7 @@ Item {
             offset: link.offset
             startColor: link.startColor
             endColor: link.endColor
+            railColor: link.railColor
             deviceRadius: link.deviceRadius
             reach: link.reach
             heading: link.heading

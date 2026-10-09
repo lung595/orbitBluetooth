@@ -121,6 +121,7 @@ Item {
         scene.beamStyle = "pulse";
         check("the scene's style reaches the beam at once", link.shown, "pulse");
         check("the beam's colours are the primary and the charge colour", [link.startColor.toString(), link.endColor.toString()], [body.night.primary.toString(), body.night.charging.toString()]);
+        check("the unlit rail is the sky's text tone", link.railColor.toString(), body.night.skyText.toString());
         scene.motion = false;
         check("Reduce motion: the clock is not followed", link.running, false);
         scene.motion = true;
