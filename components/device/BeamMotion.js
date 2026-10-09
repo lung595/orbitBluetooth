@@ -35,3 +35,43 @@ function deviceOffset(address) {
         h = (h * 31 + s.charCodeAt(k)) % 997;
     return (h % PHASE_SLOTS) * PHASE_STEP;
 }
+
+// Chain: a lit window (30 % of the link) runs to the device in 1.2 s, then the
+// link rests for 0.3 s before the next one
+var CHAIN_TRAVEL = 1.2;
+var CHAIN_GAP = 0.3;
+var CHAIN_WINDOW = 0.3;
+var CHAIN_STILL = [0.35, 0.65];   // the window frozen around the middle of the link
+
+function clamp01(x) {
+    return Math.max(0, Math.min(1, x));
+}
+
+// The lit window of the Chain style as [from, to], shares of the link (0..1).
+// It enters at the host end and leaves at the device end, so it is short and
+// growing, then whole, then short and shrinking
+function chainWindow(time, running, offset) {
+    if (!running)
+        return CHAIN_STILL;
+    const cycle = CHAIN_TRAVEL + CHAIN_GAP;
+    const t = fract((time - offset) / cycle) * cycle;
+    const head = Math.min(1, t / CHAIN_TRAVEL) * (1 + CHAIN_WINDOW);
+    return [clamp01(head - CHAIN_WINDOW), clamp01(head)];
+}
+
+// Horizon: grains fall along the bent path in 1.8 s, a knot turns round the
+// device's ring once per 3 s. Both start where their still frame is.
+var HORIZON_FALL = 1.8;
+var HORIZON_TURN = 3;
+var HORIZON_STILL_GRAIN = 0.72;
+var HORIZON_STILL_KNOT = 0.9;     // rad
+
+// How far (0..1) the lead grain is along the path, before the fall's acceleration
+function grainFront(time, running, offset) {
+    return running ? fract((time - offset) / HORIZON_FALL + HORIZON_STILL_GRAIN) : HORIZON_STILL_GRAIN;
+}
+
+// Where the knot is on its ring (rad)
+function knotAngle(time, running, offset) {
+    return running ? HORIZON_STILL_KNOT + (time - offset) / HORIZON_TURN * 2 * Math.PI : HORIZON_STILL_KNOT;
+}

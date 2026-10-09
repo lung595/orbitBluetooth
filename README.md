@@ -74,6 +74,10 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 | --- | --- |
 | ![Dragging earbuds to the inner ring connects them](screenshots/connect.gif) | ![A beam of energy flowing to a charging headset](screenshots/beam.gif) |
 
+| Charging beam: Chain | Charging beam: Horizon |
+| --- | --- |
+| ![Chain: a lit window runs along a string of dots to the device](screenshots/charging-beam-chain.gif) | ![Horizon: light bends into a thin ring round the device](screenshots/charging-beam-horizon.gif) |
+
 | New headphones pop-up | Dark and light themes |
 | --- | --- |
 | ![The pairing sheet unfolds from the bar, the headset falls into orbit and connects](screenshots/newdevice.gif) | ![The pairing sheet offering, then connected, in a dark and a light theme](screenshots/newdevice.png) |
@@ -89,7 +93,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 - **Create a group from the menu**: right-click a connected output, *Create a group…*, tick the wired outputs that are plugged in and the Bluetooth ones that are connected, then press *Listen together* ([more](docs/GUIDE.md#create-a-group-from-the-menu)).
 - **Suggested groups**: when the sound goes to a wired output while a Bluetooth device is connected (or the other way round), a dotted *ghost planet* proposes a group; one click makes it real, a right-click turns it down until the shell restarts ([more](docs/GUIDE.md#suggested-groups)). It is the group you listen to most (Orbit learns it, [more](docs/GUIDE.md#learn-my-groups)), else a pair.
 - **What really plays**: a short line under the device name and in the pop-up, for example *Bluetooth · LDAC · 96 kHz · 24 bit*, and a button that unfolds the rest: channels, profile, the codec's bit rate, latency and the audio quantum, each only when it can be honestly read.
-- **Live charging**: energy beam, time to full, charge speed, session chart. The battery arc's color follows the level, from red through amber to green, with a color of its own while charging, shared by the beam and the earbuds' bolt (a small bolt rides the arc in themes with no such color, like Blue and Cyan) ([more](docs/GUIDE.md#battery-arc-colours)).
+- **Live charging**: energy beam (four styles to choose from: Pulse, Filament, Chain, Horizon), time to full, charge speed, session chart. The battery arc's color follows the level, from red through amber to green, with a color of its own while charging, shared by the beam and the earbuds' bolt (a small bolt rides the arc in themes with no such color, like Blue and Cyan) ([more](docs/GUIDE.md#battery-arc-colours)).
 - **Earbuds trio**: the case and both buds in their own mini orbit, each with its battery.
 - **Noise control** for 13 headphone brands (Sony, Apple, Samsung, Bose, Huawei…).
 - **Pause when you take the headset off** (Sony headsets with a wearing sensor): what plays on the headset pauses when you take it off and resumes when you put it back, only what Orbit paused, and it never starts music; in a Listen together group it pauses nothing, the others keep playing. It keeps one control connection open ([more](docs/GUIDE.md#pause-when-you-take-the-headset-off)).

@@ -17,13 +17,13 @@ Window {
     readonly property string mode: args[args.length - 3]
     readonly property string pick: args[args.length - 2]
     readonly property string out: args[args.length - 1]
-    readonly property var styles: pick === "all" ? ["pulse", "filament"] : [pick]
+    readonly property var styles: pick === "all" ? ["pulse", "filament", "chain", "horizon"] : [pick]
     readonly property real linkLength: 190
     // The clock the scene's 30 Hz timer would give; stepped by hand for a recording
     property real clock: 0
 
-    width: 400
-    height: styles.length * 120 + 20
+    width: 440
+    height: styles.length * 216 + 20
     visible: true
     color: Theme.surface
 
@@ -65,36 +65,57 @@ Window {
                 required property string modelData
                 width: 360
                 Repeater {
-                    model: [true, false]
+                    // Moving, at rest (Reduce motion), and moving with the delay
+                    // of a second charging device
+                    model: [
+                        {
+                            "running": true,
+                            "offset": 0,
+                            "note": ""
+                        },
+                        {
+                            "running": false,
+                            "offset": 0,
+                            "note": " · Reduce motion"
+                        },
+                        {
+                            "running": true,
+                            "offset": 0.5,
+                            "note": " · second device (+0.5 s)"
+                        }
+                    ]
                     delegate: Item {
                         id: row
-                        required property bool modelData
+                        required property var modelData
                         width: 360
-                        height: 60
+                        height: 72
                         Disc {
                             x: 0
-                            y: 8
+                            y: 14
                         }
                         BeamLink {
                             x: 48
-                            y: 8
+                            y: 14
                             width: win.linkLength
                             height: 44
                             style: block.modelData
-                            running: row.modelData
+                            running: row.modelData.running
+                            offset: row.modelData.offset
+                            deviceRadius: 22
+                            reach: 26
                             time: win.clock
                             startColor: tones.primary
                             endColor: tones.charging
                         }
                         Disc {
                             x: 48 + win.linkLength + 4
-                            y: 8
+                            y: 14
                             arc: true
                         }
                         Text {
                             x: 0
-                            y: 52
-                            text: block.modelData + (row.modelData ? "" : " · Reduce motion")
+                            y: 62
+                            text: block.modelData + row.modelData.note
                             color: Theme.withAlpha(tones.primary, 0.7)
                             font.pixelSize: 10
                         }

@@ -93,6 +93,8 @@ Logic that can be tested lives in **pure `.js` files** with no QML: `card/Charge
 
 Settings are read through `components/common/Prefs.qml`, a reactive view shared by every surface.
 
+**The charging beam** (`components/device/`). `ChargeBeam.qml` places the beam on the host-to-device axis and decides when it exists (charging, not leaving, not focused, not a Listen together member); `BeamLink.qml` is the only place that picks a style from `chargeBeamStyle` (`BeamStyle.js`, where an unknown value is the default) and builds only that one, in a `Loader` that is inactive while the beam is hidden. A style is a component with the same inputs (`running`, `time`, `offset`, `startColor`, `endColor`): `BeamPulse` (three capsules), `EnergyBeam` (Filament, the shader), `BeamChain` (a dashed rail and one gradient bar for the lit window), `BeamHorizon` (an arc, grains, a ring and a knot; its geometry is `HorizonShape.js`). Where each moving part is at a given moment is `BeamMotion.js`: pure functions of the scene's 30 Hz clock that answer the still frame when `running` is false (Reduce motion). A new style needs: its component, its clock in `BeamMotion.js`, its name in `BeamStyle.STYLES` and `LookTab.qml`, a `BeamLink` entry, tests in `tests/beamStyle.test.js` and `tests/qml/chargeBeam.test.qml`, a still frame, and a GUIDE section. No `FrameAnimation`, `Animator` or looping `NumberAnimation`: they redraw the whole shell.
+
 ## Project layout
 
 ```
@@ -123,7 +125,9 @@ orbitBluetooth/
 │   │   └── Starfield.qml, Vignette.qml, NightColors.qml
 │   ├── device/                  # one orbiting device
 │   │   ├── DeviceBody.qml, BodyState.qml, BodyMotion.qml, BodyFace.qml, BodyPointer.qml, QuickDisconnect.qml  # body, its base state, its one-shot motions, its look, its mouse, its close button
-│   │   ├── ConnectingFx.qml, LockRing.qml, EnergyBeam.qml, LabelGlow.qml  # connection comet and rings, lock ring, charging beam (shaders/beam.frag), label glow
+│   │   ├── ConnectingFx.qml, LockRing.qml, LabelGlow.qml  # connection comet and rings, lock ring, label glow
+│   │   ├── BeamLink.qml, EnergyBeam.qml, BeamPulse.qml, BeamChain.qml, BeamHorizon.qml  # charging beam: the one place that picks the style (Filament is the shader, shaders/beam.frag)
+│   │   ├── BeamStyle.js, BeamMotion.js, HorizonShape.js  # which style, where the moving parts are at a moment, Horizon's geometry (pure, tested by tests/beamStyle.test.js)
 │   │   ├── BodyTether.qml, ChargeBeam.qml, BodyArcs.qml, BodyLabel.qml, Battery.js  # tether to the core, charge beam, rings (noise control, battery), caption, the battery tones (pure, tested)
 │   │   ├── DeviceGlyph.qml, DeviceCatalog.js, Glyphs.js, PopAnimation.qml   # device icons (Glyphs.js also draws the wired pictos), the brief pop of a body that says "here"
 │   │   └── EarbudsTrio.qml, EarbudArt.qml, Earbuds.js     # case + buds mini orbit
@@ -230,7 +234,7 @@ Run them all before every commit. A new headphone brand needs a module in `anc/p
 ```sh
 scripts/preview/render.sh          # PNG screenshots (mock devices, no real data)
 scripts/preview/record.sh          # all GIFs (needs ffmpeg)
-scripts/preview/record.sh beam     # one of: beam, gauge, focus, connect
+scripts/preview/record.sh beam     # one of: beam, beamstyles (Chain and Horizon), gauge, focus, connect
 # Bench scenes, offscreen: tick.qml is the whole scene, volumetick.qml the volume tick alone
 # (modes rest, sweep1, sweep4, burst1, burst4; stand-in players, shell side only)
 shaders/build.sh                   # recompile after editing shaders/*.frag (needs qsb)
