@@ -4,11 +4,11 @@ imports.searchPath.unshift(imports.system.programPath ? imports.system.programPa
 const { load, eq, done } = imports.lib;
 
 const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNote", "stuckNote", "levelNote"]);
-const Volume = load("Volume.js", ["clamp", "step", "validSink", "stepSize", "stepsCrossed", "queued", "tickSinks", "MAX_TICKS", "TICK_MS", "MAX_QUEUE", "IDLE_MS"]);
+const Volume = load("Volume.js", ["clamp", "step", "validSink", "stepSize", "stepsCrossed", "due", "tickGain", "linearGain", "MIN_GAIN", "audible", "tickTargets", "slotsFor", "MAX_TICKS", "MIN_GAP_MS", "TICK_KNEE", "IDLE_MS"]);
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "slices", "sliceAt", "partOf", "indexOf", "arc", "end", "point", "angleOf", "valueAt", "zone", "wheelPart", "iconSpot", "legendSpot", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
 const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded", "note"]);
-const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "loopbackArgs", "filterArgs", "muteTarget", "levelNodes", "writeLevel", "writeMuted", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "popupScreen", "shownLevels"]);
+const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "tickOutput", "description", "loopbackArgs", "filterArgs", "muteTarget", "levelNodes", "writeLevel", "writeMuted", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "popupScreen", "shownLevels"]);
 
 // --- Volume tick (Volume.js) ------------------------------------------------------
 eq("the setting: 1 % by default, 5 % when it says so", [Volume.stepSize("1"), Volume.stepSize("5"), Volume.stepSize(undefined), Volume.stepSize("7")], [0.01, 0.05, 0.01, 0.01]);
@@ -25,16 +25,30 @@ eq("1 %: a change under half a percent crosses nothing", Volume.stepsCrossed(0.5
 eq("5 %: inside one step no tick, one tick per step across (0.62 is step 12, 0.68 is step 14)", [Volume.stepsCrossed(0.61, 0.62, tickFive), Volume.stepsCrossed(0.62, 0.68, tickFive), Volume.stepsCrossed(0.2, 0.5, tickFive)], [0, 2, 6]);
 eq("the ends of the dial are steps too (and levels are clamped)", [Volume.stepsCrossed(0.98, 1.2, tickOne), Volume.stepsCrossed(0.03, -1, tickOne)], [2, 3]);
 // Pacing: about 40 a second, a jump is a run that never outlasts 300 ms
-eq("one tick every 25 ms is 40 a second", 1000 / Volume.TICK_MS, 40);
-eq("ticks waiting add up, never beyond the cap", [Volume.queued(0, 3), Volume.queued(3, 4), Volume.queued(0, 30), Volume.queued(10, 5)], [3, 7, Volume.MAX_QUEUE, Volume.MAX_QUEUE]);
-eq("the longest run lasts 300 ms", Volume.MAX_QUEUE * Volume.TICK_MS, 300);
-eq("a negative or broken backlog counts as none", Volume.queued(-5, 2), 2);
-eq("a player outlasts the gap between two ticks of a run", Volume.IDLE_MS > Volume.TICK_MS * 10, true);
-eq("one output: its own sink only", Volume.tickSinks(["bluez_output.AA_BB_CC_DD_EE_01.1"]), ["bluez_output.AA_BB_CC_DD_EE_01.1"]);
-eq("the group: every member's sink, each once", Volume.tickSinks(["a.1", "b.2", "a.1", "c.3"]), ["a.1", "b.2", "c.3"]);
-eq("never more than four outputs at once", [Volume.MAX_TICKS, Volume.tickSinks(["a", "b", "c", "d", "e", "f"])], [4, ["a", "b", "c", "d"]]);
-eq("a name that is not plain is dropped, the others stay", Volume.tickSinks(["x; rm -rf ~", "--target=y z", "ok.1", "", null, undefined, 7]), ["ok.1"]);
-eq("nothing to tick in", [Volume.tickSinks(null), Volume.tickSinks([])], [[], []]);
+eq("at most one tick every 25 ms is 40 a second", 1000 / Volume.MIN_GAP_MS, 40);
+eq("a jump is ONE tick, heard live: a long sweep crosses steps but nothing is replayed", Volume.stepsCrossed(0.1, 0.9, tickOne) > 0, true);
+eq("a tick is due after the gap, not before", [Volume.due(1000, 0), Volume.due(1024, 1000), Volume.due(1025, 1000), Volume.due(5000, 1000)], [true, false, true, true]);
+eq("a clock that went back never blocks the tick", Volume.due(10, 1000), true);
+eq("a player outlasts the gap between two ticks", Volume.IDLE_MS > Volume.MIN_GAP_MS * 10, true);
+eq("quiet outputs get the tick in full", [Volume.tickGain(0.01), Volume.tickGain(0.3), Volume.tickGain(Volume.TICK_KNEE)], [1, 1, 1]);
+eq("above the knee the gain falls so the sound does not grow: gain times level stays at the knee", [0.8, 1].map(v => Math.round(Volume.tickGain(v) * v * 1000) / 1000), [0.6, 0.6]);
+eq("at 100 % the tick is 0.6 of itself", Volume.tickGain(1), 0.6);
+eq("the gain is never above 1 nor below the 100 % one, even for a broken level", [Volume.tickGain(5), Volume.tickGain(-1), Volume.tickGain(NaN), Volume.tickGain(undefined)], [0.6, 1, 1, 1]);
+eq("0 % is silent: nothing to tick in", [Volume.audible(0), Volume.audible(0.001), Volume.audible(-1), Volume.audible(undefined)], [false, true, false, false]);
+const at = (name, level) => ({ "name": name, "level": level });
+eq("one output: its own sink only, with its gain", Volume.tickTargets([at("bluez_output.AA_BB_CC_DD_EE_01.1", 0.5)]), [{ "name": "bluez_output.AA_BB_CC_DD_EE_01.1", "gain": 1 }]);
+eq("the group: every member's sink, each once, each at its own level's gain", Volume.tickTargets([at("a.1", 1), at("b.2", 0.3), at("a.1", 0.3), at("c.3", 0.6)]), [{ "name": "a.1", "gain": 0.6 }, { "name": "b.2", "gain": 1 }, { "name": "c.3", "gain": 1 }]);
+eq("never more than four outputs at once", [Volume.MAX_TICKS, Volume.tickTargets(["a", "b", "c", "d", "e", "f"].map(n => at(n, 0.5))).map(t => t.name)], [4, ["a", "b", "c", "d"]]);
+eq("a name that is not plain is dropped, the others stay", Volume.tickTargets([at("x; rm -rf ~", 0.5), at("--target=y z", 0.5), at("ok.1", 0.5), at("", 0.5), at(null, 0.5), at(7, 0.5), null]).map(t => t.name), ["ok.1"]);
+eq("a silent output (0 %) is left out", Volume.tickTargets([at("a.1", 0), at("b.2", 0.4)]).map(t => t.name), ["b.2"]);
+eq("a tick round the level's node carries the node's linear gain: level cubed, times the knee gain", Volume.tickTargets([{ "name": "a.1", "level": 0.5, "bypass": true }, { "name": "b.2", "level": 1, "bypass": true }, { "name": "c.3", "level": 0.25, "bypass": true }]).map(t => Math.round(t.gain * 1000) / 1000), [0.125, 0.6, 0.016]);
+eq("linearGain is level cubed and safe for a broken level", [Volume.linearGain(0.5), Volume.linearGain(1), Volume.linearGain(2), Volume.linearGain(NaN)], [0.125, 1, 1, 0]);
+eq("a bypassed tick too quiet to hear (gain under MIN_GAIN) starts no player", Volume.tickTargets([{ "name": "a.1", "level": 0.1, "bypass": true }, { "name": "b.2", "level": 0.1, "bypass": false }]).map(t => t.name), ["b.2"]);
+eq("nothing to tick in", [Volume.tickTargets(null), Volume.tickTargets([])], [[], []]);
+eq("a sink keeps its player", Volume.slotsFor(["a.1", "b.2", "", ""], ["b.2", "a.1"]), [1, 0]);
+eq("a new sink takes a free player", Volume.slotsFor(["a.1", "", "", ""], ["c.3"]), [1]);
+eq("with none free it takes one holding a sink not wanted now, never one that is", Volume.slotsFor(["a.1", "b.2", "c.3", "d.4"], ["a.1", "e.5"]), [0, 1]);
+eq("two new sinks take two different players", Volume.slotsFor(["a.1", "", "", ""], ["b.2", "c.3"]), [1, 2]);
 
 // Two volumes (D249, D255): this PC's level lives on a virtual sink in front of
 // the device. Made-up address and names.
@@ -56,6 +70,9 @@ const pwNodes = [
 eq("finds the device's sink, not a stream", Route.deviceSink(pwNodes, MAC), pwNodes[1]);
 eq("finds the virtual sink", Route.virtualSink(pwNodes, MAC), pwNodes[2]);
 eq("nothing for another device", [Route.deviceSink(pwNodes, "AA:BB:CC:DD:EE:02"), Route.virtualSink(pwNodes, "AA:BB:CC:DD:EE:02")], [null, null]);
+eq("a tick for the PC-level filter plays in the device behind it, round the filter", Route.tickOutput(pwNodes, pwNodes[2]), { "name": "bluez_output.AA_BB_CC_DD_EE_01.1", "bypass": true });
+eq("a tick for any other node plays in it as it is", [Route.tickOutput(pwNodes, pwNodes[0]), Route.tickOutput(pwNodes, pwNodes[1]), Route.tickOutput(pwNodes, null)], [{ "name": "alsa_output.usb-Card", "bypass": false }, { "name": "bluez_output.AA_BB_CC_DD_EE_01.1", "bypass": false }, { "name": "", "bypass": false }]);
+eq("a filter whose device sink is gone keeps its own name", Route.tickOutput([pwNodes[2]], pwNodes[2]), { "name": "orbit_pc_AA_BB_CC_DD_EE_01", "bypass": false });
 eq("description keeps the name", Route.description("WH-1000XM6"), "WH-1000XM6 (Orbit)");
 eq("description drops quotes and escapes", Route.description('My "Buds" \\ $(x)'), "My Buds (x) (Orbit)");
 eq("empty name falls back", Route.description(""), "Bluetooth (Orbit)");

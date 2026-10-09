@@ -167,6 +167,12 @@ Item {
     // says so first.
     signal levelWriting
 
+    // The tick plays in the device behind each node, round the PC-level filter
+    function _tick(nodes, before, after, levels) {
+        const all = Pipewire.nodes.values;
+        tick.play(nodes.map(n => Route.tickOutput(all, n)), before, after, levels);
+    }
+
     // A level or a mute written to a node reaches every member's copy when
     // it is the PC level of a Listen together session (Route.levelNodes). The
     // tick follows: in that node's output alone, or in every member's when it
@@ -177,11 +183,12 @@ Item {
         const reached = Route.levelNodes(together.sharedNodes, node);
         reached.forEach(n => _wrote(n, level));
         Route.writeLevel(together.sharedNodes, node, level);
-        tick.play(reached, before, level);
+        _tick(reached, before, level);
     }
     // A level written to each of `nodes` on its own, unmuted: the group's
     // general level when the members keep their own levels (and their gaps),
-    // `levels` being what each one gets. Every one of them ticks.
+    // `levels` being what each one gets. Every one of them ticks, each at the
+    // gain its own level allows.
     function writeLevels(nodes, levels, before, after) {
         levelWriting();
         nodes.forEach((n, i) => {
@@ -189,7 +196,7 @@ Item {
             n.audio.muted = false;
             n.audio.volume = levels[i];
         });
-        tick.play(nodes, before, after);
+        _tick(nodes, before, after, levels);
     }
     function writeMuted(node, muted) {
         Route.writeMuted(together.sharedNodes, node, muted);

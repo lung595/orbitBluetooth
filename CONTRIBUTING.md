@@ -212,7 +212,7 @@ orbitBluetooth/
 │   ├── gen_sounds.py            # synthesizes sounds/*.wav
 │   └── preview/                 # offscreen renderer: shot.qml (modes), mock/ (devices, state, route, wallpaper), imports/ (mock services)
 ├── screenshots/                 # images used by the docs
-├── tick/                        # orbit_tick.py: resident volume-tick player (one PipeWire stream per output, mixes the ticks)
+├── tick/                        # orbit_tick.py: resident volume-tick player (one PipeWire stream per output, live: a tick fades in and out and replaces the one still ringing)
 ├── sounds/
 └── docs/GUIDE.md                # user guide
 ```
