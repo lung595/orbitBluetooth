@@ -123,6 +123,11 @@ Item {
             if (why !== "ended" && together.scene.active)
                 together.scene.explain(Guide.togetherNote(why, together.nameOf(address), address));
         }
+        // Said once per read of the graph, never in silence (value 10)
+        function onLatencyUnknown(address) {
+            if (together.scene.active)
+                together.scene.explain(Guide.togetherNote("no-latency", together.nameOf(address), address));
+        }
         function onMemberLeft(address) {
             if (together.scene.active)
                 together.scene.explain(Guide.togetherNote("member-out", together.nameOf(address), address));

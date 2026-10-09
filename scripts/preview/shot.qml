@@ -15,6 +15,7 @@ import "mock/State.js" as State
 //        buds, budsdock, hole, holetess, hiddencard, hiddenempty, connecting, menu, feed,
 //        hold (a press held on a device until its menu opens), tap (a plain click on it),
 //        btblocked (Turn on did nothing: note), noadapter,
+//        together2-nolatency (suffix: the "reports no delay" note of an output, NAK-15),
 //        together2, together3, together4 (the headset and 1 to 3 speakers listen
 //        together: the source takes the center), togetherback (the host was
 //        clicked: it is back at the center and the group has stepped back)
@@ -188,6 +189,8 @@ Window {
             const b = bodyOf("02:00:00:00:10:06");
             if (b)
                 scene.focusOn(b);
+        } else if (mode.startsWith("together") && parts.indexOf("nolatency") > 0) {
+            scene.explain(Guide.togetherNote("no-latency", "Fictional Speaker", "02:00:00:00:10:02"));
         } else if (mode === "togetherback") {
             scene.centre.recall();
         } else if (mode.startsWith("together") && chooser) {

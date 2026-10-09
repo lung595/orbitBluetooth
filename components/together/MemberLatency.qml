@@ -7,10 +7,10 @@ import "Delay.js" as Delay
 // (D298), read from PipeWire's graph with one `pw-dump`. It is read when the
 // session forms and again when a member's output changes (the members, a
 // codec, a profile: `signature`), a moment later so that a burst of changes is
-// one read. Never polled. The command is fixed, no user data reaches it, and
+// one read, then it stops (D368). Never polled. The command is fixed, no user data reaches it, and
 // the item exists only while a session does (TogetherSession), so nothing runs
-// and nothing is kept outside one. The figures only feed the automatic wait of
-// the wired outputs (Delay.js).
+// and nothing is kept outside one. The figures feed the automatic wait of the
+// copies (Delay.js).
 Item {
     id: root
 
@@ -21,6 +21,8 @@ Item {
 
     // { member: ms } for the members the graph gave a figure for (Delay.latenciesOf)
     property var latencies: ({})
+    // A read is over and `latencies` holds its figures (also when it gave none)
+    signal measured
 
     // A change that came while the read ran: read again afterwards
     property bool _again: false
@@ -47,8 +49,11 @@ Item {
             id: dumped
         }
         onExited: code => {
-            if (code === 0)
-                root.latencies = Delay.latenciesOf(root.sinks, Graph.parseDump(dumped.text));
+            // A failed read leaves every figure unknown: none is kept from
+            // an earlier read, and the group is told as well
+            root.latencies = code === 0 ? Delay.latenciesOf(root.sinks, Graph.parseDump(dumped.text)) : ({});
+            if (!root._again)
+                root.measured();
             // Through the timer: the process is surely over by then
             if (root._again) {
                 root._again = false;

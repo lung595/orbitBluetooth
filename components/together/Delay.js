@@ -2,12 +2,13 @@
 .import "Member.js" as Member
 .import "Together.js" as Together
 
-// The automatic delay of Listen together (D298): a wired output answers in a
-// few milliseconds, a Bluetooth one a good deal later, so the wired copy waits
-// for what the Bluetooth output adds. Only a wired copy ever waits: a
-// Bluetooth output is never delayed, so it never grows more latency than its
-// codec gives it. Latencies are given by the caller (what PipeWire or BlueZ
-// report); none is written here. Pure logic, tested by tests/delay.test.js.
+// The automatic delay of Listen together (D298, D368): a wired output answers
+// in a few milliseconds, a Bluetooth one a good deal later, and two Bluetooth
+// codecs differ as much, so a copy waits for what the output the sound is
+// heard on adds more than it does. A copy never waits for an output that is
+// quicker than it: nothing can speed an output up, so the late one is left as
+// it is. Latencies are given by the caller (what PipeWire reports); none is
+// written here and none is made up. Pure logic, tested by tests/delay.test.js.
 
 // How far the user can nudge the automatic delay either way (ms), to match
 // what the figures cannot know (a speaker's own processing, a TV)
@@ -83,9 +84,9 @@ function latenciesOf(sinks, graph) {
 
 // What a copy must wait (ms, a whole number, 0..Together.MAX_DELAY_MS): the
 // time the source takes to be heard more than the member does, plus the
-// user's correction. 0 when either latency is not known: no figure is made up,
-// so a correction has nothing to correct then (the member's own manual delay
-// is still there).
+// user's correction (`fineMs`, 0 where it does not apply). 0 when either
+// latency is not known: no figure is made up, so a correction has nothing to
+// correct then (the member's own manual delay is still there).
 function autoDelayMs(sourceLatencyMs, memberLatencyMs, fineMs) {
     if (!isLatency(sourceLatencyMs) || !isLatency(memberLatencyMs))
         return 0;
@@ -93,21 +94,28 @@ function autoDelayMs(sourceLatencyMs, memberLatencyMs, fineMs) {
 }
 
 // The automatic delays of the copies of a plan (Together.plan): { member: ms },
-// for the wired members only and only those that wait. `latencies` is
-// { member: ms } for the members the caller knows the latency of, the
-// source's included.
+// only for the members that wait. `latencies` is { member: ms } for the members
+// the caller knows the latency of, the source's included. The user's
+// correction nudges the wired copies only: it is made for what the figures
+// cannot know of a wired output (a speaker's own processing, a TV), and a
+// Bluetooth output's figure is the whole of what it adds.
 function delaysFor(plan, latencies, fineMs) {
     const out = {};
     if (!plan || !Array.isArray(plan.taps) || !latencies)
         return out;
     for (const tap of plan.taps) {
-        if (!Member.isWired(tap.member))
-            continue;
-        const ms = autoDelayMs(latencies[plan.source], latencies[tap.member], fineMs);
+        const ms = autoDelayMs(latencies[plan.source], latencies[tap.member], Member.isWired(tap.member) ? fineMs : 0);
         if (ms > 0)
             out[tap.member] = ms;
     }
     return out;
+}
+
+// The members whose latency is not in `latencies`, in session order: the ones
+// the automatic delay cannot line up, which keep their own timing (the caller
+// says so, value 10). A wired output always has a figure (latenciesOf).
+function unknownOf(members, latencies) {
+    return (members || []).filter(who => !latencies || !isLatency(latencies[who]));
 }
 
 // The delay of every copy: the automatic one and the user's own (both
