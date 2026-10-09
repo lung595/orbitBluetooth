@@ -326,6 +326,16 @@ Item {
         shared.toggleMute();
         check("pressed again it lets the group speak", [shared.muted, route.shared.audio.muted, route.copyOne.audio.muted], [false, false, false]);
 
+        // The IPC command (togetherVolume): the same level the ring moves
+        const typed = SessionData.quiet;
+        check("setLevel: a level from 0 to 100", [shared.setLevel("40"), near(route.shared.audio.volume, 0.4), SessionData.quiet - typed], ["", true, 1]);
+        check("setLevel: a percent sign and a signed change", [shared.setLevel("50%"), near(route.shared.audio.volume, 0.5), shared.setLevel("-10"), near(route.shared.audio.volume, 0.4)], ["", true, "", true]);
+        check("setLevel: up and down take the smart steps", [shared.setLevel("up"), route.shared.audio.volume > 0.4, shared.setLevel("down"), near(route.shared.audio.volume, 0.4, 0.06)], ["", true, "", true]);
+        const kept2 = route.shared.audio.volume;
+        check("setLevel: refused values write nothing", [shared.setLevel("101"), shared.setLevel("-"), shared.setLevel(""), shared.setLevel("loud"), shared.setLevel("1000000"), shared.setLevel(undefined), route.shared.audio.volume], ["bad-level", "bad-level", "bad-level", "bad-level", "bad-level", "bad-level", kept2]);
+        check("setLevel: 0 and 100 are the ends", [shared.setLevel("0"), route.shared.audio.volume, shared.setLevel("100"), route.shared.audio.volume], ["", 0, "", 1]);
+        shared.setLevel(String(Math.round(kept * 100)));
+
         check("split: the general level is the loudest's", [split.shared, split.level], [false, 0.5]);
         split.set(0.8);
         check("split: every level is scaled, the gaps kept", [nodeA.audio.volume, nodeB.audio.volume, nodeC.audio.volume].map(v => Math.round(v * 100) / 100), [0.8, 0.64, 0.48]);
@@ -355,6 +365,7 @@ Item {
         check("no group: nothing is written", [shared.ready, route.shared.audio.volume], [false, level]);
         shared.toggleMute();
         check("no group: the speaker mutes nothing", route.shared.audio.muted, false);
+        check("no group: setLevel says why and writes nothing", [shared.setLevel("30"), shared.setLevel("up"), route.shared.audio.volume], ["no-group", "no-group", level]);
     }
 
     // A step that throws must fail the test, not leave it waiting for ever

@@ -92,7 +92,7 @@ eq("transport right under the device", Route.transportPath(flat, DEV), DEV + "/f
 eq("an endpoint is not a transport", Route.transportPath("/org/bluez\n" + DEV + "\n" + DEV + "/sep1\n", DEV), "");
 eq("no transport: no absolute volume", [Route.transportPath("/org/bluez\n" + DEV + "\n", DEV), Route.transportPath(tree, "/org/bluez/hci0/dev_x")], ["", ""]);
 eq("transport volume", [Route.transportVolume('{"type":"q","data":65}'), Route.transportVolume("oops"), Route.transportVolume('{"type":"q","data":300}')], [65, -1, -1]);
-eq("level notes say why", [Guide.levelNote("no-device").length > 0, Guide.levelNote("bad-level").indexOf("0 to 100") > 0], [true, true]);
+eq("level notes say why", [Guide.levelNote("no-device").length > 0, Guide.levelNote("bad-level").indexOf("0 to 100") > 0, Guide.levelNote("no-group").indexOf("together") > 0], [true, true, true]);
 // Polar vectorscope (D250, D254, D277): angles clockwise from the right, top = 270
 const one = Polar.slices(1)[0];
 eq("one outer arc is the whole half circle, lit from the left", [Polar.slices(1), Polar.arc(one, 0.5), Polar.arc(one, 2)], [[{ start: 180, end: 360, reverse: false }], { start: 180, sweep: 90 }, { start: 180, sweep: 180 }]);

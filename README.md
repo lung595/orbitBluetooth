@@ -202,6 +202,7 @@ dms ipc call orbitBluetooth unhideAll    # bring every hidden device back
 dms ipc call orbitBluetooth volume up    # up or down, with smart steps
 dms ipc call orbitBluetooth deviceVolume 40  # the device's own level: up, down or 0-100
 dms ipc call orbitBluetooth pcVolume -- -10  # this PC's level for it (a negative step needs --)
+dms ipc call orbitBluetooth togetherVolume 40  # the group's general volume (the ring at the center): up, down, 0-100 or +N / -N
 dms ipc call orbitBluetooth volumeKeys on    # on, off or status: your volume keys use smart steps
 dms ipc call orbitBluetooth together "AA:BB:CC:DD:EE:01 AA:BB:CC:DD:EE:02"  # listen together: 2 to 4 addresses, one quoted argument
 dms ipc call orbitBluetooth togetherAdd AA:BB:CC:DD:EE:03     # add one more output to the group
