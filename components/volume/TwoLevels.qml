@@ -93,12 +93,16 @@ Item {
     // One cava and one picture for every screen that shows them, only while
     // someone looks (`listening`, set by the caller): nothing runs at rest
     property bool listening: false
+    // cava may start (false during a burst of volume keys: the peak meter
+    // draws the picture until then, D272)
+    property bool steady: true
     // The PipeWire sink whose sound is shown
     property var soundNode: null
     ScopeFeed {
         id: soundFeed
         node: levels.soundNode
         active: levels.listening && !levels.reduceMotion && levels.style !== "none"
+        steady: levels.steady
         fps: levels.fps
     }
     readonly property alias picture: soundPicture
