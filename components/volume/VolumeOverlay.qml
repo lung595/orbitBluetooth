@@ -90,12 +90,9 @@ TwoLevels {
                 root.keysNote = "failed";
         }
     }
-    // Closing the pop-up lets the keys go back to the group (NAK-9)
-    onAnyShownChanged: if (!anyShown) {
-        keysNote = "";
-        if (route)
-            route.touch("");
-    }
+    // The keys keep their target when the pop-up closes (NAK-174)
+    onAnyShownChanged: if (!anyShown)
+        keysNote = ""
 
     // --- When to show -------------------------------------------------------------
     // A new output, or this PC's saved level coming back on its filter, is

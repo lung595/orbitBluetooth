@@ -169,8 +169,10 @@ Item {
     function writeLevel(node, level) {
         levelWriting();
         const before = node.audio.volume;
+        const reached = Route.levelNodes(together.sharedNodes, node);
+        reached.forEach(n => _wrote(n, level));
         Route.writeLevel(together.sharedNodes, node, level);
-        tick.play(Route.levelNodes(together.sharedNodes, node), before, level);
+        tick.play(reached, before, level);
     }
     // A level written to each of `nodes` on its own, unmuted: the group's
     // general level when the members keep their own levels (and their gaps),
@@ -178,6 +180,7 @@ Item {
     function writeLevels(nodes, levels, before, after) {
         levelWriting();
         nodes.forEach((n, i) => {
+            _wrote(n, levels[i]);
             n.audio.muted = false;
             n.audio.volume = levels[i];
         });
@@ -235,12 +238,12 @@ Item {
         return node && node.audio ? node : null;
     }
 
-    // --- The target of the keys (NAK-9) ---------------------------------------------
-    // The member whose own level was touched last, in the scope, the radar or
-    // a card; "" once the group's level (or none) was. It goes back to the
-    // group when the group ends, and when the pop-up closes (TwoLevels). It is
-    // also cleared when a group starts, so a touch made outside any group
-    // cannot apply to it later.
+    // --- The target of the keys (NAK-9, NAK-174) ------------------------------------
+    // The member whose own level was touched last: in the scope, the radar or a
+    // card, or with the headset's own buttons (MemberLevel); "" once the group's
+    // level (or none) was. It stays when the pop-up closes, and goes back to the
+    // group when the group ends. It is also cleared when a group starts, so a
+    // touch made outside any group cannot apply to it later.
     property string touched: ""
     function touch(address) {
         if (touched !== address)
@@ -250,6 +253,27 @@ Item {
         target: root.together
         function onActiveChanged() {
             root.touch("");
+        }
+    }
+
+    // The levels written lately, per node name, so that a change of a member's
+    // level is told apart: Orbit's and the keys' own writes come back as echoes,
+    // what is left comes from the headset (Target.fromHeadset). Written before
+    // the node moves: a node may report its change at once.
+    property var _written: ({})
+    function _wrote(node, level) {
+        _written = Target.expect(_written, node.name, level, Date.now());
+    }
+    // One watcher per member of a playing group, none otherwise: nothing
+    // listens while no group plays
+    Instantiator {
+        model: root.together.active ? root.together.members : []
+        delegate: MemberLevel {
+            required property string modelData
+            address: modelData
+            node: root.ownNode(modelData)
+            book: root._written
+            onHeard: a => root.touch(a)
         }
     }
 
