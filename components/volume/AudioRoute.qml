@@ -266,7 +266,13 @@ Item {
     function touch(address) {
         if (touched !== address)
             touched = address;
+        // The member the "last single device" choice keeps (NAK-258)
+        if (together.active && address && lastMember !== address)
+            lastMember = address;
     }
+    // The member touched last in this group, kept when the group's level is
+    // touched; cleared with `touched` when a group starts or ends
+    property string lastMember: ""
     // A level set from Orbit's own screens or the command line: in a group,
     // clears a member's target (the level is not a member's); outside one,
     // becomes the target. A device's PC level that is not the output you hear
@@ -283,6 +289,7 @@ Item {
         target: root.together
         function onActiveChanged() {
             root.touch("");
+            root.lastMember = "";
         }
     }
 
@@ -320,10 +327,10 @@ Item {
         onHeard: a => root.touch(a)
     }
 
-    // Who the keys move now: in a group the member touched last
-    // (Target.resolve), else the level touched last (Target.resolveAlone); ""
+    // Who the keys move now: in a group what "Volume keys with a group" says
+    // (Target.resolveGroup: by default the member touched last), else the level touched last (Target.resolveAlone); ""
     // for the group or the output you hear. The scope lights this member's arc.
-    readonly property string target: together.active ? Target.resolve(touched, together.members, a => !!ownNode(a)) : Target.resolveAlone(touched, a => !!ownNode(a), !!pcNode(current))
+    readonly property string target: together.active ? Target.resolveGroup(prefs ? prefs.groupKeys : "follow", touched, lastMember, together.members, a => !!ownNode(a)) : Target.resolveAlone(touched, a => !!ownNode(a), !!pcNode(current))
     // The device to mark on the radar: the target while it is not the output
     // you hear (Target.marked)
     readonly property string marked: together.active ? "" : Target.marked(target, current ? current.address : "")

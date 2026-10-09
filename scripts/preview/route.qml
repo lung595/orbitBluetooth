@@ -35,6 +35,7 @@ Window {
         property int volumeStep: 2
         property string volumeSpeed: "balanced"
         property int togetherFineDelay: 0
+        property string groupKeys: "follow"
     }
     AudioRoute {
         id: route

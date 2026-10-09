@@ -8,7 +8,7 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 - [The orbit](#the-orbit) · [If it does not connect](#if-it-does-not-connect) · [If it does not disconnect](#if-it-does-not-disconnect) · [Bluetooth is off](#bluetooth-is-off)
 - [The detail card](#the-detail-card)
 - [Long press](#long-press)
-- [The two volumes](#the-two-volumes) · [Separate PC volume](#separate-pc-volume) · [Orbit's tick only](#orbits-tick-only) · [Volume pop-up](#volume-pop-up) · [Smart volume steps](#smart-volume-steps) · [Volume keys](#volume-keys) · [What really plays](#what-really-plays)
+- [The two volumes](#the-two-volumes) · [Separate PC volume](#separate-pc-volume) · [Orbit's tick only](#orbits-tick-only) · [Volume pop-up](#volume-pop-up) · [Smart volume steps](#smart-volume-steps) · [Volume keys](#volume-keys) · [Volume keys with a group](#volume-keys-with-a-group) · [What really plays](#what-really-plays)
 - [Listen together](#listen-together) · [Create a group from the menu](#create-a-group-from-the-menu) · [Suggested groups](#suggested-groups) · [Learn my groups](#learn-my-groups) · [Forget what Orbit learned](#forget-what-orbit-learned) · [The source at the center](#the-source-at-the-center) · [Group icons](#group-icons) · [The volume at the center](#the-volume-at-the-center) · [Wired outputs](#wired-outputs) · [Wired outputs in the group](#wired-outputs-in-the-group) · [Pull a wired output out of the group](#pull-a-wired-output-out-of-the-group) · [Wired delay](#wired-delay) · [What it costs](#what-it-costs) · [Limits](#limits) · [Works with multipoint headsets](#works-with-multipoint-headsets) · [Two outputs, one radio](#two-outputs-one-radio)
 - [Earbuds: the trio](#earbuds-the-trio)
 - [Hiding devices: the black hole](#hiding-devices-the-black-hole)
@@ -214,6 +214,16 @@ How it works:
 With a [Listen together](#listen-together) group playing, the keys (and `dms ipc call orbitBluetooth volume up|down`) move **the last member whose own level you touched**: in the volume scope, on the radar or with the wheel over its planet, **or with the headset's own volume buttons**. Touch the group's level and they go back to the group; closing the volume pop-up changes nothing, the member stays the target. They also go back to the group when the group ends, when that member leaves, or when it has no level of its own (a device that follows this PC). Outside a group the keys follow the same rule, see [Outside a group](#outside-a-group) below.
 
 **Headset buttons.** Orbit does not poll anything: PipeWire already reports every change of a headset's level, and a change nobody asked Orbit for (the buttons) makes that member the target. What Orbit and the keys write themselves is remembered for half a second and ignored when it comes back, so pressing a key never picks a target by echo, and the first reading of a headset (the group starting, a reconnection) is not a change. This needs a headset with **absolute volume**, which reports its level to the PC; one that does not behaves as before, and only what you touch in Orbit picks the target. Moving a member's level from DMS's own slider counts as a touch too.
+
+#### Volume keys with a group
+
+**Settings > Sound > Volume keys with a group** chooses what the keys (and `dms ipc call orbitBluetooth volume up|down`, which follows the same choice) move while a group plays:
+
+- **Follow the last change** (default): the paragraph above, the level changed last, the group's or a member's.
+- **Always the group volume**: the keys move the group's general level, whoever was touched before.
+- **Always the last single device**: the keys move the member you touched last in this group, even after you moved the group's level. Until you touch one, or when it left the group or follows the PC's level, they move the group, so they never stop working.
+
+The choice applies to a group only; outside one the keys follow the last change as described below. It is kept with Orbit's other settings.
 
 #### Outside a group
 

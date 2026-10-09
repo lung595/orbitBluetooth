@@ -79,6 +79,7 @@ var SETTINGS = {
     "scopeFps": "int",
     "scopeStyle": ["points", "rays", "waves", "none"],
     "volumeSteps": ["smart", "fixed"],
+    "groupKeys": ["follow", "group", "device"],
     "volumeSpeed": ["gentle", "balanced", "fast"],
     "keysOffered": "bool",
     "keysGivenBack": "bool",
