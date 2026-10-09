@@ -324,4 +324,8 @@ TwoLevels {
     soundNode: dev ? dev.sink : Pipewire.defaultAudioSink
     listening: anyShown
     steady: _settled
+    // The audio facts (pactl, pw-dump) start with the action as cava does, so
+    // they wait for the end of a burst too (D272): the scope above draws
+    // from the peak meter meanwhile
+    looking: anyShown && _settled
 }
