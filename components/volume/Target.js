@@ -15,6 +15,29 @@ function resolve(touched, members, hasOwnLevel) {
     return hasOwnLevel(touched) ? touched : "";
 }
 
+// What the keys move while a group plays (NAK-258): "follow" the level changed
+// last (D379, the default), "group" always the group's, "device" always the
+// member touched last, whatever the group did since.
+var GROUP_KEYS = ["follow", "group", "device"];
+
+function groupKeysOf(value) {
+    return GROUP_KEYS.indexOf(value) < 0 ? GROUP_KEYS[0] : value;
+}
+
+// resolve() under the chosen `mode`. `lastMember` is the member touched last
+// in this group, kept even after the group's level was touched; with none yet
+// (or one that left) the keys fall back to the group, like resolve().
+function resolveGroup(mode, touched, lastMember, members, hasOwnLevel) {
+    switch (groupKeysOf(mode)) {
+    case "group":
+        return "";
+    case "device":
+        return resolve(lastMember, members, hasOwnLevel);
+    default:
+        return resolve(touched, members, hasOwnLevel);
+    }
+}
+
 // --- Outside a group (NAK-196, D379) -------------------------------------------
 // The keys follow the last level that changed: a device's own level (its
 // address) or this PC's level (PC). Nothing touched, or a level that is gone,

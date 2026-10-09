@@ -171,6 +171,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | Sound | Separate PC volume (the device's level and this PC's, [more](docs/GUIDE.md#separate-pc-volume)) | On |
 | | Steps: *Smart* or *Fixed* ([more](docs/GUIDE.md#smart-volume-steps)) / Speed-up / Step | Smart / Balanced / 5 % |
 | | Volume keys: *Give back to DMS* or *Use smart steps* (niri, Orbit's from the first start unless you give them back, [more](docs/GUIDE.md#volume-keys)) | Orbit's |
+| | Volume keys with a group: *Follow the last change*, *Always the group volume* or *Always the last single device* ([more](docs/GUIDE.md#volume-keys-with-a-group)) | Follow the last change |
 | | Volume pop-up: in the Dank Island, under the bar widget, right screen edge or off ([more](docs/GUIDE.md#volume-pop-up)) | In the Dank Island |
 | | Pop-up screens: *Where I am* (only the focused screen) or *Every screen* ([more](docs/GUIDE.md#volume-pop-up)) | Where I am |
 | | Pop-up size: Compact, Medium or Large | Medium |

@@ -22,6 +22,7 @@ Item {
         property int volumeStep: 5
         property string volumeSpeed: "balanced"
         property int togetherFineDelay: 0
+        property string groupKeys: "follow"
     }
     AudioRoute {
         id: route
@@ -120,6 +121,34 @@ Item {
         check("the group ends: back to the group", route.touched, "");
         a.audio.volume = 0.1;
         check("outside a group nobody listens", route.touched, "");
+
+        // "Volume keys with a group" (NAK-258): the keys and the volume command
+        // both go through stepHeard, which reads the target
+        a.audio.volume = 0.5;
+        b.audio.volume = 0.5;
+        route.together.members = [one, two];
+        const targets = () => ["follow", "group", "device"].map(m => {
+                prefs.groupKeys = m;
+                return route.target;
+            });
+        check("no change yet: all three keep the group", targets(), ["", "", ""]);
+        route.touch(one);
+        check("a device changed last: it, the group, it", targets(), [one, "", one]);
+        route.touch("");
+        check("the group changed last: the group, the group, the device", targets(), ["", "", one]);
+        route.touch(two);
+        route.touch("");
+        check("the device kept is the latest one touched", targets(), ["", "", two]);
+        prefs.groupKeys = "device";
+        route.stepHeard(1);
+        check("the keys move that device", [Math.round(a.audio.volume * 100), Math.round(b.audio.volume * 100)], [50, 55]);
+        prefs.groupKeys = "group";
+        route.touch(one);
+        route.stepHeard(1);
+        check("always the group: the keys never take a node alone", route.target, "");
+        prefs.groupKeys = "follow";
+        route.together.members = [];
+        check("the group ends: the kept member is forgotten", route.lastMember, "");
         Qt.exit(failures === 0 ? 0 : 1);
     }
 }

@@ -7,6 +7,7 @@ import "Hidden.js" as Hidden
 import "../volume/Audiophile.js" as Audiophile
 import "../volume/Polar.js" as Polar
 import "../volume/Steps.js" as Steps
+import "../volume/Target.js" as Target
 
 // Reactive view over the plugin's saved settings, shared by every surface.
 QtObject {
@@ -132,6 +133,10 @@ QtObject {
     // How fast smart steps grow: "gentle", "balanced" or "fast"
     readonly property string volumeSpeed: Steps.speedOf(_get("volumeSpeed", "balanced"))
     readonly property int volumeStep: Steps.fixedStep(_get("volumeStep", 5))
+
+    // What the volume keys move while a group plays (NAK-258): "follow" the
+    // last change, "group" or "device"
+    readonly property string groupKeys: Target.groupKeysOf(_get("groupKeys", "follow"))
 
     // What the output is (D260): which facts show on the card's line
     // (factCard_<key>) and in the unfolded detail (factMore_<key>)

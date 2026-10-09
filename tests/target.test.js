@@ -1,7 +1,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const Target = load("Target.js", ["resolve", "resolveAlone", "marked", "PC", "SETTLE_MS", "expect", "isEcho", "fromHeadset", "settled"]);
+const Target = load("Target.js", ["resolve", "resolveAlone", "marked", "PC", "SETTLE_MS", "expect", "isEcho", "fromHeadset", "settled", "GROUP_KEYS", "groupKeysOf", "resolveGroup"]);
 
 const members = ["AA:01", "AA:02", "alsa_output.usb"];
 const all = () => true;
@@ -13,6 +13,21 @@ eq("a member that left: the group", Target.resolve("AA:09", members, all), "");
 eq("a member without its own level: the group", Target.resolve("AA:01", members, id => id !== "AA:01"), "");
 eq("no group left: the group", Target.resolve("AA:01", [], all), "");
 eq("bad input never throws", [Target.resolve(null, members, all), Target.resolve("AA:01", null, all), Target.resolve(undefined, undefined, all)], ["", "", ""]);
+
+// The keys' choice with a group (NAK-258). `touched` is what the group's level
+// clears; `last` is the member touched last, kept.
+eq("choices: follow is first, so the default", Target.GROUP_KEYS, ["follow", "group", "device"]);
+eq("choices: anything else is follow", [Target.groupKeysOf(""), Target.groupKeysOf(null), Target.groupKeysOf("x"), Target.groupKeysOf("device")], ["follow", "follow", "follow", "device"]);
+for (const [what, touched, last, want] of [
+    ["group changed last", "", "AA:02", ["", "", "AA:02"]],
+    ["a device changed last", "AA:02", "AA:02", ["AA:02", "", "AA:02"]],
+    ["no change yet", "", "", ["", "", ""]],
+])
+    eq(what + ": follow, group, device", ["follow", "group", "device"].map(m => Target.resolveGroup(m, touched, last, members, all)), want);
+eq("device choice: the member left, the group", Target.resolveGroup("device", "", "AA:09", members, all), "");
+eq("device choice: no level of its own, the group", Target.resolveGroup("device", "", "AA:01", members, id => id !== "AA:01"), "");
+eq("an unknown choice follows", Target.resolveGroup("x", "AA:02", "AA:01", members, all), "AA:02");
+eq("bad input never throws", [Target.resolveGroup("device", null, null, null, all), Target.resolveGroup(undefined, undefined, undefined, undefined, all)], ["", ""]);
 
 // Outside a group (NAK-196)
 const here = a => a === "AA:01" || a === "AA:02";

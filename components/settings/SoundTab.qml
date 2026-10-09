@@ -107,6 +107,27 @@ Column {
 
     VolumeKeysRow {}
 
+    SelectionSetting {
+        settingKey: "groupKeys"
+        label: "Volume keys with a group"
+        description: "What the volume keys, and the volume command, change while a group plays: the level changed last, always the group's, or always the member changed last"
+        options: [
+            {
+                label: "Follow the last change",
+                value: "follow"
+            },
+            {
+                label: "Always the group volume",
+                value: "group"
+            },
+            {
+                label: "Always the last single device",
+                value: "device"
+            }
+        ]
+        defaultValue: "follow"
+    }
+
     // --- Volume pop-up -------------------------------------------------------------
     Section {
         text: "Volume pop-up"
