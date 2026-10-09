@@ -1,13 +1,13 @@
 // Volumes: the tick, the two levels' routing, the vectorscope, smart steps, volume keys.
 // Run from the plugin root: gjs tests/volume.test.js (or every file: sh tests/run.sh)
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
-const { load, eq, done } = imports.lib;
+const { load, eq, done, GLib } = imports.lib;
 
 const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNote", "stuckNote", "levelNote"]);
 const Volume = load("Volume.js", ["clamp", "step", "validSink", "stepSize", "stepsCrossed", "queued", "tickSinks", "MAX_TICKS", "TICK_MS", "MAX_QUEUE", "IDLE_MS"]);
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "slices", "sliceAt", "partOf", "indexOf", "arc", "end", "point", "angleOf", "valueAt", "zone", "wheelPart", "iconSpot", "legendSpot", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
-const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded", "note"]);
+const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "restoreArgs", "isOrbit", "classify", "succeeded", "note"]);
 const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "loopbackArgs", "filterArgs", "muteTarget", "levelNodes", "writeLevel", "writeMuted", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "popupScreen", "shownLevels"]);
 
 // --- Volume tick (Volume.js) ------------------------------------------------------
@@ -247,7 +247,27 @@ eq("one level, this PC's (not Bluetooth, or no own volume)", [Route.shownLevels(
     eq("undo writes DMS's own action back", Keys.backArgs("down", 5), ["dms", "keybinds", "set", "niri", "XF86AudioLowerVolume", "spawn dms ipc call audio decrement 5", "--allow-when-locked", "--json"]);
     eq("DMS's action, step kept in 1..20", [Keys.dmsAction("up", 3), Keys.dmsAction("up", 0)], ["spawn dms ipc call audio increment 3", "spawn dms ipc call audio increment 3"]);
     eq("only a success answer counts", [Keys.succeeded('{"success":true}'), Keys.succeeded('{"success":false}'), Keys.succeeded(""), Keys.succeeded("null")], [true, false, false, false]);
-    eq("notes", [Keys.note("offer").action, Keys.note("done").action, Keys.note("nope")], ["Enable", "Undo", null]);
+    eq("notes: the keys are told as taken, with the way back", [Keys.note("done").action, Keys.note("offer"), Keys.note("nope")], ["Undo", null, null]);
+    // The uninstall gives the keys back from memory, in one detached command
+    eq("nothing to give back when no key is Orbit's", [Keys.restoreArgs([], {}), Keys.restoreArgs(null, {})], [[], []]);
+    eq("the give-back data is positional, never in the script", Keys.restoreArgs(["up", "down"], { up: 5, down: 2 }),
+        ["sh", "-c", Keys.RESTORE_SCRIPT, "orbit", "XF86AudioRaiseVolume", "spawn dms ipc call audio increment 5", "XF86AudioLowerVolume", "spawn dms ipc call audio decrement 2"]);
+    {
+        // Run it for real against a fake `dms` that records its arguments
+        const dir = GLib.dir_make_tmp("orbit-keys-XXXXXX");
+        const log = dir + "/log";
+        GLib.file_set_contents(dir + "/dms", '#!/bin/sh\nprintf \'%s|\' "$@" >> "' + log + '"\nprintf \'\\n\' >> "' + log + '"\n');
+        GLib.chmod(dir + "/dms", 0o755);
+        const argv = Keys.restoreArgs(["up", "down"], { up: 5, down: 2 });
+        const [ok] = GLib.spawn_sync(null, argv, ["PATH=" + dir + ":/usr/bin:/bin"], GLib.SpawnFlags.SEARCH_PATH, null);
+        const lines = new TextDecoder().decode(GLib.file_get_contents(log)[1]).trim().split("\n");
+        eq("the uninstall sets each key back to DMS's own step, one after the other", [ok, lines], [true, [
+            "keybinds|set|niri|XF86AudioRaiseVolume|spawn dms ipc call audio increment 5|--allow-when-locked|--json|",
+            "keybinds|set|niri|XF86AudioLowerVolume|spawn dms ipc call audio decrement 2|--allow-when-locked|--json|"]]);
+        GLib.unlink(dir + "/dms");
+        GLib.unlink(log);
+        GLib.rmdir(dir);
+    }
 }
 
 done();

@@ -3,12 +3,17 @@ import Quickshell.Io
 import qs.Services
 import "Keys.js" as Keys
 
-// The volume keys and Orbit's smart steps (D265): reads what the two keys
-// do, binds them to Orbit when the user clicks "Enable" and gives them back
-// to DMS's own action on "Undo", through DMS's own `dms keybinds` command (argument
-// lists only). Runs a command only when asked: nothing at rest.
+// The volume keys and Orbit's smart steps (D265, NAK-214): reads what the two
+// keys do, binds them to Orbit (`claim` at the daemon's start, `enable` on the
+// user's word) and gives them back to DMS's own action, through DMS's own
+// `dms keybinds` command (argument lists only). The user's "give back" is
+// remembered so that Orbit never takes the keys again by itself. Runs a
+// command only at start or when asked: nothing at rest.
 Item {
     id: root
+
+    // The plugin's settings (Prefs): where "given back" is remembered
+    required property var prefs
 
     // "unsupported" (not niri), "unknown" (not read yet or unreadable),
     // "dms" (DMS's default: can be offered), "orbit" or "custom" (the
@@ -17,6 +22,12 @@ Item {
     readonly property bool busy: _queue.length > 0 || show.running || run.running
     // Last failure, for a short message (value 10)
     property bool failed: false
+    // The step and key of every bind that is Orbit's, to give back for an
+    // uninstall (UninstallSweep), which cannot read them once Orbit is gone
+    readonly property var restore: Keys.restoreArgs(_mine, _back)
+
+    // The keys were just bound by `claim`, once the read confirms it
+    signal claimed
 
     property int _step: Keys.FALLBACK_STEP
     property var _mine: []
@@ -24,6 +35,7 @@ Item {
     property var _queue: []
     // Called once after the next read
     property var _then: null
+    property bool _claiming: false
 
     function refresh(then) {
         if (!CompositorService.isNiri) {
@@ -38,16 +50,33 @@ Item {
     }
 
     // Points both keys at Orbit, only if they still do DMS's default
-    function enable() {
+    function _bind(announce) {
         refresh(() => {
             if (root.keys !== "dms")
                 return;
+            root._claiming = announce;
             root._run([Keys.setArgs("up", root._step), Keys.setArgs("down", root._step)]);
         });
     }
 
-    // Gives back to DMS, with its own step, every key still bound to Orbit
+    // At the first start: the keys are Orbit's by default, unless the user
+    // gave them back (remembered) or has a shortcut of their own
+    function claim() {
+        if (prefs.keysGivenBack)
+            return;
+        _bind(true);
+    }
+
+    // The user asks for them (a button, the command line): forget a give-back
+    function enable() {
+        prefs.set("keysGivenBack", false);
+        _bind(false);
+    }
+
+    // Gives back to DMS, with its own step, every key still bound to Orbit,
+    // and remembers it
     function disable() {
+        prefs.set("keysGivenBack", true);
         refresh(() => {
             if (root._mine.length > 0)
                 root._run(root._mine.map(d => Keys.backArgs(d, root._back[d])));
@@ -61,7 +90,12 @@ Item {
     }
     function _next() {
         if (_queue.length === 0) {
-            refresh();
+            const tell = _claiming;
+            _claiming = false;
+            refresh(tell ? () => {
+                if (root.keys === "orbit")
+                    root.claimed();
+            } : null);
             return;
         }
         run.command = _queue[0];

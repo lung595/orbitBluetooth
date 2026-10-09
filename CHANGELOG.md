@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## Unreleased
 
+### Changed
+
+- **The volume keys are Orbit's from the first start (NAK-214).** On a fresh install they stayed DMS's own (`dms ipc call audio increment`), which move the default output, so after a change on another device (the headset's buttons, a slider, `wpctl`) they did not follow the last device whose volume changed, until *Use smart steps* was clicked. Now Orbit asks DMS (`dms keybinds`) to bind them at its first start, with no click, on niri only; the DMS step they had is kept as the fallback. It leaves alone a shortcut of your own and does nothing when you gave the keys back: *Give back to DMS*, *Undo* and `volumeKeys off` are remembered (new setting `keysGivenBack`, listed in Privacy), `volumeKeys on` and *Use smart steps* forget it. Uninstalling Orbit now puts DMS's own lines back (with their step), also when the shell stops with the plugin. The volume scope says it once (*Smart volume keys on · Undo*) instead of offering it. Cost: one `dms keybinds show` at the first start and at most two `set`, nothing at rest. Tests: `tests/qml/volumeKeys.test.qml` (fresh start binds, give-back survives a restart, own shortcut left alone, refusal said) and the give-back run against a fake `dms` in `tests/volume.test.js`. [Guide](docs/GUIDE.md#volume-keys)
+
 ### Added
 
 - **`togetherVolume`: the group's general volume from the command line.** `dms ipc call orbitBluetooth togetherVolume <up|down|0-100|+N|-N>` sets the level the ring around the center moves, with the same smart steps for `up`/`down` and the same scope (the shared PC level, or every output scaled with its gaps kept, nobody past 100 %). The value is validated and capped; with no group it answers *No group is playing* and writes nothing. The group's level logic moved out of `CentreVolume` into the display-free `GroupVolume.qml`, which the ring, the wheel and the command share (`CentreVolume` keeps the wheel over a member); `tests/qml/centre.test.qml` covers the command. Per-action cost: to be measured offscreen. [Guide](docs/GUIDE.md#the-volume-at-the-center)

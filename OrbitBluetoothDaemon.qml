@@ -38,6 +38,8 @@ Item {
     // Uninstalling erases what DMS keeps for the plugin (value 12, D259)
     UninstallSweep {
         pluginId: root.pluginId
+        // The volume keys go back to DMS's own action with the plugin
+        restore: keyBinder.restore
     }
 
     // Noise control (ANC) for headphones: address -> helper snapshot
@@ -91,9 +93,12 @@ Item {
     }
 
     // The pop-up that shows both levels whenever one changes (D252, D258)
-    // The volume keys and Orbit's smart steps, on the user's click (D265)
+    // The volume keys and Orbit's smart steps: Orbit's from the first start
+    // unless the user gave them back (D265, NAK-214)
     VolumeKeys {
         id: keyBinder
+        prefs: prefs
+        Component.onCompleted: claim()
     }
 
     VolumeOverlay {

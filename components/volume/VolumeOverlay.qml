@@ -48,41 +48,39 @@ TwoLevels {
     // card, HDMI): then only this PC's half circle shows (D258)
     dev: route.current
 
-    // --- The volume keys, offered once (D265) ------------------------------------------
-    // The first time the scope shows, a one-line note offers to bind the
-    // volume keys to Orbit. Nothing changes without the user's click, and
-    // the note never comes back.
+    // --- The volume keys, told once (D265, NAK-214) ------------------------------------
+    // The keys are Orbit's from the first start (VolumeKeys.claim). The first
+    // time the scope shows after that, a one-line note says so, with the
+    // click that gives them back. It never comes back.
     property string keysNote: ""
     readonly property var note: Keys.note(keysNote)
-    property bool _offered: false
-    function _offerKeys() {
-        if (!keys || prefs.keysOffered || _offered)
+    function _tellKeys() {
+        if (!keys)
             return;
-        _offered = true;
-        keys.refresh(() => {
-            const k = root.keys.keys;
-            if (k === "dms")
-                root.keysNote = "offer";
-            else if (k === "unsupported")
-                root.keysNote = "manual";
-            // Unreadable: try again next session
-            if (k !== "unknown")
-                root.prefs.set("keysOffered", true);
-        });
+        // A refusal is never silent (value 10): said at each opening
+        if (keys.failed) {
+            keysNote = "failed";
+            return;
+        }
+        if (prefs.keysOffered)
+            return;
+        const k = keys.keys;
+        if (k === "orbit")
+            keysNote = "done";
+        else if (k === "unsupported")
+            keysNote = "manual";
+        // Not read yet, or the user's own shortcut: nothing to say, try later
+        if (keysNote !== "")
+            prefs.set("keysOffered", true);
     }
     function noteAction() {
-        if (keysNote === "offer")
-            keys.enable();
-        else if (keysNote === "done")
+        if (keysNote === "done")
             keys.disable();
     }
     Connections {
         target: root.keys
         function onKeysChanged() {
-            const k = root.keys.keys;
-            if (k === "orbit" && (root.keysNote === "offer" || root.keysNote === "undone"))
-                root.keysNote = "done";
-            else if (k === "dms" && root.keysNote === "done")
+            if (root.keys.keys === "dms" && root.keysNote === "done")
                 root.keysNote = "undone";
         }
         function onFailedChanged() {
@@ -118,7 +116,7 @@ TwoLevels {
         onTriggered: root._settled = true
     }
     function _showAll() {
-        _offerKeys();
+        _tellKeys();
         _target = Route.popupScreen(prefs.popupScreens, CompositorService.getFocusedScreen()?.name ?? "", screens.map(s => s.name));
         const inIsland = _showInIslands();
         const list = popups.instances;
