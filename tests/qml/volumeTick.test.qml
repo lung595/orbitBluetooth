@@ -37,7 +37,7 @@ Item {
         return ProcessLog.live.filter(p => p.running);
     }
     function sinks() {
-        return started().map(p => p.command[4]);
+        return started().map(p => p.command[3]);
     }
     // How many ticks were sent to the players, in all
     function ticks() {
@@ -63,7 +63,7 @@ Item {
         tick.play([node("bluez_output.AA_01.1")], 0.5, 0.55);
         check("one output: the tick is in that sink only", h.sinks(), ["bluez_output.AA_01.1"]);
         const run = started()[0].command;
-        check("the shipped helper and sound, no shell", [run[0], run[3].endsWith("tick/orbit_tick.py"), run[5].endsWith("sounds/volume.wav"), run.length], ["python3", true, true, 6]);
+        check("the shipped helper and sound, no shell", [run[0], run[1], run[2].endsWith("tick/orbit_tick.py"), run[4].endsWith("sounds/volume.wav"), run.length], ["python3", "-I", true, true, 5]);
         check("and the tick is a line on its input", started()[0].written, ["t\n"]);
 
         h.settle();

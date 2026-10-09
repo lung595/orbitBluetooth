@@ -36,7 +36,7 @@ for tool in qml6 qml-qt6 qml /usr/lib64/qt6/bin/qml; do
         out="$work/out.txt"
         for test in "$work"/*"${1:-}"*.test.qml; do
             status=0
-            "$tool" -I "$root/scripts/preview/imports" -I "$here/stubs" "$test" >"$out" 2>&1 || status=$?
+            timeout 120 "$tool" -I "$root/scripts/preview/imports" -I "$here/stubs" "$test" >"$out" 2>&1 || status=$?
             cat "$out"
             [ "$status" -eq 0 ] || exit "$status"
             # A QML warning or TypeError fails the test too: print() lines
