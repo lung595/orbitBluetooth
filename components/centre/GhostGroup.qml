@@ -3,13 +3,15 @@ import QtQuick.Shapes
 import qs.Common
 import qs.Widgets
 import "../device"
+import "../scene"
+import "../scene/Hold.js" as Hold
 import "../scene/Physics.js" as Physics
 import "Centre.js" as Centre
 
 // The ghost group, drawn (D298): a dotted, translucent planet on the host's
 // ring, as big and where the group would be, with the names it would put
-// together under it and a small cross. A click makes it a group, a right click
-// or the cross turns it down; OrbitGhost decides and answers. The dotted ring
+// together under it and a small cross. A click makes it a group, a right click,
+// a press held 500 ms or the cross turns it down; OrbitGhost decides and answers. The dotted ring
 // is painted once, at the group's size on the nearest point, and the ring's
 // drift only carries and scales it (nothing is painted again). Nothing here
 // animates: its coming and going is OrbitGhost's presence, stepped by the
@@ -99,7 +101,8 @@ Item {
         opacity: view.ghost.presence * (view.hovered ? 1 : 0.85)
     }
 
-    // A click makes it a group, a right click turns it down. The zone is the
+    // A click makes it a group, a right click or a press held 500 ms (D368) turns it
+    // down. The zone is the
     // disc, and never smaller than a planet's (Physics.HIT_MIN): far away on the
     // ring it is as easy to click as a near one.
     MouseArea {
@@ -117,7 +120,37 @@ Item {
                 return Math.hypot(point.x - pick.width / 2, point.y - pick.height / 2) <= pick.width / 2;
             }
         }
-        onClicked: m => m.button === Qt.RightButton ? view.ghost.decline() : view.ghost.accept()
+        // Set by the release that ends a long press, read by the click it is followed by
+        property bool spent: false
+        property point pressAt
+
+        HoldRing {
+            id: hold
+            night: view.night
+            onHeld: view.ghost.decline()
+        }
+        onEnabledChanged: if (!enabled)
+            hold.cancel()
+        onPressed: m => {
+            pressAt = Qt.point(m.x, m.y);
+            spent = false;
+            if (m.button === Qt.LeftButton)
+                hold.begin();
+        }
+        onPositionChanged: m => {
+            if (Hold.moved(pressAt, Qt.point(m.x, m.y)))
+                hold.cancel();
+        }
+        onReleased: {
+            spent = hold.fired;
+            hold.cancel();
+        }
+        onCanceled: hold.cancel()
+        onClicked: m => {
+            if (spent)
+                return;
+            m.button === Qt.RightButton ? view.ghost.decline() : view.ghost.accept();
+        }
     }
 
     // The cross: not this group again until the shell ends

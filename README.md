@@ -108,6 +108,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 | Drag a device inside the inner ring | Pair and connect |
 | Drag a connected device outward | Disconnect (a device of a listening group only leaves the group) |
 | Click a device | Open its detail card |
+| Hold the press 500 ms on a device, a wired output of a group or the dotted *ghost planet* | Same as a right click (its menu; for the ghost planet, turn it down): a ring fills while you hold, moving past 5 px picks the device up instead; it works with touch ([more](docs/GUIDE.md#long-press)) |
 | Scroll over a half circle, its icon or its percentage, or drag a moon | That level: the device's or this PC's, with smart steps; a soft tick plays in that device at each step, every 1 % by default ([more](docs/GUIDE.md#the-two-volumes)) |
 | Click the planet of an open audio device | Mute or unmute |
 | Drag a connected audio device onto another (or onto any device already in the group) | Listen together: the same sound on both, up to 4 outputs ([more](docs/GUIDE.md#listen-together)) |

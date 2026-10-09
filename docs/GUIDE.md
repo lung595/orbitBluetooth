@@ -7,6 +7,7 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 - [Widgets](#widgets)
 - [The orbit](#the-orbit) · [If it does not connect](#if-it-does-not-connect) · [If it does not disconnect](#if-it-does-not-disconnect) · [Bluetooth is off](#bluetooth-is-off)
 - [The detail card](#the-detail-card)
+- [Long press](#long-press)
 - [The two volumes](#the-two-volumes) · [Separate PC volume](#separate-pc-volume) · [Orbit's tick only](#orbits-tick-only) · [Volume pop-up](#volume-pop-up) · [Smart volume steps](#smart-volume-steps) · [Volume keys](#volume-keys) · [What really plays](#what-really-plays)
 - [Listen together](#listen-together) · [Create a group from the menu](#create-a-group-from-the-menu) · [Suggested groups](#suggested-groups) · [Learn my groups](#learn-my-groups) · [Forget what Orbit learned](#forget-what-orbit-learned) · [The source at the center](#the-source-at-the-center) · [Group icons](#group-icons) · [The volume at the center](#the-volume-at-the-center) · [Wired outputs](#wired-outputs) · [Wired outputs in the group](#wired-outputs-in-the-group) · [Pull a wired output out of the group](#pull-a-wired-output-out-of-the-group) · [Wired delay](#wired-delay) · [What it costs](#what-it-costs) · [Limits](#limits) · [Works with multipoint headsets](#works-with-multipoint-headsets) · [Two outputs, one radio](#two-outputs-one-radio)
 - [Earbuds: the trio](#earbuds-the-trio)
@@ -98,6 +99,18 @@ Click any device to open it: its glyph flies onto the card.
 - **Forget** unpairs the device (BlueZ removes it) and clears what Orbit kept about it: its icon choice and a *Don't offer again* mark, so it can be offered as new next time. Also in the right-click menu: **Forget**, then click again to confirm.
 - **Battery gauge, session chart and stats** (see [Charging and battery](#charging-and-battery)).
 - The **earbuds trio** and **noise control** when the device supports them.
+
+## Long press
+
+A press held for half a second does what a right click does, so everything in the right-click menu is within reach without a right button, and on a touch screen. Hold the press on:
+
+- a **device**: its menu opens (connect, noise control, create a group, hide…);
+- a **wired output of a group** (the rounded square): its menu opens;
+- the dotted **ghost planet** of a suggested group: it is turned down, as with a right click ([Suggested groups](#suggested-groups)).
+
+A ring fills around the thing under your finger or pointer while you hold. Let go early and it is a plain click. Move more than 5 px and the hold is cancelled: a device is picked up for a drag as usual, so carrying one onto another to listen together is unchanged. When the menu opens, the release that follows is not a click. While a menu is open, any press closes it, as a right click does. It works in the bar's popout and in the Control Center, wherever right click does.
+
+Nothing runs until you press: a 30 Hz timer lives only for the half second of the hold.
 
 ## The two volumes
 
