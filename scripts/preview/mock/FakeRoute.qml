@@ -10,6 +10,9 @@ QtObject {
     property var focusDevice: null
     // True: the headset has no level of its own and follows the PC volume
     property bool follow: false
+    // The device the volume keys move while it is not the output you hear
+    // (AudioRoute.marked), "" for none
+    property string marked: ""
 
     readonly property var headset: ({
             "address": "02:00:00:00:10:06",

@@ -61,6 +61,7 @@ Item {
             levels: root.prefs ? root.prefs.pcLevels : ({})
             saveLevel: (address, level) => root._saveLevel(address, level)
             onChanged: root._refresh()
+            onLevelRestoring: (node, level) => root._wrote(node, level)
             onFilterReady: root.together.realign(address)
         }
 
@@ -98,6 +99,10 @@ Item {
                 };
         }
         publish(map);
+        // A device that left is no target any more (the keys went back to the
+        // output you hear), and must not come back by itself when it returns
+        if (!together.active && touched && touched !== Target.PC && !ownNode(touched))
+            touch("");
     }
 
     // Connected devices that play sound, the one in use first
@@ -199,12 +204,16 @@ Item {
             return which === "device" ? (dev ? "no-own-volume" : "no-device") : "no-pc-level";
         const a = String(arg === undefined || arg === null ? "" : arg).trim().toLowerCase();
         if (a === "up" || a === "down") {
+            if (!together.active)
+                touchLevel(which, dev);
             stepNode(node, a === "up" ? 1 : -1);
             return "";
         }
         const level = Route.ipcLevel(arg, node.audio.volume);
         if (level < 0)
             return "bad-level";
+        if (!together.active)
+            touchLevel(which, dev);
         writeLevel(node, level);
         return "";
     }
@@ -238,16 +247,30 @@ Item {
         return node && node.audio ? node : null;
     }
 
-    // --- The target of the keys (NAK-9, NAK-174) ------------------------------------
-    // The member whose own level was touched last: in the scope, the radar or a
-    // card, or with the headset's own buttons (HeadsetLevelWatch); "" once the group's
-    // level (or none) was. It stays when the pop-up closes, and goes back to the
-    // group when the group ends. It is also cleared when a group starts, so a
-    // touch made outside any group cannot apply to it later.
+    // --- The target of the keys (NAK-9, NAK-174, NAK-196) ---------------------------
+    // The level touched last: in a group, a member's own (in the scope, the
+    // radar or a card, or with the headset's own buttons, HeadsetLevelWatch),
+    // "" once the group's level (or none) was. Outside a group, a device's own
+    // level (its address) or this PC's (Target.PC), set in Orbit or moved by
+    // the headset's buttons or by anything else on the PC. It stays when the
+    // pop-up closes, and is cleared when a group starts or ends, so a touch
+    // made in one cannot apply to the other.
     property string touched: ""
     function touch(address) {
         if (touched !== address)
             touched = address;
+    }
+    // A level set from Orbit's own screens or the command line: in a group,
+    // clears a member's target (the level is not a member's); outside one,
+    // becomes the target. A device's PC level that is not the output you hear
+    // keeps the target as it is: its keys never move it.
+    function touchLevel(which, dev) {
+        if (together.active)
+            touch("");
+        else if (which === "device")
+            touch(dev ? dev.address : "");
+        else if (!dev || dev === current)
+            touch(Target.PC);
     }
     Connections {
         target: root.together
@@ -261,35 +284,50 @@ Item {
     // what is left comes from the headset (Target.fromHeadset). Written before
     // the node moves: a node may report its change at once.
     property var _written: ({})
+    // How long a node just read is left alone before its changes count
+    // (Target.settled); a test sets 0
+    property int settleMs: Target.SETTLE_MS
     function _wrote(node, level) {
         _written = Target.expect(_written, node.name, level, Date.now());
     }
-    // One watcher per member of a playing group, none otherwise: nothing
-    // listens while no group plays
+    // One watcher per member of a playing group; outside one, one per
+    // connected device with a level of its own and one for this PC's level.
+    // PipeWire reports the changes, so nothing polls.
     Instantiator {
-        model: root.together.active ? root.together.members : []
+        model: root.together.active ? root.together.members : root._playing
         delegate: HeadsetLevelWatch {
             required property string modelData
             address: modelData
             node: root.ownNode(modelData)
             book: root._written
+            settleMs: root.together.active ? 0 : root.settleMs
             onHeard: a => root.touch(a)
         }
     }
+    readonly property var _playing: Object.keys(_devices).filter(a => !!_devices[a].sink)
+    HeadsetLevelWatch {
+        address: Target.PC
+        node: root.together.active ? null : root.pcNode(root.current)
+        book: root._written
+        settleMs: root.settleMs
+        onHeard: a => root.touch(a)
+    }
 
-    // Who the keys move now: the member touched last while a group plays
-    // (Target.resolve), "" for the group or the output you hear. The scope
-    // lights this member's arc.
-    readonly property string target: together.active ? Target.resolve(touched, together.members, a => !!ownNode(a)) : ""
+    // Who the keys move now: in a group the member touched last
+    // (Target.resolve), else the level touched last (Target.resolveAlone); ""
+    // for the group or the output you hear. The scope lights this member's arc.
+    readonly property string target: together.active ? Target.resolve(touched, together.members, a => !!ownNode(a)) : Target.resolveAlone(touched, a => !!ownNode(a), !!pcNode(current))
+    // The device to mark on the radar: the target while it is not the output
+    // you hear (Target.marked)
+    readonly property string marked: together.active ? "" : Target.marked(target, current ? current.address : "")
 
     // The volume keys (`dms ipc call orbitBluetooth volume up|down`): the
-    // target above, else the output you hear, Bluetooth or not. Never another
-    // device: with the sound on a wired output, a connected headset must not
-    // move (P136)
+    // target above, else the output you hear, Bluetooth or not. With no
+    // target, never another device: with the sound on a wired output, a
+    // connected headset must not move (P136)
     function stepHeard(dir) {
-        const member = target;
         const dev = current;
-        const node = member ? ownNode(member) : (deviceNode(dev) || pcNode(dev));
+        const node = target === Target.PC ? pcNode(dev) : target ? ownNode(target) : (deviceNode(dev) || pcNode(dev));
         if (!node || !node.audio)
             return "no-pc-level";
         stepNode(node, dir);

@@ -160,11 +160,14 @@ Item {
         const i = Polar.indexOf(part);
         return i >= 0 && i < _memberNodes.length ? _memberNodes[i] : null;
     }
-    // The keys follow the member whose arc was touched last (AudioRoute.touched);
-    // this PC's level, or the one device's, is not a member's
+    // The keys follow the level touched last (AudioRoute.touched): a member's
+    // arc in a group, else this PC's level or the device's own
     function _touch(part) {
         const i = split ? Polar.indexOf(part) : -1;
-        route.touch(i >= 0 ? memberAddresses[i] : "");
+        if (i >= 0)
+            route.touch(memberAddresses[i]);
+        else
+            route.touchLevel(part, dev);
     }
     function setLevel(part, level) {
         const node = _node(part);

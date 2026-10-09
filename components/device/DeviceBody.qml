@@ -213,6 +213,15 @@ BodyState {
             body: body
         }
 
+        // The device the volume keys move, while it is not the output you hear
+        Loader {
+            anchors.fill: parent
+            active: !!body.scene.audioRoute && body.scene.audioRoute.marked === body.address
+            sourceComponent: TargetMark {
+                body: body
+            }
+        }
+
         // A copy's own level while the pointer is on it (OrbitCentre)
         Loader {
             anchors.centerIn: parent

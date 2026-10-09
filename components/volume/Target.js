@@ -15,6 +15,34 @@ function resolve(touched, members, hasOwnLevel) {
     return hasOwnLevel(touched) ? touched : "";
 }
 
+// --- Outside a group (NAK-196, D379) -------------------------------------------
+// The keys follow the last level that changed: a device's own level (its
+// address) or this PC's level (PC). Nothing touched, or a level that is gone,
+// leaves the keys on the output you hear.
+
+// The token for this PC's level; no Bluetooth address or node name is "pc"
+var PC = "pc";
+// How long a node that has just appeared is left alone (settled)
+var SETTLE_MS = 1500;
+
+// The level to move, or "" for the output you hear. `hasOwnLevel(address)`
+// is whether that device is connected with a level of its own, `hasPcLevel`
+// whether this PC's level can be moved. A device that left, or one that
+// follows the PC, falls back so the keys never stop working.
+function resolveAlone(touched, hasOwnLevel, hasPcLevel) {
+    if (!touched)
+        return "";
+    if (touched === PC)
+        return hasPcLevel ? PC : "";
+    return hasOwnLevel(touched) ? touched : "";
+}
+
+// The device to mark: the target when it is not the output you hear. This
+// PC's level is the output's own, so it is never marked.
+function marked(target, heardAddress) {
+    return target && target !== PC && target !== heardAddress ? target : "";
+}
+
 // --- A level changed by the headset's own buttons (NAK-174) -------------------
 // A headset with absolute volume reports its buttons to PipeWire, which moves
 // the node's volume with nobody asking Orbit. The same node also moves when
@@ -50,4 +78,12 @@ function fromHeadset(book, key, seen, level, now) {
     if (typeof seen !== "number" || isNaN(seen) || Math.abs(level - seen) < 0.001)
         return false;
     return !isEcho(book, key, level, now);
+}
+
+// Whether a node has been read for `settleMs` already. A device that has just
+// connected reports its level on its own (and WirePlumber restores one):
+// outside a group that is not the user choosing it, so the first moments only
+// refresh the starting point (NAK-196).
+function settled(readyAt, now, settleMs) {
+    return now - readyAt >= (settleMs || 0);
 }
