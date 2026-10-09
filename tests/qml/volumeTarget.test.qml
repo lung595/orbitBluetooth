@@ -43,6 +43,16 @@ Item {
         check("an unknown member has no own level", route.ownNode("AA:09"), null);
         check("so the keys move the group, not a node of it", route.stepHeard(1), "no-pc-level");
         check("no group: nothing is lit", route.target, "");
+
+        // A group starting clears a touch made before it, and the group
+        // ending clears the member that was touched in it
+        route.touch("AA:01");
+        route.together.members = ["AA:01", "AA:02"];
+        check("a group starts: a stale touch is dropped", route.touched, "");
+        route.touch("AA:02");
+        check("in the group: the member is remembered", route.touched, "AA:02");
+        route.together.members = [];
+        check("the group ends: back to the group", route.touched, "");
         Qt.exit(failures === 0 ? 0 : 1);
     }
 }

@@ -238,7 +238,9 @@ Item {
     // --- The target of the keys (NAK-9) ---------------------------------------------
     // The member whose own level was touched last, in the scope, the radar or
     // a card; "" once the group's level (or none) was. It goes back to the
-    // group when the group ends, and when the pop-up closes (TwoLevels).
+    // group when the group ends, and when the pop-up closes (TwoLevels). It is
+    // also cleared when a group starts, so a touch made outside any group
+    // cannot apply to it later.
     property string touched: ""
     function touch(address) {
         if (touched !== address)
@@ -247,8 +249,7 @@ Item {
     Connections {
         target: root.together
         function onActiveChanged() {
-            if (!root.together.active)
-                root.touch("");
+            root.touch("");
         }
     }
 
