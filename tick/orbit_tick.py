@@ -3,6 +3,12 @@
 
 usage: orbit_tick.py <sink node name> <mono 16-bit wav>
 
+The stream is linked to the sink's own input ports by this helper, with
+autoconnect off, so WirePlumber never slips a smart filter in front of it. That
+matters in Listen together: the copies read the monitor of the source's
+filter, so a tick sent through that filter would be heard in every copy. Linked
+to the sink itself, the tick sounds in this output alone.
+
 A tick per process (pw-play) costs a process start, a connection and a stream
 per tick: at 40 ticks a second that is half a core. This helper opens ONE
 stream (pw-cat, raw PCM on its standard input) and mixes the ticks into it:
@@ -39,6 +45,10 @@ LATENCY_MS = 20
 ATTACK = 72
 RELEASE = 240
 FADE = 96
+# How long the helper waits for its stream's ports to appear before linking
+# them: 40 polls, 50 ms apart (the stream needs a few ms to be announced)
+LINK_TRIES = 40
+LINK_POLL_S = 0.05
 # Longest line kept while waiting for its end: a tick line is a few bytes
 MAX_LINE = 64
 
@@ -109,13 +119,47 @@ def mix(sound, voices):
         return array.array("h", (max(-32768, min(32767, s)) for s in total)).tobytes()
 
 
+def link_plan(listed_out, listed_in, stream, sink):
+    """The (output, input) port pairs that link `stream` to `sink`'s own inputs.
+
+    `listed_out` and `listed_in` are the lines of `pw-link -o` and `pw-link -i`
+    ("node:port"). Empty until both ends have appeared. The sink's monitor
+    ports are outputs, so they never come up as inputs.
+    """
+    outs = [p for p in listed_out if p.startswith(stream + ":")]
+    ins = [p for p in listed_in if p.startswith(sink + ":")]
+    return [(outs[0], i) for i in ins] if outs and ins else []
+
+
+def link(stream, sink):
+    """Links the stream's port to the sink's input ports; False if they never came."""
+    def listing(flag):
+        done = subprocess.run(["pw-link", flag], capture_output=True, text=True, timeout=2)
+        return done.stdout.splitlines()
+    try:
+        for _ in range(LINK_TRIES):
+            pairs = link_plan(listing("-o"), listing("-i"), stream, sink)
+            if pairs:
+                for source, target in pairs:
+                    subprocess.run(["pw-link", "--", source, target], capture_output=True, timeout=2)
+                return True
+            time.sleep(LINK_POLL_S)
+    except (OSError, subprocess.TimeoutExpired):
+        # No pw-link, or PipeWire not answering: the tick stays silent, never an error
+        pass
+    return False
+
+
 def main(sink, path):
     sound = load(path)
+    # node.autoconnect=false: WirePlumber leaves the stream alone, link() places it
+    name = f"orbit_tick_{os.getpid()}"
     out = subprocess.Popen(
         ["pw-cat", "-p", "--raw", "--rate", str(RATE), "--channels", "1", "--format", "s16",
-         "--latency", f"{LATENCY_MS}ms", "--target", sink, "-"],
+         "--latency", f"{LATENCY_MS}ms", "-P", f"node.name={name},node.autoconnect=false", "-"],
         stdin=subprocess.PIPE)
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+    link(name, sink)
     voices = []
     fd = sys.stdin.fileno()
     open_input = True

@@ -84,6 +84,24 @@ class GainTest(unittest.TestCase):
         self.assertEqual([t.parse_gain(b""), t.parse_gain(b"x"), t.parse_gain(b"t 1 2")], [None, None, None])
 
 
+class LinkTest(unittest.TestCase):
+    outs = ["orbit_tick_7:output_MONO", "other_node:output_FL"]
+    ins = ["sink.1:playback_FL", "sink.1:playback_FR", "sink.12:playback_FL", "orbit_pc_x:playback_FL"]
+
+    def test_the_stream_is_linked_to_each_input_of_the_sink_itself(self):
+        self.assertEqual(
+            t.link_plan(self.outs, self.ins, "orbit_tick_7", "sink.1"),
+            [("orbit_tick_7:output_MONO", "sink.1:playback_FL"), ("orbit_tick_7:output_MONO", "sink.1:playback_FR")])
+
+    def test_never_the_filter_in_front_of_the_sink(self):
+        pairs = t.link_plan(self.outs, self.ins, "orbit_tick_7", "sink.1")
+        self.assertFalse([p for p in pairs if p[1].startswith("orbit_pc_x:")])
+
+    def test_nothing_is_linked_until_both_ends_exist(self):
+        self.assertEqual(t.link_plan([], self.ins, "orbit_tick_7", "sink.1"), [])
+        self.assertEqual(t.link_plan(self.outs, self.ins, "orbit_tick_7", "gone.sink"), [])
+
+
 class SessionTest(unittest.TestCase):
     """The whole helper against a stand-in pw-cat that keeps what it is sent."""
 
@@ -92,8 +110,16 @@ class SessionTest(unittest.TestCase):
             sink = os.path.join(tmp, "got.raw")
             fake = os.path.join(tmp, "pw-cat")
             with open(fake, "w") as f:
-                f.write("#!/bin/sh\nexec cat > " + sink + "\n")
+                f.write("#!/bin/sh\necho \"$@\" > " + tmp + "/args\nexec cat > " + sink + "\n")
             os.chmod(fake, os.stat(fake).st_mode | stat.S_IXUSR)
+            # A stand-in pw-link that lists the stream (named as pw-cat was asked) and the sink's ports
+            links = os.path.join(tmp, "pw-link")
+            with open(links, "w") as f:
+                f.write("#!/bin/sh\ncase \"$1\" in\n"
+                        "-o) n=$(sed -n 's/.*node.name=\\([^,]*\\),.*/\\1/p' " + tmp + "/args); echo \"$n:output_MONO\";;\n"
+                        "-i) echo fake.sink:playback_FL; echo fake.sink:playback_FR;;\n"
+                        "*) echo \"$@\" >> " + tmp + "/links;;\nesac\n")
+            os.chmod(links, os.stat(links).st_mode | stat.S_IXUSR)
             env = dict(os.environ, PATH=tmp + os.pathsep + os.environ["PATH"])
             wav = os.path.join(os.path.dirname(__file__), "..", "..", "sounds", "volume.wav")
             proc = subprocess.run(
@@ -102,6 +128,13 @@ class SessionTest(unittest.TestCase):
             self.assertEqual(proc.returncode, 0)
             with open(sink, "rb") as f:
                 data = shorts(f.read())
+            with open(os.path.join(tmp, "links")) as f:
+                made = [line.split() for line in f]
+            with open(os.path.join(tmp, "args")) as f:
+                args = f.read()
+        # Autoconnect is off and the stream is linked to the sink's two inputs by hand
+        self.assertIn("node.autoconnect=false", args)
+        self.assertEqual([m[2] for m in made], ["fake.sink:playback_FL", "fake.sink:playback_FR"])
         # The two lines made one tick, then it stopped writing (whole chunks only)
         self.assertGreater(max(map(abs, data)), 1000)
         self.assertEqual(len(data) % t.CHUNK, 0)
@@ -113,6 +146,10 @@ class SessionTest(unittest.TestCase):
             with open(fake, "w") as f:
                 f.write("#!/bin/sh\nexit 0\n")
             os.chmod(fake, os.stat(fake).st_mode | stat.S_IXUSR)
+            # Never the real pw-link: it would read the live graph
+            with open(os.path.join(tmp, "pw-link"), "w") as f:
+                f.write("#!/bin/sh\nexit 0\n")
+            os.chmod(os.path.join(tmp, "pw-link"), 0o755)
             env = dict(os.environ, PATH=tmp + os.pathsep + os.environ["PATH"])
             wav = os.path.join(os.path.dirname(__file__), "..", "..", "sounds", "volume.wav")
             proc = subprocess.run(

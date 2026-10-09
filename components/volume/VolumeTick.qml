@@ -27,7 +27,7 @@ Item {
     // When the last tick played (ms), to keep to Volume.MIN_GAP_MS
     property double _last: 0
 
-    // `nodes` are the PipeWire sinks the change reached, `before` and `after` the level it went from and to,
+    // `nodes` are the sinks the change reached ({name, bypass}, Route.tickOutput), `before` and `after` the level it went from and to,
     // `levels` (optional) the level each of the nodes now has, `after` for all when omitted
     function play(nodes, before, after, levels) {
         if (!prefs || !prefs.volumeTick)
@@ -40,6 +40,7 @@ Item {
         _last = now;
         const targets = Volume.tickTargets(nodes.map((n, i) => ({
                     "name": n ? n.name : "",
+                    "bypass": !!(n && n.bypass),
                     "level": levels ? levels[i] : after
                 })));
         const held = [];

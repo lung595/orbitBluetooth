@@ -69,6 +69,17 @@ function sinkNamed(nodes, name) {
     return null;
 }
 
+// Where a tick for `node` must play: { name, bypass }. The PC-level filter is
+// left out, the tick plays in the device sink behind it (bypass): Listen
+// together copies read the filter's monitor, so a tick played through it
+// would be heard in every copy and not in the member that changed alone.
+// Any other node plays as it is.
+function tickOutput(nodes, node) {
+    const name = node ? node.name : "";
+    const device = isVirtual(name) ? deviceSink(nodes, addressOfVirtual(name)) : null;
+    return device ? { "name": device.name, "bypass": true } : { "name": name, "bypass": false };
+}
+
 function virtualSink(nodes, address) {
     return sinkNamed(nodes, virtualName(address));
 }

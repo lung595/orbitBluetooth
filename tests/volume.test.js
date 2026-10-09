@@ -8,7 +8,7 @@ const Volume = load("Volume.js", ["clamp", "step", "validSink", "stepSize", "ste
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "slices", "sliceAt", "partOf", "indexOf", "arc", "end", "point", "angleOf", "valueAt", "zone", "wheelPart", "iconSpot", "legendSpot", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
 const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded", "note"]);
-const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "description", "loopbackArgs", "filterArgs", "muteTarget", "levelNodes", "writeLevel", "writeMuted", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "popupScreen", "shownLevels"]);
+const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "tickOutput", "description", "loopbackArgs", "filterArgs", "muteTarget", "levelNodes", "writeLevel", "writeMuted", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "popupScreen", "shownLevels"]);
 
 // --- Volume tick (Volume.js) ------------------------------------------------------
 eq("the setting: 1 % by default, 5 % when it says so", [Volume.stepSize("1"), Volume.stepSize("5"), Volume.stepSize(undefined), Volume.stepSize("7")], [0.01, 0.05, 0.01, 0.01]);
@@ -41,6 +41,7 @@ eq("the group: every member's sink, each once, each at its own level's gain", Vo
 eq("never more than four outputs at once", [Volume.MAX_TICKS, Volume.tickTargets(["a", "b", "c", "d", "e", "f"].map(n => at(n, 0.5))).map(t => t.name)], [4, ["a", "b", "c", "d"]]);
 eq("a name that is not plain is dropped, the others stay", Volume.tickTargets([at("x; rm -rf ~", 0.5), at("--target=y z", 0.5), at("ok.1", 0.5), at("", 0.5), at(null, 0.5), at(7, 0.5), null]).map(t => t.name), ["ok.1"]);
 eq("a silent output (0 %) is left out", Volume.tickTargets([at("a.1", 0), at("b.2", 0.4)]).map(t => t.name), ["b.2"]);
+eq("a tick round the level's node carries the level itself (gain times level)", Volume.tickTargets([{ "name": "a.1", "level": 0.5, "bypass": true }, { "name": "b.2", "level": 1, "bypass": true }]).map(t => Math.round(t.gain * 1000) / 1000), [0.5, 0.6]);
 eq("nothing to tick in", [Volume.tickTargets(null), Volume.tickTargets([])], [[], []]);
 eq("a sink keeps its player", Volume.slotsFor(["a.1", "b.2", "", ""], ["b.2", "a.1"]), [1, 0]);
 eq("a new sink takes a free player", Volume.slotsFor(["a.1", "", "", ""], ["c.3"]), [1]);
@@ -67,6 +68,9 @@ const pwNodes = [
 eq("finds the device's sink, not a stream", Route.deviceSink(pwNodes, MAC), pwNodes[1]);
 eq("finds the virtual sink", Route.virtualSink(pwNodes, MAC), pwNodes[2]);
 eq("nothing for another device", [Route.deviceSink(pwNodes, "AA:BB:CC:DD:EE:02"), Route.virtualSink(pwNodes, "AA:BB:CC:DD:EE:02")], [null, null]);
+eq("a tick for the PC-level filter plays in the device behind it, round the filter", Route.tickOutput(pwNodes, pwNodes[2]), { "name": "bluez_output.AA_BB_CC_DD_EE_01.1", "bypass": true });
+eq("a tick for any other node plays in it as it is", [Route.tickOutput(pwNodes, pwNodes[0]), Route.tickOutput(pwNodes, pwNodes[1]), Route.tickOutput(pwNodes, null)], [{ "name": "alsa_output.usb-Card", "bypass": false }, { "name": "bluez_output.AA_BB_CC_DD_EE_01.1", "bypass": false }, { "name": "", "bypass": false }]);
+eq("a filter whose device sink is gone keeps its own name", Route.tickOutput([pwNodes[2]], pwNodes[2]), { "name": "orbit_pc_AA_BB_CC_DD_EE_01", "bypass": false });
 eq("description keeps the name", Route.description("WH-1000XM6"), "WH-1000XM6 (Orbit)");
 eq("description drops quotes and escapes", Route.description('My "Buds" \\ $(x)'), "My Buds (x) (Orbit)");
 eq("empty name falls back", Route.description(""), "Bluetooth (Orbit)");

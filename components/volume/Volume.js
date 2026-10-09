@@ -64,16 +64,19 @@ function audible(level) {
 // the next run of ticks
 var IDLE_MS = 2000;
 
-// The outputs a tick plays in, from `entries` ({name, level}: a node a change
-// reached and the level it now has): only plain names, each once, silent
-// outputs left out, MAX_TICKS at most; each with the gain its level allows
+// The outputs a tick plays in, from `entries` ({name, level, bypass}: a node a
+// change reached and the level it now has): only plain names, each once, silent
+// outputs left out, MAX_TICKS at most; each with the gain its level allows.
+// `bypass` says the tick goes round the node that holds the level (straight to
+// the device behind a PC-level filter, Route.tickOutput), which then no longer
+// scales it: the level is applied here instead, so it sounds the same.
 function tickTargets(entries) {
     const out = [];
     for (const e of entries || [])
         if (e && validSink(e.name) && audible(e.level) && !out.some(t => t.name === e.name))
             out.push({
                 "name": e.name,
-                "gain": tickGain(e.level)
+                "gain": e.bypass ? tickGain(e.level) * clamp(e.level) : tickGain(e.level)
             });
     return out.slice(0, MAX_TICKS);
 }
