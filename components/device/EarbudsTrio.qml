@@ -121,6 +121,9 @@ Item {
             running: trio.animate
             time: trio.time
             offset: beam.delay
+            deviceRadius: trio.budSize / 2
+            reach: trio.budSize * 0.18
+            heading: beam.rotation
         }
     }
 

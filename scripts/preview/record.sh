@@ -7,8 +7,21 @@ cd "$(dirname "$0")"
 out=$(realpath ../../screenshots)
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
-scenes=${*:-beam gauge focus connect newdevice}
+scenes=${*:-beam beamstyles gauge focus connect newdevice}
 for s in $scenes; do
+    # The four charging beam styles, one GIF each (beams.qml shows each moving, at rest
+    # under Reduce motion, and as a second charging device)
+    if [ "$s" = beamstyles ]; then
+        for style in pulse filament chain horizon; do
+            mkdir -p "$tmp/$style"
+            QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=rhi QSG_RHI_BACKEND=opengl qml-qt6 -I imports beams.qml -- gif "$style" "$tmp/$style"
+            ffmpeg -loglevel error -y -framerate 25 -i "$tmp/$style/f%04d.png" \
+                -vf "crop=330:216:10:10,fps=20,split[a][b];[a]palettegen=max_colors=96:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle" \
+                -loop 0 "$out/charging-beam-$style.gif"
+            echo "charging-beam-$style.gif: $(ls "$tmp/$style" | wc -l) frames"
+        done
+        continue
+    fi
     mkdir -p "$tmp/$s"
     # OpenGL rendering: the software backend skips shaders (charging beam)
     # and effects (the pop-up's shadow and rounded clip)

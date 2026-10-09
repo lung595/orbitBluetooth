@@ -46,6 +46,8 @@ Window {
     // and brings back an output every second (CPU bench of the Hidden section)
     readonly property string rawMode: args[args.length - 2]
     readonly property var parts: rawMode.split("-")
+    // "-pulse", "-filament", "-chain" or "-horizon": the charging beam's style
+    readonly property string beam: ["pulse", "filament", "chain", "horizon"].find(b => parts.indexOf(b) > 0) ?? ""
     readonly property bool bright: parts.indexOf("bright") > 0
     readonly property bool light: parts.indexOf("light") > 0
     readonly property bool none: parts.indexOf("none") > 0
@@ -105,6 +107,7 @@ Window {
                     "E8:07:BF:6A:19:D4": "JBL Flip 6"
                 },
                 "holeStyle": mode === "holetess" ? "tesseract" : "blackhole",
+                "chargeBeamStyle": win.beam,
                 "desktopBackdrop": bright ? 50 : 72
             });
         SettingsData.reduceMotion = reduce;

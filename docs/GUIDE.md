@@ -464,7 +464,7 @@ Your computer's Bluetooth adapter has **one radio**. When two outputs play at th
 
 ## Earbuds: the trio
 
-Earbuds that report their parts (case, left, right) get a small orbit of their own in the detail card: the case in the middle, one bud at each end, each with its battery bar. A bud charging in the case moves closer to it, and field lines join the case to the bud.
+Earbuds that report their parts (case, left, right) get a small orbit of their own in the detail card: the case in the middle, one bud at each end, each with its battery bar. A bud charging in the case moves closer to it, and a charging beam (in the style you chose) joins the case to the bud.
 
 | Earbuds trio | Buds charging in their case |
 | --- | --- |
@@ -562,7 +562,7 @@ On **Sony** headsets the detail card shows a **Conversation ends** row (*Short*,
 
 ## Charging and battery
 
-A charging device gets a lightning badge, a breathing battery arc and a beam of energy from your machine (by default drawn as magnetic field lines, see [Charging beam](#charging-beam)). Under its name you read the level and the time to full, for example `54% · 2h08`. The arc around a connected device is colored by its level, see [Battery arc colours](#battery-arc-colours).
+A charging device gets a lightning badge, a breathing battery arc and a beam of energy from your machine (by default drawn as three weaving strands, see [Charging beam](#charging-beam)). Under its name you read the level and the time to full, for example `54% · 2h08`. The arc around a connected device is colored by its level, see [Battery arc colours](#battery-arc-colours).
 
 | Charging in orbit | Charging details |
 | --- | --- |
@@ -616,14 +616,20 @@ The card's gauge keeps its own smooth red-to-aqua ramp, red for as long as the a
 | Style | Look |
 | --- | --- |
 | **Pulse** | Three small capsules of light travel along a thin rail to the device. The lightest one: no shader. |
-| **Filament** (default) | Fine strands wave along the link, as before, now shifting from the host's color to the charge color. |
-| **Chain** | Listed, not drawn yet: it shows **Filament** until it arrives. |
-| **Horizon** | Listed, not drawn yet: it shows **Filament** until it arrives. |
+| **Filament** (default) | Three thin strands weave around each other between the host and the device, one swinging wider and fainter than the next, shifting from the host's color to the charge color. A shader, as it always was. |
+| **Chain** | A string of small dots from the host to the device, and a lit window that runs along it. No shader: one dashed line and one gradient bar. |
+| **Horizon** | Light bent by the device's gravity: a thin arc leaves the host and curves toward the device, grains fall along it faster and faster, and a thin ring, seen almost edge-on, circles the device with a small knot. The ring shows flow, never the level (the level stays on the battery arc), and it stays as thin and as dim as the black hole's own line (never wider than 1.3 times the device, never brighter than 70 %). No shader. |
 
-![Pulse and Filament, moving and as the still frame of Reduce motion](../screenshots/charging-beams.gif)
+| Pulse | Filament |
+| --- | --- |
+| ![Pulse: three capsules of light travel to the device](../screenshots/charging-beam-pulse.gif) | ![Filament: three strands weave to the device](../screenshots/charging-beam-filament.gif) |
+| **Chain** | **Horizon** |
+| ![Chain: a lit window runs along a string of dots to the device](../screenshots/charging-beam-chain.gif) | ![Horizon: light bends into a thin ring round the device](../screenshots/charging-beam-horizon.gif) |
+
+Each clip shows the style moving, as its still frame under Reduce motion, and with the delay of a second charging device. Made-up devices.
 
 - **Colors** come from your theme: the beam starts in the theme's primary at the host and ends in the charging color of the battery arc (see [Battery arc colours](#battery-arc-colours)).
-- **Reduce motion** shows one still frame per style (Pulse: three capsules at rest; Filament: the strands frozen).
+- **Reduce motion** shows one still frame per style (Pulse: three capsules at rest; Filament: the three strands frozen; Chain: the lit window halfway along the link, it is not a gauge; Horizon: a grain and the knot at rest).
 - **Nothing runs** while the beam is not seen: not charging, the detail card open on that device, a Listen together member, the screen locked or off, the orbit covered on the desktop. The style you do not use is never built.
 - **Several devices** do not pulse in unison: each has a small, steady delay of its own. The two buds of an [earbuds trio](#earbuds-the-trio) use the same style, 0.4 s apart.
 - **A value Orbit does not know** (a typo, a style from a newer version) is Filament.
@@ -766,7 +772,7 @@ Grouped in tabs: **Orbit** (with Reset), **Scanning**, **Headphones** (with devi
 | | Ambient motion | Off | Keep orbits moving when the pointer is away ⚡ (paused while windows hide the desktop) |
 | Device pictures | Real device pictures (uses the internet) | Off | Photo of the model instead of an icon, see [Real device pictures](#real-device-pictures) |
 | Look | Black hole | Black hole | Realistic, or the tesseract |
-| | Charging beam | Filament | Pulse, Filament, Chain or Horizon: how power flows to charging devices (Chain and Horizon draw Filament for now) |
+| | Charging beam | Filament | Pulse, Filament, Chain or Horizon: how power flows to charging devices |
 | | Shooting stars | On | A rare meteor (every 12–32 s), bent or swallowed by the black hole |
 | | Stars | Normal | Low, Normal or High |
 | | Custom images folder | — | PNG files that replace built-in icons |

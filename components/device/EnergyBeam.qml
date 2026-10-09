@@ -3,8 +3,9 @@ import qs.Common
 import "../scene"
 
 // The Filament charging beam along the item's width (see shaders/beam.frag):
-// faint magnetic field lines fanning out between both ends, pulses flowing
-// along, their colour shifting from the host's to the device's. The wave phase
+// three thin strands weaving between both ends, their colour shifting from the
+// host's to the device's. `amplitude` is the first strand's swing, the others
+// swing 5/3 and 7/3 as much. The wave phase
 // follows `time` (the scene's effects clock, one cycle every 4 s), and only while `running`:
 // no looping QML animation, which would redraw every shell window at the display rate.
 ShaderEffect {

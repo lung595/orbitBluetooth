@@ -24,7 +24,8 @@ Item {
     visible: opacity > 0.01
 
     readonly property real start: body.scene.coreSize / 2 * host.scale
-    readonly property real span: Math.max(0, chargeFlow.dist - start - body.diameter * body.baseScale / 2)
+    readonly property real radius: body.diameter * body.baseScale / 2
+    readonly property real span: Math.max(0, chargeFlow.dist - start - radius)
     readonly property bool running: visible && body.scene.awake && body.scene.motion
     // The beam shifts from the host's colour to the charge arc's
     readonly property color glow: body.night.primary
@@ -48,6 +49,10 @@ Item {
         offset: Motion.deviceOffset(chargeFlow.body.address)
         startColor: chargeFlow.glow
         endColor: chargeFlow.body.night.charging
+        railColor: chargeFlow.body.night.skyText
+        deviceRadius: chargeFlow.radius
+        reach: chargeFlow.radius
+        heading: chargeFlow.rotation
     }
 
     // Source flare where the beam leaves the host

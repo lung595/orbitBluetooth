@@ -29,6 +29,8 @@ QtObject {
         return lift ? Qt.hsla(c.hslHue, c.hslSaturation, 0.14, 1) : fallback;
     }
 
+    // The theme's text tone, lifted like the accents: the unlit rails drawn on the sky
+    readonly property color skyText: night(Theme.surfaceText)
     readonly property color primary: night(Theme.primary)
     readonly property color secondary: night(Theme.secondary)
     readonly property color tertiary: night(Theme.tertiary)
