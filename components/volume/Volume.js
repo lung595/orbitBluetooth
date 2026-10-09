@@ -54,6 +54,16 @@ function tickGain(level) {
     return v <= TICK_KNEE ? 1 : TICK_KNEE / v;
 }
 
+// The linear gain a PipeWire node applies for `level`, the cubic (perceptual)
+// volume Quickshell and DMS show: the node scales samples by level cubed
+function linearGain(level) {
+    const v = clamp(level);
+    return v * v * v;
+}
+
+// The gain below which a tick is inaudible: no player is started for it
+var MIN_GAIN = 0.01;
+
 // A silent output (0 %) has nothing to tick: no player is started for it
 function audible(level) {
     return clamp(level) > 0;
@@ -69,15 +79,20 @@ var IDLE_MS = 2000;
 // outputs left out, MAX_TICKS at most; each with the gain its level allows.
 // `bypass` says the tick goes round the node that holds the level (straight to
 // the device behind a PC-level filter, Route.tickOutput), which then no longer
-// scales it: the level is applied here instead, so it sounds the same.
+// scales it: the level is applied here instead (as the node would, linearGain),
+// so it sounds the same.
 function tickTargets(entries) {
     const out = [];
-    for (const e of entries || [])
-        if (e && validSink(e.name) && audible(e.level) && !out.some(t => t.name === e.name))
+    for (const e of entries || []) {
+        if (!e || !validSink(e.name) || !audible(e.level) || out.some(t => t.name === e.name))
+            continue;
+        const gain = e.bypass ? tickGain(e.level) * linearGain(e.level) : tickGain(e.level);
+        if (gain >= MIN_GAIN)
             out.push({
                 "name": e.name,
-                "gain": e.bypass ? tickGain(e.level) * clamp(e.level) : tickGain(e.level)
+                "gain": gain
             });
+    }
     return out.slice(0, MAX_TICKS);
 }
 

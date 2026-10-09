@@ -4,7 +4,7 @@ imports.searchPath.unshift(imports.system.programPath ? imports.system.programPa
 const { load, eq, done } = imports.lib;
 
 const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNote", "stuckNote", "levelNote"]);
-const Volume = load("Volume.js", ["clamp", "step", "validSink", "stepSize", "stepsCrossed", "due", "tickGain", "audible", "tickTargets", "slotsFor", "MAX_TICKS", "MIN_GAP_MS", "TICK_KNEE", "IDLE_MS"]);
+const Volume = load("Volume.js", ["clamp", "step", "validSink", "stepSize", "stepsCrossed", "due", "tickGain", "linearGain", "MIN_GAIN", "audible", "tickTargets", "slotsFor", "MAX_TICKS", "MIN_GAP_MS", "TICK_KNEE", "IDLE_MS"]);
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "slices", "sliceAt", "partOf", "indexOf", "arc", "end", "point", "angleOf", "valueAt", "zone", "wheelPart", "iconSpot", "legendSpot", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
 const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded", "note"]);
@@ -41,7 +41,9 @@ eq("the group: every member's sink, each once, each at its own level's gain", Vo
 eq("never more than four outputs at once", [Volume.MAX_TICKS, Volume.tickTargets(["a", "b", "c", "d", "e", "f"].map(n => at(n, 0.5))).map(t => t.name)], [4, ["a", "b", "c", "d"]]);
 eq("a name that is not plain is dropped, the others stay", Volume.tickTargets([at("x; rm -rf ~", 0.5), at("--target=y z", 0.5), at("ok.1", 0.5), at("", 0.5), at(null, 0.5), at(7, 0.5), null]).map(t => t.name), ["ok.1"]);
 eq("a silent output (0 %) is left out", Volume.tickTargets([at("a.1", 0), at("b.2", 0.4)]).map(t => t.name), ["b.2"]);
-eq("a tick round the level's node carries the level itself (gain times level)", Volume.tickTargets([{ "name": "a.1", "level": 0.5, "bypass": true }, { "name": "b.2", "level": 1, "bypass": true }]).map(t => Math.round(t.gain * 1000) / 1000), [0.5, 0.6]);
+eq("a tick round the level's node carries the node's linear gain: level cubed, times the knee gain", Volume.tickTargets([{ "name": "a.1", "level": 0.5, "bypass": true }, { "name": "b.2", "level": 1, "bypass": true }, { "name": "c.3", "level": 0.25, "bypass": true }]).map(t => Math.round(t.gain * 1000) / 1000), [0.125, 0.6, 0.016]);
+eq("linearGain is level cubed and safe for a broken level", [Volume.linearGain(0.5), Volume.linearGain(1), Volume.linearGain(2), Volume.linearGain(NaN)], [0.125, 1, 1, 0]);
+eq("a bypassed tick too quiet to hear (gain under MIN_GAIN) starts no player", Volume.tickTargets([{ "name": "a.1", "level": 0.1, "bypass": true }, { "name": "b.2", "level": 0.1, "bypass": false }]).map(t => t.name), ["b.2"]);
 eq("nothing to tick in", [Volume.tickTargets(null), Volume.tickTargets([])], [[], []]);
 eq("a sink keeps its player", Volume.slotsFor(["a.1", "b.2", "", ""], ["b.2", "a.1"]), [1, 0]);
 eq("a new sink takes a free player", Volume.slotsFor(["a.1", "", "", ""], ["c.3"]), [1]);

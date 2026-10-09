@@ -45,7 +45,7 @@ Item {
                 })));
         const held = [];
         for (let i = 0; i < Volume.MAX_TICKS; i++) {
-            const p = players.objectAt(i);
+            const p = players.objectAt(i) as Player;
             held.push(p && p.running ? p.sink : "");
         }
         const slots = Volume.slotsFor(held, targets.map(t => t.name));
@@ -74,7 +74,7 @@ Item {
     // Closing the standard input lets a player finish the tick still ringing, then exit
     function _release() {
         for (let i = 0; i < Volume.MAX_TICKS; i++) {
-            const player = players.objectAt(i);
+            const player = players.objectAt(i) as Player;
             if (player && player.running)
                 player.stdinEnabled = false;
         }
@@ -91,8 +91,11 @@ Item {
     Instantiator {
         id: players
         model: Volume.MAX_TICKS
-        delegate: Process {
-            property string sink: ""
-        }
+        delegate: Player {}
+    }
+
+    // A tick player and the output it is open on
+    component Player: Process {
+        property string sink: ""
     }
 }
