@@ -108,7 +108,8 @@ TwoLevels {
         Qt.callLater(_showAll);
     }
     // Starting cava costs about as much as the whole burst of keys (a fixed
-    // 0.4 s of CPU, measured, P142): its picture waits until the keys stop
+    // 0.4 s of CPU, measured, P142): cava waits until the keys stop, and the
+    // peak meter draws the picture meanwhile so the scope never waits
     property bool _settled: true
     Timer {
         id: settle
@@ -321,5 +322,10 @@ TwoLevels {
 
     // One cava for every screen's pop-up, only while one shows
     soundNode: dev ? dev.sink : Pipewire.defaultAudioSink
-    listening: anyShown && _settled
+    listening: anyShown
+    steady: _settled
+    // The audio facts (pactl, pw-dump) start with the action as cava does, so
+    // they wait for the end of a burst too (D272): the scope above draws
+    // from the peak meter meanwhile
+    looking: anyShown && _settled
 }

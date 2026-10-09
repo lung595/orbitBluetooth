@@ -179,7 +179,7 @@ The sound inside is drawn only while the pop-up or a card shows:
 
 - **Visualizer** (**Sound → Visualizer**): *Points* (a cloud: where the sound sits, left or right), *Rays* or *Waves* (its notes, bass at the top), or *None*.
 - **Visualizer motion**: *Light* (30 images per second, the default) or *Smooth* (60, twice the work).
-- It needs `cava`; without it, PipeWire's own peak meter draws one band per side. With *Reduce motion*, nothing moves.
+- It needs `cava` for the full spectrum; PipeWire's own peak meter (one band per side) draws the picture from the first frame, while `cava` starts (and during a burst of volume keys, which holds `cava` back), and for good without it. With *Reduce motion*, nothing moves.
 
 ## Smart volume steps
 

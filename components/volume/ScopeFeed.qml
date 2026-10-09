@@ -8,13 +8,19 @@ import "Polar.js" as Polar
 // output's monitor. cava runs only while `active` (the scope is on screen
 // and something moves on it); its configuration goes in through a file
 // descriptor, never a file on disk (value 5) nor a shell string (value 11).
-// Without cava, PipeWire's own peak meter gives one band per side.
+// PipeWire's own peak meter (one band per side) draws the cloud without
+// cava, and until cava's first frame arrives (starting it takes a moment,
+// and a burst of volume keys holds it back, D272): the scope moves at once
+// and switches to the full spectrum without a gap.
 Item {
     id: feed
 
     // The PipeWire sink whose sound is shown, e.g. bluez_output.<address>.1
     property var node: null
     property bool active: false
+    // cava may start now. False during a burst of volume keys (D272): the
+    // peak meter shows meanwhile. A cava already running is left alone
+    property bool steady: true
     property int fps: 60
     readonly property int bars: 16
 
@@ -24,13 +30,33 @@ Item {
     signal arrived
 
     property bool _noCava: false
+    // cava was allowed to start since the scope showed
+    property bool _go: false
+    // cava has delivered a frame since it (re)started
+    property bool _spectrum: false
+    onActiveChanged: {
+        _syncGo();
+        if (!active) {
+            frame = null;
+            _spectrum = false;
+        }
+    }
+    onSteadyChanged: _syncGo()
+    function _syncGo() {
+        _go = active && (steady || _go);
+    }
     // Set while Orbit itself stops cava to move it to another output
     property bool _moving: false
     readonly property string _conf: node && !_noCava ? (Polar.cavaConfig(node.name + ".monitor", fps, bars) || "") : ""
 
-    function _take(f) {
+    function _take(f, fromCava) {
         if (!f)
             return;
+        // The peak meter's late readings must not overwrite cava's frames
+        if (!fromCava && _spectrum)
+            return;
+        if (fromCava)
+            _spectrum = true;
         frame = f;
         stamp = Date.now();
         arrived();
@@ -40,14 +66,15 @@ Item {
         id: cava
         // bash only for the here-string: the configuration is "$1"
         command: ["bash", "-c", 'exec cava -p /dev/fd/3 3<<<"$1" </dev/null', "cava", feed._conf]
-        running: feed.active && feed._conf !== ""
+        running: feed._go && feed._conf !== ""
         stdout: SplitParser {
-            onRead: line => feed._take(Polar.parseFrame(line, feed.bars))
+            onRead: line => feed._take(Polar.parseFrame(line, feed.bars), true)
         }
         // 127: not installed. Anything else that fails early also falls back
         onExited: code => {
             const moved = feed._moving;
             feed._moving = false;
+            feed._spectrum = false;
             if (code !== 0 && feed.active && !moved)
                 feed._noCava = true;
         }
@@ -58,14 +85,13 @@ Item {
     on_ConfChanged: if (cava.running) {
         _moving = true;
         cava.running = false;
-        cava.running = Qt.binding(() => feed.active && feed._conf !== "");
+        _spectrum = false;
+        cava.running = Qt.binding(() => feed._go && feed._conf !== "");
     }
-    onActiveChanged: if (!active)
-        frame = null
 
     PwNodePeakMonitor {
         node: feed.node
-        enabled: feed.active && feed._noCava && !!feed.node
+        enabled: feed.active && (feed._noCava || !feed._spectrum) && !!feed.node
         onPeaksChanged: {
             const p = peaks || [];
             if (p.length)
