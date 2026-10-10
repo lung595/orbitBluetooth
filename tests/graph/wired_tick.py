@@ -150,15 +150,15 @@ def tone(path):
         w.writeframes(array.array("h", (int(8000 * math.sin(2 * math.pi * 440 * i / RATE)) for i in range(RATE * 2))).tobytes())
 
 
-def heard_when(env, tmp, sinks, action):
-    """The peak on each of `sinks` while `action` runs."""
+def heard_when(env, tmp, sinks, action, seconds=4):
+    """The peak on each of `sinks` while `action` runs (recorded for `seconds`)."""
     files = {s: "%s/%s.raw" % (tmp, s) for s in sinks}
-    recs = [record(env, s, files[s], 4) for s in sinks]
+    recs = [record(env, s, files[s], seconds) for s in sinks]
     time.sleep(1.0)
     action()
     for r in recs:
         try:
-            r.wait(timeout=6)
+            r.wait(timeout=seconds + 2)
         except subprocess.TimeoutExpired:
             r.kill()
     return {s: peak(files[s]) for s in sinks}
