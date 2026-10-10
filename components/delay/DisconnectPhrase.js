@@ -15,13 +15,34 @@ var MINUTE_UNITS = ["m", "mn", "min", "mins", "minute", "minutes"];
 // Little words that introduce a delay and are not part of a device name
 var LEAD = ["in", "dans", "after", "apres", "pour", "for"];
 
+// What a refusal says, one table for the launcher and the command line (value 10)
+var NOTES = {
+    "badDelay": "Use a whole number of minutes, 1 to 1440",
+    "noDelay": "Add a delay in minutes, like 30",
+    "noDevice": "Give a device name",
+    "long": "That phrase is too long",
+    "none": "No connected device matches that name",
+    "ambiguous": "Several connected devices match, type more of the name",
+    "nothing": "No disconnect is waiting for that device"
+};
+
+function note(why) {
+    return NOTES[why] || NOTES.noDevice;
+}
+
+// Text from outside (a device name) as the screen may show it: no long dash,
+// whatever the source (owner rule of 2026-10-10)
+function plain(text) {
+    return String(text === undefined || text === null ? "" : text).replace(/\s*[\u2013\u2014]\s*/g, " - ");
+}
+
 // Lowercase, accents and case folded away
 function fold(text) {
     return String(text === undefined || text === null ? "" : text).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
 
-// { n, unit } for "5", "5min", "2h"; null when the token is not a delay
-function _amount(token) {
+// { text, unit } for "5", "5min", "2h"; null when the token is not a delay
+function amount(token) {
     const m = /^(\d+(?:[.,]\d+)?)([a-z]*)$/.exec(token);
     if (!m || (m[2] && HOUR_UNITS.indexOf(m[2]) < 0 && MINUTE_UNITS.indexOf(m[2]) < 0))
         return null;
@@ -61,7 +82,7 @@ function parse(phrase, words) {
     // A number with a unit, or after a leading word, is the delay; else the last number
     const found = [];
     rest.forEach((t, i) => {
-        const a = _amount(t);
+        const a = amount(t);
         if (a)
             found.push({ "i": i, "a": a, "unit": a.unit.length > 0 });
     });
@@ -93,13 +114,29 @@ function parse(phrase, words) {
     return { "ok": true, "action": action, "query": query, "minutes": minutes };
 }
 
-// Which device a name fragment means among [{ address, name }]:
-// { ok: true, address } | { ok: false, why: "none" | "ambiguous" | "empty" }.
-// An exact (folded) name wins over a fragment; several matches are never guessed.
+// The connected devices among a Bluetooth device list, as [{ address, name }]:
+// the only ones a phrase or a command may mean, there is nothing to disconnect
+// on the others
+function connectedOf(values) {
+    const out = [];
+    for (let i = 0; i < (values ? values.length : 0); i++) {
+        if (values[i].connected)
+            out.push({ "address": values[i].address, "name": values[i].name || "" });
+    }
+    return out;
+}
+
+// Which device a name fragment or a Bluetooth address means among [{ address, name }]:
+// { ok: true, address } | { ok: false, why: "none" | "ambiguous" | "noDevice" }.
+// An exact address wins, then an exact (folded) name, then a fragment; several
+// matches are never guessed.
 function findDevice(query, devices) {
     const q = fold(query).trim();
     if (q.length === 0 || q.length > MAX_PHRASE)
-        return { "ok": false, "why": "empty" };
+        return { "ok": false, "why": "noDevice" };
+    const byAddress = (devices || []).filter(d => fold(d.address) === q);
+    if (byAddress.length === 1)
+        return { "ok": true, "address": byAddress[0].address };
     const list = (devices || []).map(d => ({ "address": d.address, "name": fold(d.name).trim() })).filter(d => d.name.length > 0);
     const exact = list.filter(d => d.name === q);
     const hits = exact.length > 0 ? exact : list.filter(d => d.name.indexOf(q) >= 0);
@@ -128,15 +165,5 @@ function schedule(pending, address, minutes, now) {
 function cancel(pending, address) {
     const next = Object.assign({}, pending);
     delete next[address];
-    return next;
-}
-
-// A delay whose device disconnected by itself is dropped: nothing to do at the end
-function dropGone(pending, connected) {
-    const next = {};
-    for (const a of Object.keys(pending)) {
-        if (connected.indexOf(a) >= 0)
-            next[a] = pending[a];
-    }
     return next;
 }

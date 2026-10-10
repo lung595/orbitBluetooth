@@ -16,24 +16,19 @@ Item {
     property string trigger: ""
     signal itemsChanged
 
+    // One entry per phrase that starts with an action word. A phrase that cannot
+    // be run (no device, a bad delay) still gets a plain entry saying why, never
+    // a silent nothing (value 10); its action is empty, so it runs nothing.
     function getItems(query) {
         const table = Words.resolve(pluginService ? pluginService.loadPluginData("orbitBluetooth", "launcherWords", ({})) : null);
         const phrase = Phrase.parse(query, table);
         if (!phrase.ok)
-            return [];
-        const list = Bluetooth.devices.values;
-        const connected = [];
-        for (let i = 0; i < list.length; i++) {
-            if (list[i].connected)
-                connected.push({
-                    "address": list[i].address,
-                    "name": list[i].name || ""
-                });
-        }
+            return phrase.why === "noWord" || phrase.why === "empty" ? [] : [_refusal(phrase.why)];
+        const connected = Phrase.connectedOf(Bluetooth.devices.values);
         const found = Phrase.findDevice(phrase.query, connected);
         if (!found.ok)
-            return [];
-        const name = connected.find(d => d.address === found.address).name;
+            return [_refusal(found.why)];
+        const name = Phrase.plain(connected.find(d => d.address === found.address).name);
         return [
             {
                 "name": "Disconnect " + name + " in " + phrase.minutes + " min",
@@ -45,12 +40,29 @@ Item {
         ];
     }
 
+    function _refusal(why) {
+        return {
+            "name": Phrase.note(why),
+            "icon": "material:info",
+            "comment": "Disconnect after a delay",
+            "action": "",
+            "categories": ["OrbitBluetooth"]
+        };
+    }
+
+    // The command line a chosen entry runs, or [] when it is not a valid
+    // "disconnectIn:<address>:<minutes>". The address and the minutes are
+    // re-checked here: they become command arguments.
+    function commandOf(item) {
+        const m = /^disconnectIn:((?:[0-9A-F]{2}:){5}[0-9A-F]{2}):(\d{1,4})$/i.exec(String(item && item.action || ""));
+        return m ? ["dms", "ipc", "call", "orbitBluetooth", "disconnectIn", m[1], m[2]] : [];
+    }
+
     function executeItem(item) {
-        const parts = String(item && item.action || "").split(":");
-        // The address is a fixed-shape token: validated again before it is a command argument
-        if (parts[0] !== "disconnectIn" || parts.length !== 8 || !/^([0-9A-F]{2}:){5}[0-9A-F]{2}$/i.test(parts.slice(1, 7).join(":")))
+        const command = commandOf(item);
+        if (command.length === 0)
             return;
-        run.command = ["dms", "ipc", "call", "orbitBluetooth", "disconnectIn", "--", parts.slice(1, 7).join(":"), parts[7]];
+        run.command = command;
         run.running = true;
     }
 

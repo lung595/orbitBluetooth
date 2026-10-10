@@ -1,4 +1,5 @@
 .pragma library
+.import "DisconnectPhrase.js" as Phrase
 
 // The words that start a launcher phrase ("deco xm6 30"). They are not fixed:
 // the user picks them (D424), so they live in ONE table, action -> list of
@@ -12,10 +13,6 @@ var DEFAULTS = {
 };
 var MAX_WORDS = 8;
 var MAX_LENGTH = 24;
-
-// Words that read as the delay's unit: a word equal to one would be taken for
-// the delay, never for the action
-var UNITS = ["m", "mn", "min", "mins", "minute", "minutes", "h", "hr", "hrs", "hour", "hours", "heure", "heures"];
 
 // One word as it is compared and stored: trimmed and lowercased
 function clean(word) {
@@ -34,22 +31,32 @@ function resolve(stored) {
 }
 
 // { ok: true, word } or { ok: false, why } for one word of `action`:
-// empty | long | space | number | unit | used | full
+// empty | long | control | space | number | unit | lead | used | full
+// Compared folded (accents and case away), like the parser reads them, so an
+// accented twin cannot serve two actions. A word the parser would read as the
+// delay (a number, "5min", a unit) or as its lead ("dans") never starts a phrase.
 function check(word, action, table) {
     const w = clean(word);
     if (w.length === 0)
         return { "ok": false, "why": "empty" };
     if (Array.from(w).length > MAX_LENGTH)
         return { "ok": false, "why": "long" };
+    // Control and invisible format characters (zero width, direction marks) would be printed back by the `words` command
+    if (/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]/.test(w))
+        return { "ok": false, "why": "control" };
     if (/\s/.test(w))
         return { "ok": false, "why": "space" };
-    if (/^\d+(?:[.,]\d+)?$/.test(w))
-        return { "ok": false, "why": "number" };
-    if (UNITS.indexOf(w) >= 0)
+    const f = Phrase.fold(w);
+    const amount = Phrase.amount(f);
+    if (amount)
+        return { "ok": false, "why": amount.unit ? "unit" : "number" };
+    if (Phrase.HOUR_UNITS.indexOf(f) >= 0 || Phrase.MINUTE_UNITS.indexOf(f) >= 0)
         return { "ok": false, "why": "unit" };
+    if (Phrase.LEAD.indexOf(f) >= 0)
+        return { "ok": false, "why": "lead" };
     // Any other action of the table, so a later action is covered without a change here
     for (const other of Object.keys(table || {})) {
-        if (other !== action && Array.isArray(table[other]) && table[other].map(clean).indexOf(w) >= 0)
+        if (other !== action && Array.isArray(table[other]) && table[other].map(x => Phrase.fold(clean(x))).indexOf(f) >= 0)
             return { "ok": false, "why": "used" };
     }
     return { "ok": true, "word": w };

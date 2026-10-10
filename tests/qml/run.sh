@@ -17,7 +17,7 @@ trap 'rm -rf "$work"' EXIT
 # The work folder mirrors the plugin root: components/ as it is, the tests
 # beside it, and stand-ins over the real window and the D-Bus reads
 cp -r "$root"/components "$root"/diagnostics "$work"/
-cp "$root"/plugin.json "$root"/OrbitBluetoothSettings.qml "$work"/
+cp "$root"/plugin.json "$root"/OrbitBluetoothSettings.qml "$root"/OrbitBluetoothLauncher.qml "$work"/
 # The real signal reader stays reachable as RealSignalRead for its own test
 cp "$work"/components/pairing/SignalRead.qml "$work"/components/pairing/RealSignalRead.qml
 cp "$here"/ProfileCheck.qml "$here"/SignalRead.qml "$here"/NewDeviceWindow.qml "$work"/components/pairing/
@@ -26,7 +26,7 @@ cp "$here"/Device.qml "$here"/Player.qml "$here"/*.test.qml "$work"/
 mkdir "$work"/mock
 cp "$root"/scripts/preview/mock/*.qml "$root"/scripts/preview/mock/*.js "$work"/mock/
 # Quickshell's device list is a model with .values; the stub keeps a plain list
-sed -i 's/Bluetooth\.devices\.values/Bluetooth.list/g' "$work"/components/pairing/*.qml "$work"/components/noise/*.qml "$work"/components/common/ReportService.qml
+sed -i 's/Bluetooth\.devices\.values/Bluetooth.list/g' "$work"/components/pairing/*.qml "$work"/components/noise/*.qml "$work"/components/delay/*.qml "$work"/OrbitBluetoothLauncher.qml "$work"/components/common/ReportService.qml
 export QT_QPA_PLATFORM=offscreen
 # Print to the terminal, not to journald, including print() lines
 export QT_FORCE_STDERR_LOGGING=1 QT_LOGGING_RULES='qml.debug=true;js.debug=true'

@@ -4,6 +4,8 @@ import QtQuick
 QtObject {
     signal pluginDataChanged(string pluginId)
     property var globalVars: ({})
+    // Plugin id -> manifest, as the plugin list; a test adds "smartTimer" to fake Sands
+    property var availablePlugins: ({})
     property var pluginDaemonInstances: ({})
     function setGlobalVar(id, k, v) {
     }

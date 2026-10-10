@@ -152,10 +152,7 @@ Item {
     // "Disconnect after a delay": one single-shot timer per pending delay (D423)
     DisconnectDelays {
         id: disconnectDelays
-        publish: map => root._publish("disconnectDelays", {
-                "ends": map,
-                "sands": disconnectDelays.sandsInstalled
-            })
+        publish: value => root._publish("disconnectDelays", value)
     }
 
     // The commands of `dms ipc call orbitBluetooth` (OrbitIpc)

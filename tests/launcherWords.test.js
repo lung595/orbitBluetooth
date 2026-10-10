@@ -14,6 +14,10 @@ eq("each refusal has its code", [
     W.check("", "disconnect", {}).why, W.check("a".repeat(25), "disconnect", {}).why, W.check("a b", "disconnect", {}).why,
     W.check("30", "disconnect", {}).why, W.check("1,5", "disconnect", {}).why, W.check("MIN", "disconnect", {}).why, W.check("heures", "disconnect", {}).why
 ], ["empty", "long", "space", "number", "number", "unit", "unit"]);
+eq("invisible format characters are refused", [W.check("de\u200bco", "disconnect", {}).why, W.check("\u202eab", "disconnect", {}).why], ["control", "control"]);
+eq("control characters are refused", [W.check("a\u001b[31mz", "disconnect", {}).why, W.check("a\u0085", "disconnect", {}).why], ["control", "control"]);
+eq("a delay with its unit, or a lead word, is refused", [W.check("5min", "disconnect", {}).why, W.check("2h", "disconnect", {}).why, W.check("dans", "disconnect", {}).why, W.check("In", "disconnect", {}).why, W.check("apr\u00e8s", "disconnect", {}).why, W.check("pour", "disconnect", {}).why], ["unit", "unit", "lead", "lead", "lead", "lead"]);
+eq("an accented twin of another action's word is refused", W.check("d\u00e9co", "other", { "disconnect": ["deco"] }).why, "used");
 eq("24 characters pass", W.check("a".repeat(24), "disconnect", {}).ok, true);
 eq("a word used by another action is refused", [W.check("go", "disconnect", { "other": ["go"] }).why, W.check("go", "other", { "other": ["go"] }).ok], ["used", true]);
 eq("the same action may keep its own word", W.check("deco", "disconnect", undefined).ok, true);

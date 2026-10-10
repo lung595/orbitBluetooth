@@ -37,7 +37,15 @@ eq("accents and case", P.findDevice("DEMO", devs), { "ok": true, "address": "A2"
 eq("unknown", P.findDevice("zzz", devs).why, "none");
 eq("ambiguous is never guessed", P.findDevice("pods", devs).why, "ambiguous");
 eq("an exact name beats a fragment", P.findDevice("pods two", devs).address, "A3");
-eq("empty query, no devices", [P.findDevice("", devs).why, P.findDevice("x", []).why], ["empty", "none"]);
+eq("empty query, no devices", [P.findDevice("", devs).why, P.findDevice("x", []).why], ["noDevice", "none"]);
+// The launcher and the command line pass an address
+const addr = [{ "address": "AA:BB:CC:DD:EE:FF", "name": "WH-1000XM6" }, { "address": "11:22:33:44:55:66", "name": "aa:bb Pods" }];
+eq("an exact address, any case", [P.findDevice("aa:bb:cc:dd:ee:ff", addr), P.findDevice("AA:BB:CC:DD:EE:FF", addr)], [{ "ok": true, "address": "AA:BB:CC:DD:EE:FF" }, { "ok": true, "address": "AA:BB:CC:DD:EE:FF" }]);
+eq("only the connected devices", P.connectedOf([{ "address": "A1", "name": "X", "connected": true }, { "address": "A2", "name": "Y", "connected": false }, { "address": "A3", "connected": true }]), [{ "address": "A1", "name": "X" }, { "address": "A3", "name": "" }]);
+eq("no list, no devices", [P.connectedOf(undefined), P.connectedOf([])], [[], []]);
+eq("every refusal has a note", ["badDelay", "noDelay", "noDevice", "long", "none", "ambiguous", "nothing"].every(w => P.note(w).length > 0 && P.note(w).indexOf("\u2014") < 0), true);
+eq("a long dash from outside becomes a hyphen", [P.plain("Kate \u2014 notes"), P.plain("A\u2013B"), P.plain(null)], ["Kate - notes", "A - B", ""]);
+eq("an unknown reason still says something", P.note("zzz"), P.note("noDevice"));
 // IPC minutes
 eq("clean minutes", [P.cleanMinutes("5"), P.cleanMinutes(30), P.cleanMinutes("0"), P.cleanMinutes("1441"), P.cleanMinutes("1.5"), P.cleanMinutes("-3"), P.cleanMinutes(""), P.cleanMinutes("999999")], [5, 30, null, null, null, null, null, null]);
 // Pending delays
@@ -47,6 +55,5 @@ p = P.schedule(p, "A1", 10, 1000);
 eq("rescheduling replaces", p, { "A1": 601000 });
 eq("cancel", P.cancel(p, "A1"), {});
 eq("cancel of nothing", P.cancel({}, "A9"), {});
-eq("a device that disconnected by itself is dropped", P.dropGone({ "A1": 1, "A2": 2 }, ["A2"]), { "A2": 2 });
 eq("the input map is not changed", p, { "A1": 601000 });
 done();

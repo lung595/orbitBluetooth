@@ -1,3 +1,4 @@
 module Quickshell
 singleton Quickshell 1.0 Quickshell.qml
 LazyLoader 1.0 LazyLoader.qml
+Scope 1.0 Scope.qml

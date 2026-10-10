@@ -8,6 +8,7 @@ import "../together/Delay.js" as Delay
 import "../together/Together.js" as Together
 import "../together/Wired.js" as Wired
 import "../noise/Anc.js" as Anc
+import "../delay/DisconnectPhrase.js" as Phrase
 import "../delay/LauncherWords.js" as Words
 import "../device/BeamStyle.js" as BeamStyle
 
@@ -64,14 +65,7 @@ Scope {
 
     // What a refused delay says, then the guide section that explains it (value 10)
     function _delayNote(why) {
-        const notes = {
-            "bad": "Use a whole number of minutes, 1 to 1440",
-            "none": "No connected device matches that name",
-            "ambiguous": "Several connected devices match, type more of the name",
-            "empty": "Give a device name",
-            "nothing": "No disconnect is waiting for that device"
-        };
-        return (notes[why] || notes.empty) + " · " + Guide.url("disconnect-after-a-delay");
+        return Phrase.note(why) + " · " + Guide.url("disconnect-after-a-delay");
     }
 
     IpcHandler {
@@ -100,12 +94,13 @@ Scope {
 
         // Sets the launcher words of an action: the same settings key the settings page writes
         function words(action: string, list: string): string {
-            const r = Words.setList(ipc.prefs.launcherWords, String(action || "").trim().toLowerCase(), String(list || "").slice(0, 400));
+            const name = String(action || "").trim().toLowerCase();
+            const r = Words.setList(ipc.prefs.launcherWords, name, String(list || "").slice(0, 400));
             if (!r.ok)
                 return "Use: words " + Words.ACTIONS.join(" | ") + " <comma-separated words> · " + Guide.url("disconnect-after-a-delay");
             ipc.prefs.set("launcherWords", r.table);
             const why = r.refused.map(x => x.why).filter((w, i, all) => all.indexOf(w) === i).join(", ");
-            return "OK: " + r.table[action.trim().toLowerCase()].join(", ") + (why ? " · refused: " + why + " · " + Guide.url("disconnect-after-a-delay") : "");
+            return "OK: " + r.table[name].join(", ") + (why ? " · refused: " + why + " · " + Guide.url("disconnect-after-a-delay") : "");
         }
 
         // Shows the new-device pop-up with a made-up headset
