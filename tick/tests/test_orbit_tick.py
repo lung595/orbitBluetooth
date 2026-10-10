@@ -159,12 +159,13 @@ class SessionTest(unittest.TestCase):
         self.assertEqual((proc.returncode, proc.stderr), (0, b""))
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 def gate_times(events_per_s, seconds, gap_ms):
-    """Times (s) at which VolumeTick.qml lets a tick through: a live gate, late ones dropped."""
+    """Times (s) at which a gate of gap_ms lets a tick through, late ones dropped.
+
+    A model of Volume.due (the real one is exercised in tests/volume.test.js); the
+    gap itself is read from Volume.js, so this only proves what the constant yields.
+    """
     out, last = [], None
     for k in range(int(events_per_s * seconds)):
         now = k / events_per_s
@@ -200,7 +201,7 @@ class BurstTest(unittest.TestCase):
         cls.samples, cls.most = render(cls.sound, cls.starts, 1.3)
 
     def test_the_burst_stays_well_below_full_scale(self):
-        # Spec: about -18 dBFS, never above -12 dBFS, even with a tick fading under the next
+        # Spec: about -16 dBFS, never above -12 dBFS, even with a tick fading under the next
         self.assertLess(max(map(abs, self.samples)), 32768 * 10 ** (-12 / 20))
 
     def test_nothing_is_clipped(self):
@@ -216,3 +217,7 @@ class BurstTest(unittest.TestCase):
         # A click is a jump the ear hears as a crackle: the loudest step must stay small
         step = max(abs(b - a) for a, b in zip(self.samples, self.samples[1:]))
         self.assertLess(step, 32768 * 10 ** (-20 / 20))
+
+
+if __name__ == "__main__":
+    unittest.main()
