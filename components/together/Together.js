@@ -189,10 +189,11 @@ function source(members, sound, defaultSink) {
 // playback }] }, one tap per other member whose output is there. The capture
 // is the source's PC-level filter when it has one (its monitor is the sound
 // before this PC's level, which every member applies itself: the level is
-// shared, D254), else its sink (a wired source has a filter only while it must
-// wait for Bluetooth, and its copies then read that filter's monitor, the
-// sound before the wait; else only its sink); the playback is the member's own
-// sink, where WirePlumber puts that member's filter in front, if it has one.
+// shared, D254), else its sink (a wired source has a filter all through the
+// session, and its copies read that filter's monitor, the sound before the
+// wait, once it exists; only until then do they read its sink); the playback
+// is the member's own sink, where WirePlumber puts that member's filter in
+// front, if it has one.
 function plan(members, sound, defaultSink) {
     const from = source(members, sound, defaultSink);
     const s = from ? sound(from) : null;
@@ -247,17 +248,17 @@ function args(tap, delayMs) {
     return Route.loopbackArgs(capture, playback, delayArg(delayMs));
 }
 
-// The command of the delay filter in front of a wired source, or null when the
-// source is not wired or has nothing to wait for (`ms` is how long it waits)
+// The command of the filter in front of a wired source, or null when the
+// source is not wired (`ms` is how long it waits, possibly nothing: the copies
+// still read the filter and not the sink, or the volume tick played in the
+// sink would sound in them)
 function filterCommand(p, ms) {
-    const wait = delayArg(ms);
-    return p && wait && Member.isWired(p.source) ? Route.wiredFilterArgs(p.source, wait) : null;
+    return p && Member.isWired(p.source) ? Route.wiredFilterArgs(p.source, delayArg(ms)) : null;
 }
 
-// The processes to run: [{ key, command }], the delay filter of a wired source
-// first when it must wait (key FILTER_KEY), then one copy per tap (key: the
-// member), for a plan, the delays of the members ({ member: ms }) and the wait
-// of the wired source (ms)
+// The processes to run: [{ key, command }], the filter of a wired source
+// first (key FILTER_KEY), then one copy per tap (key: the member), for a plan,
+// the delays of the members ({ member: ms }) and the wait of the wired source (ms)
 function commands(p, delays, sourceWaitMs) {
     const out = [];
     const filter = filterCommand(p, sourceWaitMs);

@@ -32,7 +32,7 @@ eq("no default-sink change, no module", /default|load-module/.test(cmd.join(" ")
 eq("DMS's list shows a generic name, never the output's", /node\.description="Wired output \(Orbit\)"/.test(cmd[4]), true);
 eq("a label is cleaned like the PC-level filter's", /description="Studio \(Orbit\)"/.test(Route.wiredFilterArgs(W1, "0.100", "Stu\"dio")[4]), true);
 eq("the longest wait is accepted, one more is not", [Route.wiredFilterArgs(W1, "1.000") !== null, Route.wiredFilterArgs(W1, "1.001"), Route.wiredFilterArgs(W1, "2")], [true, null, null]);
-eq("no wait, or a wait that is not seconds written by delayArg: no command", [Route.wiredFilterArgs(W1, ""), Route.wiredFilterArgs(W1, "0"), Route.wiredFilterArgs(W1, "0.000"), Route.wiredFilterArgs(W1, "-0.1"), Route.wiredFilterArgs(W1, "abc"), Route.wiredFilterArgs(W1, "0.1; reboot"), Route.wiredFilterArgs(W1, "0.1234"), Route.wiredFilterArgs(W1, "--help"), Route.wiredFilterArgs(W1, null), Route.wiredFilterArgs(W1, undefined), Route.wiredFilterArgs(W1, NaN)], new Array(11).fill(null));
+eq("a wait that is not seconds written by delayArg: no command", [Route.wiredFilterArgs(W1, "0"), Route.wiredFilterArgs(W1, "0.000"), Route.wiredFilterArgs(W1, "-0.1"), Route.wiredFilterArgs(W1, "abc"), Route.wiredFilterArgs(W1, "0.1; reboot"), Route.wiredFilterArgs(W1, "0.1234"), Route.wiredFilterArgs(W1, "--help"), Route.wiredFilterArgs(W1, null), Route.wiredFilterArgs(W1, undefined), Route.wiredFilterArgs(W1, NaN)], new Array(10).fill(null));
 eq("not a wired output's name: no command", [Route.wiredFilterArgs(btSink, "0.1"), Route.wiredFilterArgs("alsa_output.x\"y", "0.1"), Route.wiredFilterArgs("alsa_output.a b", "0.1"), Route.wiredFilterArgs("alsa_output.a..b", "0.1"), Route.wiredFilterArgs("alsa_output.", "0.1"), Route.wiredFilterArgs("", "0.1"), Route.wiredFilterArgs(null, "0.1")], new Array(7).fill(null));
 eq("the sink name is the only data in the properties, and it is quote-safe", cmd.slice(4).every(s => !/["'{},;$`\\]/.test(s.replace(/filter\.smart\.target=\{ node\.name = "[^"]*" \}/, "").replace(/node\.description="[^"]*"/, ""))), true);
 
@@ -54,7 +54,11 @@ const all = Together.commands(plan, {}, 195);
 eq("the filter comes first, under a key no member has, then the copy", [all.map(c => c.key), Member.clean(Together.FILTER_KEY)], [[Together.FILTER_KEY, BT], ""]);
 eq("the filter's command is the one Route gives, with the wait in seconds", [all[0].command, all.length], [Route.wiredFilterArgs(W1, "0.195"), 2]);
 eq("the copy has no wait of its own", all[1].command.length, 6);
-eq("no wait, no filter", [Together.commands(plan, {}, 0).map(c => c.key), Together.commands(plan, {}).map(c => c.key), Together.commands(plan, {}, -5).map(c => c.key)], [[BT], [BT], [BT]]);
+// NAK-251: the copies must read the filter and not the sink, or the volume tick played in the sink sounds in them
+const noWait = Route.wiredFilterArgs(W1, "");
+eq("no wait still has a filter, with no delay parameter", [noWait !== null, noWait.length, noWait.slice(0, 6), noWait[2] === cmd[2]], [true, 6, cmd.slice(0, 6), true]);
+eq("no wait: the filter is there all the same", [Together.commands(plan, {}, 0).map(c => c.key), Together.commands(plan, {}).map(c => c.key), Together.commands(plan, {}, -5).map(c => c.key)], [[Together.FILTER_KEY, BT], [Together.FILTER_KEY, BT], [Together.FILTER_KEY, BT]]);
+eq("no wait: that filter is the one without a delay", Together.commands(plan, {}, 0)[0].command, noWait);
 eq("a Bluetooth source never has a filter", Together.commands(Together.plan([BT, W1], a => a === BT ? { "sink": btSink, "pc": "", "profile": "" } : { "sink": W1, "pc": "", "profile": "" }, btSink), {}, 195).map(c => c.key), [W1]);
 eq("a wait longer than the longest is capped", Together.commands(plan, {}, 99999)[0].command[6], "1.000");
 eq("no plan: no filter", Together.commands(null, {}, 195), []);
@@ -63,6 +67,7 @@ all.forEach(c => { running[c.key] = c.command; });
 eq("the same wait changes nothing", Together.diff(running, Together.commands(plan, {}, 195)), { "stop": [], "start": [] });
 const longer = Together.diff(running, Together.commands(plan, {}, 210));
 eq("a new wait restarts the filter only", [longer.stop, longer.start.map(w => w.key)], [[Together.FILTER_KEY], [Together.FILTER_KEY]]);
-eq("no wait needed any more: the filter stops, the copy goes on", [Together.diff(running, Together.commands(plan, {}, 0)).stop, Together.diff(running, Together.commands(plan, {}, 0)).start], [[Together.FILTER_KEY], []]);
+const none = Together.diff(running, Together.commands(plan, {}, 0));
+eq("no wait needed any more: the filter restarts without its delay, the copy goes on", [none.stop, none.start.map(w => w.key)], [[Together.FILTER_KEY], [Together.FILTER_KEY]]);
 
 done();

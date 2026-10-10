@@ -134,8 +134,10 @@ function filterArgs(address, master, deviceName) {
 // it is the wired output that waits, for what the Bluetooth ones add. The wait
 // cannot be put in a copy (the apps play straight to that output), so a smart
 // filter "orbit_wired_<key>" like the PC-level one is slipped in front of the
-// output, only while Listen together needs the wait. The copies read the
-// filter's monitor, the sound before the wait.
+// output for as long as it is the source of a Listen together group, even with
+// nothing to wait for. The copies read the filter's monitor, the sound before
+// the wait, never the sink itself: the volume tick plays in the sink (see
+// tickOutput), so it stays out of every copy (NAK-251).
 
 var WIRED_PREFIX = "orbit_wired_";
 
@@ -154,15 +156,16 @@ function isWiredFilter(name) {
 var DELAY_SECONDS = /^[0-9](\.[0-9]{1,3})?$/;
 
 // The command of the filter in front of the wired output `sink` that waits
-// `delaySeconds` (a text, from Together.delayArg), or null when the sink is not
-// a wired output's name or the wait is none or too long. Like the PC-level
-// filter it dies with the shell, and its playback never falls back to another
-// output: if the wired one goes away the sound stops instead of leaving through
-// a speaker nobody chose.
+// `delaySeconds` (a text, from Together.delayArg; "" for no wait), or null when
+// the sink is not a wired output's name or the wait is not a valid one or too
+// long. Like the PC-level filter it dies with the shell, and its playback never
+// falls back to another output: if the wired one goes away the sound stops
+// instead of leaving through a speaker nobody chose.
 function wiredFilterArgs(sink, delaySeconds, deviceName) {
     const name = wiredFilterName(sink);
-    const delay = String(delaySeconds);
-    if (!name || !DELAY_SECONDS.test(delay) || Number(delay) <= 0 || Number(delay) * 1000 > MAX_DELAY_MS)
+    const delay = delaySeconds === "" ? "" : String(delaySeconds);
+    const waits = delay !== "";
+    if (!name || (waits && (!DELAY_SECONDS.test(delay) || Number(delay) <= 0 || Number(delay) * 1000 > MAX_DELAY_MS)))
         return null;
     const capture = "media.class=Audio/Sink node.name=" + name + " node.description=\"" + description(deviceName, "Wired output") + "\"" + " filter.smart=true filter.smart.name=" + name + " filter.smart.target={ node.name = \"" + sink + "\" }";
     const playback = "node.name=" + name + ".out node.passive=true node.dont-fallback=true";

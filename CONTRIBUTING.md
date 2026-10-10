@@ -227,6 +227,7 @@ orbitBluetooth/
 (cd tick && python3 -m unittest discover -s tests -t .)       # volume-tick mixer and a whole session against a stand-in pw-cat
 sh tests/qml/run.sh                                       # new-device pop-up scenario, polar scope, audio facts, control sessions, pause on removal, Listen together session, center, group chooser, ghost group and wired members (Qt 6); one test: sh tests/qml/run.sh centreLoop
 sh tests/run.sh                                          # every pure .js module, one test file per role (or gjs tests/volume.test.js for one)
+python3 tests/graph/wired_tick.py                        # a private PipeWire + WirePlumber, made-up outputs: where a volume tick sounds in Listen together (about 30 s)
 ```
 
 Run them all before every commit. A new headphone brand needs a module in `anc/protocols/` and tests in `anc/tests/`.
