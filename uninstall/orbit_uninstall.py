@@ -14,10 +14,11 @@ memory with "python3 -c" and depends on nothing in it:
 
 It waits a few seconds and checks again, because an update may delete the
 folder and clone it back: nothing is erased if plugin.json came back.
-If the volume keys were bound to Orbit on the user's click (D265), they are
-set back to DMS's own action with DMS's own command (`dms keybinds set`),
-only those whose action is still Orbit's. Not `dms keybinds reset`: DMS's
-binds.kdl is itself the default, so a reset would leave the key unbound.
+If the volume keys are bound to Orbit (at its first start, NAK-214,
+or on the user's click, D265), they are set back to DMS's own action
+with DMS's own command (`dms keybinds set`), only those whose action
+is still Orbit's. Not `dms keybinds reset`: DMS's binds.kdl is itself the
+default, so a reset would leave the key unbound.
 The shell watches these three files and reloads them when they change, so
 editing them here is the same as a user editing them by hand. Each file is
 written atomically and only if something of Orbit's was found in it.
