@@ -1,5 +1,6 @@
 import array
 import os
+import re
 import stat
 import subprocess
 import sys
@@ -156,6 +157,65 @@ class SessionTest(unittest.TestCase):
                 [sys.executable, "-E", "-s", os.path.join(os.path.dirname(__file__), "..", "orbit_tick.py"), "gone.sink", wav],
                 input=b"t 0.5\n", env=env, timeout=10, capture_output=True)
         self.assertEqual((proc.returncode, proc.stderr), (0, b""))
+
+
+def gate_times(events_per_s, seconds, gap_ms):
+    """Times (s) at which a gate of gap_ms lets a tick through, late ones dropped.
+
+    A model of Volume.due (the real one is exercised in tests/volume.test.js); the
+    gap itself is read from Volume.js, so this only proves what the constant yields.
+    """
+    out, last = [], None
+    for k in range(int(events_per_s * seconds)):
+        now = k / events_per_s
+        if last is None or now - last >= gap_ms / 1000:
+            out.append(now)
+            last = now
+    return out
+
+
+def render(sound, starts, seconds):
+    """What the helper writes for ticks asked at `starts` (s): samples, most voices at once."""
+    samples, voices, most = [], [], 0
+    pending = list(starts)
+    for c in range(int(seconds * t.RATE) // t.CHUNK):
+        begin = c * t.CHUNK
+        while pending and pending[0] * t.RATE < begin + t.CHUNK:
+            t.replace(voices, 1.0, max(0, int(pending.pop(0) * t.RATE) - begin))
+        most = max(most, len(voices))
+        samples += shorts(t.mix(sound, voices))
+    return samples, most
+
+
+class BurstTest(unittest.TestCase):
+    """A wheel spun at full speed (240 events a second) must not saturate or crackle."""
+
+    @classmethod
+    def setUpClass(cls):
+        root = os.path.join(os.path.dirname(__file__), "..", "..")
+        with open(os.path.join(root, "components", "volume", "Volume.js")) as f:
+            gap = int(re.search(r"var MIN_GAP_MS = (\d+);", f.read()).group(1))
+        cls.starts = gate_times(240, 1.0, gap)
+        cls.sound = t.load(os.path.join(root, "sounds", "volume.wav"))
+        cls.samples, cls.most = render(cls.sound, cls.starts, 1.3)
+
+    def test_the_burst_stays_well_below_full_scale(self):
+        # Spec: about -16 dBFS, never above -12 dBFS, even with a tick fading under the next
+        self.assertLess(max(map(abs, self.samples)), 32768 * 10 ** (-12 / 20))
+
+    def test_nothing_is_clipped(self):
+        self.assertLess(max(map(abs, self.samples)), 32767)
+
+    def test_ticks_start_at_most_20_a_second(self):
+        self.assertGreaterEqual(min(b - a for a, b in zip(self.starts, self.starts[1:])), 0.05 - 1e-9)
+
+    def test_at_most_the_tick_and_the_one_it_replaces_ring(self):
+        self.assertLessEqual(self.most, 2)
+
+    def test_no_step_between_two_samples_is_a_click(self):
+        # A click is a jump the ear hears as a crackle: the loudest step must stay small
+        step = max(abs(b - a) for a, b in zip(self.samples, self.samples[1:]))
+        self.assertLess(step, 32768 * 10 ** (-20 / 20))
 
 
 if __name__ == "__main__":

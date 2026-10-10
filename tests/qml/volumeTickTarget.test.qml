@@ -63,7 +63,7 @@ Item {
         });
     }
 
-    // Each step waits out the tick's gap (25 ms) after the previous one
+    // Each step waits out the tick's gap (Volume.MIN_GAP_MS, 50 ms) after the previous one
     property int stepIndex: 0
     readonly property var steps: [() => {
             check("at rest: nothing runs", ProcessLog.live.filter(p => p.running).length, 0);
@@ -91,7 +91,7 @@ Item {
             Qt.exit(failures === 0 ? 0 : 1);
         }]
     Timer {
-        interval: 40
+        interval: 60
         repeat: true
         running: true
         triggeredOnStart: true

@@ -15,7 +15,7 @@ import "Volume.js" as Volume
 // A player per output (tick/orbit_tick.py) holds ONE PipeWire stream, fades
 // each tick in and out and lets a new tick replace the one still ringing: a
 // pw-play per tick cost a process, a connection and a stream each, too much at
-// 40 a second. It starts with the first tick, goes after Volume.IDLE_MS
+// 20 a second. It starts with the first tick, goes after Volume.IDLE_MS
 // without one (closing its standard input) and dies with the shell. Nothing
 // here runs between two changes: no pacing timer, only the idle one-shot.
 Item {

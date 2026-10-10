@@ -9,8 +9,8 @@ import "../../components/volume"
 // this measures the shell's side only; what they were sent is let go every
 // second so a long run does not grow. Made-up sink names only. Never quits.
 // Usage: QT_QPA_PLATFORM=offscreen qml -I imports volumetick.qml -- <mode> /dev/null
-// Modes: rest (nothing moves), sweep1 / sweep4 (one 1 % step every 25 ms,
-//        40 a second, up then down, into 1 or 4 outputs), burst1 / burst4
+// Modes: rest (nothing moves), sweep1 / sweep4 (one 1 % step every 50 ms,
+//        20 a second, the tick's gap, up then down, into 1 or 4 outputs), burst1 / burst4
 //        (a 5 % jump once a second, into 1 or 4 outputs)
 Window {
     id: win
@@ -51,7 +51,7 @@ Window {
     }
 
     Timer {
-        interval: 25
+        interval: 50
         repeat: true
         running: win.mode.startsWith("sweep")
         onTriggered: win.move(1)
