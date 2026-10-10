@@ -25,7 +25,7 @@ Item {
     id: session
 
     // The daemon's AudioRoute: which Bluetooth devices there are and their
-    // outputs, and the wired outputs and their delay filters
+    // outputs, and the wired outputs and their source filters
     required property var route
     // The user's nudge on the automatic wait of the wired outputs (ms)
     property int fineDelayMs: 0
@@ -75,7 +75,7 @@ Item {
 
     // --- What Together.js asks about an output ---------------------------------------
     // A wired output is there while its node is (no profile, no filter of the
-    // PC level); `pc` is then the delay filter Orbit runs in front of it, once
+    // PC level); `pc` is then the source filter Orbit runs in front of it, once
     // it exists
     function _facts(who) {
         if (Member.isWired(who)) {

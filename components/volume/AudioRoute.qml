@@ -37,7 +37,7 @@ Item {
         fineDelayMs: root.prefs ? root.prefs.togetherFineDelay : 0
     }
 
-    // A wired output (D298) by its node name, and the delay filter Orbit runs
+    // A wired output (D298) by its node name, and the source filter Orbit runs
     // in front of it while it is a session's source, or null
     function wiredSink(name) {
         return Route.sinkNamed(Pipewire.nodes.values, name);
