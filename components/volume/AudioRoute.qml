@@ -174,16 +174,17 @@ Item {
     }
 
     // A level or a mute written to a node reaches every member's copy when
-    // it is the PC level of a Listen together session (Route.levelNodes). The
-    // tick follows: in that node's output alone, or in every member's when it
-    // is the group's level.
-    function writeLevel(node, level) {
+    // it is the PC level of a Listen together session (Route.levelNodes), but
+    // the tick follows what the hand moved: that node's output alone, or every
+    // member's only when `group` says it is the group's general level
+    // (Route.tickNodes).
+    function writeLevel(node, level, group) {
         levelWriting();
         const before = node.audio.volume;
         const reached = Route.levelNodes(together.sharedNodes, node);
         reached.forEach(n => _wrote(n, level));
         Route.writeLevel(together.sharedNodes, node, level);
-        _tick(reached, before, level);
+        _tick(Route.tickNodes(together.sharedNodes, node, group), before, level);
     }
     // A level written to each of `nodes` on its own, unmuted: the group's
     // general level when the members keep their own levels (and their gaps),
@@ -242,9 +243,9 @@ Item {
         _stepState = r.state;
         return r.step;
     }
-    function stepNode(node, dir) {
+    function stepNode(node, dir, group) {
         const now = node.audio.volume;
-        writeLevel(node, Steps.apply(now, dir, stepFor(dir, now)));
+        writeLevel(node, Steps.apply(now, dir, stepFor(dir, now)), group);
     }
 
     // A member's own level: its Bluetooth device's, or its output's when it is
@@ -344,7 +345,8 @@ Item {
         const node = target === Target.PC ? pcNode(dev) : target ? ownNode(target) : (deviceNode(dev) || pcNode(dev));
         if (!node || !node.audio)
             return "no-pc-level";
-        stepNode(node, dir);
+        // No target inside a group is the group's general level
+        stepNode(node, dir, together.active && !target);
         return "";
     }
 

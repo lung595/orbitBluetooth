@@ -8,7 +8,7 @@ const Volume = load("Volume.js", ["clamp", "step", "validSink", "stepSize", "ste
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "slices", "sliceAt", "partOf", "indexOf", "arc", "end", "point", "angleOf", "valueAt", "zone", "wheelPart", "iconSpot", "legendSpot", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
 const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded", "note"]);
-const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "tickOutput", "description", "loopbackArgs", "filterArgs", "muteTarget", "levelNodes", "writeLevel", "writeMuted", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "popupScreen", "shownLevels"]);
+const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "tickOutput", "description", "loopbackArgs", "filterArgs", "muteTarget", "levelNodes", "tickNodes", "writeLevel", "writeMuted", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "popupScreen", "shownLevels"]);
 
 // --- Volume tick (Volume.js) ------------------------------------------------------
 eq("the setting: 1 % by default, 5 % when it says so", [Volume.stepSize("1"), Volume.stepSize("5"), Volume.stepSize(undefined), Volume.stepSize("7")], [0.01, 0.05, 0.01, 0.01]);
@@ -89,6 +89,11 @@ const shared = [sharedA, sharedB, sharedC];
 eq("a shared node reaches all the shared ones", Route.levelNodes(shared, sharedB), shared);
 eq("another node reaches only itself", Route.levelNodes(shared, own), [own]);
 eq("with nothing shared, only itself", Route.levelNodes([], own), [own]);
+// The tick follows the hand, not the shared write: one output unless it is the group's level (NAK-255)
+eq("a member's shared level ticks its own output only", Route.tickNodes(shared, sharedB, false), [sharedB]);
+eq("a member's level ticks its own output when nothing says group", Route.tickNodes(shared, sharedB), [sharedB]);
+eq("the group's general level ticks every shared output", Route.tickNodes(shared, sharedB, true), shared);
+eq("a level outside the shared ones ticks itself, group or not", Route.tickNodes(shared, own, true), [own]);
 Route.writeLevel(shared, sharedC, 0.5);
 eq("a level written is on every copy, unmuted", shared.map(n => [n.audio.volume, n.audio.muted]), [[0.5, false], [0.5, false], [0.5, false]]);
 eq("and the node outside is left alone", [own.audio.volume, own.audio.muted], [0.3, true]);

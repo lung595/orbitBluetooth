@@ -186,6 +186,14 @@ function levelNodes(shared, node) {
     return shared.indexOf(node) >= 0 ? shared : [node];
 }
 
+// The nodes whose output ticks for a level written to `node`: that node's
+// alone, or every shared one when `group` says the hand moved the group's
+// general level. The level of a member reaches the others (levelNodes) but
+// the sound of its tick belongs to its own output (NAK-255).
+function tickNodes(shared, node, group) {
+    return group ? levelNodes(shared, node) : [node];
+}
+
 // A level written like a slider does: on every node it must reach, unmuted
 function writeLevel(shared, node, level) {
     for (const n of levelNodes(shared, node)) {

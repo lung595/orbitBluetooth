@@ -179,7 +179,8 @@ Item {
             return;
         SessionData.suppressOSDTemporarily();
         _touch(part);
-        route.writeLevel(node, Math.max(0, Math.min(1, level)));
+        // The group's general level (the shared PC half) sounds on every member
+        route.writeLevel(node, Math.max(0, Math.min(1, level)), split && part === "pc");
     }
     // One wheel notch over the scope: a smart step, as the keys
     function stepLevel(part, dir) {
@@ -188,7 +189,7 @@ Item {
             return;
         SessionData.suppressOSDTemporarily();
         _touch(part);
-        route.stepNode(node, dir);
+        route.stepNode(node, dir, split && part === "pc");
     }
     function toggleMute(part) {
         const node = _node(part);
