@@ -5,7 +5,7 @@ var GLib = imports.gi.GLib;
 var root = GLib.path_get_dirname(GLib.path_get_dirname(GLib.canonicalize_filename(imports.system.programPath ?? "tests/run.test.js", GLib.get_current_dir())));
 
 // The modules live in feature folders: components/<feature>/<Name>.js
-const features = ["settings", "card", "centre", "common", "device", "noise", "pairing", "radar", "radio", "scene", "together", "volume", "wear"];
+const features = ["settings", "card", "centre", "common", "device", "noise", "pairing", "radar", "radio", "rules", "scene", "together", "volume", "wear"];
 function pathOf(file) {
     // The diagnostics module is not a component feature: it has its own folder
     if (GLib.file_test(root + "/diagnostics/" + file, GLib.FileTest.EXISTS))
