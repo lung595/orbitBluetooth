@@ -9,6 +9,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 - **Connection rules engine (NAK-388), logic only.** `components/rules/ConnectRules.js` decides what happens when a device connects: its start volume, then its noise mode, all in memory and never written to DMS's settings. `components/rules/ConnectRulesRunner.qml` sequences the two steps; no view loads it yet, so nothing changes on screen. Tested by `tests/connectRules.test.js` and `tests/qml/connectRulesRunner.test.qml`.
 
+- **Battery sessions and history file (NAK-389), logic only.** `components/battery/BatterySessions.js` works out, per device, the battery sessions, the low-battery decision (10, 15, 20 or 30 %, 20 % by default) and the autonomy estimate from the latest sessions; with too few sessions it answers "unknown" rather than guess. `components/battery/BatteryHistoryStore.qml` keeps the history in Orbit's cache folder (mode 0600 in a 0700 folder, keyed by a salted hash, never an address or a name), reads it once on first use and writes only when a session ends: no timer, no polling. Nothing is shown yet and nothing runs at rest. Tests: `tests/batterySessions.test.js`, `tests/historyDisk.test.js`.
+
 ## 1.15.0 - 2026-10-10
 
 ### Added

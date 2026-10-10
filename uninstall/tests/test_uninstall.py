@@ -32,6 +32,9 @@ class Shell:
         write(self.manifest, {"id": ID})
         self.cache = os.path.join(root, "cache", ID)
         os.makedirs(os.path.join(self.cache, "pictures"))
+        # The battery history lives in the cache folder, so the sweep takes it too
+        os.makedirs(os.path.join(self.cache, "battery"))
+        write(os.path.join(self.cache, "battery", "history.json"), {"v": 1})
         self.settings = os.path.join(root, "settings.json")
         self.plugin_settings = os.path.join(root, "plugin_settings.json")
         self.session = os.path.join(root, "session.json")
@@ -87,6 +90,7 @@ class SweepTest(unittest.TestCase):
         os.remove(self.shell.manifest)
         self.assertTrue(self.shell.run())
         self.assertFalse(os.path.exists(self.shell.cache))
+        self.assertFalse(os.path.exists(os.path.join(self.shell.cache, "battery", "history.json")))
         self.assertEqual(read(self.shell.plugin_settings), {"abyss": {"enabled": True}})
         s = read(self.shell.settings)
         self.assertEqual(s["barConfigs"][0]["rightWidgets"], [{"id": "battery"}])
