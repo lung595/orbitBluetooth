@@ -15,7 +15,7 @@ CategoryPage {
         wrapMode: Text.WordWrap
         font.pixelSize: Theme.fontSizeSmall
         color: Theme.surfaceVariantText
-        text: "Read from PipeWire only while the card or the pop-up shows. Pick what shows on the line and what unfolds"
+        text: "Read from PipeWire only while the card or the pop-up shows. Pick what shows on the line or unfolds"
     }
 
     Repeater {

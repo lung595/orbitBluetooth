@@ -127,4 +127,9 @@ CategoryPage {
         ]
         defaultValue: "30"
     }
+
+    BatteryPill {
+        forKey: "scopeFps"
+        visible: page.shown("scopeFps")
+    }
 }

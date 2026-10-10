@@ -8,7 +8,7 @@ import "../.."
 // Usage: QT_QPA_PLATFORM=offscreen qml -I imports settings.qml -- <state> <out.png>
 // States: default, category (Pop-up open), search ("tick"), jump (Enter on "tick":
 //         the volume tick lit), none (nothing matches), many (Audio details,
-//         20 switches); suffixes: -light, -narrow, -reduce
+//         20 switches), battery (Scanning, with its battery pills); suffixes: -light, -narrow, -reduce
 Window {
     id: win
     readonly property var opts: Qt.application.arguments.slice(Qt.application.arguments.indexOf("--") + 1)
@@ -77,6 +77,8 @@ Window {
             const view = win.findField(page).view;
             if (win.state === "category")
                 view.open("popup", "");
+            else if (win.state === "battery")
+                view.open("scanning", "");
             else if (win.state === "many")
                 view.open("audio", "");
             else if (win.state === "search")

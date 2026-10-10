@@ -829,6 +829,12 @@ Nothing runs while the page is still: no timer, no animation after the short fad
 
 Three buttons in **Reset & help** reset custom device icons, bring back every hidden device and offer ignored devices again. DMS's *Reduce motion* is respected.
 
+### Battery pills
+
+A setting that costs battery has a small pill under it with its level, *High battery use*, *Some battery use* or *Light on battery*, and one line saying why (the background scan and its interval and duration, the headset *Always connected* engine, the visualizer motion, ambient motion). A setting with no real cost has none. The pill is still: nothing runs for it.
+
+![The Scanning category with its battery pills](../screenshots/settings-battery.png)
+
 ## Report a problem
 
 When something does not work, Orbit can give you a short report to paste in a GitHub issue. It holds versions (Orbit, DMS, Quickshell, Qt, niri, your distribution), which parts of Orbit are loaded, the settings that choose a behaviour, a few counts, the shell's CPU over one second and the last events as codes. It holds **no device name, no Bluetooth address, no login, no home folder**: every line is cleaned twice before it is shown. It is built only when you ask and costs nothing the rest of the time. The codes are explained in [Debugging Orbit](DEBUGGING.md).

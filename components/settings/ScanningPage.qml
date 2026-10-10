@@ -6,7 +6,6 @@ import qs.Modules.Plugins
 CategoryPage {
     id: page
     category: "scanning"
-    required property string batteryNote
 
     // --- Scanning ----------------------------------------------------------------
 
@@ -39,8 +38,13 @@ CategoryPage {
         settingKey: "offerScan"
         visible: page.shown("offerScan")
         label: page.label("offerScan")
-        description: page.help("offerScan") + " · " + page.batteryNote
+        description: page.help("offerScan")
         defaultValue: false
+    }
+
+    BatteryPill {
+        forKey: "offerScan"
+        visible: page.shown("offerScan")
     }
 
     SelectionSetting {
@@ -70,6 +74,11 @@ CategoryPage {
         defaultValue: "60"
     }
 
+    BatteryPill {
+        forKey: "offerEvery"
+        visible: page.shown("offerEvery") && offerScan.value
+    }
+
     SliderSetting {
         settingKey: "offerMinBattery"
         // Only matters once the background scan is on
@@ -86,7 +95,7 @@ CategoryPage {
         settingKey: "scanSeconds"
         visible: page.shown("scanSeconds")
         label: page.label("scanSeconds")
-        description: page.help("scanSeconds") + " · " + page.batteryNote
+        description: page.help("scanSeconds")
         options: [
             {
                 label: "20 seconds",
@@ -106,5 +115,10 @@ CategoryPage {
             }
         ]
         defaultValue: "45"
+    }
+
+    BatteryPill {
+        forKey: "scanSeconds"
+        visible: page.shown("scanSeconds")
     }
 }

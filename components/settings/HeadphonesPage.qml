@@ -6,7 +6,6 @@ import qs.Modules.Plugins
 CategoryPage {
     id: page
     category: "headphones"
-    required property string batteryNote
     required property PluginSettings settings
 
     // --- Headphones --------------------------------------------------------------
@@ -23,7 +22,7 @@ CategoryPage {
         settingKey: "ancEngine"
         visible: page.shown("ancEngine")
         label: page.label("ancEngine")
-        description: page.help("ancEngine") + " · " + page.batteryNote
+        description: page.help("ancEngine")
         options: [
             {
                 label: "On demand",
@@ -35,6 +34,11 @@ CategoryPage {
             }
         ]
         defaultValue: "demand"
+    }
+
+    BatteryPill {
+        forKey: "ancEngine"
+        visible: page.shown("ancEngine")
     }
 
     ToggleSetting {

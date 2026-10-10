@@ -9,7 +9,6 @@ CategoryPage {
     id: page
     category: "desktop"
     required property string pluginId
-    required property string batteryNote
 
     // The desktop widget's own instance (Settings → Desktop Widgets): its
     // display choice is edited here with DMS's native picker
@@ -47,7 +46,12 @@ CategoryPage {
         settingKey: "desktopAmbient"
         visible: page.shown("desktopAmbient")
         label: page.label("desktopAmbient")
-        description: page.help("desktopAmbient") + " · " + page.batteryNote
+        description: page.help("desktopAmbient")
         defaultValue: false
+    }
+
+    BatteryPill {
+        forKey: "desktopAmbient"
+        visible: page.shown("desktopAmbient")
     }
 }

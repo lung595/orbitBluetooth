@@ -141,7 +141,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 
 ## Settings
 
-**Settings → Plugins → Orbit Bluetooth**, a search field on top and the categories down the left (Orbit, Scanning, Headphones, Volume, Pop-up, Audio details, Sounds, Desktop, Look, Reset & help), one open at a time. Type to filter the page in place (names, help lines and synonyms, a typo is forgiven); **Esc** gives the page back, **Ctrl+F** or **/** goes to the field, **Enter** opens the best match and lights it. Options marked ⚡ use more battery.
+**Settings → Plugins → Orbit Bluetooth**, a search field on top and the categories down the left (Orbit, Scanning, Headphones, Volume, Pop-up, Audio details, Sounds, Desktop, Look, Reset & help), one open at a time. Type to filter the page in place (names, help lines and synonyms, a typo is forgiven); **Esc** gives the page back, **Ctrl+F** or **/** goes to the field, **Enter** opens the best match and lights it. A setting with a real battery cost carries a pill under it (*High battery use*, *Some battery use* or *Light on battery*) and one line saying why; options marked ⚡ below are the ones that have one.
 
 | Section | Setting | Default |
 | --- | --- | --- |

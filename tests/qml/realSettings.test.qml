@@ -36,6 +36,9 @@ Item {
         }
         return null;
     }
+    function pill(key) {
+        return find(settings, i => i.forKey === key);
+    }
     readonly property var field: find(settings, i => i.focusField && i.view)
     // The "Learn my groups" row sits in the first child of the habit row
     readonly property var habits: find(settings, i => i.remembered !== undefined && i.owner)
@@ -61,6 +64,22 @@ Item {
             "then": 50,
             "run": () => {
                 h.check("a search for it shows it", h.habits.children[0].visible, true);
+                h.field.view.query = "";
+                h.field.view.open("scanning", "");
+            }
+        },
+        {
+            "then": 50,
+            "run": () => {
+                h.check("the Scanning page shows the battery pill of the background scan", h.pill("offerScan").visible, true);
+                h.check("the pill of the interval waits for the scan to be on", h.pill("offerEvery").visible, false);
+                h.field.view.query = "wired delay";
+            }
+        },
+        {
+            "then": 50,
+            "run": () => {
+                h.check("a search for another setting hides the pill", h.pill("offerScan").visible, false);
                 h.field.view.query = "";
             }
         }

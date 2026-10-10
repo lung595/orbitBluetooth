@@ -9,7 +9,7 @@ import "diagnostics/Log.js" as Log
 // turns the page into the answer (only the matching settings, editable in
 // place); Esc gives the page back. Every option works out of the box; each
 // setting has a label and one short help line (both read from the search
-// index), and options that cost battery say so ("⚡ Uses more battery").
+// index), and options that cost battery carry a pill with their level (BatteryPill).
 PluginSettings {
     id: root
 
@@ -21,8 +21,6 @@ PluginSettings {
         "surface": "settings"
     })
     pluginId: "orbitBluetooth"
-
-    readonly property string batteryNote: "⚡ Uses more battery"
 
     // Below this width the rail keeps its icons only
     readonly property int narrowWidth: 400
@@ -106,12 +104,10 @@ PluginSettings {
                         }
                         ScanningPage {
                             view: view
-                            batteryNote: root.batteryNote
                         }
                         HeadphonesPage {
                             view: view
                             settings: root
-                            batteryNote: root.batteryNote
                         }
                         VolumePage {
                             view: view
@@ -129,7 +125,6 @@ PluginSettings {
                         DesktopPage {
                             view: view
                             pluginId: root.pluginId
-                            batteryNote: root.batteryNote
                         }
                         LookPage {
                             view: view
