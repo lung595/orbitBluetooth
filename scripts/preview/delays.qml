@@ -18,7 +18,10 @@ Window {
 
     Loader {
         id: ld
-        source: "../../components/delay/DisconnectDelays.qml"
+        // publish is required since round 2: pass it at load time (the base ignores it)
+        Component.onCompleted: setSource("../../components/delay/DisconnectDelays.qml", {
+            "publish": map => {}
+        })
         onLoaded: {
             const n = win.mode === "one" ? 1 : win.mode === "five" ? 5 : 0;
             for (let i = 1; i <= n; i++)
