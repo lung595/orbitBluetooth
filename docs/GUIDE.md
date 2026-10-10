@@ -835,6 +835,22 @@ A setting that costs battery has a small pill under it with its level, *High bat
 
 ![The Scanning category with its battery pills](../screenshots/settings-battery.png)
 
+## Disconnect after a delay
+
+Ask Orbit to disconnect a device later, without touching it. From the launcher, type the device and the minutes in any order:
+
+- `deco xm6 30` disconnects *xm6* in 30 minutes;
+- `in 5 min disconnect xm6` (or `dans 5 min deco xm6`) disconnects it in 5 minutes.
+
+Words that start a phrase are yours to change: `dms ipc call orbitBluetooth words disconnect deco,disconnect` sets them, and an empty list gives back the defaults. The delay runs from the moment you ask; a device that disconnects by itself before then drops its delay.
+
+From the command line:
+
+- `dms ipc call orbitBluetooth disconnectIn AA:BB:CC:DD:EE:01 30` (1 to 1440 minutes);
+- `dms ipc call orbitBluetooth cancelDisconnect AA:BB:CC:DD:EE:01` drops the pending delay.
+
+Nothing is kept after the shell stops: pending delays live in memory only and are never written to disk. With no delay pending, nothing runs.
+
 ## Report a problem
 
 When something does not work, Orbit can give you a short report to paste in a GitHub issue. It holds versions (Orbit, DMS, Quickshell, Qt, niri, your distribution), which parts of Orbit are loaded, the settings that choose a behaviour, a few counts, the shell's CPU over one second and the last events as codes. It holds **no device name, no Bluetooth address, no login, no home folder**: every line is cleaned twice before it is shown. It is built only when you ask and costs nothing the rest of the time. The codes are explained in [Debugging Orbit](DEBUGGING.md).

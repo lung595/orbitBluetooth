@@ -11,6 +11,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 - **Battery sessions and history file (NAK-389), logic only.** `components/battery/BatterySessions.js` works out, per device, the battery sessions, the low-battery decision (10, 15, 20 or 30 %, 20 % by default) and the autonomy estimate from the latest sessions; with too few sessions it answers "unknown" rather than guess. `components/battery/BatteryHistoryStore.qml` keeps the history in Orbit's cache folder (mode 0600 in a 0700 folder, keyed by a salted hash, never an address or a name), reads it once on first use and writes only when a session ends: no timer, no polling. Nothing is shown yet and nothing runs at rest. Tests: `tests/batterySessions.test.js`, `tests/historyDisk.test.js`.
 
+- **Disconnect after a delay (NAK-403).** Say *deco xm6 30* or *in 5 min disconnect xm6* in the launcher (French and English, free word order) and the device disconnects in that many minutes (1 to 1440). `dms ipc call orbitBluetooth disconnectIn <device> <minutes>` does the same, `cancelDisconnect <device>` drops the pending delay, and `words disconnect <words>` sets the launcher words (empty = the defaults). The phrase parser (`components/delay/DisconnectPhrase.js`), the launcher words (`LauncherWords.js`) and the engine (`DisconnectDelays.qml`) are one timer per pending delay: with no delay pending nothing runs. A device that disconnects by itself drops its delay. Pending delays live in memory only and are never written to disk. Tests: `tests/disconnectPhrase.test.js`, `tests/launcherWords.test.js`, and the disconnect-delay bench scene. [Guide](docs/GUIDE.md#disconnect-after-a-delay)
+
 ## 1.15.0 - 2026-10-10
 
 ### Added
