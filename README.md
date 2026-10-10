@@ -141,7 +141,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 
 ## Settings
 
-**Settings → Plugins → Orbit Bluetooth**, grouped in tabs: Orbit, Scanning, Headphones (with device pictures), Sound, Desktop, Look. Options marked ⚡ use more battery.
+**Settings → Plugins → Orbit Bluetooth**, a search field on top and the categories down the left (Orbit, Scanning, Headphones, Volume, Pop-up, Audio details, Sounds, Desktop, Look, Reset & help), one open at a time. Type to filter the page in place (names, help lines and synonyms, a typo is forgiven); **Esc** gives the page back, **Ctrl+F** or **/** goes to the field, **Enter** opens the best match and lights it. Options marked ⚡ use more battery.
 
 | Section | Setting | Default |
 | --- | --- | --- |
@@ -160,33 +160,33 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Background scan (Orbit searches by itself) ⚡ | Off |
 | | Background scan interval / battery threshold (shown when the scan is on) | Every minute / 30 % |
 | | Scan duration: 20 s, 45 s, 90 s or *While open* ⚡ | 45 s |
-| | Sounds (short cues) / their volume | Off / 60 % |
-| | Volume tick (a soft tick in the output whose volume you change, in every output for the group's) | On |
-| | Tick every (*1 %* or *5 %*; shown with *Volume tick*, [more](docs/GUIDE.md#the-two-volumes)) | 1 % |
-| | Orbit's tick only (while you change a level in Orbit, DMS's own volume sound waits; shown with *Volume tick*, [more](docs/GUIDE.md#orbits-tick-only)) | On |
 | Headphones | Noise control | On |
 | | Turn off conversation awareness on disconnect | On |
 | | Pause when you take the headset off (Sony with a wearing sensor; keeps a control connection open, [more](docs/GUIDE.md#pause-when-you-take-the-headset-off)) | On |
 | | Engine: *On demand* or *Always connected* ⚡ | On demand |
-| Sound | Separate PC volume (the device's level and this PC's, [more](docs/GUIDE.md#separate-pc-volume)) | On |
+| | Real device pictures (uses the internet) | Off |
+| Volume | Separate PC volume (the device's level and this PC's, [more](docs/GUIDE.md#separate-pc-volume)) | On |
 | | Steps: *Smart* or *Fixed* ([more](docs/GUIDE.md#smart-volume-steps)) / Speed-up / Step | Smart / Balanced / 5 % |
 | | Volume keys: *Give back to DMS* or *Use smart steps* (niri, Orbit's from the first start unless you give them back, [more](docs/GUIDE.md#volume-keys)) | Orbit's |
 | | Volume keys with a group: *Follow the last change*, *Always the group volume* or *Always the last single device* ([more](docs/GUIDE.md#volume-keys-with-a-group)) | Follow the last change |
-| | Volume pop-up: in the Dank Island, under the bar widget, right screen edge or off ([more](docs/GUIDE.md#volume-pop-up)) | In the Dank Island |
+| Pop-up | Volume pop-up: in the Dank Island, under the bar widget, right screen edge or off ([more](docs/GUIDE.md#volume-pop-up)) | In the Dank Island |
 | | Pop-up screens: *Where I am* (only the focused screen) or *Every screen* ([more](docs/GUIDE.md#volume-pop-up)) | Where I am |
 | | Pop-up size: Compact, Medium or Large | Medium |
 | | Visualizer: Points, Rays, Waves or None / motion: Smooth or Light | Points / Smooth |
-| | Audio details: per fact (connection, profile, codec, bit rate, sample rate, bit depth, channels, latency, quantum, resampling), on the line / when unfolded ([more](docs/GUIDE.md#what-really-plays)) | Line: connection, codec, sample rate, bit depth; unfolded: all |
-| Desktop widget | Displays | All |
+| Audio details | Audio details: per fact (connection, profile, codec, bit rate, sample rate, bit depth, channels, latency, quantum, resampling), on the line / when unfolded ([more](docs/GUIDE.md#what-really-plays)) | Line: connection, codec, sample rate, bit depth; unfolded: all |
+| Sounds | Sounds (short cues) / their volume | Off / 60 % |
+| | Volume tick (a soft tick in the output whose volume you change, in every output for the group's) | On |
+| | Tick every (*1 %* or *5 %*; shown with *Volume tick*, [more](docs/GUIDE.md#the-two-volumes)) | 1 % |
+| | Orbit's tick only (while you change a level in Orbit, DMS's own volume sound waits; shown with *Volume tick*, [more](docs/GUIDE.md#orbits-tick-only)) | On |
+| Desktop | Displays | All |
 | | Backdrop | 72 % |
 | | Ambient motion ⚡ | Off |
-| Device pictures | Real device pictures (uses the internet) | Off |
-| Orbit | Report a problem: *Copy report* (anonymous, [more](docs/GUIDE.md#report-a-problem)) | — |
 | Look | Black hole: realistic or tesseract | Black hole |
 | | Charging beam: Pulse, Filament, Chain or Horizon | Filament |
 | | Shooting stars | On |
 | | Stars: Low, Normal or High | Normal |
 | | Custom images folder | — |
+| Reset & help | Report a problem: *Copy report* (anonymous, [more](docs/GUIDE.md#report-a-problem)) | — |
 
 ## Command line and keybindings
 
@@ -225,7 +225,7 @@ Bind the commands in your compositor, for example in niri: `Mod+N { spawn "dms" 
 
 | Problem | Solution |
 | --- | --- |
-| Something else does not work | *Settings → Orbit → Copy report*, then paste it in a [bug report](https://github.com/lung595/orbitBluetooth/issues/new?template=bug.yml); see [Report a problem](docs/GUIDE.md#report-a-problem) |
+| Something else does not work | *Settings → Reset & help → Copy report*, then paste it in a [bug report](https://github.com/lung595/orbitBluetooth/issues/new?template=bug.yml); see [Report a problem](docs/GUIDE.md#report-a-problem) |
 | Nothing changed after installing | Add one of its widgets, see [Add a widget](#3-add-a-widget) |
 | Earbuds disconnect after a few seconds | Accept the pairing code dialog once |
 | No pop-up for new headphones | It appears when any tool searches for devices (Orbit's **Scan**, your system settings); turn on **Background scan** to have Orbit search by itself; the pop-up waits for full-screen windows |
@@ -267,7 +267,7 @@ Some Sony headsets do not report charging, or drop Bluetooth while charging: thi
 - **Audio details**: read from PipeWire (`pactl list sinks`) while the card or the pop-up shows, only if a fact is chosen; kept in memory, dropped when it closes. Latency and bit rate also read the graph once with `pw-dump`, and the quantum once with `pw-top` (about 2 s), only while the details are unfolded (or the fact is on the line). Orbit never writes to PipeWire or to the headset.
 - **DMS's volume OSD and sound**: while Orbit's pop-up is on, Orbit holds DMS's *Volume* switch (`osdVolumeEnabled`) off, and with **Orbit's tick only** it holds DMS's *Volume Changed* sound (`soundVolumeChanged`) off for the moment Orbit moves a level. Both are held in memory only, and Orbit lets go of them around each of DMS's own saves, so nothing of it reaches DMS's files. [OSD](docs/GUIDE.md#dmss-own-volume-osd), [sound](docs/GUIDE.md#orbits-tick-only)
 - **Volume keys**: at its first start Orbit asks DMS (`dms keybinds`) to bind them to itself, unless you gave them back or they are your own shortcut; *Give back to DMS* (remembered in Orbit's settings) and uninstalling Orbit put DMS's exact line back. [More](docs/GUIDE.md#volume-keys)
-- **The anonymous report** (*Settings → Orbit → Copy report*, `dms ipc call orbitBluetooth diagnostics`, `scripts/diagnose.sh`) holds versions, states and codes only; the last 200 events live in memory and vanish with the shell. It is built only when you ask, goes to your clipboard (marked sensitive with `wl-copy`, so DMS's history does not keep it) or your terminal, and is never sent anywhere: you read it, then paste it yourself. [More](docs/GUIDE.md#report-a-problem)
+- **The anonymous report** (*Settings → Reset & help → Copy report*, `dms ipc call orbitBluetooth diagnostics`, `scripts/diagnose.sh`) holds versions, states and codes only; the last 200 events live in memory and vanish with the shell. It is built only when you ask, goes to your clipboard (marked sensitive with `wl-copy`, so DMS's history does not keep it) or your terminal, and is never sent anywhere: you read it, then paste it yourself. [More](docs/GUIDE.md#report-a-problem)
 - **Guide links**: the GitHub mark opens the guide in your browser only when you click it; Orbit itself makes no request.
 - **Network: only one opt-in feature, off by default.** **Real device pictures** sends only the *model name* of devices you have paired, never a stranger's device nearby, never the Bluetooth address. It contacts `commons.wikimedia.org`, then `api.sketchfab.com`, and downloads the picture from `upload.wikimedia.org` or `media.sketchfab.com`. Pictures are credited in the card, kept in `~/.cache/orbitBluetooth/pictures` (readable by you only) and erased when you turn the option off or from the settings.
 

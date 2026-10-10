@@ -3,17 +3,16 @@ import qs.Common
 import qs.Modules.Plugins
 import "../device/BeamStyle.js" as BeamStyle
 
-// Look tab: the black hole, stars and custom images.
-Column {
-    width: parent ? parent.width : 0
-    spacing: Theme.spacingM
-
-    // --- Look --------------------------------------------------------------------
+// The black hole, stars and custom images.
+CategoryPage {
+    id: page
+    category: "look"
 
     SelectionSetting {
         settingKey: "holeStyle"
-        label: "Black hole"
-        description: "Where hidden devices go"
+        visible: page.shown("holeStyle")
+        label: page.label("holeStyle")
+        description: page.help("holeStyle")
         options: [
             {
                 label: "Black hole",
@@ -30,8 +29,9 @@ Column {
 
     SelectionSetting {
         settingKey: "chargeBeamStyle"
-        label: "Charging beam"
-        description: "How power flows to charging devices."
+        visible: page.shown("chargeBeamStyle")
+        label: page.label("chargeBeamStyle")
+        description: page.help("chargeBeamStyle")
         options: [
             {
                 label: "Pulse",
@@ -55,13 +55,17 @@ Column {
 
     ToggleSetting {
         settingKey: "shootingStars"
-        label: "Shooting stars"
+        visible: page.shown("shootingStars")
+        label: page.label("shootingStars")
+        description: page.help("shootingStars")
         defaultValue: true
     }
 
     SelectionSetting {
         settingKey: "starDensity"
-        label: "Stars"
+        visible: page.shown("starDensity")
+        label: page.label("starDensity")
+        description: page.help("starDensity")
         options: [
             {
                 label: "Low",
@@ -81,8 +85,9 @@ Column {
 
     StringSetting {
         settingKey: "imageFolder"
-        label: "Custom images folder"
-        description: "PNGs named after devices replace their icons"
+        visible: page.shown("imageFolder")
+        label: page.label("imageFolder")
+        description: page.help("imageFolder")
         placeholder: "~/Pictures/bluetooth"
         defaultValue: ""
     }

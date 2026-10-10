@@ -15,6 +15,10 @@ Column {
     id: row
 
     required property PluginSettings settings
+    // The settings page this row sits in: it words the two settings below
+    // (as the index does, so a search matches what is shown) and, while a
+    // search filters the page, says which of them match
+    required property var owner
 
     // The saved switch (default on) and the groups remembered
     property bool learning: true
@@ -44,6 +48,7 @@ Column {
 
     Item {
         width: parent.width
+        visible: row.owner.shown("learnHabits")
         // As tall as the text, which wraps onto several lines, and never less
         // than the switch: a height taken from the switch alone let the
         // description spill over its neighbours
@@ -56,7 +61,7 @@ Column {
             spacing: Theme.spacingXS
 
             StyledText {
-                text: "Learn my groups"
+                text: row.owner.label("learnHabits")
                 font.pixelSize: Theme.fontSizeLarge
                 font.weight: Font.Medium
                 color: Theme.surfaceText
@@ -64,7 +69,7 @@ Column {
             StyledText {
                 width: parent.width
                 wrapMode: Text.WordWrap
-                text: "The suggested group is the one you listen to most. Orbit remembers each group as short hashes, at most 8, on this computer only: no name, no address, never sent anywhere. Off: nothing is kept and a pair is suggested"
+                text: row.owner.help("learnHabits")
                 font.pixelSize: Theme.fontSizeSmall
                 color: Theme.surfaceVariantText
             }
@@ -95,7 +100,7 @@ Column {
     Item {
         width: parent.width
         height: forget.height
-        visible: row.remembered > 0
+        visible: row.remembered > 0 && row.owner.shown("togetherHabits")
 
         StyledText {
             anchors.verticalCenter: parent.verticalCenter
@@ -110,7 +115,7 @@ Column {
 
             ActionButton {
                 id: forget
-                text: "Forget what Orbit learned"
+                text: row.owner.label("togetherHabits")
                 onClicked: {
                     row.settings.saveValue("togetherHabits", Habits.forget());
                     row.remembered = 0;

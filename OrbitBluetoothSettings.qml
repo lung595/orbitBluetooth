@@ -1,13 +1,15 @@
 import QtQuick
 import qs.Common
-import qs.Widgets
 import qs.Modules.Plugins
 import "components/settings"
 import "diagnostics/Log.js" as Log
 
-// Plugin settings, grouped by what they change. Every option works out of
-// the box; descriptions stay one short line, and options that cost battery
-// say so ("⚡ Uses more battery").
+// Plugin settings: a search field on top, the categories on the left as
+// bodies on a plotted orbit, one category at a time on the right. Typing
+// turns the page into the answer (only the matching settings, editable in
+// place); Esc gives the page back. Every option works out of the box; each
+// setting has a label and one short help line (both read from the search
+// index), and options that cost battery say so ("⚡ Uses more battery").
 PluginSettings {
     id: root
 
@@ -22,114 +24,123 @@ PluginSettings {
 
     readonly property string batteryNote: "⚡ Uses more battery"
 
-    // Long settings are split into tabs (value 7): a row of chips, one
-    // group shown at a time. Same look as Abyss's settings.
-    property string tab: "orbit"
-    readonly property var tabList: [
-        {
-            "id": "orbit",
-            "icon": "bluetooth",
-            "text": "Orbit"
-        },
-        {
-            "id": "scanning",
-            "icon": "bluetooth_searching",
-            "text": "Scanning"
-        },
-        {
-            "id": "headphones",
-            "icon": "headphones",
-            "text": "Headphones"
-        },
-        {
-            "id": "sound",
-            "icon": "graphic_eq",
-            "text": "Sound"
-        },
-        {
-            "id": "desktop",
-            "icon": "desktop_windows",
-            "text": "Desktop"
-        },
-        {
-            "id": "look",
-            "icon": "palette",
-            "text": "Look"
-        }
-    ]
+    // Below this width the rail keeps its icons only
+    readonly property int narrowWidth: 400
 
-    Flow {
+    FocusScope {
+        id: page
         width: parent ? parent.width : 0
-        spacing: Theme.spacingS
-        Repeater {
-            model: root.tabList
-            Rectangle {
-                id: chip
-                required property var modelData
-                readonly property bool on: root.tab === modelData.id
-                height: 36
-                width: chipRow.implicitWidth + 28
-                radius: 18
-                color: on ? Qt.tint(Theme.surfaceContainerHigh, Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.16)) : chipArea.containsMouse ? Theme.surfaceContainerHighest : Theme.surfaceContainerHigh
-                border.width: on ? 1.5 : 0
-                border.color: Theme.primary
-                Row {
-                    id: chipRow
-                    anchors.centerIn: parent
-                    spacing: 7
-                    DankIcon {
-                        anchors.verticalCenter: parent.verticalCenter
-                        name: chip.modelData.icon
-                        size: 17
-                        color: chip.on ? Theme.primary : Theme.surfaceText
-                    }
-                    StyledText {
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: chip.modelData.text
-                        font.pixelSize: Theme.fontSizeMedium
-                        font.weight: chip.on ? Font.DemiBold : Font.Normal
-                        color: chip.on ? Theme.primary : Theme.surfaceText
-                    }
+        implicitHeight: column.implicitHeight
+
+        SettingsView {
+            id: view
+            compact: page.width < root.narrowWidth
+        }
+
+        // Ctrl+F reaches the field from anywhere in the window; "/" only
+        // arrives here when no text field has taken it, so a slash typed into
+        // a field still works
+        Shortcut {
+            sequence: "Ctrl+F"
+            enabled: page.visible
+            onActivated: search.focusField()
+        }
+        Keys.onPressed: event => {
+            if (event.text === "/" && !(event.modifiers & (Qt.ControlModifier | Qt.AltModifier))) {
+                search.focusField();
+                event.accepted = true;
+            } else if (event.key === Qt.Key_Escape && view.filtering) {
+                view.query = "";
+                event.accepted = true;
+            }
+        }
+        // A click on the page gives it the keys ("/", Esc); the controls keep their own clicks
+        TapHandler {
+            gesturePolicy: TapHandler.ReleaseWithinBounds
+            grabPermissions: PointerHandler.ApprovesTakeOverByAnything
+            onTapped: page.forceActiveFocus()
+        }
+
+        Column {
+            id: column
+            width: parent.width
+            spacing: Theme.spacingS
+
+            SearchField {
+                id: search
+                width: parent.width
+                view: view
+                onReleased: page.forceActiveFocus()
+            }
+
+            Row {
+                width: parent.width
+                spacing: Theme.spacingM
+
+                CategoryRail {
+                    id: rail
+                    // Above the content, so a narrow rail's tooltips overlap it
+                    z: 1
+                    view: view
                 }
-                MouseArea {
-                    id: chipArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.tab = chip.modelData.id
+
+                Item {
+                    width: parent.width - rail.width - Theme.spacingM
+                    height: Math.max(pages.implicitHeight, none.implicitHeight)
+
+                    NoResults {
+                        id: none
+                        width: parent.width
+                        visible: view.filtering && !view.hasResults
+                        query: view.query
+                    }
+
+                    // Every page is built once; only the open one (or those with a match) shows
+                    Column {
+                        id: pages
+                        width: parent.width
+
+                        OrbitPage {
+                            view: view
+                            settings: root
+                        }
+                        ScanningPage {
+                            view: view
+                            batteryNote: root.batteryNote
+                        }
+                        HeadphonesPage {
+                            view: view
+                            settings: root
+                            batteryNote: root.batteryNote
+                        }
+                        VolumePage {
+                            view: view
+                        }
+                        PopupPage {
+                            view: view
+                        }
+                        AudioPage {
+                            view: view
+                        }
+                        SoundsPage {
+                            view: view
+                            settings: root
+                        }
+                        DesktopPage {
+                            view: view
+                            pluginId: root.pluginId
+                            batteryNote: root.batteryNote
+                        }
+                        LookPage {
+                            view: view
+                        }
+                        ResetPage {
+                            view: view
+                            settings: root
+                        }
+                    }
                 }
             }
         }
-    }
-
-    OrbitTab {
-        settings: root
-        visible: root.tab === "orbit"
-    }
-
-    ScanningTab {
-        settings: root
-        batteryNote: root.batteryNote
-        visible: root.tab === "scanning"
-    }
-
-    SoundTab {
-        visible: root.tab === "sound"
-    }
-
-    HeadphonesTab {
-        settings: root
-        batteryNote: root.batteryNote
-        visible: root.tab === "headphones"
-    }
-
-    DesktopTab {
-        pluginId: root.pluginId
-        batteryNote: root.batteryNote
-        visible: root.tab === "desktop"
-    }
-
-    LookTab {
-        visible: root.tab === "look"
     }
 }

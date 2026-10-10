@@ -19,8 +19,25 @@ Item {
                 "togetherFineDelay": 35
             })
     }
+    // Stands in for the settings page: it words the rows from the index and shows them all
+    SettingsView {
+        id: index
+    }
+    Item {
+        id: owner
+        function shown(key) {
+            return true;
+        }
+        function label(key) {
+            return index.label(key);
+        }
+        function help(key) {
+            return index.help(key);
+        }
+    }
     FineDelayRow {
         id: row
+        owner: owner
         settings: store
     }
 

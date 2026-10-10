@@ -4,32 +4,28 @@ import qs.Widgets
 import qs.Modules.Plugins
 import qs.Modules.Settings.Widgets
 
-// Desktop tab: the desktop widget's displays, backdrop and ambient motion.
-Column {
-    id: tab
+// The desktop widget's displays, backdrop and ambient motion.
+CategoryPage {
+    id: page
+    category: "desktop"
     required property string pluginId
     required property string batteryNote
 
     // The desktop widget's own instance (Settings → Desktop Widgets): its
     // display choice is edited here with DMS's native picker
-    readonly property var desktopInstance: (SettingsData.desktopWidgetInstances || []).find(w => w.widgetType === tab.pluginId) ?? null
-
-    width: parent ? parent.width : 0
-    spacing: Theme.spacingM
-
-    // --- Desktop -----------------------------------------------------------------
+    readonly property var desktopInstance: (SettingsData.desktopWidgetInstances || []).find(w => w.widgetType === page.pluginId) ?? null
 
     SettingsDisplayPicker {
-        visible: !!tab.desktopInstance
-        displayPreferences: tab.desktopInstance?.config?.displayPreferences ?? ["all"]
-        onPreferencesChanged: prefs => SettingsData.updateDesktopWidgetInstanceConfig(tab.desktopInstance.id, {
+        visible: !!page.desktopInstance && !page.view.filtering
+        displayPreferences: page.desktopInstance?.config?.displayPreferences ?? ["all"]
+        onPreferencesChanged: prefs => SettingsData.updateDesktopWidgetInstanceConfig(page.desktopInstance.id, {
                 "displayPreferences": prefs
             })
     }
 
     StyledText {
         width: parent.width
-        visible: !tab.desktopInstance
+        visible: !page.desktopInstance && !page.view.filtering
         text: "Add Orbit Bluetooth in Settings → Desktop Widgets to choose its displays"
         wrapMode: Text.WordWrap
         color: Theme.surfaceVariantText
@@ -38,8 +34,9 @@ Column {
 
     SliderSetting {
         settingKey: "desktopBackdrop"
-        label: "Backdrop"
-        description: "Veil behind the orbit"
+        visible: page.shown("desktopBackdrop")
+        label: page.label("desktopBackdrop")
+        description: page.help("desktopBackdrop")
         defaultValue: 72
         minimum: 0
         maximum: 100
@@ -48,8 +45,9 @@ Column {
 
     ToggleSetting {
         settingKey: "desktopAmbient"
-        label: "Ambient motion"
-        description: "Keep moving when the pointer is away · " + tab.batteryNote
+        visible: page.shown("desktopAmbient")
+        label: page.label("desktopAmbient")
+        description: page.help("desktopAmbient") + " · " + page.batteryNote
         defaultValue: false
     }
 }
