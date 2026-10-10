@@ -8,6 +8,7 @@ import "../together/Delay.js" as Delay
 import "../together/Together.js" as Together
 import "../together/Wired.js" as Wired
 import "../noise/Anc.js" as Anc
+import "../delay/LauncherWords.js" as Words
 import "../device/BeamStyle.js" as BeamStyle
 
 // The `dms ipc call orbitBluetooth ...` commands, for keyboard shortcuts.
@@ -25,6 +26,8 @@ import "../device/BeamStyle.js" as BeamStyle
 //   separate | togetherStatus | togetherDelay <device> <ms>
 //   togetherOutputs | wiredDelay up | down | +10 | -10 | 20 | reset | status
 //   (a device is a Bluetooth address or a wired output's node name)
+//   disconnectIn <device> <minutes, 1 to 1440> | cancelDisconnect <device>
+//   words disconnect <comma-separated words>   (the launcher words, D424; empty = defaults)
 //   diagnostics   the anonymous report: the first call starts it, the next one (a
 //                 couple of seconds later) hands it over (scripts/diagnose.sh does both)
 // Every argument is checked and capped before it is used, and an answer never
@@ -40,6 +43,7 @@ Scope {
     required property var newDevices
     required property var prefs
     required property var report
+    required property var delays
     // Hands a value to the surfaces (the daemon's PluginService global)
     required property var publish
 
@@ -58,6 +62,18 @@ Scope {
         return refusal ? _say(Guide.togetherNote(refusal.why, session.nameOf(refusal.address), refusal.address)) : "OK";
     }
 
+    // What a refused delay says, then the guide section that explains it (value 10)
+    function _delayNote(why) {
+        const notes = {
+            "bad": "Use a whole number of minutes, 1 to 1440",
+            "none": "No connected device matches that name",
+            "ambiguous": "Several connected devices match, type more of the name",
+            "empty": "Give a device name",
+            "nothing": "No disconnect is waiting for that device"
+        };
+        return (notes[why] || notes.empty) + " · " + Guide.url("disconnect-after-a-delay");
+    }
+
     IpcHandler {
         target: "orbitBluetooth"
 
@@ -69,6 +85,27 @@ Scope {
                 return "Use: beamStyle " + BeamStyle.STYLES.join(" | ") + " | reset · " + Guide.url("charging-beam");
             ipc.publish("beamStyle", s === "reset" ? "" : s);
             return "OK";
+        }
+
+        // Disconnects a connected device after a delay (D423); the answer never repeats the input
+        function disconnectIn(device: string, minutes: string): string {
+            const r = ipc.delays.start(String(device || "").slice(0, 120), minutes);
+            return r.ok ? "OK: in " + r.minutes + " min" : ipc._delayNote(r.why);
+        }
+
+        function cancelDisconnect(device: string): string {
+            const r = ipc.delays.stop(String(device || "").slice(0, 120));
+            return r.ok ? "OK" : ipc._delayNote(r.why);
+        }
+
+        // Sets the launcher words of an action: the same settings key the settings page writes
+        function words(action: string, list: string): string {
+            const r = Words.setList(ipc.prefs.launcherWords, String(action || "").trim().toLowerCase(), String(list || "").slice(0, 400));
+            if (!r.ok)
+                return "Use: words " + Words.ACTIONS.join(" | ") + " <comma-separated words> · " + Guide.url("disconnect-after-a-delay");
+            ipc.prefs.set("launcherWords", r.table);
+            const why = r.refused.map(x => x.why).filter((w, i, all) => all.indexOf(w) === i).join(", ");
+            return "OK: " + r.table[action.trim().toLowerCase()].join(", ") + (why ? " · refused: " + why + " · " + Guide.url("disconnect-after-a-delay") : "");
         }
 
         // Shows the new-device pop-up with a made-up headset

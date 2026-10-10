@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Services
 import "components/common"
+import "components/delay"
 import "components/noise"
 import "components/pairing"
 import "components/together"
@@ -148,6 +149,15 @@ Item {
             })
     }
 
+    // "Disconnect after a delay": one single-shot timer per pending delay (D423)
+    DisconnectDelays {
+        id: disconnectDelays
+        publish: map => root._publish("disconnectDelays", {
+                "ends": map,
+                "sands": disconnectDelays.sandsInstalled
+            })
+    }
+
     // The commands of `dms ipc call orbitBluetooth` (OrbitIpc)
     OrbitIpc {
         ancService: ancService
@@ -157,6 +167,7 @@ Item {
         newDevices: newDeviceWatch
         prefs: prefs
         report: reportService
+        delays: disconnectDelays
         publish: (name, value) => root._publish(name, value)
     }
 
