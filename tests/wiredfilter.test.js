@@ -1,4 +1,4 @@
-// The delay filter of a wired source (Listen together): its name, its command, and the copies that read it.
+// The filter in front of a wired source (Listen together): its name, its command, and the copies that read it.
 // Run from the plugin root: gjs tests/wiredfilter.test.js (or every file: sh tests/run.sh)
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;

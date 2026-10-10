@@ -9,7 +9,7 @@ import "components/volume/Route.js" as Route
 // call or gone (D279: away keeps its place, only a Bluetooth disconnect or
 // the user removes it), when the session ends, and the level the members
 // share; then the wired outputs of D298 (members found by their node, the
-// delay filter of a wired source, the waits read from the graph). The
+// source filter of a wired source, the waits read from the graph). The
 // processes are the stand-in of Quickshell.Io listed in ProcessLog. Run with
 // tests/qml/run.sh.
 Item {
@@ -86,14 +86,14 @@ Item {
         route.devices = next;
     }
 
-    // The processes of the session: the copies and the delay filter of a wired
+    // The processes of the session: the copies and the source filter of a wired
     // source, not the graph reader
     function live() {
         return ProcessLog.live.filter(p => p.command[0] !== "pw-dump");
     }
     // A node as the lines below name it: a Bluetooth output or filter by the
     // last two digits of its address (and "pc" for the filter), a wired output
-    // by its name after "alsa_output.", the delay filter of one as "f-" and that
+    // by its name after "alsa_output.", the source filter of one as "f-" and that
     function labelOf(node) {
         if (/^orbit_wired_w_/.test(node))
             return "f-" + node.slice(14, -17);
@@ -102,7 +102,7 @@ Item {
         return /([0-9A-F]{2})(\.1)?$/.exec(node)[1] + (/^orbit_pc_/.test(node) ? "pc" : "");
     }
     // The copies that run, as "member <- where it is copied from", and the
-    // delay filter as "filter(wired output)"
+    // source filter as "filter(wired output)"
     function copies() {
         const out = [];
         for (const p of live()) {
@@ -116,7 +116,7 @@ Item {
         }
         return out.sort();
     }
-    // A wired output node, as PipeWire lists it, and the delay filter in front of it
+    // A wired output node, as PipeWire lists it, and the source filter in front of it
     function wire(name, description) {
         const next = Object.assign({}, route.wired);
         next[name] = {
@@ -433,7 +433,7 @@ Item {
         s.properties["api.bluez5.codec"] = codec;
         return s;
     }
-    // The wired outputs' process: the delay filter's, or null
+    // The wired outputs' process: the source filter's, or null
     function filterProcess() {
         return live().find(p => /media\.class=Audio\/Sink/.test(p.command[4])) || null;
     }
@@ -459,12 +459,17 @@ Item {
 
         check("start with a wired source and a Bluetooth output", session.start([w1, b]), null);
         check("the first with an output is the source", [session.members, session.source], [[w1, b], w1]);
-        check("the copy reads the wired output, no wait is made up", copies(), ["02<-test_one"]);
+        check("with no wait the filter still runs, the copy reads the sink until it is up", copies(), ["02<-test_one", "filter(test_one)"]);
+        check("the filter made up no wait: its command has no delay argument", filterProcess().command.length, 6);
+        filterUp(w1, true);
+        check("the filter is up: the copy reads its monitor, so the source's tick stays out of it", copies(), ["02<-f-test_one", "filter(test_one)"]);
         check("the face shows the wired source's own level", [session.sharedNode === route.wired[w1], session.memberNode(w2) === route.wired[w2], session.sharedNodes.length], [true, true, 0]);
 
         check("a wired output joins by a drop onto a member", [session.join(w2, b), session.members], [null, [w1, b, w2]]);
-        check("its copy reads the same source", copies(), ["02<-test_one", "test_two<-test_one"]);
+        check("its copy reads the same source", copies(), ["02<-f-test_one", "filter(test_one)", "test_two<-f-test_one"]);
         check("a wired output can be removed", [session.remove(w2), session.members], [null, [w1, b]]);
+        // Back to the state the next steps start from: the filter has not come up yet
+        filterUp(w1, false);
 
         h.wait(500);
     }

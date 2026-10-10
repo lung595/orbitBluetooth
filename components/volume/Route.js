@@ -129,7 +129,7 @@ function filterArgs(address, master, deviceName) {
     return loopbackArgs(capture, playback);
 }
 
-// --- The delay filter of a wired source (D298) ----------------------------------------------------
+// --- The filter in front of a wired source (D298; it also keeps the volume tick out of the copies, NAK-251) ---
 // Bluetooth is never delayed, so when the sound is taken from a wired output
 // it is the wired output that waits, for what the Bluetooth ones add. The wait
 // cannot be put in a copy (the apps play straight to that output), so a smart
@@ -163,7 +163,7 @@ var DELAY_SECONDS = /^[0-9](\.[0-9]{1,3})?$/;
 // instead of leaving through a speaker nobody chose.
 function wiredFilterArgs(sink, delaySeconds, deviceName) {
     const name = wiredFilterName(sink);
-    const delay = delaySeconds === "" ? "" : String(delaySeconds);
+    const delay = String(delaySeconds);
     const waits = delay !== "";
     if (!name || (waits && (!DELAY_SECONDS.test(delay) || Number(delay) <= 0 || Number(delay) * 1000 > MAX_DELAY_MS)))
         return null;

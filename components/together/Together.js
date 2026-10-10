@@ -165,7 +165,7 @@ function without(members, who) {
 // --- Where the sound comes from ----------------------------------------------------------
 // `sound(member)` gives { sink, pc, profile }: node names ("" when none),
 // null for an output Orbit does not see. `pc` is the filter in front of the
-// output: the PC-level one of a Bluetooth output, or the delay filter of a
+// output: the PC-level one of a Bluetooth output, or the source filter of a
 // wired source (Route.wiredFilterArgs), once it exists. A member can be copied
 // to when it has an output of its own kind (see fits), and a Bluetooth one is
 // not in its call profile.
@@ -229,7 +229,7 @@ function isOutput(name) {
 }
 
 // A node name a copy may read from: an output, or one of Orbit's filters (the
-// PC-level one of a Bluetooth output, the delay one of a wired source)
+// PC-level one of a Bluetooth output, the source one of a wired source)
 function isSource(name) {
     return isOutput(name) || Route.isVirtual(name) || Route.isWiredFilter(name);
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Listen together on a PRIVATE PipeWire + WirePlumber: where does a volume tick sound?
 
-usage: python3 tests/graph/wired_tick.py        (from the plugin root; ~25 s)
+usage: python3 tests/graph/wired_tick.py        (from the plugin root; ~30 s)
 
 Starts its own PipeWire and WirePlumber in a temporary runtime directory (the
 bus, BlueZ and the sound cards are never touched: those monitors are switched
@@ -200,6 +200,7 @@ def main():
             check(title + ": tick on the copy is not heard on the source", c[WIRED] < HEARD)
             check(title + ": both levels together tick both", b[WIRED] > HEARD and b[BLUE] > HEARD)
             check(title + ": the copied sound still reaches the copy", m[BLUE] > 0.1)
+            check(title + ": the played sound still reaches the source", m[WIRED] > 0.1)
 
         title = "wired source, wired copy"
         s, c, b, m = scenario(env, tmp, title, WIRED, WIRED2, WIRED2, 0)
