@@ -31,10 +31,10 @@ function stepsCrossed(before, after, size) {
     return Math.abs(step(after, size) - step(before, size));
 }
 
-// A tick plays at most once per MIN_GAP_MS (40 a second): faster would blur into
+// A tick plays at most once per MIN_GAP_MS (20 a second): faster would blur into
 // a buzz. A tick that comes sooner is dropped, never kept for later, so the
 // sound always follows the hand and stops with it
-var MIN_GAP_MS = 25;
+var MIN_GAP_MS = 50;
 
 // Whether a tick may play at `now`, the last one having played at `last` (ms)
 function due(now, last) {

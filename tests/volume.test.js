@@ -25,9 +25,9 @@ eq("1 %: a change under half a percent crosses nothing", Volume.stepsCrossed(0.5
 eq("5 %: inside one step no tick, one tick per step across (0.62 is step 12, 0.68 is step 14)", [Volume.stepsCrossed(0.61, 0.62, tickFive), Volume.stepsCrossed(0.62, 0.68, tickFive), Volume.stepsCrossed(0.2, 0.5, tickFive)], [0, 2, 6]);
 eq("the ends of the dial are steps too (and levels are clamped)", [Volume.stepsCrossed(0.98, 1.2, tickOne), Volume.stepsCrossed(0.03, -1, tickOne)], [2, 3]);
 // Pacing: about 40 a second, a jump is a run that never outlasts 300 ms
-eq("at most one tick every 25 ms is 40 a second", 1000 / Volume.MIN_GAP_MS, 40);
+eq("at most one tick every 50 ms is 20 a second", 1000 / Volume.MIN_GAP_MS, 20);
 eq("a jump is ONE tick, heard live: a long sweep crosses steps but nothing is replayed", Volume.stepsCrossed(0.1, 0.9, tickOne) > 0, true);
-eq("a tick is due after the gap, not before", [Volume.due(1000, 0), Volume.due(1024, 1000), Volume.due(1025, 1000), Volume.due(5000, 1000)], [true, false, true, true]);
+eq("a tick is due after the gap, not before", [Volume.due(1000, 0), Volume.due(1049, 1000), Volume.due(1050, 1000), Volume.due(5000, 1000)], [true, false, true, true]);
 eq("a clock that went back never blocks the tick", Volume.due(10, 1000), true);
 eq("a player outlasts the gap between two ticks", Volume.IDLE_MS > Volume.MIN_GAP_MS * 10, true);
 eq("quiet outputs get the tick in full", [Volume.tickGain(0.01), Volume.tickGain(0.3), Volume.tickGain(Volume.TICK_KNEE)], [1, 1, 1]);

@@ -41,10 +41,15 @@ CHUNK = RATE // 100
 # What pw-cat is asked to buffer: ticks reach the speaker about this late
 LATENCY_MS = 20
 # Each tick fades in and out (1.5 ms, 5 ms) so it starts and ends without a
-# click; a tick replaced while it rings fades out over FADE samples (2 ms)
+# click; a tick replaced while it rings fades out over FADE samples (5 ms), long
+# enough that the cut is not heard as a crackle
 ATTACK = 72
 RELEASE = 240
-FADE = 96
+FADE = 240
+# The shipped sound peaks near -10 dBFS: scaled to this share it peaks near
+# -16 dBFS, so that even with the tick it replaces still fading the sum stays
+# under -12 dBFS and a loud output has room left (no saturation)
+HEADROOM = 0.5
 # How long the helper waits for its stream's ports to appear before linking
 # them: 40 polls, 50 ms apart (the stream needs a few ms to be announced)
 LINK_TRIES = 40
@@ -60,6 +65,8 @@ def load(path):
             raise ValueError("expected mono 16-bit 48 kHz")
         samples = array.array("h")
         samples.frombytes(w.readframes(w.getnframes()))
+    for i in range(len(samples)):
+        samples[i] = int(samples[i] * HEADROOM)
     for i in range(min(ATTACK, len(samples))):
         samples[i] = samples[i] * i // ATTACK
     for i in range(min(RELEASE, len(samples))):
