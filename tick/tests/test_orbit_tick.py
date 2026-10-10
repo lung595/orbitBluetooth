@@ -159,7 +159,6 @@ class SessionTest(unittest.TestCase):
         self.assertEqual((proc.returncode, proc.stderr), (0, b""))
 
 
-
 def gate_times(events_per_s, seconds, gap_ms):
     """Times (s) at which a gate of gap_ms lets a tick through, late ones dropped.
 

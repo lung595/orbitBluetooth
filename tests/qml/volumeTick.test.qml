@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell.Io
 import "components/volume"
+import "components/volume/Volume.js" as Volume
 
 // Test of VolumeTick: where and when the tick plays when a level changes.
 // One output whose own level moved: that sink only; the group's level: every
@@ -96,7 +97,7 @@ Item {
         tick.play([node("a.1")], 0.55, 0.56);
         tick.play([node("a.1")], 0.56, 0.57);
         check("a burst inside the gap: the later ticks are dropped", h.ticks(), 1);
-        tick._last -= 30;
+        tick._last -= Volume.MIN_GAP_MS;
         tick.play([node("a.1")], 0.57, 0.58);
         check("after the gap the next step ticks again, on the same player", [h.ticks(), h.started().length], [2, 1]);
 

@@ -10,7 +10,7 @@ filter, so a tick sent through that filter would be heard in every copy. Linked
 to the sink itself, the tick sounds in this output alone.
 
 A tick per process (pw-play) costs a process start, a connection and a stream
-per tick: at 20 ticks a second that is half a core. This helper opens ONE
+per tick: at the 40 ticks a second of the time that was half a core. This helper opens ONE
 stream (pw-cat, raw PCM on its standard input) and mixes the ticks into it:
 every line "t" or "t <gain>" on the standard input plays one tick (gain 0..1,
 the cap the caller derives from the output's level). Ticks are live, never
