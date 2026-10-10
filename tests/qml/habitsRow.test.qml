@@ -30,6 +30,22 @@ Item {
                     })
             })
     }
+    // Stands in for the settings page: it words the rows from the index and shows them all
+    SettingsView {
+        id: index
+    }
+    Item {
+        id: owner
+        function shown(key) {
+            return true;
+        }
+        function label(key) {
+            return index.label(key);
+        }
+        function help(key) {
+            return index.help(key);
+        }
+    }
     // A page about as wide as the settings column of a narrow window
     Item {
         id: page
@@ -38,6 +54,7 @@ Item {
 
         HabitsRow {
             id: row
+            owner: owner
             settings: store
         }
     }

@@ -6,6 +6,8 @@ import QtQuick
 Item {
     property string pluginId: "orbitBluetooth"
     property var pluginService: null
+    // The settings page puts its widgets here, as DMS's own does
+    default property alias content: column.data
     property var stored: ({})
     // Every save, in order: [[key, value], …]
     property var saves: []
@@ -16,5 +18,12 @@ Item {
     function saveValue(key, value) {
         stored[key] = value;
         saves = saves.concat([[key, value]]);
+    }
+
+    implicitHeight: column.implicitHeight
+    height: implicitHeight
+    Column {
+        id: column
+        width: parent.width
     }
 }

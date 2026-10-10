@@ -5,6 +5,7 @@ const { load, eq, done, root, GLib } = imports.lib;
 
 const S = load("SettingsSearch.js");
 const Index = load("SettingsIndex.js");
+const View = load("SettingsView.js");
 const Audiophile = load("Audiophile.js");
 
 const ids = (list, q) => S.search(list, q).map(r => r.id);
@@ -83,12 +84,12 @@ eq("the real index finds the wired delay with 'cable'", ids(Index.ENTRIES, "cabl
 eq("the real index finds the noise control with 'anc'", first(Index.ENTRIES, "anc"), "ancEnabled");
 eq("the real index forgives a typo", first(Index.ENTRIES, "vizualizer"), "scopeStyle");
 
-// --- The index follows the real tabs -------------------------------------------
+// --- The index follows the real pages -------------------------------------------
 function read(path) {
     const [, bytes] = GLib.file_get_contents(root + "/" + path);
     return new TextDecoder().decode(bytes);
 }
-// The QML files of the settings page: tabs and their rows
+// The QML files of the settings page: pages and their rows
 function qmlFiles(path) {
     const d = GLib.Dir.open(path, 0);
     const names = [];
@@ -98,7 +99,7 @@ function qmlFiles(path) {
             names.push(n);
     return names.sort();
 }
-const tabOf = file => { const m = /^(\w+)Tab\.qml$/.exec(file); return m ? m[1].toLowerCase() : null; };
+const pageOf = file => { const m = /^(\w+)Page\.qml$/.exec(file); return m && m[1] !== "Category" ? m[1].toLowerCase() : null; };
 const inIndex = new Map(Index.ENTRIES.map(e => [e.id, e]));
 
 eq("every index id is unique", inIndex.size, Index.ENTRIES.length);
@@ -109,16 +110,43 @@ for (const name of qmlFiles(root + "/components/settings")) {
     for (const k of keys) {
         used.add(k);
         eq(name + " " + k + " is in the index", inIndex.has(k), true);
-        if (tabOf(name))
-            eq(name + " " + k + " is filed under its tab", inIndex.get(k) && inIndex.get(k).category, tabOf(name));
+        if (pageOf(name))
+            eq(name + " " + k + " is filed under its page", inIndex.get(k) && inIndex.get(k).category, pageOf(name));
     }
 }
-eq("the facts of the sound tab are all there", Audiophile.INFOS.every(i => inIndex.has("factCard_" + i.key) && inIndex.has("factMore_" + i.key)), true);
-eq("the sound tab still builds the fact keys the index lists", /"factCard_" \+/.test(read("components/settings/SoundTab.qml")) && /"factMore_" \+/.test(read("components/settings/SoundTab.qml")), true);
+eq("the facts of the audio page are all there", Audiophile.INFOS.every(i => inIndex.has("factCard_" + i.key) && inIndex.has("factMore_" + i.key)), true);
+eq("the audio page still builds the fact keys the index lists", /"factCard_" \+/.test(read("components/settings/AudioPage.qml")) && /"factMore_" \+/.test(read("components/settings/AudioPage.qml")), true);
 for (const i of Audiophile.INFOS) { used.add("factCard_" + i.key); used.add("factMore_" + i.key); }
-eq("the index lists nothing the tabs no longer have", Index.ENTRIES.map(e => e.id).filter(id => !used.has(id)), []);
-eq("the keyless rows exist in the tabs", [/VolumeKeysRow \{/.test(read("components/settings/SoundTab.qml")), /ReportRow \{/.test(read("components/settings/OrbitTab.qml"))], [true, true]);
+eq("the index lists nothing the pages no longer have", Index.ENTRIES.map(e => e.id).filter(id => !used.has(id)), []);
+eq("the keyless rows exist in the pages", [/VolumeKeysRow \{/.test(read("components/settings/VolumePage.qml")), /ReportRow \{/.test(read("components/settings/ResetPage.qml"))], [true, true]);
 eq("every entry has a label, a help line and keywords", Index.ENTRIES.filter(e => !e.label || !e.help || !e.keywords.length).map(e => e.id), []);
+eq("every help is one short line", Index.ENTRIES.filter(e => e.help.length > 100).map(e => e.id), []);
+// Label and help are worded once, in the index: a page that spells its own would drift from what a search matches
+eq("pages take label and help from the index", qmlFiles(root + "/components/settings").filter(n => pageOf(n) && /^\s*(label|description): "/m.test(read("components/settings/" + n).replace(/\{[^{}]*\bvalue:[^{}]*\}/g, ""))), []);
+// The rows that are not settings widgets word themselves from the index too
+for (const [file, keys] of [["HabitsRow.qml", ["learnHabits", "togetherHabits"]], ["FineDelayRow.qml", ["togetherFineDelay"]]]) {
+    const src = read("components/settings/" + file);
+    eq(file + " reads its words from the index", Index.ENTRIES.filter(e => keys.includes(e.id) && (src.includes('"' + e.label + '"') || src.includes('"' + e.help + '"'))).map(e => e.id), []);
+}
+eq("byId finds an entry by its key", View.byId(Index.ENTRIES).volumeTick.label, "Volume tick");
+
+// --- Categories and the view of a search ---------------------------------------
+const cats = Index.CATEGORIES.map(c => c.id);
+eq("ten categories, each with an icon, a name and a help line", [cats.length, Index.CATEGORIES.every(c => c.icon && c.name && c.help)], [10, true]);
+eq("every entry sits in a known category", Index.ENTRIES.filter(e => !cats.includes(e.category)).map(e => e.id), []);
+eq("every category has entries", cats.filter(c => !Index.ENTRIES.some(e => e.category === c)), []);
+eq("every category has its page file", cats.filter(c => !qmlFiles(root + "/components/settings").includes(c[0].toUpperCase() + c.slice(1) + "Page.qml")), []);
+eq("entries are listed in the order of the rail", Index.ENTRIES.map(e => cats.indexOf(e.category)).every((n, i, a) => i === 0 || a[i - 1] <= n), true);
+
+const where = View.categoryOf(Index.ENTRIES);
+const g = View.group(S.search(Index.ENTRIES, "tick"), where);
+eq("a search groups its matches by category", [g.ids.volumeTick, g.counts.sounds >= 3, g.first.category], [true, true, "sounds"]);
+eq("each category names its best match", [g.firsts.sounds, Object.keys(g.firsts).every(c => g.counts[c] > 0)], [S.search(Index.ENTRIES, "tick").find(r => where[r.id] === "sounds").id, true]);
+eq("the first match is the best ranked", g.first.id, S.search(Index.ENTRIES, "tick")[0].id);
+eq("no match gives empty groups", View.group(S.search(Index.ENTRIES, "zzzzqq"), where), { ids: {}, counts: {}, firsts: {}, first: null });
+eq("junk results are ignored", View.group([{ id: "nope" }, null].filter(Boolean), where).first, null);
+eq("a category is found by id", [View.find(Index.CATEGORIES, "popup").name, View.find(Index.CATEGORIES, "x")], ["Pop-up", null]);
+eq("the old names still find their setting", [first(Index.ENTRIES, "Sounds"), first(Index.ENTRIES, "Device pictures"), ids(Index.ENTRIES, "Volume steps").includes("volumeSteps")], ["sounds", "realPictures", true]);
 
 // --- Speed ---------------------------------------------------------------------
 const prepared = S.prepare(Index.ENTRIES);

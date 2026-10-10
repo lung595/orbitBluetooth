@@ -16,6 +16,9 @@ Column {
     id: row
 
     required property PluginSettings settings
+    // The settings page this row sits in: it words the label and the help
+    // line as the index does, so a search matches what is shown
+    required property var owner
 
     readonly property string settingKey: "togetherFineDelay"
     // The saved correction (ms), always within Delay.cleanFine's range
@@ -51,7 +54,7 @@ Column {
 
         StyledText {
             anchors.verticalCenter: parent.verticalCenter
-            text: "Wired delay"
+            text: row.owner.label(row.settingKey)
             font.pixelSize: Theme.fontSizeMedium
             font.weight: Font.Medium
             color: Theme.surfaceText
@@ -94,7 +97,7 @@ Column {
 
     StyledText {
         width: parent.width
-        text: "Nudge the automatic wait that lines up wired outputs with Bluetooth ones"
+        text: row.owner.help(row.settingKey)
         font.pixelSize: Theme.fontSizeSmall
         color: Theme.surfaceVariantText
     }

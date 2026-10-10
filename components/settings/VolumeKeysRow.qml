@@ -34,13 +34,13 @@ Row {
                 return "Could not change the volume keys. The guide shows how to bind them by hand";
             switch (keyBinder.keys) {
             case "dms":
-                return "Volume keys: DMS's own steps. Smart steps apply once they are bound to Orbit";
+                return "Volume keys: DMS's own steps";
             case "orbit":
-                return "Volume keys: Orbit's smart steps. If Orbit is turned off they fall back to DMS's steps";
+                return "Volume keys: Orbit's smart steps";
             case "custom":
-                return "Volume keys: a shortcut of your own, left as it is. For smart steps, bind them to dms ipc call orbitBluetooth volume up or down";
+                return "Volume keys: a shortcut of your own, left as it is. See the guide to bind smart steps";
             case "unsupported":
-                return "For smart steps on the volume keys, bind them to dms ipc call orbitBluetooth volume up or down (done for you on niri only)";
+                return "Smart steps need the keys bound by hand here: see the guide";
             default:
                 return "Reading the volume keys…";
             }
