@@ -23,7 +23,7 @@ QtObject {
     // `device`: { volume: bool, noiseModes: [names] }
     function deviceConnected(address, device) {
         const key = Rules.keyOf(address, salt);
-        const plan = Rules.onConnected(_state, key, rules[key], device, Date.now());
+        const plan = Rules.onConnected(_state, key, (rules || {})[key], device, Date.now());
         _state = plan.state;
         for (const a of plan.actions) {
             if (a.kind === "volume")

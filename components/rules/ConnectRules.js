@@ -1,4 +1,6 @@
 .pragma library
+.import "../common/Address.js" as Address
+.import "../together/Member.js" as Member
 
 // Pure engine for connection rules (no QML, testable with gjs): from a device's
 // stored rule and a "connected" event it decides, in order, what Orbit does so
@@ -20,21 +22,21 @@ var USER_LOWERED = "user-lowered"; // the user already set a lower volume this s
 var INVALID = "invalid";           // the stored value is unusable and was ignored
 var STORM = "storm";               // the same connection was already handled
 
-// Settings key of a device: a salted hash, never the Bluetooth address itself.
-// The salt is a random string Orbit keeps in its own settings, so the key cannot
-// be brute-forced back to an address from a copy of the settings alone.
-// Two independent 32-bit FNV-1a runs give a 16-hex-digit key. "" when unusable.
+// Seeds of the two halves of a key, unrelated to the ones of Member.key and
+// Habits so that a stored key never matches a name elsewhere.
+var SEEDS = [1540483477, 2246822519];
+
+// Settings key of a device: 16 hex digits of two seeded hashes (Member.hash)
+// over a salt and the address, so the address is not in clear in the settings.
+// Not a secret: the salt sits in the same settings, so a copy of them could
+// still be brute-forced. "" when the address is unusable or the salt is empty
+// (an unsalted key would be the same on every machine), which means no action.
 function keyOf(address, salt) {
-    if (typeof address !== "string" || !/^([0-9A-Fa-f]{2}[:_-]){5}[0-9A-Fa-f]{2}$/.test(address))
+    var mac = Address.colon(address);
+    if (!mac || typeof salt !== "string" || !salt)
         return "";
-    var text = String(salt || "") + "|" + address.toUpperCase().replace(/[_-]/g, ":");
-    var a = 0x811c9dc5, b = 0x01000193 ^ 0x5bd1e995;
-    for (var i = 0; i < text.length; i++) {
-        a = Math.imul(a ^ text.charCodeAt(i), 0x01000193) >>> 0;
-        b = Math.imul(b ^ text.charCodeAt(i), 0x5bd1e995) >>> 0;
-        b = (b ^ (b >>> 13)) >>> 0;
-    }
-    return ("00000000" + a.toString(16)).slice(-8) + ("00000000" + b.toString(16)).slice(-8);
+    var text = salt + "|" + mac;
+    return Member.hash(text, SEEDS[0]) + Member.hash(text, SEEDS[1]);
 }
 
 // Cleans a stored rule: keeps only a whole volume in 0-100 and a mode name.
@@ -59,8 +61,8 @@ function sanitize(stored) {
     return { "rule": Object.keys(rule).length ? rule : null, "invalid": invalid };
 }
 
-// A fresh session state: when each device last connected, and the lowest volume
-// the user chose for it since.
+// A fresh session state: when each device's rule last ran, and the latest
+// volume the user chose for it since.
 function newState() {
     return { "lastAt": {}, "userVolume": {} };
 }
@@ -93,8 +95,8 @@ function onConnected(state, key, rule, device, now) {
     var last = state.lastAt[key];
     var lastAt = Object.assign({}, state.lastAt);
     lastAt[key] = now;
-    // Every report restarts the window, so a storm that keeps going stays one.
     var next = { "lastAt": lastAt, "userVolume": state.userVolume };
+    // Every report inside a window restarts it, so a storm that keeps going stays one.
     if (last !== undefined && now - last < STORM_MS)
         return { "state": next, "actions": [], "skipped": [{ "kind": "all", "reason": STORM }] };
 
@@ -115,5 +117,8 @@ function onConnected(state, key, rule, device, now) {
         else
             actions.push({ "kind": "noise", "mode": clean.rule.noise });
     }
-    return { "state": next, "actions": actions, "skipped": skipped };
+    // The window opens only when something ran: Bluetooth says "connected"
+    // before the audio node exists, and that first report (no facts yet, so
+    // nothing applied) must not swallow the second one that has them.
+    return { "state": actions.length ? next : state, "actions": actions, "skipped": skipped };
 }

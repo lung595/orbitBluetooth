@@ -15,7 +15,8 @@ eq("key shape", /^[0-9a-f]{16}$/.test(key), true);
 eq("key stable", R.keyOf(ADDR, SALT), key);
 eq("key ignores case and separator", R.keyOf("aa_bb_cc_dd_ee_01", SALT), key);
 eq("key depends on salt", R.keyOf(ADDR, "other") !== key, true);
-eq("key hides the address", key.indexOf("AA") < 0 && key.indexOf(":") < 0, true);
+eq("key hides the address", key.indexOf("aabbccddee01") < 0, true);
+eq("empty salt gives no key", [R.keyOf(ADDR, ""), R.keyOf(ADDR, undefined)], ["", ""]);
 eq("key of garbage", ["", "nope", null, undefined, 42, "AA:BB:CC:DD:EE"].map(a => R.keyOf(a, SALT)), ["", "", "", "", "", ""]);
 
 // No rule = no action
@@ -57,6 +58,8 @@ eq("lowered: not raised", run({ volume: 40 }, full, st).skipped, [{ kind: "volum
 eq("lowered: noise still runs", run({ volume: 40, noise: "nc" }, full, st).actions, [{ kind: "noise", mode: "nc" }]);
 st = R.noteUserVolume(R.newState(), key, 70);
 eq("user above rule: rule applies", run({ volume: 40 }, full, st).actions, [{ kind: "volume", value: 40 }]);
+eq("latest user level wins: 10 then 70, rule 40 applies",
+    run({ volume: 40 }, full, R.noteUserVolume(R.noteUserVolume(R.newState(), key, 10), key, 70)).actions, [{ kind: "volume", value: 40 }]);
 eq("user level ignored if garbage", R.noteUserVolume(R.newState(), key, "x").userVolume, {});
 eq("user level capped", R.noteUserVolume(R.newState(), key, 400).userVolume[key], 100);
 
@@ -73,5 +76,13 @@ eq("after quiet it applies again", R.onConnected(state, key, { volume: 30 }, ful
 const other = R.keyOf("AA:BB:CC:DD:EE:02", SALT);
 eq("storm is per device", R.onConnected(state, other, { volume: 30 }, full, 1700).actions.length, 1);
 eq("a device with no rule starts no window", run(undefined, full, state, 1700).state.lastAt, state.lastAt);
+
+// Facts arriving late: the first report has none (nothing applied, no window),
+// the second one 500 ms later applies once
+const early = R.onConnected(R.newState(), key, { volume: 30 }, null, 1000);
+eq("early report: unsupported, no window", [early.skipped[0].reason, early.state.lastAt[key]], ["unsupported", undefined]);
+const late = R.onConnected(early.state, key, { volume: 30 }, full, 1500);
+eq("late facts: applied once", late.actions, [{ kind: "volume", value: 30 }]);
+eq("then a third is a storm", R.onConnected(late.state, key, { volume: 30 }, full, 1800).skipped, [{ kind: "all", reason: "storm" }]);
 
 done();
