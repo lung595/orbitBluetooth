@@ -210,6 +210,9 @@ dms ipc call orbitBluetooth togetherAdd AA:BB:CC:DD:EE:03     # add one more out
 dms ipc call orbitBluetooth togetherRemove AA:BB:CC:DD:EE:03  # take one out (the group ends below two)
 dms ipc call orbitBluetooth togetherDelay AA:BB:CC:DD:EE:02 120  # hold one output back, 0 to 1000 ms, this session only
 dms ipc call orbitBluetooth togetherStatus   # who listens together (JSON, with each member's latency)
+dms ipc call orbitBluetooth disconnectIn AA:BB:CC:DD:EE:01 30  # disconnect this device in 30 minutes (1 to 1440)
+dms ipc call orbitBluetooth cancelDisconnect AA:BB:CC:DD:EE:01  # drop that pending delay
+dms ipc call orbitBluetooth words disconnect deco,disconnect  # the launcher words for a delayed disconnect (empty = the defaults)
 dms ipc call orbitBluetooth togetherOutputs  # the wired outputs Listen together can take (JSON)
 dms ipc call orbitBluetooth wiredDelay up    # nudge the wired outputs' wait: up, down, +10, -10, 20, reset or status
 dms ipc call orbitBluetooth separate         # end listening together

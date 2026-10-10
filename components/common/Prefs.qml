@@ -153,6 +153,8 @@ QtObject {
     readonly property bool keysOffered: _get("keysOffered", false)
     // The user gave the keys back to DMS: Orbit never takes them by itself
     readonly property bool keysGivenBack: _get("keysGivenBack", false)
+    // The words that start a launcher phrase, action -> list (D424); LauncherWords.resolve fills the gaps
+    readonly property var launcherWords: _get("launcherWords", ({}))
 
     readonly property bool reduceMotion: SettingsData.reduceMotion
 
