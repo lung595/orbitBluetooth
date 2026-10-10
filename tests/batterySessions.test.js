@@ -8,7 +8,7 @@ const GLib = imports.gi.GLib;
 const dir = GLib.path_get_dirname(GLib.path_get_dirname(GLib.canonicalize_filename(imports.system.programPath, GLib.get_current_dir())));
 const [, bytes] = GLib.file_get_contents(dir + "/components/battery/BatterySessions.js");
 const src = new TextDecoder().decode(bytes).replace(".pragma library", "");
-const S = new Function(src + "; return { feed, disconnect, usable, estimate, thresholdOf, newTracker, newAlert, lowBattery, sha256, deviceKey, newHistory, parse, serialize, prune, record, touch, lastSeen, sessionsOf, KEEP_MS, MAX_GAP_MS };")();
+const S = new Function(src + "; return { feed, disconnect, usable, estimate, thresholdOf, newTracker, newAlert, lowBattery, sha256, deviceKey, newHistory, parse, serialize, prune, record, touch, lastSeen, sessionsOf, writeCommand, eraseCommand, KEEP_MS, MAX_GAP_MS };")();
 
 const H = 3600000, T0 = Date.UTC(2026, 8, 1, 8, 0, 0);
 const rnd = () => 0.5;
@@ -75,6 +75,9 @@ step(20); eq("fires at the threshold", fired, 1);
 step(19); step(22); step(18); step(20); eq("crossed twice: still one", fired, 1);
 step(30, true); step(25); eq("not re-armed above threshold after charge", fired, 1);
 step(19); eq("re-armed by a charge", fired, 2);
+a = S.newAlert(); fired = 0;
+step(15); step(100); step(15); eq("back at full without a charge report: re-armed", fired, 2);
+step(22); step(18); eq("jitter within the margin: no second alert", fired, 2);
 a = S.newAlert(); fired = 0;
 step(10, false, true); eq("DND: no alert", fired, 0);
 step(10, false, false); eq("DND off while still low: alert comes", fired, 1);

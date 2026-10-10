@@ -96,6 +96,9 @@ function estimate(sessions, level) {
 
 // ---- Low battery ---------------------------------------------------------
 
+// Percent above the threshold at which a discharge counts as over
+var REARM_MARGIN = 5;
+
 function thresholdOf(value) {
     return THRESHOLDS.indexOf(value) >= 0 ? value : DEFAULT_THRESHOLD;
 }
@@ -106,13 +109,16 @@ function newAlert() {
 
 // One decision per discharge: { alert, fire }. It fires once when the level
 // reaches the threshold while discharging, then stays quiet however many times
-// the level crosses it again; only a charge re-arms it. With Do not disturb on
+// the level crosses it again; a charge re-arms it, and so does a level well
+// above the threshold (a headset charged in its case never reports charging,
+// while a 19 -> 22 -> 18 jitter around the threshold stays one alert). With Do not disturb on
 // it neither fires nor disarms, so the warning still comes once DND is off.
 // The notification itself is silent (the caller sends it without a sound).
 function lowBattery(alert, level, charging, threshold, dnd) {
-    if (charging)
+    var limit = thresholdOf(threshold);
+    if (charging || (typeof level === "number" && level >= limit + REARM_MARGIN))
         return { alert: { armed: true }, fire: false };
-    if (typeof level !== "number" || !alert.armed || level > thresholdOf(threshold) || dnd)
+    if (typeof level !== "number" || !alert.armed || level > limit || dnd)
         return { alert: alert, fire: false };
     return { alert: { armed: false }, fire: true };
 }
@@ -132,7 +138,7 @@ var _K = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1
     0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
     0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];
 
-// SHA-256 of an ASCII/UTF-16 string folded to bytes; QML has no crypto module
+// SHA-256 of an string encoded to UTF-8 bytes (BMP only); QML has no crypto module
 function sha256(text) {
     var bytes = [];
     for (var i = 0; i < text.length; i++) {
@@ -221,6 +227,18 @@ function parse(text, random) {
         clean.devices[key] = { seen: d.seen, sessions: Array.isArray(d.sessions) ? d.sessions.filter(_cleanSession).slice(-MAX_SESSIONS_PER_DEVICE) : [] };
     });
     return clean;
+}
+
+// The command that stores serialized history on its standard input: umask 077
+// makes the folder 0700 and the file 0600; paths are positional parameters,
+// never part of the shell string, and the rename keeps the old file whole
+// until the new one is complete.
+function writeCommand(folder, file) {
+    return ["sh", "-c", "umask 077; mkdir -p -- \"$1\" && cat > \"$2.tmp\" && mv -f -- \"$2.tmp\" \"$2\"", "sh", folder, file];
+}
+
+function eraseCommand(file) {
+    return ["rm", "-f", "--", file, file + ".tmp"];
 }
 
 function serialize(history) {
