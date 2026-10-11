@@ -1,0 +1,175 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Orbit · NAK-539 · GitHub mark beside Copy report</title>
+<style>
+/* Every colour below is a DMS Theme role; the palettes are fictitious theme data set from JS (same data as the Sands model). */
+:root{--r:12px;--ease:cubic-bezier(.33,1,.68,1)}
+*{box-sizing:border-box}
+body{margin:0;padding:24px;background:var(--bg);color:var(--text);font:14px/1.4 Inter,'Noto Sans',sans-serif}
+h1{font-size:20px;font-weight:600;margin:0 0 4px}h2{font-size:16px;font-weight:600;margin:32px 0 12px}
+p{margin:0 0 4px;color:var(--variant);max-width:76ch}
+.num{font-variant-numeric:tabular-nums}
+.switches{display:flex;flex-wrap:wrap;gap:12px 20px;margin:20px 0}
+.grp{display:flex;flex-wrap:wrap;align-items:center;gap:4px}.grp>span{font-size:12px;color:var(--variant);margin-right:4px}
+.grp button{font:inherit;min-height:44px;padding:0 12px;border-radius:var(--r);border:1px solid var(--outline);background:none;color:var(--text);cursor:pointer}
+.grp button[aria-pressed=true]{background:var(--primary);color:var(--onprimary);border-color:var(--primary)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+#stage{overflow:auto;max-width:100%;padding:4px}
+#panel{background:var(--surface);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:16px}
+.head{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+.head b{font-size:18px;font-weight:600;flex:1 1 120px}
+.search{flex:1 1 160px;min-width:0;height:44px;border-radius:var(--r);border:1px solid var(--outline);background:none;color:var(--text);font:inherit;padding:0 12px}
+.search::placeholder{color:var(--variant);opacity:1}
+.body{display:flex;align-items:flex-start}
+/* Orbit's rail (NAK-261): one planet per category on a dashed orbit, 160 px. Static here: the rail is not the subject of this page. */
+.rail{position:relative;flex:0 0 160px;width:160px;display:flex;flex-direction:column}
+.rail::before{content:"";position:absolute;left:23px;top:22px;bottom:22px;width:2px;background:repeating-linear-gradient(180deg,var(--line) 0 3px,transparent 3px 6px)}
+.ent{position:relative;width:160px;height:44px;color:var(--variant);font-size:14px;line-height:16px;display:flex;align-items:center;gap:8px;padding-right:4px}
+.ent i{flex:0 0 48px;height:44px;display:grid;place-items:center}
+.ent i::before{content:"";width:22px;height:22px;border-radius:50%;background:var(--high);border:1px solid var(--line)}
+.ent span{min-width:0;overflow-wrap:anywhere}
+.ent.on{color:var(--text);font-weight:600}
+.ent.on i::before{width:30px;height:30px;border:2px solid var(--primary);background:var(--tint)}
+.logo{fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.content{flex:1 1 0;min-width:0;padding-left:16px;display:flex;flex-direction:column;gap:16px}
+.content h3{margin:0;font-size:16px;font-weight:600;line-height:24px}
+.note{font-size:12px;line-height:16px;color:var(--variant);overflow-wrap:anywhere;margin:0}
+/* Orbit's own wrapping setting row: the title wraps before its control, the control drops under the text when room is missing. */
+.rowi{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+.txt{flex:1 1 160px;min-width:0}
+.txt b{display:block;font-weight:500;line-height:20px;overflow-wrap:anywhere}.txt small{display:block;font-size:12px;line-height:16px;color:var(--variant);overflow-wrap:anywhere}
+.ctl{position:relative;flex:0 1 auto;min-width:0;max-width:100%;display:flex;flex-wrap:wrap;gap:8px}
+.seg{font:inherit;font-size:12px;line-height:16px;min-height:34px;padding:0 16px;border-radius:var(--r);border:0;background:var(--high);color:var(--text);cursor:pointer;max-width:100%}
+/* The Copy report button. Its two labels share one grid cell, so its width never changes between states. */
+.cr{position:relative;overflow:hidden;font:inherit;font-size:14px;line-height:20px;height:44px;min-width:112px;padding:0 16px;border-radius:var(--r);border:1px solid var(--outline);background:none;color:var(--text);cursor:pointer;display:grid;place-items:center;white-space:nowrap;transition:transform .1s var(--ease)}
+.cr::before{content:"";position:absolute;inset:0;background:var(--high);opacity:0;transition:opacity .1s var(--ease)}
+.cr:hover::before,.cr.f-hover::before,.cr.f-press::before{opacity:1;transition-duration:.15s}
+.cr:active,.cr.f-press{transform:scale(.97);transition-duration:.1s}
+.cr.f-focus{outline:2px solid var(--primary);outline-offset:2px}
+.cr>span{grid-area:1/1;position:relative;display:inline-flex;align-items:center;gap:8px;transition:opacity .1s var(--ease)}
+.cr .l-busy,.cr .l-done{opacity:0}
+.cr .l-done svg{color:var(--primary)}
+/* Copied: a dotted orbit (2 px on, 6 px off, the dash of the Orbit sky) appears at the foot of the button. Opacity only. */
+.cr .tintc{position:absolute;inset:0;background:var(--primary);opacity:0;transition:opacity .1s var(--ease)}
+.cr .orb{position:absolute;left:16px;right:16px;bottom:6px;height:1px;background:repeating-linear-gradient(90deg,var(--primary) 0 2px,transparent 2px 8px);opacity:0;transition:opacity .1s var(--ease)}
+.s-busy .cr{cursor:default;color:var(--variant)}.s-busy .cr::before{opacity:0}.s-busy .cr:active{transform:none}
+.s-busy .cr .l-rest,.s-copied .cr .l-rest{opacity:0}
+.s-busy .cr .l-busy,.s-copied .cr .l-done{opacity:1;transition-duration:.15s}
+.s-copied .cr{border-color:var(--primary)}.s-copied .cr::before{opacity:0}
+.s-copied .cr .tintc{opacity:.14;transition-duration:.15s}
+.s-copied .cr .orb{opacity:1;transition-duration:.15s}
+/* Guided message (D228): Orbit's existing HelpNote, laid under the row at full width. */
+.hn{flex:1 1 100%;min-width:0;display:none;align-items:center;gap:4px;padding:8px 4px 8px 12px;border-radius:var(--r);background:var(--high);border:1px solid var(--line)}
+#row.s-none .hn{animation:fade .15s var(--ease) both}
+.s-none .hn{display:flex}
+.hn div{flex:1 1 0;min-width:0}
+.hn b{display:block;font-weight:700;line-height:20px;overflow-wrap:anywhere}
+.hn small{display:block;font-size:12px;line-height:16px;color:var(--variant);overflow-wrap:anywhere}
+.gh{flex:0 0 44px;width:44px;height:44px;border:0;border-radius:var(--r);background:none;color:var(--variant);cursor:pointer;display:grid;place-items:center;transition:color .1s var(--ease)}
+.gh:hover,.gh.f-hover{color:var(--primary);transition-duration:.15s}
+.gh.f-focus{outline:2px solid var(--primary);outline-offset:2px}
+/* The always visible mark (D453): same GitHubMark, beside the button. Once the report is copied it takes the primary colour: the next step is there. */
+.s-copied .gi{color:var(--primary);transition-duration:.15s}
+.tip{position:absolute;z-index:2;left:0;top:calc(100% + 4px);padding:4px 8px;border-radius:var(--r);background:var(--high);border:1px solid var(--line);color:var(--text);font-size:12px;line-height:16px;width:max-content;max-width:100%;overflow-wrap:anywhere;pointer-events:none;opacity:0;transition:opacity .1s var(--ease)}
+.gi:hover~.tip,.gi:focus-visible~.tip,.g-tip .tip{opacity:1;transition-duration:.15s}
+@keyframes fade{from{opacity:0}}
+/* Reduce motion: states swap with a 150 ms fade, nothing scales. */
+.rm .cr{transition:opacity .15s var(--ease)!important}.rm .cr:active,.rm .cr.f-press{transform:none}
+@media (prefers-reduced-motion:reduce){#row.s-none .hn{animation-duration:.15s}.cr{transition:opacity .15s var(--ease)!important}.cr:active,.cr.f-press{transform:none}}
+.foot{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--variant);padding-top:8px}
+#said{min-height:20px;margin-top:8px}
+.sheet{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+.cell{background:var(--surface);border-radius:var(--r);padding:16px}
+.cell .g-tip{margin-bottom:32px}
+/* Before: the row as it is on main (1.15.0), drawn from ReportRow.qml, ActionButton.qml and GuideLink.qml. */
+.old{display:flex;align-items:center;gap:12px}.old small{flex:1 1 0;min-width:0;font-size:12px;line-height:16px;color:var(--variant);overflow-wrap:anywhere}.old.err small{color:var(--error)}
+.old .ab{flex:0 0 auto;height:34px;padding:0 16px;border-radius:var(--r);background:var(--high);color:var(--text);font-size:12px;line-height:34px;white-space:nowrap}.old .gl{flex:0 0 24px;height:24px;display:grid;place-items:center;color:var(--variant)}
+.cell>i{display:block;font-style:normal;font-size:12px;line-height:16px;color:var(--variant);margin-bottom:8px}
+table{border-collapse:collapse;font-size:14px;max-width:100%}th,td{text-align:left;padding:8px 16px 8px 0;border-bottom:1px solid var(--outline);vertical-align:top}th{color:var(--variant);font-weight:500}
+</style>
+<body>
+<h1>Orbit · NAK-539 · The GitHub mark beside "Copy report"</h1>
+<p>The anonymous report row of Settings, "Reset &amp; help", before and after. After: the row approved on Sands (D453, the single model for every plugin), as is, in Orbit's settings. The GitHub mark is always there, 8 px to the right of "Copy report": it opens a new issue for Orbit, where the report is pasted. Once the report is copied the mark takes the primary colour, so the next step shows itself. Switch "Clipboard tool" to "Missing" to see the guided message. Every state is also drawn side by side under the panel.</p>
+<p>Why it is not generic: no toast and no green tick. "Copied" is marked by the dotted orbit of Orbit's own sky, drawn at the foot of the button, and the next step lights up beside it like a body entering the light.</p>
+<div class="switches" id="sw"></div>
+<div id="stage"><div id="panel"></div></div>
+<p id="said" aria-live="polite"></p>
+<h2>Before: the row on main (1.15.0), at the width of the settings column</h2><div class="sheet" id="before"></div>
+<h2>After: every state, at the width of the settings column</h2><div class="sheet" id="sheet"></div>
+<h2>Where the GitHub mark leads (decided, D453)</h2><div id="dest"></div>
+<h2>Motion</h2><div id="motion"></div>
+<h2>Contrast, measured from the palette shown (WCAG formula, tints composited)</h2><div id="contrast"></div>
+<h2>Exact copy</h2><div id="copy"></div>
+<script>
+"use strict";
+// Fictitious DMS themes (same data as the Sands model): stock, one coloured, one wallpaper-generated. Keys are Theme roles.
+const TH={stock:{dark:{bg:"#141218",surface:"#211F26",high:"#36343B",text:"#E6E0E9",variant:"#CAC4D0",outline:"#938F99",primary:"#D0BCFF",error:"#F2B8B5",onprimary:"#381E72"},
+light:{bg:"#E7E0EC",surface:"#FEF7FF",high:"#E6E0E9",text:"#1D1B20",variant:"#49454F",outline:"#79747E",primary:"#6750A4",error:"#B3261E",onprimary:"#FFFFFF"}},
+green:{dark:{bg:"#10140F",surface:"#1C211B",high:"#313630",text:"#E0E4DB",variant:"#C2C8BC",outline:"#8C9387",primary:"#A1D39A",error:"#FFB4AB",onprimary:"#0A390F"},
+light:{bg:"#E3E9DC",surface:"#F7FBF1",high:"#E0E4DB",text:"#191D17",variant:"#424940",outline:"#72796F",primary:"#3A6A36",error:"#BA1A1A",onprimary:"#FFFFFF"}},
+wall:{dark:{bg:"#17130B",surface:"#231F17",high:"#39342B",text:"#ECE1D4",variant:"#D1C5B4",outline:"#9A8F80",primary:"#EFBF6D",error:"#FFB4AB",onprimary:"#422C00"},
+light:{bg:"#EFE3D0",surface:"#FFF8F1",high:"#EDE1D0",text:"#1F1B13",variant:"#4E4639",outline:"#807667",primary:"#7A5900",error:"#BA1A1A",onprimary:"#FFFFFF"}}};
+const S={theme:"stock",mode:"dark",w:518,rm:false,tool:"yes",st:"live"};
+let live="rest",timer=0;
+const C={title:"Anonymous report",help:"Versions, states and error codes only. It stays on this PC until you paste it.",
+ button:"Copy report",busy:"Collecting…",done:"Copied",helpDone:"Report copied. Read it, then paste it in a GitHub issue.",
+ noneTitle:"The report could not be copied",noneHint:"Install wl-clipboard, or run dms ipc call orbitBluetooth diagnostics in a terminal.",
+ gh:"Open the guide: Report a problem",issue:"Open a new issue for Orbit on GitHub",helpHist:"Report copied. Read it, then paste it in a GitHub issue. It holds nothing personal, but DMS's clipboard history may keep it.",tip:"Open an issue on GitHub"};
+const SECS=["Orbit","Scanning","Headphones","Volume","Pop-up","Audio details","Sounds","Desktop","Look","Reset & help"];
+const GH=`<svg width="18" height="18" viewBox="0 0 98 96" aria-hidden="true"><path fill="currentColor" d="M48.854 0C21.839 0 0 22 0 49.217c0 21.756 13.993 40.172 33.405 46.69 2.427.49 3.316-1.059 3.316-2.362 0-1.141-.08-5.052-.08-9.127-13.59 2.934-16.42-5.867-16.42-5.867-2.184-5.704-5.42-7.17-5.42-7.17-4.448-3.015.324-3.015.324-3.015 4.934.326 7.523 5.052 7.523 5.052 4.367 7.496 11.404 5.378 14.235 4.074.404-3.178 1.699-5.378 3.074-6.6-10.839-1.141-22.243-5.378-22.243-24.283 0-5.378 1.94-9.778 5.014-13.2-.485-1.222-2.184-6.275.486-13.038 0 0 4.125-1.304 13.426 5.052a46.97 46.97 0 0 1 12.214-1.63c4.125 0 8.33.571 12.213 1.63 9.302-6.356 13.427-5.052 13.427-5.052 2.67 6.763.97 11.816.485 13.038 3.155 3.422 5.015 7.822 5.015 13.2 0 18.905-11.404 23.06-22.324 24.283 1.78 1.548 3.316 4.481 3.316 9.126 0 6.6-.08 11.897-.08 13.526 0 1.304.89 2.853 3.316 2.364 19.412-6.52 33.405-24.935 33.405-46.691C97.707 22 75.788 0 48.854 0z"/></svg>`;
+const CHECK=`<svg class="logo" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.5 3.5l6.5-7.5"/></svg>`;
+const SW=[["theme","Theme",[["stock","Stock"],["green","Green"],["wall","Wallpaper"]]],["mode","",[["dark","Dark"],["light","Light"]]],
+["w","Panel width",[[518,"518 px wide"],[436,"436 px narrow"],[360,"360 px stress"]]],["rm","Reduce motion",[[false,"Off"],[true,"On"]]],
+["tool","Clipboard tool",[["yes","Present"],["no","Missing"]]],
+["st","Panel shows",[["live","Live (press it)"],["hover","Hover"],["press","Pressed"],["focus","Focus"],["busy","Collecting"],["copied","Copied"],["copiedh","Copied, history on"],["none","No clipboard tool"],["ghover","Mark hover"],["gfocus","Mark focus"]]]];
+const STATES=[["rest","Rest"],["hover","Hover"],["press","Pressed"],["focus","Focus-visible"],["busy","Collecting (about 2 s at most)"],["copied","Copied (leaves alone after 4 s)"],["copiedh","Copied while DMS keeps a clipboard history (longest text)"],["none","No clipboard tool (guided message)"],["ghover","GitHub mark: hover (label shown)"],["gfocus","GitHub mark: focus-visible (label shown)"]];
+const $=id=>document.getElementById(id);
+// One row, in the asked state. `id` only on the live row so the sheet stays inert.
+function rowHTML(st,isLive){const hist=st==="copiedh";if(hist)st="copied";const sc=st==="busy"||st==="copied"||st==="none"?" s-"+st:"",f=st==="hover"||st==="press"||st==="focus"?" f-"+st:"",g=st==="ghover"?" f-hover":st==="gfocus"?" f-focus":"";
+ return`<div class="rowi${sc}"${isLive?' id="row"':""}><div class="txt"><b>${C.title}</b><small${isLive?' aria-live="polite"':""}>${hist?C.helpHist:st==="copied"?C.helpDone:C.help}</small></div>
+<div class="ctl${g?" g-tip":""}"><button class="cr${f}"${isLive?' id="cr"':' tabindex="-1"'}${st==="busy"?' aria-disabled="true"':""} aria-label="${st==="busy"?C.busy:st==="copied"?C.done:C.button}"><i class="tintc"></i><i class="orb"></i>
+<span class="l-rest">${C.button}</span><span class="l-busy">${C.busy}</span><span class="l-done">${CHECK}${C.done}</span></button><button class="gh gi${g}"${isLive?"":' tabindex="-1"'} aria-label="${C.issue}">${GH}</button><span class="tip" role="tooltip">${C.tip}</span></div>
+<div class="hn" role="status"><div><b>${C.noneTitle}</b><small>${C.noneHint}</small></div><button class="gh"${isLive?"":' tabindex="-1"'} aria-label="${C.gh}">${GH}</button></div></div>`;}
+const shown=()=>S.st==="live"?live:S.st;
+function content(){$("content").innerHTML=`<h3>Reset &amp; help</h3>
+<div class="ctl"><button class="seg">Reset device icons</button><button class="seg">Show hidden devices</button><button class="seg">Offer ignored devices again</button></div>
+${rowHTML(shown(),true)}`;}
+// The live press: collect, then copy or guide. The confirmation leaves alone; no timer exists at rest.
+function press(){if(S.st!=="live"||live==="busy")return;clearTimeout(timer);live="busy";content();$("cr").focus();
+ timer=setTimeout(()=>{live=S.tool==="yes"?"copied":"none";content();$("cr").focus();
+  if(live==="copied")timer=setTimeout(()=>{live="rest";const r=$("row");if(r){r.classList.remove("s-copied");r.querySelector("small").textContent=C.help;$("cr").setAttribute("aria-label",C.button);}},4000);},600);}
+const lin=c=>{c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};
+const rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+const lum=c=>.2126*lin(c[0])+.7152*lin(c[1])+.0722*lin(c[2]);
+const mix=(f,b,a)=>f.map((v,i)=>v*a+b[i]*(1-a));
+const cr=(a,b)=>{const x=lum(a),y=lum(b);return(Math.max(x,y)+.05)/(Math.min(x,y)+.05)};
+function pairs(t){const s=rgb(t.surface),h=rgb(t.high),p=rgb(t.primary),tx=rgb(t.text),v=rgb(t.variant),o=rgb(t.outline),ti=mix(p,s,.14);
+ return[["Title (text) / surface",4.5,cr(tx,s)],["Help line (variant) / surface",4.5,cr(v,s)],["Button label (text) / surface, rest",4.5,cr(tx,s)],["Button label (text) / hover fill (high)",4.5,cr(tx,h)],
+ ["Collecting label (variant) / surface",4.5,cr(v,s)],["Copied label (text) / primary tint 14 %",4.5,cr(tx,ti)],["Check (primary) / primary tint 14 %",3,cr(p,ti)],
+ ["Button outline / surface",3,cr(o,s)],["Copied outline and focus ring (primary) / surface",3,cr(p,s)],
+ ["Note title (text) / note fill (high)",4.5,cr(tx,h)],["Note hint (variant) / note fill (high)",4.5,cr(v,h)],["GitHub mark at rest (variant) / surface",3,cr(v,s)],["GitHub mark hover and after copy (primary) / surface",3,cr(p,s)],["Mark label (text) / label fill (high)",4.5,cr(tx,h)],["GitHub mark in the note (variant) / note fill (high)",3,cr(v,h)],["GitHub mark in the note, hover (primary) / note fill (high)",3,cr(p,h)],["Dotted orbit (primary) / primary tint 14 %",3,cr(p,ti)],["Before: error text (error) / surface",4.5,cr(rgb(t.error),s)]];}
+function render(){const t=TH[S.theme][S.mode],de=document.documentElement;for(const k in t)de.style.setProperty("--"+k,t[k]);
+ // Theme.withAlpha(Theme.outline, 0.24), as in HelpNote: a decorative edge, composited here on the note fill.
+ de.style.setProperty("--tint","rgb("+mix(rgb(t.primary),rgb(t.surface),.14).map(Math.round).join(",")+")");
+ de.style.setProperty("--line","rgb("+mix(rgb(t.outline),rgb(t.high),.24).map(Math.round).join(",")+")");
+ $("sw").innerHTML=SW.map(g=>`<div class="grp" role="group" aria-label="${g[1]||g[0]}">${g[1]?`<span>${g[1]}</span>`:""}${g[2].map(o=>`<button aria-pressed="${S[g[0]]===o[0]}" data-sw="${g[0]}" data-v="${o[0]}">${o[1]}</button>`).join("")}</div>`).join("");
+ const p=$("panel");p.style.width=S.w+"px";document.body.className=S.rm?"rm":"";
+ p.innerHTML=`<div class="head"><b>Orbit</b><input class="search" type="search" placeholder="Search settings" aria-label="Search settings"></div>
+<div class="body"><div class="rail" aria-label="Sections">${SECS.map((n,i)=>`<div class="ent${i===SECS.length-1?" on":""}"><i></i><span>${n}</span></div>`).join("")}</div>
+<div class="content" id="content"></div></div>
+<div class="foot"><span>Orbit · lung595</span></div>`;
+ content();
+ const cw=S.w-32-160-16;
+ $("before").innerHTML=[["Rest","","Anonymous report. Versions, states and codes only, to paste in a GitHub issue"],["Copied","","Report copied. Read it, then paste it in a GitHub issue"],["No clipboard tool"," err","The report could not be copied. Install wl-clipboard, or run dms ipc call orbitBluetooth diagnostics in a terminal"]].map(b=>`<div class="cell"><i>${b[0]}</i><div class="old${b[1]}" style="width:${cw}px"><small>${b[2]}</small><span class="ab">Copy report</span><span class="gl">${GH.replace(/18/g,"14")}</span></div></div>`).join("")+`<div class="cell" style="max-width:${cw+32}px"><i>What changes</i><p class="note">Before: one 12 px sentence, a 34 px button, and a 14 px mark in a 24 px target that leads to the guide, not to the place where the report is pasted. Nothing wraps: the text column gets what the button leaves. After: title and help line, a 112 x 44 button, the mark in a 44 x 44 target leading to a new issue, a guided message for the failure instead of red text.</p></div>`;
+ $("sheet").innerHTML=STATES.map(s=>`<div class="cell"><i>${s[1]}</i><div style="width:${cw}px">${rowHTML(s[0],false)}</div></div>`).join("");
+ $("motion").innerHTML=`<table><tr><th>What moves</th><th>Property</th><th>Duration</th><th>Easing</th></tr>${[["Hover: fill appears under the label","opacity","150 ms in, 100 ms out"],["Press: button shrinks to 97 %","transform scale","100 ms in, 100 ms out"],["Copied: label swaps to the check and \"Copied\", tint appears","opacity","150 ms in, 100 ms out"],["Copied: dotted orbit appears at the foot of the button","opacity","150 ms in, 100 ms out"],["Guided message appears","opacity","150 ms in, 100 ms out"],["GitHub mark: colour on hover and after copy, label on hover or focus","opacity (colour in QML)","150 ms in, 100 ms out"]].map(r=>`<tr>${r.map(c=>`<td class="num">${c}</td>`).join("")}<td class="num">OutCubic</td></tr>`).join("")}<tr><td>Reduce motion</td><td>opacity only</td><td class="num">150 ms</td><td>nothing scales</td></tr><tr><td>At rest</td><td colspan="3">nothing moves and no timer runs; the 4 s timer exists only while "Copied" is shown</td></tr></table>`;
+ $("contrast").innerHTML=`<table><tr><th>Pair</th><th>Need</th><th>${S.theme} dark</th><th>${S.theme} light</th></tr>${pairs(TH[S.theme].dark).map((r,i)=>{const l=pairs(TH[S.theme].light)[i][2];return`<tr><td>${r[0]}</td><td class="num">${r[1]}:1</td><td class="num">${r[2].toFixed(2)}${r[2]<r[1]?" FAIL":""}</td><td class="num">${l.toFixed(2)}${l<r[1]?" FAIL":""}</td></tr>`}).join("")}</table>`;
+ $("dest").innerHTML=`<table><tr><th>Opens</th><th>When</th><th>What is sent</th></tr>
+<tr><td>github.com/lung595/orbitBluetooth/issues/new/choose</td><td>on click, or Enter / Space when the mark has the focus; never by itself</td><td>nothing: the address is a constant, the report is never put in it and nothing is prefilled. The bug form already exists in the repository (bug.yml)</td></tr></table>
+<p>The page opens in the browser; the plugin itself never touches the network. The mark of the guided message keeps its own target: the guide, section "Report a problem".</p>`;
+ $("copy").innerHTML=`<table><tr><th>Part</th><th>Text</th></tr>${[["Title",C.title],["Help line",C.help],["Button",C.button],["Button while collecting",C.busy],["Button once copied",C.done],["Help line once copied",C.helpDone],["Help line once copied, DMS clipboard history on",C.helpHist],["Guided message, reason",C.noneTitle],["Guided message, what to do",C.noneHint],["GitHub mark beside the button, accessible name",C.issue],["GitHub mark beside the button, label on hover or focus",C.tip],["GitHub mark in the guided message, accessible name",C.gh]].map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join("")}</table>`;}
+document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+ if(b.dataset.sw){const k=b.dataset.sw,raw=b.dataset.v;S[k]=k==="w"?+raw:k==="rm"?raw==="true":raw;clearTimeout(timer);live="rest";render();const n=document.querySelector(`[data-sw="${k}"][aria-pressed=true]`);if(n)n.focus();return;}
+ if(b.id==="cr"){press();return;}
+ if(b.classList.contains("gh")||b.classList.contains("seg"))$("said").textContent=b.classList.contains("gi")?"In the plugin: opens github.com/lung595/orbitBluetooth/issues/new/choose in your browser, on click only. This page opens nothing.":b.classList.contains("gh")?"In the plugin: opens docs/GUIDE.md, section \"Report a problem\", in your browser. This page opens nothing.":"In the plugin: resets, as today. Not the subject of this page.";});
+render();
+</script>
+</body></html>
