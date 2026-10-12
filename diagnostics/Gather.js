@@ -16,8 +16,25 @@ var PROBES = [
     // QML cannot tell its own Qt version; the package manager can (Fedora)
     { "key": "qt", "command": ["rpm", "-q", "--qf", "%{VERSION}", "qt6-qtbase"] },
     { "key": "distro", "command": ["cat", "--", "/etc/os-release"] },
-    { "key": "journal", "command": ["journalctl", "--user", "-u", "dms", "-n", "300", "--no-pager"] }
+    // Read to be hidden, never written: the machine's name, which is also the
+    // default name of its Bluetooth adapter
+    { "key": "host", "command": ["cat", "--", "/etc/hostname"] },
+    // The messages alone ("-o cat"): no machine name, no local time, and no
+    // month written in the person's language
+    { "key": "journal", "command": ["env", "LC_ALL=C", "journalctl", "--user", "-u", "dms", "-n", "300", "--no-pager", "-o", "cat"] }
 ];
+
+// The machine's name out of /etc/hostname, or ""
+function _host(text) {
+    var m = /^\s*([A-Za-z0-9][A-Za-z0-9._-]{0,62})\s*$/.exec(typeof text === "string" ? text : "");
+    return m ? m[1] : "";
+}
+
+// The account's name out of the path of its home folder, or ""
+function account(home) {
+    var m = /\/([^\/]{1,64})\/?$/.exec(typeof home === "string" ? home : "");
+    return m ? m[1] : "";
+}
 
 // Tried in this order. The first marks the text as sensitive so DMS's
 // clipboard history leaves it out (D371); the second is the fallback.
@@ -47,6 +64,8 @@ function _distro(text) {
 function parse(key, text) {
     if (key === "journal")
         return typeof text === "string" ? text.split("\n").filter(function (l) { return l.length > 0; }) : [];
+    if (key === "host")
+        return _host(text);
     return key === "distro" ? _distro(text) : _number(text);
 }
 

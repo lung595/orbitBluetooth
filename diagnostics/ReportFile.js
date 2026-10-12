@@ -32,6 +32,11 @@ var MAX_TIME = Date.UTC(9999, 11, 31, 23, 59, 59);
 // ("deviceName" is Quickshell's). They are only ever registered with Redact,
 // never written.
 var NAMES = ["name", "deviceName", "alias", "model"];
+// And any other property called like one. A name that is neither a text nor
+// a number (an object, a nested list) cannot be hidden: the device is then
+// not readable, and the journal lines are left out.
+var NAMED = /name|alias|model|title|label|nick/i;
+var MAX_NAMES = 16;
 
 // A time a file name and a report can write: a number of this era, or now
 function _time(now) {
@@ -56,12 +61,29 @@ function _alias(device) {
         return Redact.register("device", device) || "device";
     if (!device || typeof device !== "object")
         return "device";
-    for (var n = 0; n < NAMES.length; n++) {
-        var a = Redact.register("device", device[NAMES[n]]);
+    var keys = NAMES.slice();
+    for (var key in device) {
+        if (NAMED.test(key) && keys.indexOf(key) < 0 && keys.length < MAX_NAMES)
+            keys.push(key);
+    }
+    for (var n = 0; n < keys.length; n++) {
+        var value = device[keys[n]];
+        if (value === null || value === undefined || typeof value === "function" || typeof value === "boolean")
+            continue;
+        if (!_nameable(value))
+            throw new Error("a name that cannot be read");
+        var a = Redact.register("device", value);
         if (!alias)
             alias = a;
     }
     return alias || "device";
+}
+
+// A name Redact can hide: a text, a number, or a short list of those
+function _nameable(value) {
+    if (Array.isArray(value))
+        return value.length <= 8 && value.every(function (v) { return !Array.isArray(v) && _nameable(v); });
+    return typeof value === "string" || value instanceof String || (typeof value === "number" && isFinite(value));
 }
 
 // The devices as an array, or null when they cannot be read: a JS array, a

@@ -110,7 +110,8 @@ Redact.forget();
 Redact.register("device", "device");
 Redact.register("device", "secret");
 Redact.register("user", "user");
-eq("a name that is a word of an alias or of a mark changes neither, once or twice", [Redact.text("device and user, token=abc"), Redact.text(Redact.text("device and user, token=abc"))], Array(2).fill("device#1 and user#1, token=<secret>"));
+// "user" is nobody's account: it is not registered, and stays the plain word it is
+eq("a name that is a word of an alias or of a mark changes neither, once or twice", [Redact.text("device and user, token=abc"), Redact.text(Redact.text("device and user, token=abc"))], Array(2).fill("device#1 and user, token=<secret>"));
 Redact.forget();
 eq("a one-digit name leaves a version alone and is hidden at the end of a sentence", (Redact.register("device", "1"), [Redact.text("Orbit 1.15.0 on Qt 6.1"), Redact.text("it is 1.")]), ["Orbit 1.15.0 on Qt 6.1", "it is device#1."]);
 Redact.forget();
@@ -129,21 +130,21 @@ for (const piece of ["a.", "1.", "a-", "a@", "a:"]) {
 }
 Redact.register("device", "Bob Buds");
 const filler = "token=" + "A1b2".repeat(300);
-eq("a name or a secret cut in half by the cap does not come out", [filler.slice(0, Redact.MAX_INPUT - 5) + " Bob Buds tail", filler.slice(0, Redact.MAX_INPUT - 12) + " deadbeefdeadbeefdeadbeefdeadbeef0123 tail"].map(t => Redact.text(t)), Array(2).fill("token=<secret> "));
+eq("a name or a secret cut in half by the cap does not come out", [filler.slice(0, Redact.MAX_INPUT - 5) + " Bob Buds tail", filler.slice(0, Redact.MAX_INPUT - 12) + " deadbeefdeadbeefdeadbeefdeadbeef0123 tail"].map(t => Redact.text(t)), Array(2).fill("token=<secret>"));
 Redact.forget();
 // What reads like a secret or an account and is neither
 eq("a count and a state stay readable", Redact.text("pins: 3 tokens: 12, login: failed user=none"), "pins: 3 tokens: 12, login: failed user=none");
 eq("a plural key with a value is still a secret", ["pins: 1234", "tokens: abc", "tokens=12a"].map(t => Redact.text(t)), ["pins: <secret>", "tokens: <secret>", "tokens=<secret>"]);
 // A line with nothing personal in it stays readable, and its secret or account twin does not
 const twins = [
-    ["a keyboard key", "key: Enter pressed", "key: hunter2 x, key: 4321 pressed, key=Enter", "key: <secret> x, key: <secret> pressed, key=<secret>"],
+    ["a keyboard key", "key: Enter pressed", "key: hunter2 x, key: 4321 pressed, key=Enter", "key: <secret>, key: <secret>, key=<secret>"],
     ["a property name", "wireplumber: node 57 key: api.bluez5.codec value: aac", "key: api.hunter2@x key: Api-Bluez", "key: <secret> key: <secret>"],
     ["a state after pin", "pin: yes, pin=no (key: none)", "pin: yes1 pin: 4321 _pin: abcd", "pin: <secret> pin: <secret> _pin: <secret>"],
-    ["a state after a named key", "keys: 2", "wifi_pin: yes api_key: none link-key: Enter pressed", "wifi_pin: <secret> api_key: <secret> link-key: <secret> pressed"],
+    ["a state after a named key", "keys: 2", "wifi_pin: yes api_key: none link-key: Enter pressed", "wifi_pin: <secret> api_key: <secret> link-key: <secret>"],
     ["a word after by user", "cancelled by user request", "cancelled by user jdoe, by user requestor", "cancelled by user <user> by user <user>"],
     ["a word after of user", "volume of user interface, of user input", "volume of user jdoe", "volume of user <user>"],
     ["a media folder that is no drive", "play /usr/share/media/sounds/bell.oga and ~/media/a.oga", "play /media/jdoe/a.oga file:///media/jdoe/b /run/media/jdoe/c /var/run/media/jdoe/d", "play /media/<user>/a.oga file:///media/<user>/b /run/media/<user>/c /var/run/media/<user>/d"],
-    ["a data folder under /mnt", "open /mnt/data/music/a.flac and /mnt/usb", "open /mnt/jdoe/music/a.flac /mnt/database/x /mnt/data.jdoe/x", "open /mnt/<user>/music/a.flac /mnt/<user>/x /mnt/<user>/x"],
+    ["a mount point under /mnt", "open /mnt/data and /mnt/usb", "open /mnt/jdoe/music/a.flac /mnt/database/x /mnt/data.jdoe/x /mnt/data/jdoe/a.flac", "open /mnt/<user> /mnt/<user> /mnt/<user> /mnt/data/<user>"],
     ["a number after user=", "user=42 login: 1000, (user=0)", "user=42jdoe user=jdoe user=42@laptop", "user=<user> user=<user> user=<user>"]
 ];
 for (const [what, plain, personal, hidden] of twins) {
@@ -303,7 +304,7 @@ eq("only the plugin's own journal lines are kept, cleaned", lines.slice(13), [
     "Journal lines (anonymized, 4 kept, last 50 at most):",
     "  WARN qml: [orbit] ORB-W010 state=off",
     "  ERROR qml: QML OrbitBluetooth at file://~/.config/DankMaterialShell/plugins/orbitBluetooth/A.qml[4:1]: device#1 <mac> <ip>",
-    "  xxxxxxxxxx [orbit] token=<secret>",
+    "  [orbit] token=<secret>",
     "  [orbit] ORB-W011 tool=pw_loopback",
     ""
 ]);
@@ -323,7 +324,7 @@ eq("a journal line dated the ISO way loses its machine name too", [isoHost.index
 
 // Zero cost at rest (value 6) and no way out (value 5): the module holds no timer, no
 // file, no process and no network call, so nothing in it can run on its own
-const files = ["Allow", "Codes", "Cpu", "Log", "Redact", "Report", "ReportFile"];
+const files = ["Allow", "Codes", "Cpu", "Log", "Redact", "RedactRules", "Report", "ReportFile"];
 const sources = files.map(f => new TextDecoder().decode(GLib.file_get_contents(GLib.path_get_dirname(GLib.path_get_dirname(GLib.canonicalize_filename(imports.system.programPath, GLib.get_current_dir()))) + "/diagnostics/" + f + ".js")[1]));
 eq("no timer, file, process, network or QML import in the module", sources.map((src, i) => new RegExp("Timer|setTimeout|setInterval|FileView|Process|XML" + HT.toUpperCase().slice(0, 0) + "HttpRequest|fetch\\(|WebSocket|\\bimport (Qt|Quickshell|qs)|Qt\\.|" + HT + "s?:").test(src) ? files[i] : null).filter(Boolean), []);
 eq("only warn and error reach the console, never log", sources.filter(src => /console\.(log|debug|info)/.test(src)).length, 0);

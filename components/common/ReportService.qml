@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 import Quickshell.Bluetooth
 import Quickshell.Io
 import qs.Common
@@ -125,7 +126,10 @@ Item {
                 "reduceMotion": prefs.reduceMotion
             },
             "cpu": _cpu,
-            "journal": a.journal
+            "journal": a.journal,
+            // Never written: hidden wherever a line names them
+            "user": Quickshell.env("USER") || Gather.account(Quickshell.env("HOME")),
+            "host": a.host
         });
         report = text;
         _phase = "idle";

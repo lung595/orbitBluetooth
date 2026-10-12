@@ -87,7 +87,7 @@ eq("and the journal is left out", [survived.indexOf("Secret"), survived.indexOf(
 Redact.forget();
 const huge = "Huge Bob " + "w".repeat(50000) + " end-of-bob";
 const hugeText = ReportFile.build({ "now": NOW, "devices": [{ "name": huge, "kind": "tv" }], "journal": ["[orbit] seen " + huge + " again", "[orbit] seen Huge Bob www"] });
-eq("a name of 50 000 characters does not throw and does not come out", [hugeText.split("\n").filter(l => /device#1/.test(l)), ["Huge", "www", "end-of-bob"].filter(w => hugeText.indexOf(w) >= 0)], [["  [orbit] seen device#1", "  device#1 kind=tv"], ["Huge", "www"]]);
+eq("a name of 50 000 characters does not throw and does not come out", [hugeText.split("\n").filter(l => /device#1/.test(l)), ["Huge", "www", "end-of-bob"].filter(w => hugeText.indexOf(w) >= 0)], [["  [orbit] seen device#1", "  [orbit] seen device#1 Bob www", "  device#1 kind=tv"], ["www"]]);
 // The facts themselves may throw: the report of no facts, not an exception
 const noVersions = {};
 Object.defineProperty(noVersions, "versions", { "enumerable": true, get() { throw new Error("gone"); } });
@@ -165,7 +165,7 @@ const report = ReportFile.build({
 });
 const lines = report.split("\n");
 eq("the file starts as the clipboard report does", lines.slice(0, 3), ["OrbitBluetooth diagnostic report (anonymous: versions, states and codes only)", "Created      : 2026-10-08 12:03:41 UTC", "Plugin       : OrbitBluetooth 1.16.0"]);
-eq("a device named in a journal line carries the alias of its own line", lines.filter(l => l.indexOf("A.qml") >= 0), ["  ERROR qml: OrbitBluetooth at file://~/.config/x/A.qml[4:1]: device#2 (device#3) <mac> of user#1 on device#4"]);
+eq("a device named in a journal line carries the alias of its own line", lines.filter(l => l.indexOf("A.qml") >= 0), ["  ERROR qml: OrbitBluetooth at file://~/.config/x/A.qml[4:1]: device#2 (device#3) <mac> of <user> on device#4"]);
 eq("the devices and the error counts close the file", lines.slice(-7), [
     "Devices (2 known, 1 connected):",
     "  device#1 kind=earbudsStem connected=yes paired=yes trusted=yes codec=aac battery=80 batteryLeft=80 batteryRight=81 batteryCase=40 charging=no",

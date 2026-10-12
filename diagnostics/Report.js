@@ -11,9 +11,28 @@
 // goes through the allowlist and Redact, so what comes out holds versions,
 // states and codes, and nothing that identifies a person or a machine.
 
-// "Oct 08 12:00:00 <host> qs[123]: " as journalctl writes it by default, or
-// with the date as "2026-10-08T12:00:00+0200" (its ISO formats)
-var SYSLOG_PREFIX = /^(?:\w{3} [ \d]\d \d\d:\d\d:\d\d|\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d[.,\d]*(?:Z|[+-]\d\d:?\d\d)?) \S+ \S+: /;
+// The journal is asked for without its prefix (Gather.js: "-o cat"). Should a
+// line still come with one ("Oct 08 12:00:00 <host> qs[123]: ", the month in
+// any language, or an ISO date), the machine name in it is one no pattern
+// could recognise: everything up to the program and its process number goes,
+// or up to the program after a time of day.
+var PID_PREFIX = /^.{0,120}?\S\[\d+\]\s?:\s?/;
+var SYSLOG_PREFIX = /^.{0,48}?\d\d:\d\d:\d\d\S* \S+ \S+?: ?/;
+
+// The level the engine writes before a tagged line
+var LEVEL = /(?:DEBUG|INFO|WARN|ERROR|CRITICAL|FATAL) qml: $/;
+
+// What a journal line says, without what journalctl put before it. A line
+// the plugin tagged starts at its tag, or at the level before it.
+function _body(line, tag) {
+    var at = line.indexOf(tag);
+    if (at >= 0) {
+        var level = LEVEL.exec(line.slice(0, at));
+        return line.slice(level ? level.index : at);
+    }
+    var cut = line.replace(PID_PREFIX, "");
+    return cut !== line ? cut : line.replace(SYSLOG_PREFIX, "");
+}
 
 // A version or a distribution name: letters, digits and a few separators
 function _version(v) {
@@ -40,7 +59,8 @@ function _stamp(ms) {
 //   now: ms, plugin: version text,
 //   versions: { dms, quickshell, qt, niri, distro },
 //   surfaces: { widget: bool, ... }, settings: { key: value }, facts: { key: value },
-//   cpu: { percent, windowMs } or null, journal: [ lines from the DMS journal ]
+//   cpu: { percent, windowMs } or null, journal: [ lines from the DMS journal ],
+//   user, host: the account and the machine, never written, only hidden
 // }
 // Anything missing is shown as "?" or left out; nothing throws: facts that
 // cannot be read (an accessor that throws) give the report of no facts.
@@ -56,6 +76,8 @@ function _build(info) {
     var i = info || {};
     var v = i.versions || {};
     var now = typeof i.now === "number" ? i.now : Date.now();
+    // The account and the machine, hidden wherever a line writes them
+    Redact.identity(i.user, i.host);
     var active = [];
     for (var s = 0; s < Codes.SURFACES.length; s++) {
         if (i.surfaces && i.surfaces[Codes.SURFACES[s]] === true)
@@ -93,6 +115,6 @@ function _build(info) {
     if (!kept.length)
         out.push("  none");
     for (var k = 0; k < kept.length; k++)
-        out.push("  " + Redact.text(kept[k].replace(SYSLOG_PREFIX, "")));
+        out.push("  " + Redact.text(_body(kept[k], tag)));
     return out.join("\n") + "\n";
 }

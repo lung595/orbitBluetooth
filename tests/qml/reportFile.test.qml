@@ -43,7 +43,7 @@ Item {
         // What only this engine can prove: its own patterns, its String.normalize, its lists
         Redact.forget();
         Redact.register("device", " Zoe\u0301's  buds\n");
-        h.check("a name is found under its other spellings", Redact.text("on Zo\u00e9\u2019s\u00a0buds: AABBCCDDEE01 access_token=hunter2 ~jdoe"), "on device#1: <mac> access_token=<secret> ~");
+        h.check("a name is found under its other spellings", Redact.text("on Zo\u00e9\u2019s\u00a0buds: AABBCCDDEE01 ~jdoe access_token=hunter2 tail"), "on device#1: <mac> ~ access_token=<secret>");
         h.check("a device named like a word of its line changes none", ReportFile.devices([
             {
                 "name": "aac",
@@ -58,7 +58,7 @@ Item {
         Redact.forget();
         Redact.register("device", "token");
         Redact.register("device", "1");
-        h.check("a device named like a word of a rule lets no secret out, a text is cut before the rules", [Redact.text("token=hunter2 at \x2fhome/jdoe on \uff22ob_1 1.15.0, pins: 3"), Redact.text("a.".repeat(24000)).length], ["device#1=<secret> at ~ on Bob_device#2 1.15.0, pins: 3", 240]);
+        h.check("a device named like a word of a rule lets no secret out, a text is cut before the rules", [Redact.text("at \x2fhome/jdoe on \uff22ob_1 1.15.0 token=hunter2 x, pins: 3"), Redact.text("a. ".repeat(16000)).length, Redact.text("a.".repeat(24000)).length], ["at ~ on Bob_device#2 1.15.0 device#1=<secret>, pins: 3", 240, 0]);
         h.check("a time out of range still gives a plain name", /^orbit-report-\d{8}-\d{6}Z\.txt$/.test(ReportFile.fileName(8.64e15)), true);
         Redact.forget();
         print(h.failures ? h.failures + " failure(s)" : "all passed");
