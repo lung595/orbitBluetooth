@@ -27,7 +27,8 @@ eq("every device word is a short plain token", Codes.DEVICE.kind.concat(Codes.DE
 eq("the name is the plugin's label and the time, UTC", ReportFile.fileName(NOW), "orbit-report-20261008-120341Z.txt");
 eq("one-digit parts are padded", ReportFile.fileName(Date.UTC(2027, 0, 2, 3, 4, 5)), "orbit-report-20270102-030405Z.txt");
 const shape = /^orbit-report-\d{8}-\d{6}Z\.txt$/;
-eq("a time that is not one still gives a plain name", [undefined, null, "\x2fhome/jdoe", NaN, Infinity, 1e300, {}, "../../x"].filter(t => !shape.test(ReportFile.fileName(t))), []);
+eq("a time that is not one, or out of the four-digit years, still gives a plain name", [undefined, null, "\x2fhome/jdoe", NaN, Infinity, -Infinity, 1e300, {}, "../../x", 8.64e15, -8.64e15, -1, 253402300800000, 4e14, -6e13].filter(t => !shape.test(ReportFile.fileName(t))), []);
+eq("the last second of the year 9999 is still a time", ReportFile.fileName(253402300799000), "orbit-report-99991231-235959Z.txt");
 eq("the name cannot leave its folder", /[\/\\\s]|\.\./.test(ReportFile.fileName(NOW)), false);
 
 // --- devices: one line each, from the allowlist ------------------------------------
@@ -41,10 +42,54 @@ eq("a device is written from its allowed facts, under its alias", ReportFile.dev
 ]);
 eq("every name of a device is hidden afterwards, the model too", Redact.text("Bob's AirPods Pro, Bob's buds, AirPods Pro, kitchen speaker"), "device#1, device#2, device#3, device#4");
 eq("the same device keeps its alias from one report to the next", ReportFile.devices([speaker])[1], "  device#4 kind=speaker connected=no paired=yes codec=? battery=?");
-eq("no device, no line", [ReportFile.devices([]), ReportFile.devices(null), ReportFile.devices("Bob"), ReportFile.devices({ "length": 3 })], Array(4).fill(["Devices (0 known, 0 connected):", "  none"]));
-eq("a device that is not one, or says nothing allowed, is a ?", ReportFile.devices([null, "Bob's phone", 7, {}, { "name": "x" }, { "address": MAC }]).slice(1), Array(6).fill("  device ?"));
-// A getter that throws is the caller's bug; a prototype key is not a fact
-eq("an inherited key is not read", ReportFile.devices([Object.create({ "kind": "phone", "name": "Inherited Bob" })])[1], "  device#5 ?");
+eq("no device, no line", [ReportFile.devices([]), ReportFile.devices(null), ReportFile.devices(undefined)], Array(3).fill(["Devices (0 known, 0 connected):", "  none"]));
+eq("a device that is not one, or says nothing allowed, is a ?", ReportFile.devices([null, "Bob's phone", 7, {}, { "name": "" }, { "address": MAC }]).slice(1), Array(6).fill("  device ?"));
+eq("a one-character name is a name", ReportFile.devices([{ "name": "x" }])[1], "  device#5 ?");
+// A prototype key is not a fact
+eq("an inherited key is not read", ReportFile.devices([Object.create({ "kind": "phone", "name": "Inherited Bob" })])[1], "  device#6 ?");
+eq("the name Quickshell gives a device is hidden too", (ReportFile.devices([{ "deviceName": "Quick Bob" }]), Redact.text("Quick Bob")), "device#7");
+
+// A device named like a word of its own line (a key, a codec, a kind, yes/no, a number,
+// a piece of "device"): the line is written as it is, nothing in it is replaced
+for (const word of ["kind", "aac", "codec", "yes", "no", "80", "de", "device", "speaker", "connected", "battery", "#1", "="]) {
+    Redact.forget();
+    eq("a device named " + JSON.stringify(word) + " changes no word of the device lines", ReportFile.devices([{ "name": word, "kind": "speaker", "connected": true, "codec": "aac", "battery": 80 }, { "name": "Other one", "kind": "phone", "connected": false, "codec": "sbc", "battery": 80 }]), [
+        "Devices (2 known, 1 connected):",
+        "  device#1 kind=speaker connected=yes codec=aac battery=80",
+        "  device#2 kind=phone connected=no codec=sbc battery=80"
+    ]);
+}
+
+// A list that is not a JS array (D2): read when it can be (a QML list, a model), and
+// when it cannot the journal is left out, since no name in it could be hidden
+Redact.forget();
+const listLike = { "length": 2, "0": { "name": "Listed Bob", "kind": "phone" }, "1": { "name": "Listed Zoe", "connected": true } };
+const model = { "count": 1, "get": n => [{ "name": "Model Bob", "kind": "watch" }][n] };
+eq("a list with a length and indexes is read", ReportFile.devices(listLike), ["Devices (2 known, 1 connected):", "  device#1 kind=phone", "  device#2 connected=yes"]);
+eq("a model with count and get is read", ReportFile.devices(model), ["Devices (1 known, 0 connected):", "  device#3 kind=watch"]);
+eq("a list without its entries is counted, each a ?", ReportFile.devices({ "length": 3 }), ["Devices (3 known, 0 connected):", "  device ?", "  device ?", "  device ?"]);
+eq("their names are hidden in a journal line", ReportFile.build({ "devices": listLike, "journal": ["[orbit] Listed Bob then Listed Zoe"] }).split("\n").filter(l => /^ {2}\[orbit\]/.test(l)), ["  [orbit] device#1 then device#2"]);
+for (const unreadable of ["Bob", 7, true, { "0": buds }, { "length": -1 }, { "length": 1e12 }, { "length": "2" }, { "count": 2 }, { "count": 1, "get": () => { throw new Error("gone"); } }, { get length() { throw new Error("gone"); } }]) {
+    Redact.forget();
+    const closed = ReportFile.build({ "now": NOW, "devices": unreadable, "journal": ["[orbit] ORB-E001 Unlisted Bob " + MAC] });
+    eq("a list that cannot be read says so and takes the journal with it: " + (typeof unreadable === "object" ? Object.keys(unreadable) : unreadable), [closed.indexOf("Unlisted"), closed.indexOf("Journal lines (anonymized, 0 kept, last 50 at most):\n  none\n") > 0, closed.split("\n").filter(l => /^Devices/.test(l))], [-1, true, ["Devices (not readable, journal lines left out):"]]);
+}
+
+// Nothing throws (D5): a device whose accessor throws is a ? and, its name being unknown,
+// the journal is left out; a name far longer than a Bluetooth one is hidden whole
+Redact.forget();
+const broken = { get name() { throw new Error("gone"); }, "kind": "phone" };
+const brokenFact = { "name": "Half Bob", get codec() { throw new Error("gone"); } };
+const survived = ReportFile.build({ "now": NOW, "devices": [broken, speaker, brokenFact], "journal": ["[orbit] ORB-E001 Secret Bob"] });
+eq("a device that throws is a ? and the others keep their line", survived.split("\n").slice(-7, -3), ["Devices (3 known, 0 connected, one not readable, journal lines left out):", "  device ?", "  device#1 kind=speaker connected=no paired=yes codec=? battery=?", "  device ?"]);
+eq("and the journal is left out", [survived.indexOf("Secret"), survived.indexOf("Journal lines (anonymized, 0 kept") > 0], [-1, true]);
+Redact.forget();
+const huge = "Huge Bob " + "w".repeat(50000) + " end-of-bob";
+const hugeText = ReportFile.build({ "now": NOW, "devices": [{ "name": huge, "kind": "tv" }], "journal": ["[orbit] seen " + huge + " again", "[orbit] seen Huge Bob www"] });
+eq("a name of 50 000 characters does not throw and does not come out", [hugeText.split("\n").filter(l => /device#1/.test(l)), ["Huge", "www", "end-of-bob"].filter(w => hugeText.indexOf(w) >= 0)], [["  [orbit] seen device#1", "  device#1 kind=tv"], ["Huge", "www"]]);
+eq("a time out of range is the present in the report as in the name", /^Created      : 20\d\d-\d\d-\d\d \d\d:\d\d:\d\d UTC$/.test(ReportFile.build({ "now": 8.64e15 + 1 }).split("\n")[1]), true);
+Redact.forget();
+ReportFile.devices([buds, speaker]);
 
 // Each rule, one hostile device at a time: the value goes in every allowed key and in
 // keys nobody allowed, and the whole text is searched
@@ -126,7 +171,7 @@ for (const nothing of [undefined, null, {}, "x", 7, []]) {
     const bare = ReportFile.build(nothing).split("\n");
     eq("a file with nothing is still a report: " + JSON.stringify(nothing), [bare[2], bare.slice(-5)], ["Plugin       : OrbitBluetooth ?", ["Devices (0 known, 0 connected):", "  none", "Errors and warnings (0 among the 0 events kept):", "  none", ""]]);
 }
-eq("hostile shapes never throw", ReportFile.build({ "devices": { "0": buds }, "now": "never", "journal": 5, "versions": [] }).indexOf("Devices (0 known") > 0, true);
+eq("hostile shapes never throw", ReportFile.build({ "devices": { "0": buds }, "now": "never", "journal": 5, "versions": [] }).indexOf("Devices (not readable") > 0, true);
 
 // Special characters: a name is taken literally, a control character cannot forge a line
 Redact.forget();

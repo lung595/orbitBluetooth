@@ -20,27 +20,33 @@
 // A report is read by a person: past this many devices the rest is counted
 var MAX_DEVICES = 32;
 
-// The properties of a device that may hold a name somebody chose or a model.
-// They are only ever registered with Redact, never written.
-var NAMES = ["name", "alias", "model"];
+// A list longer than this is not read at all (and the journal is left out)
+var MAX_LIST = 10000;
 
-function _two(n) {
-    return (n < 10 ? "0" : "") + n;
+// The last moment a four-digit year can write
+var MAX_TIME = Date.UTC(9999, 11, 31, 23, 59, 59);
+
+// The properties of a device that may hold a name somebody chose or a model
+// ("deviceName" is Quickshell's). They are only ever registered with Redact,
+// never written.
+var NAMES = ["name", "deviceName", "alias", "model"];
+
+// A time a file name and a report can write: a number of this era, or now
+function _time(now) {
+    return typeof now === "number" && now >= 0 && now <= MAX_TIME ? now : Date.now();
 }
 
 // "orbit-report-20261008-120341Z.txt": the plugin's label and the time, UTC
 // so the name does not tell where the person lives. Nothing of the machine,
 // the account or a device. A time that is not one gives the present.
 function fileName(now) {
-    var d = new Date(typeof now === "number" && isFinite(now) ? now : Date.now());
-    if (isNaN(d.getTime()))
-        d = new Date();
-    return Codes.LABEL + "-report-" + d.getUTCFullYear() + _two(d.getUTCMonth() + 1) + _two(d.getUTCDate())
-        + "-" + _two(d.getUTCHours()) + _two(d.getUTCMinutes()) + _two(d.getUTCSeconds()) + "Z.txt";
+    // "2026-10-08T12:03:41.000Z" without its marks and its milliseconds
+    var stamp = new Date(_time(now)).toISOString().slice(0, 19).replace(/[-:]/g, "").replace("T", "-");
+    return Codes.LABEL + "-report-" + stamp + "Z.txt";
 }
 
 // Registers every name of a device and returns the alias to call it by
-// ("device" when it has no name long enough to be hidden)
+// ("device" when it has no name)
 function _alias(device) {
     var alias = "";
     if (!device || typeof device !== "object")
@@ -53,24 +59,65 @@ function _alias(device) {
     return alias || "device";
 }
 
+// The devices as an array, or null when they cannot be read: a JS array, a
+// QML list (a length and indexes) or a model (count and get). No list at all
+// is an empty one.
+function _list(list) {
+    if (list === null || list === undefined)
+        return [];
+    if (Array.isArray(list))
+        return list.length <= MAX_LIST ? list : null;
+    if (typeof list !== "object")
+        return null;
+    var byGet = typeof list.get === "function";
+    var size = byGet ? list.count : list.length;
+    if (typeof size !== "number" || !(size >= 0 && size <= MAX_LIST))
+        return null;
+    var out = [];
+    for (var d = 0; d < size; d++)
+        out.push(byGet ? list.get(d) : list[d]);
+    return out;
+}
+
+// The "Devices" lines, and whether every name could be read and registered.
+// When not (a list that is not one, an accessor that throws) the names are
+// unknown, so nothing can hide them in a journal line: the caller leaves the
+// journal out.
+function _read(list) {
+    var all = null;
+    try {
+        all = _list(list);
+    } catch (e) {}
+    if (!all)
+        return { "lines": ["Devices (not readable, journal lines left out):", "  none"], "hidden": false };
+    var connected = 0;
+    var hidden = true;
+    var lines = [];
+    for (var d = 0; d < all.length; d++) {
+        var line = "device ?";
+        try {
+            // The alias is Redact's and the facts are the allowlist's: the
+            // line is written as it is, so a device named "aac" or "yes"
+            // cannot change a word of it
+            var alias = _alias(all[d]);
+            var facts = Allow.pick(Codes.DEVICE, all[d]);
+            if (all[d] && all[d].connected === true)
+                connected++;
+            line = alias + " " + (facts.length ? facts.join(" ") : "?");
+        } catch (e) {
+            hidden = false;
+        }
+        if (d < MAX_DEVICES)
+            lines.push("  " + line);
+    }
+    var head = "Devices (" + all.length + " known, " + connected + " connected" + (all.length > MAX_DEVICES ? ", first " + MAX_DEVICES + " shown" : "") + (hidden ? "" : ", one not readable, journal lines left out") + "):";
+    return { "lines": [head].concat(lines.length ? lines : ["  none"]), "hidden": hidden };
+}
+
 // The "Devices" lines. Every device's names are registered, shown or not, so
 // none of them survives in a journal line; call it before Report.build.
 function devices(list) {
-    var all = Array.isArray(list) ? list : [];
-    var connected = 0;
-    var lines = [];
-    for (var d = 0; d < all.length; d++) {
-        var alias = _alias(all[d]);
-        if (all[d] && all[d].connected === true)
-            connected++;
-        if (d >= MAX_DEVICES)
-            continue;
-        var facts = Allow.pick(Codes.DEVICE, all[d]);
-        // Redact is the second wall, as in Log.event
-        lines.push("  " + Redact.text(alias + " " + (facts.length ? facts.join(" ") : "?")));
-    }
-    var head = "Devices (" + all.length + " known, " + connected + " connected" + (all.length > MAX_DEVICES ? ", first " + MAX_DEVICES + " shown" : "") + "):";
-    return [head].concat(lines.length ? lines : ["  none"]);
+    return _read(list).lines;
 }
 
 // The errors and warnings of the memory buffer, counted by code: what went
@@ -97,12 +144,19 @@ function errors() {
 }
 
 // info = what Report.build takes, plus
-//   devices: [ { name, alias, model: hidden, never written;
+//   devices: [ { name, deviceName, alias, model: hidden, never written;
 //                and the keys of Codes.DEVICE } ]
-// Anything missing is shown as "?" or left out; nothing throws.
+// Anything missing is shown as "?" or left out. A device that cannot be read
+// is a "?" and takes the journal lines away with it; it does not throw.
 function build(info) {
-    var i = info && typeof info === "object" ? info : {};
+    var i = {};
+    var from = info && typeof info === "object" ? info : {};
+    for (var key in from)
+        i[key] = from[key];
+    i.now = _time(i.now);
     // First, so the names are known when Report.build cleans the journal
-    var deviceLines = devices(i.devices);
-    return Report.build(i) + deviceLines.concat(errors()).join("\n") + "\n";
+    var read = _read(i.devices);
+    if (!read.hidden)
+        i.journal = [];
+    return Report.build(i) + read.lines.concat(errors()).join("\n") + "\n";
 }

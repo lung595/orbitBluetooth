@@ -65,7 +65,7 @@ eq("a plain time is not an address", Redact.text("12:03:41 ready"), "12:03:41 re
 eq("a version is not an address", Redact.text("Qt 6.11.2, niri 25.08.1"), "Qt 6.11.2, niri 25.08.1");
 eq("a code and its states stay readable", Redact.text("ORB-E001 action=connect reason=timeout"), "ORB-E001 action=connect reason=timeout");
 eq("a control character cannot forge a new line", Redact.text("a\nb\u0000c\r"), "a b c ");
-eq("a long line is cut", Redact.text("ab ".repeat(200)).length, 240);
+eq("a long line is cut", Redact.text("xy ".repeat(200)).length, 240);
 eq("cleaning twice changes nothing", Redact.text(Redact.text(secrets["ipv6"] + " " + secrets["mac colon"])), Redact.text(secrets["ipv6"] + " " + secrets["mac colon"]));
 eq("nothing becomes an empty text", [Redact.text(null), Redact.text(undefined)], ["", ""]);
 
@@ -74,14 +74,66 @@ eq("a device name gets an alias", Redact.register("device", "Bob's AirPods Pro")
 eq("the same name (any case) gets the same alias", Redact.register("device", "BOB'S airpods PRO"), "device#1");
 eq("the next device gets the next number", Redact.register("device", "Kitchen Speaker"), "device#2");
 eq("the login is hidden as a user", Redact.register("user", "jdoe"), "user#1");
-eq("a one-letter name is refused (it would hide every letter)", Redact.register("device", "a"), "");
-eq("a name of spaces is refused (it would hide every gap)", [Redact.register("device", "   "), Redact.register("device", " a\t")], ["", ""]);
+eq("a name of spaces or of nothing is refused (it would hide every gap)", [Redact.register("device", "   "), Redact.register("device", ""), Redact.register("device", "\t\n\u00a0")], ["", "", ""]);
 eq("a name with a tab is hidden where the tab reads as a space", (Redact.register("device", "Tab\tname"), [Redact.text("x Tab\tname y"), Redact.text("x Tab name y")]), ["x device#3 y", "x device#3 y"]);
 eq("a bad kind is refused", Redact.register("de vice", "Name"), "");
 eq("the longest known name goes first", Redact.text("Bob's AirPods Pro and kitchen speaker, jdoe"), "device#1 and device#2, user#1");
 eq("a name with regex characters is taken literally", (Redact.register("device", "(my) [pods]+"), Redact.text("x (my) [pods]+ y")), "x device#4 y");
 Redact.forget();
 eq("forgetting clears the aliases", Redact.text("Bob's AirPods Pro"), "Bob's AirPods Pro");
+
+// The spaces around a name are not part of it (D1): the journal does not carry them
+for (const edge of ["Edge pods ", "Edge pods\n", "Edge pods\t", " Edge pods", "\r\n Edge pods \t"]) {
+    Redact.forget();
+    Redact.register("device", edge);
+    eq("a name is hidden whatever space it starts or ends with: " + JSON.stringify(edge), [Redact.text("[orbit] Edge pods: connected"), Redact.text("link to Edge pods"), Redact.text("(Edge pods)")], ["[orbit] device#1: connected", "link to device#1", "(device#1)"]);
+}
+// One spelling for a name and for the line it is looked for in (D3)
+Redact.forget();
+Redact.register("device", "Zoe\u0301's  buds");
+eq("a name is found under its other spellings (composed letters, odd spaces, apostrophes, zero width)", ["Zo\u00e9's buds", "Zoe\u0301\u2019s buds", "Zo\u00e9's\u00a0buds", "Zo\u00e9's   buds", "Zo\u00e9's\u2028buds", "Zo\u00e9's\u0085buds", "Zo\u00e9\u200b's buds"].map(t => Redact.text("on " + t + " now")), Array(7).fill("on device#1 now"));
+eq("a line separator cannot forge a line either", /[\u0085\u2028\u2029]/.test(Redact.text("a\u0085b\u2028c\u2029d")), false);
+Redact.forget();
+eq("a one-character name is hidden where it stands alone, not inside a word", (Redact.register("device", "x"), [Redact.text("seen x again, x: ok"), Redact.text("taxi x2 max")]), ["seen device#1 again, device#1: ok", "taxi x2 max"]);
+eq("a one-digit name does not eat the number of an alias", (Redact.register("device", "1"), Redact.text(Redact.text("x and 1"))), "device#1 and device#2");
+Redact.forget();
+eq("a name that is a number or a String object is a name", [Redact.register("device", 4242), Redact.register("device", new String("Boxed Bob")), Redact.text("4242 and Boxed Bob")], ["device#1", "device#2", "device#1 and device#2"]);
+eq("what cannot be a name is refused", [null, undefined, true, {}, [], NaN, Infinity].map(n => Redact.register("device", n)), Array(7).fill(""));
+// A name longer than a Bluetooth name can be (D5): no pattern too big, and nothing of it left
+Redact.forget();
+const endless = "Long Bob " + "z".repeat(50000) + " tail-of-bob";
+eq("an endless name is registered without throwing", Redact.register("device", endless), "device#1");
+eq("and hidden to the end of its line", Redact.text("[orbit] seen " + endless + " here"), "[orbit] seen device#1");
+Redact.forget();
+
+// The addresses, accounts and secrets the first patterns let through (D6, D7, D9)
+const more = {
+    "address without separator": "dev AABBCCDDEE01 up",
+    "address glued to a letter": "devAABBCCDDEE01x up",
+    "address in dotted groups": "at aabb.ccdd.ee01 up",
+    "address with spaces": "at AA BB CC DD EE 01 up",
+    "address in a link": "dev=AA%3ABB%3ACC%3ADD%3AEE%3A01&x",
+    "address with a one-digit part": "at AA:BB:CC:DD:EE:1 up",
+    "five parts of an address": "at AA:BB:CC:DD:EE up",
+    "four parts of an address": "at BB-CC-DD-EE up",
+    "drive mounted for the account": "open /run/media/jdoe/KEY/a.txt and /media/jdoe/b",
+    "tilde account": "cd ~jdoe/Music",
+    "account at machine": "as jdoe@laptop now",
+    "user= account": "session user=jdoe login: jdoe USERNAME=jdoe",
+    "prefixed key": "access_token=hunter2 refresh-token: hunter2",
+    "JSON key": '{"token": "hunter2", "api_key":"hunter2"}',
+    "pairing code": "Passkey: 123456 pin=0000 pincode: 9999",
+    "passphrase": "passphrase=hunter2",
+    "basic header": "Authorization: Basic aHVudGVyMjpodW50ZXIy",
+    "session cookie": "cookie=hunter2 session_id=hunter2"
+};
+const moreForbidden = ["AABB", "aabb", "AA BB", "AA%3A", "AA:BB", "BB-CC", "EE:1", "jdoe", "laptop", "hunter2", "123456", "0000", "9999", "aHVudGVy"];
+for (const what in more) {
+    const out = Redact.text(more[what]);
+    eq("no leak: " + what, moreForbidden.filter(f => out.indexOf(f) >= 0), []);
+    eq("cleaning twice changes nothing: " + what, Redact.text(out), out);
+}
+eq("what is not an address stays readable", Redact.text("12:03:41 ready, A.qml[4:1], 2026-10-08, Qt 6.11.2, Basic settings, x ~ y"), "12:03:41 ready, A.qml[4:1], 2026-10-08, Qt 6.11.2, Basic settings, x ~ y");
 
 eq("a command is reduced to its program", [Redact.command("/usr/bin/wl-copy --sensitive hunter2"), Redact.command(["/usr/bin/pw-play", "\x2fhome/jdoe/a.wav"]), Redact.command("dms ipc call")], ["wl-copy", "pw-play", "dms"]);
 eq("an odd command becomes <cmd>", [Redact.command(""), Redact.command(["x y"]), Redact.command(null), Redact.command(["\x2fhome/jdoe/my tool"])], ["<cmd>", "<cmd>", "<cmd>", "<cmd>"]);
@@ -202,9 +254,13 @@ eq("a report with nothing is still a report", [bare.indexOf("Plugin       : Orbi
 const hostile = Report.build({ "plugin": "1.0 \x2fhome/jdoe", "versions": { "dms": { "a": 1 }, "qt": "x\ny", "distro": "<script>" }, "surfaces": 5, "settings": "no", "facts": [1], "cpu": "high", "journal": "no", "now": "never" });
 eq("hostile versions become ? and no input throws", [hostile.indexOf("jdoe"), hostile.indexOf("DMS          : ?   Quickshell : ?   Qt : ?"), hostile.indexOf("<script>")], [-1, 0 < hostile.indexOf("DMS          : ?   Quickshell : ?   Qt : ?") ? hostile.indexOf("DMS          : ?   Quickshell : ?   Qt : ?") : -2, -1]);
 
+// The machine name that starts a journal line goes whatever the date format (D8)
+const isoHost = Report.build({ "journal": ["2026-10-08T12:00:00+0200 laptop-jdoe qs[123]: [orbit] ORB-E001 iso", "2026-10-08T12:00:00.123456+02:00 laptop-jdoe qs[123]: [orbit] ORB-E001 precise", "2026-10-08T10:00:00Z laptop-jdoe qs[123]: [orbit] ORB-E001 zulu"] });
+eq("a journal line dated the ISO way loses its machine name too", [isoHost.indexOf("laptop"), isoHost.indexOf("jdoe"), isoHost.split("\n").filter(l => /^ {2}\[orbit\] ORB-E001 (iso|precise|zulu)$/.test(l)).length], [-1, -1, 3]);
+
 // Zero cost at rest (value 6) and no way out (value 5): the module holds no timer, no
 // file, no process and no network call, so nothing in it can run on its own
-const files = ["Allow", "Codes", "Cpu", "Log", "Redact", "Report"];
+const files = ["Allow", "Codes", "Cpu", "Log", "Redact", "Report", "ReportFile"];
 const sources = files.map(f => new TextDecoder().decode(GLib.file_get_contents(GLib.path_get_dirname(GLib.path_get_dirname(GLib.canonicalize_filename(imports.system.programPath, GLib.get_current_dir()))) + "/diagnostics/" + f + ".js")[1]));
 eq("no timer, file, process, network or QML import in the module", sources.map((src, i) => new RegExp("Timer|setTimeout|setInterval|FileView|Process|XML" + HT.toUpperCase().slice(0, 0) + "HttpRequest|fetch\\(|WebSocket|\\bimport (Qt|Quickshell|qs)|Qt\\.|" + HT + "s?:").test(src) ? files[i] : null).filter(Boolean), []);
 eq("only warn and error reach the console, never log", sources.filter(src => /console\.(log|debug|info)/.test(src)).length, 0);

@@ -38,6 +38,20 @@ Item {
         h.check("its journal line carries the same alias and nothing personal", lines.filter(l => l.indexOf("[orbit]") >= 0), ["  [orbit] ORB-E001 device#1 <mac> ~/x"]);
         h.check("no name, address, login or machine in the file", ["Bob", "AirPods", "AA:BB", "jdoe", "laptop"].filter(w => text.indexOf(w) >= 0), []);
         h.check("a file with nothing is still a report", ReportFile.build(null).split("\n").slice(-5), ["Devices (0 known, 0 connected):", "  none", "Errors and warnings (0 among the 0 events kept):", "  none", ""]);
+        // What only this engine can prove: its own patterns, its String.normalize, its lists
+        Redact.forget();
+        Redact.register("device", " Zoe\u0301's  buds\n");
+        h.check("a name is found under its other spellings", Redact.text("on Zo\u00e9\u2019s\u00a0buds: AABBCCDDEE01 access_token=hunter2 ~jdoe"), "on device#1: <mac> access_token=<secret> ~");
+        h.check("a device named like a word of its line changes none", ReportFile.devices([{
+                    "name": "aac",
+                    "kind": "speaker",
+                    "codec": "aac"
+                }])[1], "  device#2 kind=speaker codec=aac");
+        h.check("a list that cannot be read takes the journal with it", ReportFile.build({
+                "devices": "Bob",
+                "journal": ["[orbit] Unlisted Bob"]
+            }).indexOf("Unlisted"), -1);
+        h.check("a time out of range still gives a plain name", /^orbit-report-\d{8}-\d{6}Z\.txt$/.test(ReportFile.fileName(8.64e15)), true);
         Redact.forget();
         print(h.failures ? h.failures + " failure(s)" : "all passed");
         Qt.exit(h.failures ? 1 : 0);

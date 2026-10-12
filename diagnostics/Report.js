@@ -11,8 +11,9 @@
 // goes through the allowlist and Redact, so what comes out holds versions,
 // states and codes, and nothing that identifies a person or a machine.
 
-// "Oct 08 12:00:00 <host> qs[123]: " as journalctl writes it by default
-var SYSLOG_PREFIX = /^\w{3} [ \d]\d \d\d:\d\d:\d\d \S+ \S+: /;
+// "Oct 08 12:00:00 <host> qs[123]: " as journalctl writes it by default, or
+// with the date as "2026-10-08T12:00:00+0200" (its ISO formats)
+var SYSLOG_PREFIX = /^(?:\w{3} [ \d]\d \d\d:\d\d:\d\d|\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d[.,\d]*(?:Z|[+-]\d\d:?\d\d)?) \S+ \S+: /;
 
 // A version or a distribution name: letters, digits and a few separators
 function _version(v) {

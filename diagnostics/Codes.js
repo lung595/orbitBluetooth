@@ -1,4 +1,5 @@
 .pragma library
+.import "../components/volume/Codecs.js" as Codecs
 
 // What THIS plugin may say. It is the only diagnostics file that differs from
 // one plugin to the next; the others are copied as they are. Every code is
@@ -102,13 +103,17 @@ var FACTS = {
 
 // What a report may say about one device. Its name, its model and its address
 // are not here and so can never be written: a device is told apart by the
-// alias Redact gives it. The codecs are PipeWire's own words (Codecs.js).
+// alias Redact gives it. A kind is a glyph of the "hostGlyph" setting, less
+// "auto", which is a choice and not a kind. The codecs are PipeWire's own
+// words, read from the list the plugin keeps (Codecs.js).
 var DEVICE = {
-    "kind": SETTINGS.hostGlyph.slice(1),
+    "kind": SETTINGS.hostGlyph.filter(function (glyph) {
+        return glyph !== "auto";
+    }),
     "connected": "bool",
     "paired": "bool",
     "trusted": "bool",
-    "codec": ["sbc", "sbc_xq", "aac", "aptx", "aptx_hd", "aptx_ll", "aptx_ll_duplex", "aptx_adaptive", "ldac", "lc3", "lc3plus_hr", "faststream", "opus_05", "cvsd", "msbc", "lc3_swb"],
+    "codec": Object.keys(Codecs.CODECS),
     "battery": "int",
     "batteryLeft": "int",
     "batteryRight": "int",
