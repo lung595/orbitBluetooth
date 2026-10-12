@@ -106,6 +106,52 @@ eq("an endless name is registered without throwing", Redact.register("device", e
 eq("and hidden to the end of its line", Redact.text("[orbit] seen " + endless + " here"), "[orbit] seen device#1");
 Redact.forget();
 
+// The rules run before the names (N1), and a name never rewrites what they or an alias wrote
+Redact.register("device", "device");
+Redact.register("device", "secret");
+Redact.register("user", "user");
+eq("a name that is a word of an alias or of a mark changes neither, once or twice", [Redact.text("device and user, token=abc"), Redact.text(Redact.text("device and user, token=abc"))], Array(2).fill("device#1 and user#1, token=<secret>"));
+Redact.forget();
+eq("a one-digit name leaves a version alone and is hidden at the end of a sentence", (Redact.register("device", "1"), [Redact.text("Orbit 1.15.0 on Qt 6.1"), Redact.text("it is 1.")]), ["Orbit 1.15.0 on Qt 6.1", "it is device#1."]);
+Redact.forget();
+// The other ways a journal may write a name (D3)
+Redact.register("device", "Bob's Big Buds");
+eq("a name is found escaped, in full-width letters, with thin spaces", ["Bob's_Big_Buds", "Bob's%20Big%20Buds", "Bob's\\x20Big\\x20Buds", "Bob\\'s Big Buds", "Bob's\u2009Big\u2003Buds", "\uff22\uff4f\uff42's Big Buds", "BOB'S B\u0131G BUDS"].map(t => Redact.text("on " + t + " now")), Array(7).fill("on device#1 now"));
+Redact.forget();
+Redact.register("device", "Ann@nas speaker");
+eq("a name the rules change is still hidden whole", Redact.text("on Ann@nas speaker now"), "on device#1 now");
+Redact.forget();
+// A text far longer than a line (N2): read up to a cap, in a time that does not grow with its square
+for (const piece of ["a.", "1.", "a-", "a@", "a:"]) {
+    const from = Date.now();
+    const cut = Redact.text(piece.repeat(24000));
+    eq("48 000 characters of " + JSON.stringify(piece) + " are cleaned at once", [Date.now() - from < 500, cut.length <= Redact.MAX_LINE], [true, true]);
+}
+Redact.register("device", "Bob Buds");
+const filler = "token=" + "A1b2".repeat(300);
+eq("a name or a secret cut in half by the cap does not come out", [filler.slice(0, Redact.MAX_INPUT - 5) + " Bob Buds tail", filler.slice(0, Redact.MAX_INPUT - 12) + " deadbeefdeadbeefdeadbeefdeadbeef0123 tail"].map(t => Redact.text(t)), Array(2).fill("token=<secret> "));
+Redact.forget();
+// What reads like a secret or an account and is neither
+eq("a count and a state stay readable", Redact.text("pins: 3 tokens: 12, login: failed user=none"), "pins: 3 tokens: 12, login: failed user=none");
+eq("a plural key with a value is still a secret", ["pins: 1234", "tokens: abc", "tokens=12a"].map(t => Redact.text(t)), ["pins: <secret>", "tokens: <secret>", "tokens=<secret>"]);
+const rest = {
+    "address glued to a letter, with colons": "macAA:BB:CC:DD:EE:01 up",
+    "address in full-width digits": "at \uff21\uff21:BB:CC:DD:EE:\uff10\uff11 up",
+    "drive under /mnt": "open /mnt/jdoe/a.txt",
+    "accounts service": "read /var/lib/AccountsService/users/jdoe",
+    "home folder without its first slash": "open home/jdoe/a.txt",
+    "id with the account": "uid=1000(jdoe) gid=1000(jdoe)",
+    "account after its word": "session opened for user jdoe",
+    "short basic header": "Basic aHVudGVyMg==, Basic dTpw0A",
+    "authorization header": "Authorization: Basic hunter2",
+    "pairing code without a sign": "pin 123456, pairing code 123456",
+    "psk and bare key": "psk=hunter2 key=hunter2 wifi_key: hunter2"
+};
+for (const what in rest) {
+    const out = Redact.text(rest[what]);
+    eq("no leak: " + what, ["AA:BB", "jdoe", "hunter2", "aHVudGVy", "dTpw", "123456", "\uff10"].filter(f => out.indexOf(f) >= 0), []);
+}
+
 // The addresses, accounts and secrets the first patterns let through (D6, D7, D9)
 const more = {
     "address without separator": "dev AABBCCDDEE01 up",

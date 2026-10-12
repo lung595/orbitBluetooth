@@ -43,11 +43,12 @@ eq("a device is written from its allowed facts, under its alias", ReportFile.dev
 eq("every name of a device is hidden afterwards, the model too", Redact.text("Bob's AirPods Pro, Bob's buds, AirPods Pro, kitchen speaker"), "device#1, device#2, device#3, device#4");
 eq("the same device keeps its alias from one report to the next", ReportFile.devices([speaker])[1], "  device#4 kind=speaker connected=no paired=yes codec=? battery=?");
 eq("no device, no line", [ReportFile.devices([]), ReportFile.devices(null), ReportFile.devices(undefined)], Array(3).fill(["Devices (0 known, 0 connected):", "  none"]));
-eq("a device that is not one, or says nothing allowed, is a ?", ReportFile.devices([null, "Bob's phone", 7, {}, { "name": "" }, { "address": MAC }]).slice(1), Array(6).fill("  device ?"));
-eq("a one-character name is a name", ReportFile.devices([{ "name": "x" }])[1], "  device#5 ?");
+eq("a device that is not one, or says nothing allowed, is a ?", ReportFile.devices([null, 7, true, {}, { "name": "" }, { "address": MAC }]).slice(1), Array(6).fill("  device ?"));
+eq("a bare name in place of a device is a name, hidden like the others (D3)", [ReportFile.devices(["Bare Bob"])[1], Redact.text("seen Bare Bob")], ["  device#5 ?", "seen device#5"]);
+eq("a one-character name is a name", ReportFile.devices([{ "name": "x" }])[1], "  device#6 ?");
 // A prototype key is not a fact
-eq("an inherited key is not read", ReportFile.devices([Object.create({ "kind": "phone", "name": "Inherited Bob" })])[1], "  device#6 ?");
-eq("the name Quickshell gives a device is hidden too", (ReportFile.devices([{ "deviceName": "Quick Bob" }]), Redact.text("Quick Bob")), "device#7");
+eq("an inherited key is not read", ReportFile.devices([Object.create({ "kind": "phone", "name": "Inherited Bob" })])[1], "  device#7 ?");
+eq("the name Quickshell gives a device is hidden too", (ReportFile.devices([{ "deviceName": "Quick Bob" }]), Redact.text("Quick Bob")), "device#8");
 
 // A device named like a word of its own line (a key, a codec, a kind, yes/no, a number,
 // a piece of "device"): the line is written as it is, nothing in it is replaced
@@ -81,12 +82,25 @@ Redact.forget();
 const broken = { get name() { throw new Error("gone"); }, "kind": "phone" };
 const brokenFact = { "name": "Half Bob", get codec() { throw new Error("gone"); } };
 const survived = ReportFile.build({ "now": NOW, "devices": [broken, speaker, brokenFact], "journal": ["[orbit] ORB-E001 Secret Bob"] });
-eq("a device that throws is a ? and the others keep their line", survived.split("\n").slice(-7, -3), ["Devices (3 known, 0 connected, one not readable, journal lines left out):", "  device ?", "  device#1 kind=speaker connected=no paired=yes codec=? battery=?", "  device ?"]);
+eq("a device that throws is a ? and the others keep their line", survived.split("\n").slice(-7, -3), ["Devices (3 known, 0 connected, 2 not readable, journal lines left out):", "  device ?", "  device#1 kind=speaker connected=no paired=yes codec=? battery=?", "  device ?"]);
 eq("and the journal is left out", [survived.indexOf("Secret"), survived.indexOf("Journal lines (anonymized, 0 kept") > 0], [-1, true]);
 Redact.forget();
 const huge = "Huge Bob " + "w".repeat(50000) + " end-of-bob";
 const hugeText = ReportFile.build({ "now": NOW, "devices": [{ "name": huge, "kind": "tv" }], "journal": ["[orbit] seen " + huge + " again", "[orbit] seen Huge Bob www"] });
 eq("a name of 50 000 characters does not throw and does not come out", [hugeText.split("\n").filter(l => /device#1/.test(l)), ["Huge", "www", "end-of-bob"].filter(w => hugeText.indexOf(w) >= 0)], [["  [orbit] seen device#1", "  device#1 kind=tv"], ["Huge", "www"]]);
+// The facts themselves may throw: the report of no facts, not an exception
+const noVersions = {};
+Object.defineProperty(noVersions, "versions", { "enumerable": true, get() { throw new Error("gone"); } });
+const noKeys = new Proxy({}, { ownKeys() { throw new Error("gone"); } });
+eq("facts that cannot be read give a report all the same (D5)", [noVersions, noKeys].map(i => ReportFile.build(i).split("\n")[2]), Array(2).fill("Plugin       : OrbitBluetooth ?"));
+// A device named like a word the rules look for must not break the rule (N1)
+for (const word of ["home", "user", "token", "Bearer", "media", "password", "e/", "en="]) {
+    Redact.forget();
+    const named = ReportFile.build({ "now": NOW, "devices": [{ "name": word, "kind": "phone" }], "journal": ["Oct 08 12:00:00 laptop-jdoe qs[1]: [orbit] open \x2fhome/jdoe/x user=jdoe token=abc123 Bearer abc123 /run/media/jdoe/K password=hunter2"] });
+    eq("a device named " + JSON.stringify(word) + " lets no account and no secret out", [named.indexOf("[orbit] open") > 0, ["jdoe", "abc123", "hunter2"].filter(w => named.indexOf(w) >= 0)], [true, []]);
+}
+Redact.forget();
+eq("a device named with one digit leaves the versions alone", ReportFile.build({ "now": NOW, "plugin": "1.15.0", "devices": [{ "name": "1" }] }).split("\n")[2], "Plugin       : OrbitBluetooth 1.15.0");
 eq("a time out of range is the present in the report as in the name", /^Created      : 20\d\d-\d\d-\d\d \d\d:\d\d:\d\d UTC$/.test(ReportFile.build({ "now": 8.64e15 + 1 }).split("\n")[1]), true);
 Redact.forget();
 ReportFile.devices([buds, speaker]);
@@ -188,21 +202,25 @@ Log.clear();
 for (let n = 0; n < 1000; n++)
     Log.event(n % 2 ? "ORB-E001" : "ORB-W011", { "action": "connect", "reason": "timeout", "tool": "pactl" });
 const many = [];
-for (let n = 0; n < 2000; n++)
-    many.push({ "name": "Headset of person " + n, "address": MAC, "kind": "headphones", "connected": n % 4 === 0, "codec": "ldac", "battery": n % 101 });
+for (let n = 0; n < ReportFile.MAX_LIST; n++)
+    many.push({ "name": "Headset of person " + n, "deviceName": "Dn " + n + " set", "alias": "Al " + n + " set", "model": "Mo " + n + " set", "address": MAC, "kind": "headphones", "connected": n % 4 === 0, "codec": "ldac", "battery": n % 101 });
 const journal = [];
 for (let n = 0; n < 5000; n++)
-    journal.push("[orbit] ORB-E001 with Headset of person " + (n % 2000) + " at " + MAC + " " + "y".repeat(500));
+    journal.push("[orbit] ORB-E001 with Headset of person " + (n % 256) + " at " + MAC + " " + "y".repeat(500));
 const started = Date.now();
 const big = ReportFile.build({ "now": NOW, "devices": many, "journal": journal });
 const took = Date.now() - started;
 const bigLines = big.split("\n");
-eq("a huge state is counted whole and shown in part", bigLines.filter(l => /^Devices/.test(l)), ["Devices (2000 known, 500 connected, first 32 shown):"]);
+eq("a huge state is counted whole and shown in part", bigLines.filter(l => /^Devices/.test(l)), ["Devices (256 known, 64 connected, first 32 shown):"]);
 eq("32 device lines at most", [ReportFile.MAX_DEVICES, bigLines.filter(l => /^ {2}device#\d+ kind=headphones/.test(l)).length], [32, 32]);
 eq("the journal stays at its 50 lines and the events at the buffer's 200", [bigLines.filter(l => /^ {2}\[orbit\]/.test(l)).length, bigLines.filter(l => /^ {2}\d\d:\d\d:\d\d ORB-/.test(l)).length], [50, 200]);
 eq("the errors are the buffer's, counted", bigLines.slice(-4), ["Errors and warnings (200 among the 200 events kept):", "  ORB-E001 x100 (A Bluetooth action failed)", "  ORB-W011 x100 (A helper program is missing)", ""]);
 eq("a device past the 32 shown is hidden in the journal all the same", ["Headset", "person", "AA:BB"].filter(w => big.indexOf(w) >= 0), []);
 eq("the file stays small enough to read and attach", big.length < 40000, true);
-eq("and is built in a few seconds at worst", took < 10000, true);
+eq("and is built in well under a second (N3: 256 devices of 4 names, 50 lines)", took < 1000, true);
+Redact.forget();
+many.push({ "name": "One too many" });
+const refused = ReportFile.build({ "now": NOW, "devices": many, "journal": ["[orbit] ORB-E001 One too many"] });
+eq("one device past the list's cap: nothing is read and the journal is left out", [refused.indexOf("One too many"), refused.split("\n").filter(l => /^Devices/.test(l))], [-1, ["Devices (not readable, journal lines left out):"]]);
 
 done();

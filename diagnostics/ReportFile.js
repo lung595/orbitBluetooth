@@ -20,8 +20,10 @@
 // A report is read by a person: past this many devices the rest is counted
 var MAX_DEVICES = 32;
 
-// A list longer than this is not read at all (and the journal is left out)
-var MAX_LIST = 10000;
+// A list longer than this is not read at all (and the journal is left out):
+// a machine knows some dozens of devices, and every name of every one is
+// looked for in every journal line
+var MAX_LIST = 256;
 
 // The last moment a four-digit year can write
 var MAX_TIME = Date.UTC(9999, 11, 31, 23, 59, 59);
@@ -49,6 +51,9 @@ function fileName(now) {
 // ("device" when it has no name)
 function _alias(device) {
     var alias = "";
+    // A list of bare names instead of objects
+    if (typeof device === "string")
+        return Redact.register("device", device) || "device";
     if (!device || typeof device !== "object")
         return "device";
     for (var n = 0; n < NAMES.length; n++) {
@@ -91,7 +96,7 @@ function _read(list) {
     if (!all)
         return { "lines": ["Devices (not readable, journal lines left out):", "  none"], "hidden": false };
     var connected = 0;
-    var hidden = true;
+    var unread = 0;
     var lines = [];
     for (var d = 0; d < all.length; d++) {
         var line = "device ?";
@@ -105,13 +110,17 @@ function _read(list) {
                 connected++;
             line = alias + " " + (facts.length ? facts.join(" ") : "?");
         } catch (e) {
-            hidden = false;
+            unread++;
         }
         if (d < MAX_DEVICES)
             lines.push("  " + line);
     }
-    var head = "Devices (" + all.length + " known, " + connected + " connected" + (all.length > MAX_DEVICES ? ", first " + MAX_DEVICES + " shown" : "") + (hidden ? "" : ", one not readable, journal lines left out") + "):";
-    return { "lines": [head].concat(lines.length ? lines : ["  none"]), "hidden": hidden };
+    var notes = [all.length + " known", connected + " connected"];
+    if (all.length > MAX_DEVICES)
+        notes.push("first " + MAX_DEVICES + " shown");
+    if (unread)
+        notes.push(unread + " not readable, journal lines left out");
+    return { "lines": ["Devices (" + notes.join(", ") + "):"].concat(lines.length ? lines : ["  none"]), "hidden": !unread };
 }
 
 // The "Devices" lines. Every device's names are registered, shown or not, so
@@ -150,9 +159,14 @@ function errors() {
 // is a "?" and takes the journal lines away with it; it does not throw.
 function build(info) {
     var i = {};
-    var from = info && typeof info === "object" ? info : {};
-    for (var key in from)
-        i[key] = from[key];
+    try {
+        var from = info && typeof info === "object" ? info : {};
+        for (var key in from)
+            i[key] = from[key];
+    } catch (e) {
+        // What could not be read is left out, like anything missing
+        i = {};
+    }
     i.now = _time(i.now);
     // First, so the names are known when Report.build cleans the journal
     var read = _read(i.devices);

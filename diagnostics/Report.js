@@ -42,8 +42,17 @@ function _stamp(ms) {
 //   surfaces: { widget: bool, ... }, settings: { key: value }, facts: { key: value },
 //   cpu: { percent, windowMs } or null, journal: [ lines from the DMS journal ]
 // }
-// Anything missing is shown as "?" or left out; nothing throws.
+// Anything missing is shown as "?" or left out; nothing throws: facts that
+// cannot be read (an accessor that throws) give the report of no facts.
 function build(info) {
+    try {
+        return _build(info);
+    } catch (e) {
+        return _build(null);
+    }
+}
+
+function _build(info) {
     var i = info || {};
     var v = i.versions || {};
     var now = typeof i.now === "number" ? i.now : Date.now();
