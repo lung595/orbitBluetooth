@@ -134,6 +134,23 @@ Redact.forget();
 // What reads like a secret or an account and is neither
 eq("a count and a state stay readable", Redact.text("pins: 3 tokens: 12, login: failed user=none"), "pins: 3 tokens: 12, login: failed user=none");
 eq("a plural key with a value is still a secret", ["pins: 1234", "tokens: abc", "tokens=12a"].map(t => Redact.text(t)), ["pins: <secret>", "tokens: <secret>", "tokens=<secret>"]);
+// A line with nothing personal in it stays readable, and its secret or account twin does not
+const twins = [
+    ["a keyboard key", "key: Enter pressed", "key: hunter2 x, key: 4321 pressed, key=Enter", "key: <secret> x, key: <secret> pressed, key=<secret>"],
+    ["a property name", "wireplumber: node 57 key: api.bluez5.codec value: aac", "key: api.hunter2@x key: Api-Bluez", "key: <secret> key: <secret>"],
+    ["a state after pin", "pin: yes, pin=no (key: none)", "pin: yes1 pin: 4321 _pin: abcd", "pin: <secret> pin: <secret> _pin: <secret>"],
+    ["a state after a named key", "keys: 2", "wifi_pin: yes api_key: none link-key: Enter pressed", "wifi_pin: <secret> api_key: <secret> link-key: <secret> pressed"],
+    ["a word after by user", "cancelled by user request", "cancelled by user jdoe, by user requestor", "cancelled by user <user> by user <user>"],
+    ["a word after of user", "volume of user interface, of user input", "volume of user jdoe", "volume of user <user>"],
+    ["a media folder that is no drive", "play /usr/share/media/sounds/bell.oga and ~/media/a.oga", "play /media/jdoe/a.oga file:///media/jdoe/b /run/media/jdoe/c /var/run/media/jdoe/d", "play /media/<user>/a.oga file:///media/<user>/b /run/media/<user>/c /var/run/media/<user>/d"],
+    ["a data folder under /mnt", "open /mnt/data/music/a.flac and /mnt/usb", "open /mnt/jdoe/music/a.flac /mnt/database/x /mnt/data.jdoe/x", "open /mnt/<user>/music/a.flac /mnt/<user>/x /mnt/<user>/x"],
+    ["a number after user=", "user=42 login: 1000, (user=0)", "user=42jdoe user=jdoe user=42@laptop", "user=<user> user=<user> user=<user>"]
+];
+for (const [what, plain, personal, hidden] of twins) {
+    eq("stays readable: " + what, Redact.text(plain), plain);
+    eq("is still hidden: " + what, Redact.text(personal), hidden);
+    eq("cleaning twice changes nothing: " + what, Redact.text(Redact.text(personal)), hidden);
+}
 const rest = {
     "address glued to a letter, with colons": "macAA:BB:CC:DD:EE:01 up",
     "address in full-width digits": "at \uff21\uff21:BB:CC:DD:EE:\uff10\uff11 up",

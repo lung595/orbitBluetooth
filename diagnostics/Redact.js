@@ -21,6 +21,12 @@ var _stale = false;
 // follows it on a line is hidden with it (a pattern has a size limit).
 var MAX_NAME = 248;
 
+// How much of a raw name or text is read, in times what is kept of it: making
+// one spelling of it only takes characters away (the zero-width ones, a letter
+// and its accents composed into one), so there is room for three of those per
+// character kept, and an endless text is still never walked whole.
+var RAW_FACTOR = 4;
+
 // What the rules write. A name never replaces a piece of one of these or of
 // an alias, so cleaning a clean text again changes nothing.
 var _MARKS = "<(?:secret|mac|ip|email|host|user|uid|cmd)>";
@@ -46,7 +52,7 @@ function register(kind, name) {
         return "";
     // Without the spaces around it, and one space for a run of them: a line
     // of the journal does not carry the name's own spacing
-    name = _plain(name.slice(0, 4 * MAX_NAME)).replace(/ +/g, " ").trim();
+    name = _plain(name.slice(0, RAW_FACTOR * MAX_NAME)).replace(/ +/g, " ").trim();
     if (!name)
         return "";
     var cut = name.length > MAX_NAME;
@@ -82,6 +88,9 @@ function _escape(s) {
 // (several, "_", "%20", "\x20"), its quotes escaped or not. A single
 // character is hidden only where it stands alone, or it would hide every such
 // letter of the text and the first digit of a version.
+// The only group of the pattern is what stands before the name (empty for a
+// longer name): it is set where a name was found, and not where a mark or an
+// alias was, which is left as it is.
 function _pattern(known, kept) {
     var body = _escape(known.name).replace(/ /g, "(?:[ _]|%20|\\\\x20)+").replace(/['"]/g, "\\\\?$&") + (known.cut ? ".*" : "");
     if (known.name.length < 2)
@@ -89,11 +98,11 @@ function _pattern(known, kept) {
     else
         body = "()" + body;
     // What the rules wrote goes first, except for a name that holds some
-    return new RegExp(known.ruled ? body + "|(" + kept + ")" : "(" + kept + ")|" + body, "gi");
+    return new RegExp(known.ruled ? body + "|" + kept : kept + "|" + body, "gi");
 }
 
 function _prepare() {
-    var kept = _MARKS + "|(?:" + Object.keys(_counts).join("|") + ")#[0-9]+";
+    var kept = "(?:" + _MARKS + "|(?:" + Object.keys(_counts).join("|") + ")#[0-9]+)";
     _known.sort(function (a, b) {
         return b.name.length - a.name.length;
     });
@@ -107,8 +116,7 @@ function _names(s) {
         _prepare();
     for (var i = 0; i < _known.length; i++) {
         var known = _known[i];
-        s = s.replace(known.pattern, function (all, a, b) {
-            var lead = known.ruled ? a : b;
+        s = s.replace(known.pattern, function (all, lead) {
             return lead === undefined ? all : lead + known.alias;
         });
     }
@@ -128,17 +136,33 @@ var MAX_INPUT = 1024;
 
 var _HEX2 = "[0-9A-Fa-f]{2}";
 // A key that says its value is a secret. It may be prefixed (access_token).
-var _KEY = "(?:[A-Za-z0-9]{1,32}[-_]){0,4}(?:token|secret|passw(?:or)?d|passwd|pwd|passphrase|passkey|passcode|pin(?:code)?|psk|credential|cookie|session[-_]?id|(?:auth|api)?[-_]?key)";
+var _PREFIX = "(?:[A-Za-z0-9]{1,32}[-_])";
+var _NAMED = "token|secret|passw(?:or)?d|pwd|passphrase|passkey|passcode|pincode|psk|credential|cookie|session[-_]?id|(?:auth|api)[-_]?key";
+// "key" and "pin" alone are also everyday words, so they have a rule of their
+// own below. With a prefix (wifi_key) they are keys like the others.
+var _BARE = "(?:key|pin)";
+var _KEY = _PREFIX + "{0,4}(?:" + _NAMED + "|" + _PREFIX + _BARE + ")";
 var _VALUE = "(?:\"[^\"]*\"|'[^']*'|<secret>|\\S+)";
 var _SIGN = "([\"']?\\s*[=:]\\s*)";
+// Where a value ends
+var _END = "(?![^\\s,;)])";
+// A value that says how things went is not a secret and not an account
+var _STATE = "(?:failed|failure|ok|success|succeeded|denied|refused|error|timeout|true|false|yes|no|none|null)";
+// What follows a bare "key" or "pin" and is no secret: a state ("pin: yes"),
+// the dotted name of a property ("key: api.bluez5.codec"), the name of a
+// keyboard key ("key: Enter pressed"). Anything else is hidden.
+var _PLAIN_VALUE = "(?:(?:" + _STATE + "|[a-z]+(?:\\.[a-z][a-z0-9_-]*)+)" + _END + "|[a-z]\\w* (?:pressed|released)\\b)";
+// A folder of /mnt that is named after what it holds, not after an account
+var _MOUNT = "(?:data|disk|usb|backup|storage|share|nas|cdrom|windows)";
 var _RULES = [
     // Secrets first, so nothing below can cut one in half. A "key=value" or
     // "key: value" whose key says what it is (quoted or not, as in JSON), a
     // pairing code after its name, an authorization header, well-known token
     // prefixes, and any long run of hex or base64 characters.
     [new RegExp("\\b(" + _KEY + ")" + _SIGN + _VALUE, "gi"), "$1$2<secret>"],
+    [new RegExp("\\b(_?" + _BARE + ")" + _SIGN + "(?!" + _PLAIN_VALUE + ")" + _VALUE, "gi"), "$1$2<secret>"],
     // A plural key with a small number is a count ("pins: 3"), not a secret
-    [new RegExp("\\b(" + _KEY + "s)" + _SIGN + "(?!\\d{1,3}(?![^\\s,;]))" + _VALUE, "gi"), "$1$2<secret>"],
+    [new RegExp("\\b(" + _PREFIX + "{0,4}(?:" + _NAMED + "|" + _BARE + ")s)" + _SIGN + "(?!\\d{1,3}(?![^\\s,;]))" + _VALUE, "gi"), "$1$2<secret>"],
     [/\b(pin(?:code)?|passkey|passcode|pairing code)(\s+)\d{4,8}\b/gi, "$1$2<secret>"],
     [/\b(authorization["']?\s*[=:]\s*)(?:(?:Basic|Bearer|Digest)\s+)?\S+/gi, "$1<secret>"],
     [/\bBearer\s+\S+/gi, "Bearer <secret>"],
@@ -175,16 +199,18 @@ var _RULES = [
     [/\/Users\/[^\/\s:'"]+/g, "~"],
     [/\/root\b/g, "~"],
     [/\/run\/user\/\d+/g, "/run/user/<uid>"],
-    // And outside the home folder: a drive mounted for the account, the
-    // accounts service, "~name", "name@machine", "uid=1000(name)", "user=name"
-    // (but not "login: failed"), "for user name"
-    [/(\/(?:run\/)?media|\/mnt)\/[^\/\s:'"]+/g, "$1/<user>"],
+    // And outside the home folder: a drive mounted for the account (/media
+    // at the root only, /usr/share/media is not one), the accounts service,
+    // "~name", "name@machine", "uid=1000(name)", "user=name" (but not
+    // "login: failed" or "user=42"), "for user name" (but not "by user request")
+    [/(^|[^A-Za-z0-9_.~-]|\/run)(\/media)\/[^\/\s:'"]+/g, "$1$2/<user>"],
+    [new RegExp("(\\/mnt)\\/(?!" + _MOUNT + "(?![^\\/\\s:'\"]))[^\\/\\s:'\"]+", "g"), "$1/<user>"],
     [/(\/AccountsService\/(?:users|icons))\/[^\/\s:'"]+/g, "$1/<user>"],
     [/(=\d+)\([^)\s]+\)/g, "$1(<user>)"],
     [/(^|[^0-9A-Za-z\/.~])~[A-Za-z_][A-Za-z0-9_.-]*/g, "$1~"],
     [/\b[A-Za-z_][A-Za-z0-9_.-]*@[A-Za-z0-9][A-Za-z0-9.-]*/g, "<user>@<host>"],
-    [/\b(user(?:name)?|login|logname)(\s*[=:]\s*)(?!(?:failed|failure|ok|success|succeeded|denied|refused|error|timeout|true|false|yes|no|none|null)\b)[^\s<]\S*/gi, "$1$2<user>"],
-    [/\b((?:for|as|by|of) user)(\s+)[^\s<]\S*/gi, "$1$2<user>"]
+    [new RegExp("\\b(user(?:name)?|login|logname)(\\s*[=:]\\s*)(?!" + _STATE + "\\b|\\d+" + _END + ")[^\\s<]\\S*", "gi"), "$1$2<user>"],
+    [/\b((?:for|as|by|of) user)(\s+)(?!(?:request|interface|input|action|session|space)\b)[^\s<]\S*/gi, "$1$2<user>"]
 ];
 
 function _rules(s) {
@@ -199,22 +225,26 @@ function _clean(s) {
     return _names(_rules(s));
 }
 
+// How many characters two texts start with in common
+function _shared(a, b) {
+    var n = 0;
+    while (n < a.length && a[n] === b[n])
+        n++;
+    return n;
+}
+
 // Hides everything personal in a text. Cleaning a clean text again changes
-// nothing. A text longer than MAX_INPUT is cut there, and a name or a secret
-// may be cut in half by it: only what reads the same with the next MAX_NAME
-// characters in sight is kept, which leaves that half out.
+// nothing. A text longer than MAX_INPUT is cut there, which may cut a name or
+// a secret in half and let its first half read as plain text. So the text is
+// also cleaned with MAX_NAME more characters in sight, and what the two
+// results do not share (that half, seen whole the second time) is left out.
 function text(value) {
     if (value === null || value === undefined)
         return "";
-    var all = _plain(String(value).slice(0, 4 * MAX_INPUT));
+    var all = _plain(String(value).slice(0, RAW_FACTOR * MAX_INPUT));
     var s = _clean(all.slice(0, MAX_INPUT));
-    if (all.length > MAX_INPUT) {
-        var wider = _clean(all.slice(0, MAX_INPUT + MAX_NAME));
-        var same = 0;
-        while (same < s.length && s[same] === wider[same])
-            same++;
-        s = s.slice(0, same);
-    }
+    if (all.length > MAX_INPUT)
+        s = s.slice(0, _shared(s, _clean(all.slice(0, MAX_INPUT + MAX_NAME))));
     return s.length > MAX_LINE ? s.slice(0, MAX_LINE - 1) + "…" : s;
 }
 
