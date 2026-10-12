@@ -75,9 +75,11 @@ eq("the same name (any case) gets the same alias", Redact.register("device", "BO
 eq("the next device gets the next number", Redact.register("device", "Kitchen Speaker"), "device#2");
 eq("the login is hidden as a user", Redact.register("user", "jdoe"), "user#1");
 eq("a one-letter name is refused (it would hide every letter)", Redact.register("device", "a"), "");
+eq("a name of spaces is refused (it would hide every gap)", [Redact.register("device", "   "), Redact.register("device", " a\t")], ["", ""]);
+eq("a name with a tab is hidden where the tab reads as a space", (Redact.register("device", "Tab\tname"), [Redact.text("x Tab\tname y"), Redact.text("x Tab name y")]), ["x device#3 y", "x device#3 y"]);
 eq("a bad kind is refused", Redact.register("de vice", "Name"), "");
 eq("the longest known name goes first", Redact.text("Bob's AirPods Pro and kitchen speaker, jdoe"), "device#1 and device#2, user#1");
-eq("a name with regex characters is taken literally", (Redact.register("device", "(my) [pods]+"), Redact.text("x (my) [pods]+ y")), "x device#3 y");
+eq("a name with regex characters is taken literally", (Redact.register("device", "(my) [pods]+"), Redact.text("x (my) [pods]+ y")), "x device#4 y");
 Redact.forget();
 eq("forgetting clears the aliases", Redact.text("Bob's AirPods Pro"), "Bob's AirPods Pro");
 

@@ -99,3 +99,19 @@ var FACTS = {
     "sceneVisible": "bool",
     "reduceMotion": "bool"
 };
+
+// What a report may say about one device. Its name, its model and its address
+// are not here and so can never be written: a device is told apart by the
+// alias Redact gives it. The codecs are PipeWire's own words (Codecs.js).
+var DEVICE = {
+    "kind": SETTINGS.hostGlyph.slice(1),
+    "connected": "bool",
+    "paired": "bool",
+    "trusted": "bool",
+    "codec": ["sbc", "sbc_xq", "aac", "aptx", "aptx_hd", "aptx_ll", "aptx_ll_duplex", "aptx_adaptive", "ldac", "lc3", "lc3plus_hr", "faststream", "opus_05", "cvsd", "msbc", "lc3_swb"],
+    "battery": "int",
+    "batteryLeft": "int",
+    "batteryRight": "int",
+    "batteryCase": "int",
+    "charging": "bool"
+};

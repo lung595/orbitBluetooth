@@ -12,7 +12,12 @@
 var _known = [];
 
 function register(kind, name) {
-    if (typeof name !== "string" || name.length < 2 || !/^[a-z]+$/.test(kind))
+    if (typeof name !== "string" || !/^[a-z]+$/.test(kind))
+        return "";
+    // As text() reads it: a tab or a new line in a name is a space by the
+    // time the name is looked for, and a name of spaces would hide them all
+    name = name.replace(/[\u0000-\u001f\u007f]/g, " ");
+    if (name.trim().length < 2)
         return "";
     for (var i = 0; i < _known.length; i++) {
         if (_known[i].name.toLowerCase() === name.toLowerCase())
