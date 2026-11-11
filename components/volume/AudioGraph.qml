@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell.Io
+import qs.Common
 import "AudioGraph.js" as Graph
 
 // What PipeWire's graph says of the output in view (D260): the delay it
@@ -8,7 +9,10 @@ import "AudioGraph.js" as Graph
 // on `refresh()`, and its answer is dropped (or ignored, if it ends late)
 // as soon as it is not wanted:
 // nothing polls and nothing runs while folded. The commands are fixed, no
-// user data reaches them. `pw-top` samples for one second, then ends.
+// user data reaches them. The dump comes from WirePlumber's `wpexec` and a
+// read-only script (graph/orbit_graph.lua), so it works on a default install;
+// the quantum needs `pw-top` (pipewire-utils): without it that fact is simply
+// absent, never guessed. `pw-top` samples for one second, then ends.
 Item {
     id: root
     objectName: "audioGraph" // found by the offscreen previews
@@ -22,6 +26,8 @@ Item {
     readonly property var facts: Object.assign({}, _dumped[sink], _topped[sink])
     property var _dumped: ({})
     property var _topped: ({})
+    // The graph reader, beside this plugin's other helpers
+    readonly property string _script: Paths.strip(Qt.resolvedUrl("../../graph/orbit_graph.lua"))
 
     function refresh() {
         if (wantDump && sink && !dumper.running)
@@ -45,7 +51,7 @@ Item {
 
     Process {
         id: dumper
-        command: ["pw-dump"]
+        command: ["wpexec", root._script]
         stdout: StdioCollector {
             id: dumped
         }

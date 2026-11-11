@@ -253,7 +253,7 @@ The delay PipeWire adds to the Bluetooth device, as the sound server reports it 
 
 The size of the audio buffer PipeWire works in, in samples and milliseconds (*1024 samples (11 ms)*). A smaller quantum answers faster and costs more power. It is read from `pw-top`, which only lists outputs that are playing **right now**: pause the sound and the line is empty.
 
-All four are read through `pw-dump` and `pw-top` (they come with PipeWire), only when you unfold the details or switch the fact on for the line, once per opening, and then Orbit lets go. If `pw-dump` or `pw-top` is not installed, only these lines go missing.
+Latency and quality are read through WirePlumber's `wpexec` (a fixed, read-only script shipped with Orbit); the quantum needs `pw-top`, which comes with pipewire-utils (not installed by default on Fedora): without it only that line goes missing. Each is read only when you unfold the details or switch the fact on for the line, once per opening, and then Orbit lets go.
 
 ## Listen together
 

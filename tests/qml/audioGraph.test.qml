@@ -14,7 +14,7 @@ Item {
         sink: "bluez_output.AA_BB_CC_DD_EE_FF.1"
     }
 
-    // What `pw-dump` and `pw-top -b -n 2` say, cut down to what is read
+    // What the graph reader (graph/orbit_graph.lua, pw-dump's shape) and `pw-top -b -n 2` say, cut down to what is read
     readonly property string listing: JSON.stringify([
         {
             "info": {
@@ -64,15 +64,15 @@ Item {
     }
 
     Component.onCompleted: {
-        check("both runners exist", [runner("pw-dump") !== null, runner("pw-top") !== null], [true, true]);
-        check("nothing wanted: nothing runs", [runner("pw-dump").running, runner("pw-top").running], [false, false]);
+        check("both runners exist", [runner("wpexec") !== null, runner("pw-top") !== null], [true, true]);
+        check("nothing wanted: nothing runs", [runner("wpexec").running, runner("pw-top").running], [false, false]);
         graph.refresh();
-        check("asking while nothing is wanted runs nothing", [runner("pw-dump").running, runner("pw-top").running], [false, false]);
+        check("asking while nothing is wanted runs nothing", [runner("wpexec").running, runner("pw-top").running], [false, false]);
 
         graph.wantDump = true;
-        check("the dump is wanted: only it runs", [runner("pw-dump").running, runner("pw-top").running], [true, false]);
-        check("the commands are fixed", [runner("pw-dump").command, runner("pw-top").command], [["pw-dump"], ["pw-top", "-b", "-n", "2"]]);
-        finish("pw-dump", 0, listing);
+        check("the dump is wanted: only it runs", [runner("wpexec").running, runner("pw-top").running], [true, false]);
+        check("the commands are fixed", [runner("wpexec").command[1].endsWith("/graph/orbit_graph.lua"), runner("wpexec").command.length, runner("pw-top").command], [true, 2, ["pw-top", "-b", "-n", "2"]]);
+        finish("wpexec", 0, listing);
         check("the delay and the quality arrive", [graph.facts.latencyMs, graph.facts.quality], [606.387499, 0]);
         check("no quantum without the sampler", graph.facts.quantum, undefined);
 
@@ -85,18 +85,18 @@ Item {
         check("not wanted: the quantum is dropped, the rest stays", [graph.facts.quantum, graph.facts.latencyMs > 0], [undefined, true]);
 
         graph.refresh();
-        check("a refresh runs only what is wanted", [runner("pw-dump").running, runner("pw-top").running], [true, false]);
+        check("a refresh runs only what is wanted", [runner("wpexec").running, runner("pw-top").running], [true, false]);
         graph.wantDump = false;
-        finish("pw-dump", 0, listing);
+        finish("wpexec", 0, listing);
         check("an answer that ends late is ignored", graph.facts, ({}));
 
         graph.wantDump = true;
-        finish("pw-dump", 1, "garbage");
+        finish("wpexec", 1, "garbage");
         check("a failed command gives nothing", graph.facts, ({}));
 
         graph.sink = "";
         graph.refresh();
-        check("no sink named: nothing is asked", runner("pw-dump").running, false);
+        check("no sink named: nothing is asked", runner("wpexec").running, false);
 
         print(failures ? failures + " failure(s)" : "all passed");
         Qt.exit(failures ? 1 : 0);

@@ -104,7 +104,8 @@ var fakeSinks = {
     }
 };
 
-// What `pw-dump` and `pw-top` would add for the headset: the delay it
-// reports, LDAC's quality (adaptive), the quantum the graph runs at
+// What the graph reader (graph/orbit_graph.lua) and `pw-top` would add for
+// the headset: the delay it reports, LDAC's quality (adaptive), the quantum
+// the graph runs at
 var fakeDump = { "bluez_output.02_00_00_00_10_06.1": { "latencyMs": 184.6, "quality": 0 } };
 var fakeTop = { "bluez_output.02_00_00_00_10_06.1": { "quantum": 1024, "quantumRate": 96000 } };

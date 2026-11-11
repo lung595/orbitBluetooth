@@ -89,7 +89,7 @@ Item {
     // The processes of the session: the copies and the source filter of a wired
     // source, not the graph reader
     function live() {
-        return ProcessLog.live.filter(p => p.command[0] !== "pw-dump");
+        return ProcessLog.live.filter(p => p.command[0] !== "wpexec");
     }
     // A node as the lines below name it: a Bluetooth output or filter by the
     // last two digits of its address (and "pc" for the filter), a wired output
@@ -145,7 +145,7 @@ Item {
             delete next[name];
         route.filters = next;
     }
-    // What `pw-dump` says: each output's name with the time it reports (ns, 0 for none)
+    // What the graph reader says (pw-dump's shape): each output's name with the time it reports (ns, 0 for none)
     function dumpOf(latencies) {
         return JSON.stringify(Object.keys(latencies).map(name => ({
                     "info": {
@@ -166,16 +166,17 @@ Item {
     }
     // The graph reader asked for its answer: gives it, and says it is over
     function answerGraph(latencies) {
-        const reader = ProcessLog.live.find(p => p.command[0] === "pw-dump");
+        const reader = ProcessLog.live.find(p => p.command[0] === "wpexec");
         if (!reader || !reader.running)
             return false;
+        reader.started();
         reader.stdout.text = dumpOf(latencies);
         reader.running = false;
         reader.exited(0);
         return true;
     }
     function readerRunning() {
-        return ProcessLog.live.some(p => p.command[0] === "pw-dump" && p.running);
+        return ProcessLog.live.some(p => p.command[0] === "wpexec" && p.running);
     }
 
     property int failures: 0
@@ -234,7 +235,7 @@ Item {
         }
     }
     Component.onCompleted: {
-        steps = [step1, step2, step3, step4, step5, step6, step7, step8, step9, step10, step11, step12, step13, step14, step15, step16, step17, step18, step19];
+        steps = [step1, step2, step3, step4, step5, step6, step7, step8, step9, step10, step11, step12, step13, step14, step15, step16, step17, step18, step19, step20, step21];
         stepper.start();
     }
 
@@ -524,7 +525,7 @@ Item {
 
     function step13() {
         check("an unplugged wired output ends a session of two", [session.active, h.ends, copies()], [false, ["member-left:ne"], []]);
-        check("nothing reads the graph outside a session", ProcessLog.live.some(p => p.command[0] === "pw-dump"), false);
+        check("nothing reads the graph outside a session", ProcessLog.live.some(p => p.command[0] === "wpexec"), false);
 
         // A Bluetooth source, a wired output to copy to
         h.ends = [];
@@ -621,10 +622,44 @@ Item {
     }
 
     function step19() {
-        const reader = ProcessLog.live.find(p => p.command[0] === "pw-dump");
+        const reader = ProcessLog.live.find(p => p.command[0] === "wpexec");
+        h.unknowns = [];
+        reader.started();
         reader.running = false;
         reader.exited(1);
         check("a failed read keeps no figure of the read before", session.latencies, {});
+        check("and the group is told", h.unknowns.length, 1);
+        h.failedTold = h.unknowns;
+        // A good read again, then a change that reads once more
+        patch(b, {
+            "sink": sinkWith(b, "sbc")
+        });
+        h.wait(500);
+    }
+
+    // What the group was told after the failed read
+    property var failedTold: []
+    function step20() {
+        check("the change is read again", readerRunning(), true);
+        answerGraph({
+            "bluez_output.AA_BB_CC_DD_EE_02.1": 150000000
+        });
+        check("a good read gives the figure back", session.latencies[b], 150);
+        patch(b, {
+            "sink": sinkWith(b, "ldac")
+        });
+        h.wait(500);
+    }
+
+    function step21() {
+        // No wpexec (no WirePlumber): Quickshell sends neither `started` nor
+        // `exited`, the reader only stops
+        check("the codec change is read too", readerRunning(), true);
+        const reader = ProcessLog.live.find(p => p.command[0] === "wpexec");
+        h.unknowns = [];
+        reader.running = false;
+        check("a reader that never starts keeps no figure", session.latencies, {});
+        check("and the group is told, as for a failed read", h.unknowns, h.failedTold);
         session.end("ended", "");
     }
 }

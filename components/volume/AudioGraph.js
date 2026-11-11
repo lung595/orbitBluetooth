@@ -6,8 +6,9 @@
 // commands and hands their text here. A value that is not there is left
 // out, never guessed.
 
-// `pw-dump`'s text -> { sink name: { latencyMs, quality } }. Only sinks;
-// each key is there only when PipeWire reported it
+// pw-dump's JSON, as graph/orbit_graph.lua prints it -> { sink name:
+// { latencyMs, quality } }. Only sinks; each key is there only when PipeWire
+// reported it
 function parseDump(text) {
     let list;
     try {
