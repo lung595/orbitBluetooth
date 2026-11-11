@@ -13,6 +13,8 @@ Checked: a tick on the source stays out of the copy, a tick on the copy stays
 out of the source, the group's general level ticks both, the copied sound still
 passes, and (the counter-proof) without the filter the tick does leak into the
 copy. Also run for a source with a wait and for a wired copy. Exit 0 when all hold.
+Developer-only: building and recording the private graph needs pipewire-utils
+(pw-cli, pw-cat, pw-link), which Orbit itself does not.
 """
 import array
 import json

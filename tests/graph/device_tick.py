@@ -12,6 +12,8 @@ general level) tests/graph-ticks.js says in which outputs Orbit plays the tick;
 the real helper (tick/orbit_tick.py) plays it there, and each output's input
 is recorded. The counter-proof runs the old choice (every shared output) and
 must leak. Reuses the PipeWire plumbing of wired_tick.py. Exit 0 when all hold.
+Developer-only: building and recording the private graph needs pipewire-utils
+(pw-cli, pw-cat, pw-link), which Orbit itself does not.
 """
 import json
 import os
