@@ -11,8 +11,9 @@ import "Together.js" as Together
 // only the copies that changed are stopped or started: a newcomer never
 // cuts the others. Each command keeps bash watching its standard input: the
 // pipe closes when the shell goes away, even after a crash, and takes the
-// copy with it, so nothing outlives the shell (value 12). Nothing is written
-// to any file.
+// copy with it, so nothing outlives the shell (value 12). No name on disk
+// holds data: the config is in an unlinked tmpfs file reached through the
+// data-free link $XDG_RUNTIME_DIR/orbit-loopback.conf (Route.loopbackArgs).
 Item {
     id: link
 
@@ -72,7 +73,8 @@ Item {
             }
 
             // pipewire -c, unlike pw-loopback, keeps running when its loopback
-            // is destroyed (an output unplugged, PipeWire restarted): a node of
+            // is destroyed while its output stays listed (an output that goes
+            // away is stopped by the plan first): a node of
             // this process that was there and has been missing for 2 s while
             // it runs is taken as an exit. A node never seen is left alone.
             // Only Quickshell's own node list is read, and only while a

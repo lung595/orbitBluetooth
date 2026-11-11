@@ -117,7 +117,7 @@ function description(deviceName, fallback) {
 // string and add modules. bash watches its standard input (a pipe from the
 // shell) and stops pipewire the moment the shell goes away, even after a
 // crash, so nothing outlives the shell (value 12). Unlike pw-loopback,
-// pipewire keeps running when its loopback is destroyed (PipeWire restarted):
+// pipewire keeps running when its loopback is destroyed under it:
 // RouteDevice and TogetherLink watch for the node going away and stop it.
 // Thanks to the PipeWire developers: module-loopback and the config format are
 // theirs, used from their documentation (no code copied).

@@ -8,8 +8,8 @@ import "components/together/Together.js" as Together
 import "diagnostics/Log.js" as Log
 
 // Test of the watch over Orbit's loopback processes: `pipewire -c`, unlike
-// pw-loopback, keeps running when its loopback is destroyed (an output
-// unplugged, PipeWire restarted), so a node that was there and has been
+// pw-loopback, keeps running when its loopback is destroyed while its output
+// stays listed, so a node that was there and has been
 // missing for 2 s while its process runs is taken as an exit. The PC-level
 // filter (RouteDevice) logs ORB-E003 and starts again; a copy or the wired
 // filter of Listen together (TogetherLink) is lost, once. A node never seen,

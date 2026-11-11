@@ -72,7 +72,7 @@ Look for `ORB-W010` (no usable adapter) and `ORB-I021` (a surface was unloaded) 
 
 ### A helper program keeps stopping
 
-`ORB-E003` names the program (`tool`) and its exit status (`code`); `ORB-W011` says it is not installed. For `tool=pw_loopback`, `code=-1` means the process still ran but its loopback was gone (PipeWire restarted, an output unplugged): Orbit stopped it, and starts the PC-level filter again by itself. `code=1` right at the start means `$XDG_RUNTIME_DIR` is not set, and `code=127` that `pipewire` itself is missing.
+`ORB-E003` names the program (`tool`) and its exit status (`code`); `ORB-W011` says it is not installed. For `tool=pw_loopback`, `code=-1` means the process still ran but its loopback node was gone for 2 s (the module was destroyed while its output stayed listed): Orbit stopped it, and starts the PC-level filter again by itself. An output that is unplugged is not this case: its process is stopped first, with nothing logged. `code=1` right at the start means `$XDG_RUNTIME_DIR` is missing or not absolute, or the config could not be made there, and `code=127` that `pipewire` itself is missing.
 
 ### The shell restarts or the bar freezes
 

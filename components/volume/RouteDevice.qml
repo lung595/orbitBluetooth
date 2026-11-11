@@ -132,7 +132,7 @@ Item {
     }
 
     // pipewire -c, unlike pw-loopback, keeps running when its loopback is
-    // destroyed (PipeWire restarted): a filter that was there and has been
+    // destroyed while its output stays listed: a filter that was there and has been
     // missing for 2 s while its process runs is taken as an exit. The process
     // is stopped, the exit logged, and a moment later `wanted` starts it again.
     // A filter never seen is left alone, so a start that makes nothing cannot
