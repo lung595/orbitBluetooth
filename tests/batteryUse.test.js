@@ -9,7 +9,7 @@ const read = f => new TextDecoder().decode(GLib.file_get_contents(root + "/" + f
 eq("three levels, as in Abyss", Object.values(Use.LEVELS), ["High battery use", "Some battery use", "Light on battery"]);
 eq("every pill sits on a setting of the index", Object.keys(Use.USES).filter(k => !Index.ENTRIES.some(e => e.id === k)), []);
 eq("every pill has a known level and a short reason", Object.entries(Use.USES).filter(([, u]) => !Use.LEVELS[u.level] || !u.why || u.why.length > 70).map(([k]) => k), []);
-eq("a setting without a cost has no pill", Use.use("popupSize"), null);
+eq("a setting without a cost has no pill", Use.use("showLabels"), null);
 eq("use() gives level, label and reason", Use.use("scopeFps").label, "Light on battery");
 
 // Each listed setting shows its pill in its page, and only those do

@@ -3,24 +3,28 @@ import Quickshell.Io
 import "components/volume"
 import "components/volume/Keys.js" as KeyBinds
 
-// Test of VolumeKeys (NAK-214, D265): on a fresh install the keys become
-// Orbit's at the first start with no click; once the user gave them back, a
-// restart does not take them again; a shortcut of the user's own is left
-// alone. The uninstall reads DMS's listing itself (uninstall/ tests). `dms
-// keybinds` is played by hand through the stand-in processes (a listing as
-// DMS prints it, the answer of each `set`). Made-up shortcuts only. Run
+// Test of VolumeKeys (NAK-214, D265): the keys are DMS's by default. Keys an
+// older version took by itself go back to DMS at the first start, once; a
+// later start runs nothing. The user's "use smart steps" binds them and is
+// remembered; giving them back unbinds them; a shortcut of the user's own is
+// left alone. The uninstall reads DMS's listing itself (uninstall/ tests).
+// `dms keybinds` is played by hand through the stand-in processes (a listing
+// as DMS prints it, the answer of each `set`). Made-up shortcuts only. Run
 // with tests/qml/run.sh.
 Item {
     id: h
 
     // The plugin's settings as Prefs shows them, with what was saved
     component FakePrefs: QtObject {
-        property bool keysGivenBack: false
+        property bool keysOrbit: false
+        property bool keysReturned: false
         property var saved: ({})
         function set(key, value) {
             saved[key] = value;
-            if (key === "keysGivenBack")
-                keysGivenBack = value;
+            if (key === "keysOrbit")
+                keysOrbit = value;
+            if (key === "keysReturned")
+                keysReturned = value;
         }
     }
 
@@ -77,23 +81,50 @@ Item {
             "run": () => {
                 check("a fresh start reads nothing before it is asked", [keys.keys, h.shower().running], ["unknown", false]);
                 keys.claim();
-                check("the first start reads the keys", h.shower().running, true);
+                check("the first start reads the keys once", h.shower().running, true);
+                check("and remembers that it did", [prefs.keysReturned, prefs.saved.keysOrbit], [true, undefined]);
+                // An older version had taken them by itself
+                h.answer(h.shower(), h.listing(KeyBinds.action("up", 5), KeyBinds.action("down", 5)));
+                check("keys taken by an older version: the up key goes back to DMS with its step", h.setter().command[5], h.dmsUp);
+                h.answer(h.setter(), '{"success":true}');
+                check("and the down key", h.setter().command[5], h.dmsDown);
+                h.answer(h.setter(), '{"success":true}');
                 h.answer(h.shower(), h.listing(h.dmsUp, h.dmsDown));
-                check("DMS's default keys: the up key is set to Orbit, no click", [h.setter().running, h.setter().command.slice(0, 5)], [true, ["dms", "keybinds", "set", "niri", "XF86AudioRaiseVolume"]]);
+                check("DMS's keys again, nothing failed", [keys.keys, keys.failed], ["dms", false]);
+            }
+        },
+        {
+            "run": () => {
+                keys.claim();
+                check("a later start reads nothing, binds nothing", [h.shower().running, h.setter().running, keys.keys], [false, false, "dms"]);
+            }
+        },
+        {
+            "run": () => {
+                keys.enable();
+                check("the user asks for smart steps: remembered", [prefs.saved.keysOrbit, prefs.keysOrbit], [true, true]);
+                h.answer(h.shower(), h.listing(h.dmsUp, h.dmsDown));
+                check("DMS's default keys: the up key is set to Orbit", [h.setter().running, h.setter().command.slice(0, 5)], [true, ["dms", "keybinds", "set", "niri", "XF86AudioRaiseVolume"]]);
                 check("with Orbit's action and DMS's own step as the fallback", h.setter().command[5], KeyBinds.action("up", 5));
                 h.answer(h.setter(), '{"success":true}');
                 check("then the down key", h.setter().command[4], "XF86AudioLowerVolume");
                 h.answer(h.setter(), '{"success":true}');
-                check("then one read to confirm", h.shower().running, true);
                 h.answer(h.shower(), h.listing(KeyBinds.action("up", 5), KeyBinds.action("down", 5)));
                 check("the keys are Orbit's, nothing failed", [keys.keys, keys.failed], ["orbit", false]);
-                check("nothing was remembered as given back", [keys.prefs.keysGivenBack, keys.prefs.saved.keysGivenBack], [false, undefined]);
+            }
+        },
+        {
+            "run": () => {
+                keys.claim();
+                check("asked for: a restart binds them again", h.shower().running, true);
+                h.answer(h.shower(), h.listing(KeyBinds.action("up", 5), KeyBinds.action("down", 5)));
+                check("already Orbit's: nothing to set", h.setter().running, false);
             }
         },
         {
             "run": () => {
                 keys.disable();
-                check("giving back is remembered", [prefs.saved.keysGivenBack, prefs.keysGivenBack], [true, true]);
+                check("giving back is remembered", [prefs.saved.keysOrbit, prefs.keysOrbit], [false, false]);
                 h.answer(h.shower(), h.listing(KeyBinds.action("up", 5), KeyBinds.action("down", 5)));
                 check("the up key goes back to DMS's own action with its step", h.setter().command[5], h.dmsUp);
                 h.answer(h.setter(), '{"success":true}');
@@ -105,16 +136,8 @@ Item {
         },
         {
             "run": () => {
-                keys.claim();
-                check("after a give-back, a restart does not read, nor bind, anything", [h.shower().running, h.setter().running, keys.keys], [false, false, "dms"]);
-            }
-        },
-        {
-            "run": () => {
                 keys.enable();
-                check("the user asking again clears the give-back", [prefs.saved.keysGivenBack, prefs.keysGivenBack], [false, false]);
                 h.answer(h.shower(), h.listing(h.dmsUp, h.dmsDown));
-                check("and binds the keys", h.setter().running, true);
                 h.answer(h.setter(), '{"success":false}');
                 check("a refusal of DMS stops there and is said", [keys.failed, h.setter().running], [true, false]);
                 h.answer(h.shower(), h.listing(KeyBinds.action("up", 5), h.dmsDown));
@@ -122,7 +145,6 @@ Item {
         },
         {
             "run": () => {
-                prefs.set("keysGivenBack", false);
                 keys.claim();
                 h.answer(h.shower(), h.listing("spawn pamixer -i 5", h.dmsDown));
                 check("the user's own shortcut is left alone", [keys.keys, h.setter().running], ["custom", false]);

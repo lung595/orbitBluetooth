@@ -41,11 +41,12 @@ QtObject {
     readonly property int maxDevices: parseInt(_get("maxDevices", "8"))
     // Offer to connect a new unpaired device found while scanning
     readonly property bool offerNew: _get("offerNew", true)
-    // Left by the pairing sheet under the bar (removed after 1.15): its
-    // settings, and the addresses refused with "Don't offer again". The
-    // daemon clears them once (null reads as unset)
-    readonly property var sheetKeys: ["offerPopup", "offerScan", "offerEvery", "offerMinBattery", "ignoredDevices"]
-    readonly property bool oldSheetSettings: sheetKeys.some(k => _data[k] !== undefined && _data[k] !== null)
+    // Settings of features removed after 1.15: the pairing sheet under the
+    // bar (and the addresses refused with "Don't offer again"), Orbit OSD,
+    // and the old way the volume keys were taken. The daemon clears them
+    // once (null reads as unset)
+    readonly property var retiredKeys: ["offerPopup", "offerScan", "offerEvery", "offerMinBattery", "ignoredDevices", "popupMode", "popupSize", "popupScreens", "keysOffered", "keysGivenBack"]
+    readonly property bool retiredSettings: retiredKeys.some(k => _data[k] !== undefined && _data[k] !== null)
     readonly property bool autoScan: _get("autoScan", true)
     // Hover × on connected devices; off by default (drag away or right-click instead)
     readonly property bool quickDisconnect: _get("quickDisconnect", false)
@@ -105,14 +106,6 @@ QtObject {
     readonly property bool separatePc: _get("separatePc", true)
     // This PC's level per device, address -> 0..1 (D256)
     property var pcLevels: ({})
-    // The volume pop-up (D258): "replace" (in the Dank Island, else in place
-    // of DMS's volume OSD, which is switched off, D273),
-    // "bar" (under the bar widget), "edge" (right screen edge) or "off"
-    readonly property string popupMode: _get("popupMode", "replace")
-    // "compact", "medium" or "large"
-    readonly property string popupSize: _get("popupSize", "medium")
-    // The screens it shows on (D286): "focused" (where you are) or "all"
-    readonly property string popupScreens: _get("popupScreens", "focused") === "all" ? "all" : "focused"
     // The vectorscope's cloud: 60 frames a second ("Smooth") or 30 ("Light")
     readonly property int scopeFps: parseInt(_get("scopeFps", "30")) === 60 ? 60 : 30
     // How the vectorscope draws the sound: "points", "rays", "waves", "none"
@@ -140,10 +133,11 @@ QtObject {
     readonly property var factsLine: _facts("factCard_", "card")
     readonly property var factsMore: _facts("factMore_", "more")
 
-    // The user was told once that Orbit took the volume keys (D265): never again
-    readonly property bool keysOffered: _get("keysOffered", false)
-    // The user gave the keys back to DMS: Orbit never takes them by itself
-    readonly property bool keysGivenBack: _get("keysGivenBack", false)
+    // The user asked for the volume keys to use Orbit's smart steps; off by
+    // default, the keys are DMS's (D265)
+    readonly property bool keysOrbit: _get("keysOrbit", false)
+    // The keys an older version took by itself were given back, once
+    readonly property bool keysReturned: _get("keysReturned", false)
     // The words that start a launcher phrase, action -> list (D424); LauncherWords.resolve fills the gaps
     readonly property var launcherWords: _get("launcherWords", ({}))
 

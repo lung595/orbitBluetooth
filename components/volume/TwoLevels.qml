@@ -11,8 +11,8 @@ import "../together/Wired.js" as Wired
 
 // The volumes of one output (D249) and the picture of its sound, as
 // ScopeScreen reads them: the device's own level and this PC's, with what
-// a gesture on the scope does. The base of VolumeOverlay (the output in
-// use) and CardVolume (the device on the detail card). A device with no
+// a gesture on the scope does. The base of CardVolume (the device on the
+// detail card). A device with no
 // level of its own, or an output that is not Bluetooth, has this PC's
 // level only (deviceLevel -1).
 // Listening together (D254, D277): when `dev` is one of the outputs sharing

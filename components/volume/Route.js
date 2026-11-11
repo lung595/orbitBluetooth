@@ -272,37 +272,7 @@ function iconFor(kind) {
     return "speaker";
 }
 
-// Pop-up sizes (D258): width x height of the horizontal pop-up
-function popupSize(size) {
-    if (size === "compact")
-        return { "w": 300, "h": 172 };
-    if (size === "large")
-        return { "w": 540, "h": 300 };
-    return { "w": 420, "h": 236 };
-}
-
-// How the pop-up sits (D258): "replace" takes the place of DMS's volume OSD
-// (DMS's own position; upright when DMS shows its OSDs on a side), "bar"
-// unfolds under Orbit's bar widget, "edge" stands on the right screen edge.
-// Upright, the half circles turn a quarter: their flat side against the
-// screen edge, so they open toward the screen.
-function popupLayout(mode, osdOnSide, osdOnLeft, size) {
-    const s = popupSize(size);
-    const upright = mode === "edge" || (mode === "replace" && !!osdOnSide);
-    const rotation = upright ? (mode === "replace" && osdOnLeft ? 90 : -90) : 0;
-    return upright ? { "w": s.h, "h": s.w, "upright": true, "rotation": rotation } : { "w": s.w, "h": s.h, "upright": false, "rotation": 0 };
-}
-
-// The one screen the volume pop-up shows on (D286): the focused one, or ""
-// for every screen ("all" asked, focus unknown, or a focused screen the
-// pop-up cannot show on, so it never ends up nowhere)
-function popupScreen(where, focusedName, names) {
-    if (where === "all" || !focusedName || names.indexOf(focusedName) === -1)
-        return "";
-    return focusedName;
-}
-
-// Which levels the pop-up shows, from the nodes AudioRoute gives
+// Which levels the scope shows, from the nodes AudioRoute gives
 // (deviceNode, pcNode). Both: two half circles. Only one level (a device
 // with no level of its own, "Separate PC volume" off, or an output that is
 // not Bluetooth): that one alone, as the "pc" half. "ownIcon" tells the

@@ -7,8 +7,8 @@ const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNo
 const Volume = load("Volume.js", ["clamp", "step", "validSink", "stepSize", "stepsCrossed", "due", "tickGain", "linearGain", "MIN_GAIN", "audible", "tickTargets", "slotsFor", "MAX_TICKS", "MIN_GAP_MS", "TICK_KNEE", "IDLE_MS"]);
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "slices", "sliceAt", "partOf", "indexOf", "arc", "end", "point", "angleOf", "valueAt", "zone", "wheelPart", "iconSpot", "legendSpot", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
-const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded", "note"]);
-const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "tickOutput", "description", "loopbackArgs", "filterArgs", "muteTarget", "levelNodes", "tickNodes", "writeLevel", "writeMuted", "ipcLevel", "transportPath", "transportVolume", "iconFor", "popupSize", "popupLayout", "popupScreen", "shownLevels"]);
+const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded"]);
+const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "tickOutput", "description", "loopbackArgs", "filterArgs", "muteTarget", "levelNodes", "tickNodes", "writeLevel", "writeMuted", "ipcLevel", "transportPath", "transportVolume", "iconFor", "shownLevels"]);
 
 // --- Volume tick (Volume.js) ------------------------------------------------------
 eq("the setting: 1 % by default, 5 % when it says so", [Volume.stepSize("1"), Volume.stepSize("5"), Volume.stepSize(undefined), Volume.stepSize("7")], [0.01, 0.05, 0.01, 0.01]);
@@ -198,15 +198,7 @@ eq("ease reaches its target", Math.abs(Polar.ease(0, 1, 2, 10) - 1) < 1e-6, true
 eq("cava config", Polar.cavaConfig("orbit_pc_AA.monitor", 60, 8).split("\n").filter(l => /source|bars|framerate|channels/.test(l)), ["framerate = 60", "bars = 16", "source = orbit_pc_AA.monitor", "channels = stereo"]);
 eq("cava config refuses odd names", [Polar.cavaConfig("x\nmethod = fifo", 60, 8), Polar.cavaConfig("", 60, 8)], [null, null]);
 eq("foot icons", [Route.iconFor("headphonesPremium"), Route.iconFor("earbudsStem"), Route.iconFor("soundbar"), Route.iconFor("bluetooth")], ["headphones", "earbuds", "speaker", "speaker"]);
-eq("pop-up sizes, medium by default", [Route.popupSize("compact"), Route.popupSize("x"), Route.popupSize("large").h], [{ w: 300, h: 172 }, { w: 420, h: 236 }, 300]);
 
-// The volume pop-up (D258): where it stands, which levels it shows
-// The screen it shows on (D286): the focused one, never nowhere
-eq("pop-up on the focused screen only", Route.popupScreen("focused", "DP-2", ["HDMI-A-1", "DP-2"]), "DP-2");
-eq("pop-up on every screen when asked", Route.popupScreen("all", "DP-2", ["HDMI-A-1", "DP-2"]), "");
-eq("pop-up on every screen when the focus is unknown or has no pop-up", [Route.popupScreen("focused", "", ["DP-2"]), Route.popupScreen("focused", "eDP-1", ["DP-2"]), Route.popupScreen("focused", "DP-2", [])], ["", "", ""]);
-eq("pop-up lies flat in place of DMS's OSD", Route.popupLayout("replace", false, false, "medium"), { w: 420, h: 236, upright: false, rotation: 0 });
-eq("upright on the right edge, flat side against it", Route.popupLayout("edge", false, false, "large"), { w: 300, h: 540, upright: true, rotation: -90 });
 // Smart volume steps (D264), rhythms taken from a real recording
 {
     // `n` notches `gap` ms apart, after a long pause; the steps taken
@@ -245,7 +237,6 @@ eq("an unknown speed is balanced", Steps.speedOf("warp"), "balanced");
     eq("apply lands on whole percents, inside 0..1", [Steps.apply(0.394, 1, 1), Steps.apply(0.99, 1, 8), Steps.apply(0.02, -1, 5)], [0.4, 1, 0]);
     eq("fixed step is 1..10", [Steps.fixedStep("3"), Steps.fixedStep("99"), Steps.fixedStep("x")], [3, 10, 5]);
 }
-eq("follows DMS's OSD on a side", [Route.popupLayout("replace", true, true, "compact").rotation, Route.popupLayout("replace", true, false, "x").rotation, Route.popupLayout("bar", true, true, "x").upright], [90, -90, false]);
 const nd = { n: "dev" }, np = { n: "pc" };
 eq("two levels", Route.shownLevels(nd, np), { device: nd, pc: np, ownIcon: false });
 eq("one level, the device's own", Route.shownLevels(nd, null), { device: null, pc: nd, ownIcon: true });
@@ -278,7 +269,6 @@ eq("one level, this PC's (not Bluetooth, or no own volume)", [Route.shownLevels(
     eq("undo writes DMS's own action back", Keys.backArgs("down", 5), ["dms", "keybinds", "set", "niri", "XF86AudioLowerVolume", "spawn dms ipc call audio decrement 5", "--allow-when-locked", "--json"]);
     eq("DMS's action, step kept in 1..20", [Keys.dmsAction("up", 3), Keys.dmsAction("up", 0)], ["spawn dms ipc call audio increment 3", "spawn dms ipc call audio increment 3"]);
     eq("only a success answer counts", [Keys.succeeded('{"success":true}'), Keys.succeeded('{"success":false}'), Keys.succeeded(""), Keys.succeeded("null")], [true, false, false, false]);
-    eq("notes: the keys are told as taken, with the way back", [Keys.note("done").action, Keys.note("offer"), Keys.note("nope")], ["Undo", null, null]);
 }
 
 done();

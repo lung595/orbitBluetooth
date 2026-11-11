@@ -351,7 +351,7 @@ eq("a numeric tickEvery is reported, not shown as ?", Allow.pick(Codes.SETTINGS,
 // Every settingKey of the pages is either listed in Codes.SETTINGS with exactly the
 // words (or number kind) of its choices, or left out on purpose.
 // Three behaviour flags live in Prefs.qml without a settings control of their own
-const KEPT_PREFS = ["keysOffered", "keysGivenBack", "learnHabits"];
+const KEPT_PREFS = ["keysOrbit", "keysReturned", "learnHabits"];
 const OMITTED = ["imageFolder", "factCard_", "factMore_"];
 const settingsDir = GLib.path_get_dirname(GLib.path_get_dirname(GLib.canonicalize_filename(imports.system.programPath, GLib.get_current_dir()))) + "/components/settings";
 const keysFound = {};

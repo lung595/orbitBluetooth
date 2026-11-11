@@ -3,7 +3,7 @@ import QtQuick.Window
 import "../../components/volume"
 
 // Offscreen bench of the scope's sound feed (NAK-210): ScopeFeed and the
-// ScopeModel it moves, shown and hidden by the scene as VolumeOverlay does on
+// ScopeModel it moves, shown and hidden by the scene as a card does on
 // a volume key. Nothing is spawned and nothing is captured: the stand-in cava
 // sends a made-up 16-band frame at 60 Hz once it runs, and the stand-in peak
 // meter a made-up reading at 47 Hz (one 1024-sample buffer at 48 kHz) while
@@ -12,7 +12,7 @@ import "../../components/volume"
 // Usage: QT_QPA_PLATFORM=offscreen qml -I imports scopefeed.qml -- <mode> /dev/null
 // Modes: rest (the scope hidden), shown (the scope on screen, no key),
 //        burst (every 4 s: the scope shows, 8 key steps 150 ms apart hold
-//        cava back as VolumeOverlay's `_settled` does, the scope folds 3 s
+//        cava back as a settle timer does, the scope folds 3 s
 //        after the last step)
 Window {
     id: win

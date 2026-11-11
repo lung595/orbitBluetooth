@@ -1,13 +1,13 @@
 import QtQuick
 import "components/volume"
 
-// Test of DmsQuiet: a stand-in for DMS's settings reads "volume OSD off" while
-// the `osd` switch is on, and "volume sound off" only while Orbit moves a
-// level (`hold`, with `replaceSound`) and a moment after; when a switch ends,
-// or the owner goes (plugin off), DMS's own value is back. While DMS saves its
-// settings the switches are let go, so that a forced value is never written to
-// disk (P143). Nothing is ever written for good by the plugin (value 12, D273,
-// D360). Run with tests/qml/run.sh.
+// Test of DmsQuiet: a stand-in for DMS's settings reads "volume sound off"
+// only while Orbit moves a level (`hold`, with `replaceSound`) and a moment
+// after; when it ends, or the owner goes (plugin off), DMS's own value is
+// back. While DMS saves its settings the switch is let go, so that a forced
+// value is never written to disk (P143). DMS's volume OSD is never touched
+// (Orbit OSD was removed after 1.15). Nothing is ever written for good by the
+// plugin (value 12, D360). Run with tests/qml/run.sh.
 Item {
     id: h
 
@@ -32,7 +32,6 @@ Item {
     DmsQuiet {
         id: quiet3
         settings: dms3
-        osd: true
         replaceSound: true
     }
     // An owner that goes while it holds (the overlay when the plugin is
@@ -51,7 +50,6 @@ Item {
             DmsQuiet {
                 id: inner
                 settings: owner.settings
-                osd: true
                 replaceSound: true
             }
         }
@@ -70,52 +68,6 @@ Item {
     }
 
     readonly property var steps: [
-        // --- The OSD (D273) ---------------------------------------------------------
-        {
-            "run": () => check("at rest DMS's OSD is as the user set it", dms.osdVolumeEnabled, true)
-        },
-        {
-            "run": () => {
-                quiet.osd = true;
-                check("on: DMS's volume OSD is off", dms.osdVolumeEnabled, false);
-                check("and DMS's volume sound is not touched", dms.soundVolumeChanged, true);
-            }
-        },
-        {
-            "run": () => {
-                dms._selfWrite = true;
-                check("a save in progress sees DMS's own value", dms.osdVolumeEnabled, true);
-                dms._selfWrite = false;
-                check("and the switch is back once the save is seen", dms.osdVolumeEnabled, false);
-            }
-        },
-        {
-            // A save that changes nothing leaves DMS's flag up for good
-            "run": () => {
-                dms._selfWrite = true;
-                check("a save without a file event: the switch lets go", dms.osdVolumeEnabled, true);
-            },
-            "wait": 400
-        },
-        {
-            "run": () => {
-                check("then DMS's flag is lowered", dms._selfWrite, false);
-                check("and the switch is back", dms.osdVolumeEnabled, false);
-                dms._selfWrite = true;
-                check("the next save is seen too", dms.osdVolumeEnabled, true);
-                dms._selfWrite = false;
-                check("and the switch comes back", dms.osdVolumeEnabled, false);
-            }
-        },
-        {
-            "run": () => {
-                quiet.osd = false;
-                check("ended: DMS's setting is back", dms.osdVolumeEnabled, true);
-                dms.osdVolumeEnabled = false;
-                check("and it is the user's again to change", dms.osdVolumeEnabled, false);
-                dms.osdVolumeEnabled = true;
-            }
-        },
         // --- The volume sound (D360) -------------------------------------------------
         {
             "run": () => {
@@ -130,7 +82,7 @@ Item {
             "run": () => {
                 quiet.hold();
                 check("a level moves: DMS's volume sound waits", [dms.soundVolumeChanged, quiet.holding, quiet.wait.running], [false, true, true]);
-                check("the OSD switch is another one, untouched", dms.osdVolumeEnabled, true);
+                check("DMS's volume OSD is never touched", dms.osdVolumeEnabled, true);
             }
         },
         {
@@ -202,7 +154,7 @@ Item {
                     "settings": dms2
                 });
                 h.owner.quiet.hold();
-                check("a second owner switches its own settings off", [dms2.osdVolumeEnabled, dms2.soundVolumeChanged], [false, false]);
+                check("a second owner holds its own sound, not the OSD", [dms2.osdVolumeEnabled, dms2.soundVolumeChanged], [true, false]);
                 h.owner.destroy();
             }
         },
@@ -215,17 +167,16 @@ Item {
                     "settings": null
                 });
                 h.owner.quiet.hold();
-                check("no settings to switch: nothing breaks", [h.owner.quiet.osd, h.owner.quiet.holding], [true, true]);
+                check("no settings to switch: nothing breaks", h.owner.quiet.holding, true);
                 h.owner.destroy();
             }
         },
         {
             "run": () => {
                 quiet3.hold();
-                check("no sound flag in DMS: it is not made up, the OSD is still held", [h.read(dms3, "soundVolumeChanged"), dms3.osdVolumeEnabled], [undefined, false]);
+                check("no sound flag in DMS: it is not made up, the OSD is not touched", [h.read(dms3, "soundVolumeChanged"), dms3.osdVolumeEnabled], [undefined, true]);
                 check("and the sound's Binding is never switched on without the flag", [quiet3.hasSoundFlag, quiet3.holding, quiet3.volumeSound.when], [false, true, false]);
                 quiet3.replaceSound = false;
-                quiet3.osd = false;
                 check("and it all ends cleanly", [h.read(dms3, "soundVolumeChanged"), dms3.osdVolumeEnabled], [undefined, true]);
             }
         }

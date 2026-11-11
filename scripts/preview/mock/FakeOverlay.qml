@@ -1,6 +1,6 @@
 import QtQuick
 
-// What VolumeOverlay gives a ScopeScreen, made up: the device at 62 % with
+// What a TwoLevels gives a ScopeScreen, made up: the device at 62 % with
 // this PC at 85 %, or outputs listening together (`members`, each { part,
 // level, muted, icon, label }) when there are two to four.
 QtObject {

@@ -94,7 +94,7 @@ Window {
     readonly property bool landed: scene.centre.grouping === 1 && !scene.centre.travelling
     property int steps: 0
 
-    // The wheel on the group's level, as VolumeOverlay wires it: the route
+    // The wheel on the group's level, as the card wires it: the route
     // says a level is about to move, DmsQuiet holds DMS's sound back
     Timer {
         interval: 150

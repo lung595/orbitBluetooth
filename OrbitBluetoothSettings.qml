@@ -112,9 +112,6 @@ PluginSettings {
                         VolumePage {
                             view: view
                         }
-                        PopupPage {
-                            view: view
-                        }
                         AudioPage {
                             view: view
                         }

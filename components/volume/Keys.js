@@ -122,16 +122,3 @@ function succeeded(text) {
         return false;
     }
 }
-
-// The one-line note in the volume scope (shown once, D265): text and the
-// word to click, or null. Short, to fit beside the mute icons. "done" tells
-// the user that Orbit took the keys, and how to give them back.
-var NOTES = {
-    "done": { "text": "Smart volume keys on", "action": "Undo" },
-    "undone": { "text": "Volume keys back to DMS", "action": "" },
-    "manual": { "text": "Bind your keys to Orbit", "action": "" },
-    "failed": { "text": "Could not change the keys", "action": "" }
-};
-function note(kind) {
-    return NOTES[kind] || null;
-}

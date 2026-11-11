@@ -36,7 +36,6 @@ var CATEGORIES = [
     { "id": "scanning", "icon": "bluetooth_searching", "name": "Scanning", "help": "When Orbit looks for devices" },
     { "id": "headphones", "icon": "headphones", "name": "Headphones", "help": "Noise control and the wearing sensor" },
     { "id": "volume", "icon": "volume_up", "name": "Volume", "help": "Levels, steps and keys" },
-    { "id": "popup", "icon": "picture_in_picture_alt", "name": "Pop-up", "help": "The volume pop-up and its visualizer" },
     { "id": "audio", "icon": "info", "name": "Audio details", "help": "What the output is, read from PipeWire" },
     { "id": "sounds", "icon": "graphic_eq", "name": "Sounds", "help": "Sounds and the volume tick" },
     { "id": "desktop", "icon": "desktop_windows", "name": "Desktop", "help": "The desktop widget" },
@@ -72,17 +71,14 @@ var ENTRIES = [
     _entry("volumeSteps", "volume", "Steps", "Smart: slow notches move by 1 %, a quick run builds up speed. Fixed: the same step every time", ["volume", "wheel", "keys", "scroll", "smart", "fixed", "acceleration", "notch"]),
     _entry("volumeSpeed", "volume", "Speed-up", "How far a quick run can go per notch: Gentle, Balanced or Fast", ["acceleration", "wheel", "scroll", "keys", "fast", "slow", "step"]),
     _entry("volumeStep", "volume", "Step", "The fixed volume step, in percent", ["percent", "increment", "keys", "wheel", "size"]),
-    _entry("volumeKeys", "volume", "Volume keys", "Hand the volume keys to Orbit's smart steps, or give them back to DMS", ["keyboard", "shortcut", "keybind", "bindings", "media keys", "hotkey", "dms"]),
+    _entry("volumeKeys", "volume", "Volume keys", "Off by default: the keys are DMS's. On: they use Orbit's smart steps", ["keyboard", "shortcut", "keybind", "bindings", "media keys", "hotkey", "dms"]),
     _entry("groupKeys", "volume", "Volume keys with a group", "What the volume keys change while a group plays: the last change, the group, or the last device", ["keyboard", "shortcut", "listen together", "members", "follow", "device"]),
 
-    // --- popup -----------------------------------------------------------------
-    _entry("popupMode", "popup", "Pop-up", "Shows both levels whenever one changes; DMS's own OSD is switched off", ["osd", "island", "indicator", "overlay", "bar", "edge", "notification"]),
-    _entry("popupSize", "popup", "Size", "How big the volume pop-up is", ["compact", "medium", "large", "bigger", "smaller", "osd"]),
-    _entry("popupScreens", "popup", "Screens", "Where the pop-up shows when a volume changes: the screen you work on, or every screen", ["monitor", "display", "multi", "every", "osd"]),
-    _entry("scopeStyle", "popup", "Visualizer", "How the sound is drawn inside the half circles: points, rays or waves", ["spectrum", "cava", "analyzer", "equalizer", "animation", "graphics", "music"]),
-    _entry("scopeFps", "popup", "Visualizer motion", "While the pop-up or a card shows, nothing otherwise; Smooth draws twice as often", ["fps", "frame rate", "smooth", "light", "battery", "animation", "cpu"])
+    // --- visualizer (volume) ----------------------------------------------------
+    _entry("scopeStyle", "volume", "Visualizer", "How the sound is drawn inside the half circles: points, rays or waves", ["spectrum", "cava", "analyzer", "equalizer", "animation", "graphics", "music"]),
+    _entry("scopeFps", "volume", "Visualizer motion", "While a card shows, nothing otherwise; Smooth draws twice as often", ["fps", "frame rate", "smooth", "light", "battery", "animation", "cpu"])
     // --- audio ------------------------------------------------------------------
-].concat(FACTS.map(f => _entry("factCard_" + f[0], "audio", f[1] + ": on the line", "Shown under the device's name and in the pop-up", ["audio details", "line", "card", "pipewire"].concat(f[2]))),
+].concat(FACTS.map(f => _entry("factCard_" + f[0], "audio", f[1] + ": on the line", "Shown under the device's name on its card", ["audio details", "line", "card", "pipewire"].concat(f[2]))),
          FACTS.map(f => _entry("factMore_" + f[0], "audio", f[1] + ": more info", "Shown when the info button unfolds the card", ["audio details", "more", "detail", "pipewire"].concat(f[2]))),
          [
     // --- sounds ----------------------------------------------------------------

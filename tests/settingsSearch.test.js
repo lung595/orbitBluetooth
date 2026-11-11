@@ -145,7 +145,7 @@ eq("each category names its best match", [g.firsts.sounds, Object.keys(g.firsts)
 eq("the first match is the best ranked", g.first.id, S.search(Index.ENTRIES, "tick")[0].id);
 eq("no match gives empty groups", View.group(S.search(Index.ENTRIES, "zzzzqq"), where), { ids: {}, counts: {}, firsts: {}, first: null });
 eq("junk results are ignored", View.group([{ id: "nope" }, null].filter(Boolean), where).first, null);
-eq("a category is found by id", [View.find(Index.CATEGORIES, "popup").name, View.find(Index.CATEGORIES, "x")], ["Pop-up", null]);
+eq("a category is found by id", [View.find(Index.CATEGORIES, "volume").name, View.find(Index.CATEGORIES, "x")], ["Volume", null]);
 eq("the old names still find their setting", [first(Index.ENTRIES, "Sounds"), ids(Index.ENTRIES, "Volume steps").includes("volumeSteps")], ["sounds", true]);
 
 // --- Speed ---------------------------------------------------------------------

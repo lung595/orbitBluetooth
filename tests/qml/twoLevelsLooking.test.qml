@@ -49,7 +49,7 @@ Item {
         check("hidden: nothing is read", facts().active, false);
 
         // The pop-up is up and the scope listens, but a burst of keys holds
-        // the rest back (VolumeOverlay sets looking from its settle timer)
+        // the rest back (an owner sets looking from its settle timer)
         levels.listening = true;
         levels.looking = false;
         check("listening alone starts no read", facts().active, false);

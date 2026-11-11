@@ -1,18 +1,13 @@
 import QtQuick
 
-// Holds DMS's own answers to a volume change quiet, so that Orbit's are the
-// only ones. Two switches, each forced in memory only:
-// - `osd` (D273): DMS's volume OSD (Settings > On-screen Displays > Volume)
-//   stays off for as long as it is true, so that Orbit's pop-up is the only
-//   one: the OSD on screens without a Dank Island and the volume face the
-//   island opens by itself both follow it;
-// - the volume sound (D360): DMS's "Volume Changed" sound (Settings > Sounds)
-//   waits while Orbit moves a level and a moment after the last one, so that
-//   Orbit's tick is the only sound. Only with `replaceSound` (the tick is on
-//   and the user asked for it alone) and only around Orbit's own writes
-//   (`hold`): DMS's sliders and keys keep their sound where no tick plays.
-// Qt gives DMS's own values back as soon as a switch ends or this object goes
-// with its owner (plugin off, uninstall): nothing is written by Orbit (value 12).
+// Holds DMS's own volume sound quiet while Orbit's tick plays (D360): DMS's
+// "Volume Changed" sound (Settings > Sounds) waits while Orbit moves a level
+// and a moment after the last one, so that Orbit's tick is the only sound.
+// Only with `replaceSound` (the tick is on and the user asked for it alone)
+// and only around Orbit's own writes (`hold`): DMS's sliders and keys keep
+// their sound where no tick plays. Forced in memory only: Qt gives DMS's own
+// value back as soon as the switch ends or this object goes with its owner
+// (plugin off, uninstall): nothing is written by Orbit (value 12).
 // DMS writes every setting that differs from its default each time one of
 // them changes, and once when it starts, so a forced value would reach
 // settings.json and stay there after an uninstall (P143). The switches are
@@ -24,8 +19,6 @@ QtObject {
 
     // DMS's SettingsData (null: nothing to do)
     required property var settings
-    // DMS's volume OSD stays off
-    property bool osd: false
     // Orbit's tick plays instead of DMS's volume sound: `hold` may silence it
     property bool replaceSound: false
     // How long DMS's sound waits after the last level Orbit wrote (ms): more
@@ -34,9 +27,9 @@ QtObject {
     // A level of Orbit's is moving, or just moved: DMS's sound waits
     readonly property bool holding: replaceSound && wait.running
     // DMS's "I am writing settings.json" flag; if a DMS update removes it,
-    // this reads false and the switches simply stay on
+    // this reads false and the switch simply stays on
     readonly property bool writing: settings?._selfWrite === true
-    // True for the instant of a DMS save: the switches let go
+    // True for the instant of a DMS save: the switch lets go
     property bool saving: false
     // A DMS update may rename the sound's flag: then there is nothing to hold
     // (a Binding on a property that is not there would warn at every level)
@@ -52,22 +45,18 @@ QtObject {
     }
 
     onWritingChanged: _sync()
-    onOsdChanged: _sync()
     onHoldingChanged: _sync()
     Component.onCompleted: _sync()
-    // A Binding deleted along with its owner gives nothing back (DMS's OSD or
-    // sound would stay off for good), so the switches are let go of first
-    Component.onDestruction: {
-        osd = false;
-        wait.stop();
-    }
+    // A Binding deleted along with its owner gives nothing back (DMS's sound
+    // would stay off for good), so the switch is let go of first
+    Component.onDestruction: wait.stop()
     onReplaceSoundChanged: {
         if (!replaceSound)
             wait.stop();
     }
 
     function _sync() {
-        saving = (osd || holding) && writing;
+        saving = holding && writing;
         if (saving)
             releaseWindow.restart();
         else
@@ -90,14 +79,6 @@ QtObject {
                 quiet.settings._selfWrite = false;
             quiet.saving = false;
         }
-    }
-
-    property Binding volumeOsd: Binding {
-        target: quiet.settings
-        property: "osdVolumeEnabled"
-        value: false
-        when: quiet.osd && quiet.settings !== null && !quiet.saving
-        restoreMode: Binding.RestoreBindingOrValue
     }
 
     property Binding volumeSound: Binding {

@@ -8,7 +8,7 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 - [The orbit](#the-orbit) · [If it does not connect](#if-it-does-not-connect) · [If it does not disconnect](#if-it-does-not-disconnect) · [Bluetooth is off](#bluetooth-is-off)
 - [The detail card](#the-detail-card)
 - [Long press](#long-press)
-- [The two volumes](#the-two-volumes) · [Separate PC volume](#separate-pc-volume) · [Orbit's tick only](#orbits-tick-only) · [Volume pop-up](#volume-pop-up) · [Smart volume steps](#smart-volume-steps) · [Volume keys](#volume-keys) · [Volume keys with a group](#volume-keys-with-a-group) · [What really plays](#what-really-plays)
+- [The two volumes](#the-two-volumes) · [Separate PC volume](#separate-pc-volume) · [Orbit's tick only](#orbits-tick-only) · [Visualizer](#visualizer) · [Smart volume steps](#smart-volume-steps) · [Volume keys](#volume-keys) · [Volume keys with a group](#volume-keys-with-a-group) · [What really plays](#what-really-plays)
 - [Listen together](#listen-together) · [Create a group from the menu](#create-a-group-from-the-menu) · [Suggested groups](#suggested-groups) · [Learn my groups](#learn-my-groups) · [Forget what Orbit learned](#forget-what-orbit-learned) · [The source at the center](#the-source-at-the-center) · [Group icons](#group-icons) · [The volume at the center](#the-volume-at-the-center) · [Wired outputs](#wired-outputs) · [Wired outputs in the group](#wired-outputs-in-the-group) · [Pull a wired output out of the group](#pull-a-wired-output-out-of-the-group) · [Wired delay](#wired-delay) · [What it costs](#what-it-costs) · [Limits](#limits) · [Works with multipoint headsets](#works-with-multipoint-headsets) · [Two outputs, one radio](#two-outputs-one-radio)
 - [Earbuds: the trio](#earbuds-the-trio)
 - [Hiding devices: the black hole](#hiding-devices-the-black-hole)
@@ -113,7 +113,7 @@ Nothing runs until you press: a 30 Hz timer lives only for the half second of th
 
 ## The two volumes
 
-Open a **connected** audio device (headphones, speaker, earbuds, TV…) and its card shows **two volumes** on a small dark screen, the same one as Orbit's volume pop-up:
+Open a **connected** audio device (headphones, speaker, earbuds, TV…) and its card shows **two volumes** on a small dark screen:
 
 ![The two volumes on an open headset's card](../screenshots/volume.png)
 
@@ -124,7 +124,7 @@ Open a **connected** audio device (headphones, speaker, earbuds, TV…) and its 
 - **Click an icon** to mute that level. **Click the planet** to mute too: with one audio device connected it mutes this PC, with several it mutes that device only.
 - **Scroll over the planet** to change the level you hear move first (the device's own when it has one).
 - **A device with no level of its own** (no *absolute volume* over Bluetooth): its volume is this PC's, so the screen shows this PC's half circle alone and says *Its volume follows this PC*.
-- **Volume tick**: a soft, short tick plays at each step you make (every 1 % by default, or every 5 %: **Scanning → Tick every**), so you hear the level where it matters: on the card, in the volume scope (the Dank Island or the pop-up), with the volume keys and in the [radar](#the-volume-radar). It plays **in the output whose level you change**, and only there (also in Listen together: the source's tick is not heard in the copies, because it goes straight to the device and not through the filter the copies listen to), so turning one speaker does not make the whole room tick. When you change the **group's** level (the ring at the center, the group's arc, the radar's group dial) it plays in **every** output of the group at once. The tick is **live**: it follows your hand, so a fast change never replays late ticks. Each new tick replaces the one still sounding (no queue, nothing plays on after the last step), at most 20 a second (one every 50 ms), and a jump of the dial is one tick, not a run. Every tick fades in and out, peaks near -16 dBFS even when it replaces the one still sounding, so it never clicks, and it gets quieter as the output's level rises above 60 % (at 100 % it plays at 0.6 of its size), so it cannot saturate and crackle; at 0 % there is nothing to hear and nothing starts. Turn it off in **Scanning → Volume tick**. It needs `pw-cat` and `python3` (PipeWire's player). DMS's own volume sound waits while you change a level in Orbit, so only the tick plays: see [Orbit's tick only](#orbits-tick-only).
+- **Volume tick**: a soft, short tick plays at each step you make (every 1 % by default, or every 5 %: **Scanning → Tick every**), so you hear the level where it matters: on the card, with the volume keys and in the [radar](#the-volume-radar). It plays **in the output whose level you change**, and only there (also in Listen together: the source's tick is not heard in the copies, because it goes straight to the device and not through the filter the copies listen to), so turning one speaker does not make the whole room tick. When you change the **group's** level (the ring at the center, the group's arc, the radar's group dial) it plays in **every** output of the group at once. The tick is **live**: it follows your hand, so a fast change never replays late ticks. Each new tick replaces the one still sounding (no queue, nothing plays on after the last step), at most 20 a second (one every 50 ms), and a jump of the dial is one tick, not a run. Every tick fades in and out, peaks near -16 dBFS even when it replaces the one still sounding, so it never clicks, and it gets quieter as the output's level rises above 60 % (at 100 % it plays at 0.6 of its size), so it cannot saturate and crackle; at 0 % there is nothing to hear and nothing starts. Turn it off in **Scanning → Volume tick**. It needs `pw-cat` and `python3` (PipeWire's player). DMS's own volume sound waits while you change a level in Orbit, so only the tick plays: see [Orbit's tick only](#orbits-tick-only).
 - Devices that are not connected, or have no sound output, show no screen: scrolling over a connected keyboard or mouse says **…has no volume** instead of doing nothing. Right after a headset connects, its audio can take a second to appear.
 
 Everything talks to the local sound server (PipeWire) only. The picture of the sound is read with `cava` from the device's output, only while the card is open; with *Reduce motion* it does not run and the levels change at once.
@@ -145,44 +145,23 @@ Devices that follow this PC's level have one level only, whatever this setting s
 DMS plays a sound of its own when a volume changes (*Settings → Sounds → Volume Changed*). Next to Orbit's [volume tick](#the-two-volumes) that is two sounds for one change, so Orbit asks DMS's to wait while it moves a level.
 
 - **On by default**, in **Scanning → Orbit's tick only**. The row is shown only while **Volume tick** is on: without the tick, DMS's sound is the only one there is.
-- **Only around Orbit's own changes.** DMS's sound waits from the moment Orbit writes a level (a drag on the card, the pop-up or the radar, a scroll, the volume keys you gave to Orbit, a command line call) until about 0.4 second after the last one. DMS's own sliders and keys, and anything else that changes a volume, keep their sound.
+- **Only around Orbit's own changes.** DMS's sound waits from the moment Orbit writes a level (a drag on the card or the radar, a scroll, the volume keys you gave to Orbit, a command line call) until about 0.4 second after the last one. DMS's own sliders and keys, and anything else that changes a volume, keep their sound.
 - **It is done in memory.** Orbit holds DMS's *Volume Changed* switch off, and DMS's own value comes back by itself 0.4 second later, when you turn the row off, when the plugin is turned off or when it is removed. Orbit writes nothing of DMS's, and nothing runs when no level moves.
-- **DMS's saves are guarded**, as for [DMS's own volume OSD](#dmss-own-volume-osd): Orbit lets go of the switch for a quarter of a second around each save DMS makes, so the file keeps your own value and removing Orbit leaves nothing behind. In that moment DMS's sound could play along with the tick.
+- **DMS's saves are guarded**: DMS saves all of its settings together whenever one changes (a theme, a bar...) and once when it starts; Orbit lets go of the switch for a quarter of a second around each save DMS makes, so the file keeps your own value and removing Orbit leaves nothing behind. In that moment DMS's sound could play along with the tick.
 - **If DMS changes how it saves or renames the switch** (an update), Orbit cannot see the saves or the switch any more: it then leaves DMS's sound alone, or the file may take it as off. In the second case turn **Volume Changed** back on in DMS's *Settings → Sounds*, and please open an issue.
 - Turn the row off to hear both sounds again.
 
-## Volume pop-up
+## Visualizer
 
-When a volume changes, from a key, the command line or anywhere else, Orbit can show **both levels at once** in a small pop-up: the same dark screen as the card, with the device's half circle, this PC's, and the sound inside.
+The sound inside a card's two half circles is drawn only while the card shows:
 
-- **Where** (**Pop-up**): *In the Dank Island* (the default), *Under the bar widget*, *Right screen edge*, or *Off* to keep DMS's own OSD.
-- **Dank Island**: on screens that have one, Orbit's screen appears **inside the island**, which grows to fit. A screen without an island gets the pop-up where DMS's OSD would show.
-- **Only one volume pop-up**: with any choice but *Off*, DMS's own volume OSD is switched off, see [DMS's own volume OSD](#dmss-own-volume-osd).
-- **Screens** (**Pop-up → Screens**): *Where I am* (default) shows the pop-up only on the screen with the focus, and one still up on the screen you just left closes; *Every screen* shows it everywhere. If the focused screen is not one where the pop-up can show, it shows everywhere, never nowhere.
-- **Size** (**Pop-up → Size**): *Compact*, *Medium* (default) or *Large*.
-- **It grows out of the island** with DMS's own spring, and folds back by itself. How it moves is up to DMS: *Settings → Dank Island → Reduce Motion* (or the global *Reduce Motion*) makes it follow the keys at once, which costs much less shell time.
-- **Scroll over it** to keep changing the level with [smart steps](#smart-volume-steps); drag a moon or click an icon, as on the card. It closes by itself a moment after the last change.
-- **The info line starts folded** each time: the details you unfolded are not kept for the next pop-up.
-- With no Bluetooth audio device, it shows this PC's level alone.
-
-### DMS's own volume OSD
-
-So that only one volume pop-up shows, Orbit switches DMS's own volume OSD off while its pop-up is on (any choice but *Off*). That also stops DMS's Dank Island from opening its own volume face before Orbit's.
-
-- It is done **in memory**: Orbit holds DMS's *Volume* switch (*Settings → On-screen Displays*) off, and DMS's own value comes back when Orbit stops, when the plugin is turned off, or when you choose *Off*. Orbit writes nothing of DMS's.
-- **DMS's saves are guarded.** DMS saves all of its settings together whenever one changes (a theme, a bar...) and once when it starts. Orbit lets go of the switch for a quarter of a second around each save, so the file keeps your own *Volume* value and removing Orbit leaves nothing behind. In that quarter of a second DMS's OSD could show if you press a volume key.
-- **If DMS changes how it saves** (an update that renames the flag Orbit watches), Orbit cannot see the saves any more and the file may take the switch as off. Then turn **Volume** back on in DMS's *Settings → On-screen Displays*, and please open an issue.
-- The microphone, brightness and other OSDs are not touched.
-
-The sound inside is drawn only while the pop-up or a card shows:
-
-- **Visualizer** (**Pop-up → Visualizer**): *Points* (a cloud: where the sound sits, left or right), *Rays* or *Waves* (its notes, bass at the top), or *None*.
-- **Visualizer motion**: *Light* (30 images per second, the default) or *Smooth* (60, twice the work).
+- **Visualizer** (**Volume → Visualizer**): *Points* (a cloud: where the sound sits, left or right), *Rays* or *Waves* (its notes, bass at the top), or *None*.
+- **Visualizer motion** (**Volume → Visualizer motion**): *Light* (30 images per second, the default) or *Smooth* (60, twice the work).
 - It needs `cava` for the full spectrum; PipeWire's own peak meter (one band per side) draws the picture from the first frame, while `cava` starts (and during a burst of volume keys, which holds `cava` back), and for good without it. With *Reduce motion*, nothing moves.
 
 ## Smart volume steps
 
-Orbit's own way of stepping the volume, for the wheel over the pop-up and the card and for the [volume keys](#volume-keys) once bound to Orbit:
+Orbit's own way of stepping the volume, for the wheel over the card and for the [volume keys](#volume-keys) once bound to Orbit:
 
 - **Slow notches move by 1 %**, so you can land exactly where you want.
 - **A quick run builds up speed**, up to a ceiling you choose in **Volume → Speed-up**: *Gentle* (3 %), *Balanced* (4 %, default) or *Fast* (6 %).
@@ -194,23 +173,24 @@ Orbit's own way of stepping the volume, for the wheel over the pop-up and the ca
 
 ## Volume keys
 
-Your keyboard's volume keys can use Orbit's **smart steps**: 1 % per press when you tap, bigger steps when you hold or press fast, the same as scrolling in Orbit's volume pop-up.
+Your keyboard's volume keys can use Orbit's **smart steps**: 1 % per press when you tap, bigger steps when you hold or press fast, the same as scrolling over a card's volumes.
 
-- **From the first start**, with nothing to click: the keys are Orbit's, so they follow the last device whose volume changed (see below). The first time Orbit's volume pop-up opens after that, one line under the scope says **Smart volume keys on · Undo**; it shows only once.
-- **In the settings**, **Volume** category, under the volume steps: **Give back to DMS** (or **Undo** in that line) gives them back, and Orbit remembers it: it never takes them again by itself. **Use smart steps** binds them again. The line next to it says what the keys do now.
-- **From the command line**: `dms ipc call orbitBluetooth volumeKeys on`, `off` or `status`. `off` is remembered like **Give back to DMS**, `on` forgets it.
+- **Off by default**: the keys are DMS's, and DMS's own OSD shows the level. Orbit takes them only when you ask; they then follow the last device whose volume changed (see below).
+- **In the settings**, **Volume** category, under the volume steps: **Use smart steps** binds them, **Give back to DMS** gives them back. Orbit remembers your choice. The line next to it says what the keys do now.
+- **From the command line**: `dms ipc call orbitBluetooth volumeKeys on`, `off` or `status`, remembered like the buttons.
+- **Up to 1.15 Orbit took the keys by itself.** At the first start after the update, keys still bound to Orbit go back to DMS, once; turn **Use smart steps** on to keep them.
 
 How it works:
 
-- Orbit asks DMS's own command, `dms keybinds`, to point the two keys (`XF86AudioRaiseVolume` and `XF86AudioLowerVolume`) at Orbit. Orbit writes nothing itself; this is the one DMS setting it changes, at its first start and when you ask.
+- Orbit asks DMS's own command, `dms keybinds`, to point the two keys (`XF86AudioRaiseVolume` and `XF86AudioLowerVolume`) at Orbit. Orbit writes nothing itself; this is the one DMS setting it changes, only when you ask.
 - It binds them only if they still do **DMS's default** (`dms ipc call audio increment` and `decrement`). If you bound them to something of your own, Orbit leaves them alone.
 - **The keys never stop working.** If Orbit is off, removed, or too old for this command, the keys fall back to DMS's own step (the one they had, 3 % by default).
-- **Undo**, **Give back to DMS** and **uninstalling Orbit** write back the exact line DMS had (its own step included), only on keys still bound to Orbit.
+- **Give back to DMS** and **uninstalling Orbit** write back the exact line DMS had (its own step included), only on keys still bound to Orbit.
 - **niri only**: elsewhere the line reads *Bind your keys to Orbit*. Bind them yourself, for example in Hyprland: `binde = , XF86AudioRaiseVolume, exec, dms ipc call orbitBluetooth volume up`.
 
 ### Which level the keys move
 
-With a [Listen together](#listen-together) group playing, the keys (and `dms ipc call orbitBluetooth volume up|down`) move **the last member whose own level you touched**: in the volume scope, on the radar or with the wheel over its planet, **or with the headset's own volume buttons**. Touch the group's level and they go back to the group; closing the volume pop-up changes nothing, the member stays the target. They also go back to the group when the group ends, when that member leaves, or when it has no level of its own (a device that follows this PC). Outside a group the keys follow the same rule, see [Outside a group](#outside-a-group) below.
+With a [Listen together](#listen-together) group playing, the keys (and `dms ipc call orbitBluetooth volume up|down`) move **the last member whose own level you touched**: on its card, on the radar or with the wheel over its planet, **or with the headset's own volume buttons**. Touch the group's level and they go back to the group; the member stays the target until then. They also go back to the group when the group ends, when that member leaves, or when it has no level of its own (a device that follows this PC). Outside a group the keys follow the same rule, see [Outside a group](#outside-a-group) below.
 
 **Headset buttons.** Orbit does not poll anything: PipeWire already reports every change of a headset's level, and a change nobody asked Orbit for (the buttons) makes that member the target. What Orbit and the keys write themselves is remembered for half a second and ignored when it comes back, so pressing a key never picks a target by echo, and the first reading of a headset (the group starting, a reconnection) is not a change. This needs a headset with **absolute volume**, which reports its level to the PC; one that does not behaves as before, and only what you touch in Orbit picks the target. Moving a member's level from DMS's own slider counts as a touch too.
 
@@ -239,7 +219,7 @@ The member the keys move is **visible**: in the volume scope its arc has a firme
 
 ## What really plays
 
-Under the device's name on its card, and at the foot of the volume pop-up (centered under the screen, for **any** output: a sound card, HDMI, a Bluetooth device), one short line says what the sound is:
+Under the device's name on its card, one short line says what the sound is:
 
 > Bluetooth · LDAC · 96 kHz · 24 bit
 
@@ -249,7 +229,7 @@ Under the device's name on its card, and at the foot of the volume pop-up (cente
 - **The info button** next to the line unfolds the details: the same facts with their names, the **profile**, **bit rate**, **channels**, **latency**, **quantum**, and **PC to device**, a note such as *Resampled 48 kHz to 96 kHz* when this PC mixes at one rate and the device plays at another (it appears only for a device with the [separate PC volume](#separate-pc-volume)).
 - **Choose what shows**: **Settings → Audio details** has two switches per fact, *on the line* and *more info*. Turn every one off and Orbit reads nothing.
 
-It is read from PipeWire (`pactl list sinks`) once when the card or pop-up appears, and again when you click the info button; the graph facts (bit rate, latency, quantum) are read only while the details are unfolded, or while their *on the line* switch is on. Nothing runs while they are closed, and nothing is sent anywhere. If the line is missing, the output is not known to PipeWire yet (a headset takes a second to appear after it connects) or `pactl` is not installed (it comes with `pipewire-pulse`).
+It is read from PipeWire (`pactl list sinks`) once when the card appears, and again when you click the info button; the graph facts (bit rate, latency, quantum) are read only while the details are unfolded, or while their *on the line* switch is on. Nothing runs while they are closed, and nothing is sent anywhere. If the line is missing, the output is not known to PipeWire yet (a headset takes a second to appear after it connects) or `pactl` is not installed (it comes with `pipewire-pulse`).
 
 ### Profile
 
@@ -284,7 +264,7 @@ The same sound on **two, three or four** outputs at once, Bluetooth or [wired](#
 - **One leaves**: right-click a device that listens together and choose **Remove from group** (a wired member reads **Disconnect**: it leaves the group and stays plugged in); the others keep playing. Dragging it outward, away from the group, does the same without disconnecting it (the hint reads *Release to leave the group*); a wired member can be dragged out too, see [Pull a wired output out of the group](#pull-a-wired-output-out-of-the-group). Turning it off ends its part too. With only two, removing one ends the session, since one device is not a group.
 - **Stop it all**: **Stop group** in the group's [radar](#the-volume-radar), or `dms ipc call orbitBluetooth separate`. A member's menu is short on purpose: it leaves the group or hides, the group itself is stopped from its radar. A session also ends **by itself** when fewer than two outputs remain, and when the shell ends (a crash included).
 - **On the command line** (one argument per call, so the list is quoted): `dms ipc call orbitBluetooth together "AA:BB:CC:DD:EE:01 AA:BB:CC:DD:EE:02 AA:BB:CC:DD:EE:03"` (spaces or commas), then `togetherAdd <address>`, `togetherRemove <address>`, `togetherStatus` (who listens together, as JSON), `togetherDelay <address> <ms>` (see [Limits](#limits)) and `separate`. Only connected audio devices are accepted, and a refusal says why.
-- **What you see**: while a session runs, the [two volumes](#the-two-volumes) of the card and of the pop-up change shape. The outer half circle shows the **outputs' own levels**, the inner half circle stays below, shared: **this PC's level**, what the PC sends to all of them. Without a session, the screen looks as before.
+- **What you see**: while a session runs, the [two volumes](#the-two-volumes) of the card change shape. The outer half circle shows the **outputs' own levels**, the inner half circle stays below, shared: **this PC's level**, what the PC sends to all of them. Without a session, the screen looks as before.
   - **With two outputs**, the outer half circle is **cut at the top**: the left half is the first output (`primary` color), the right half the second (`secondary`), each lit from its bottom corner toward the top, and both meet at the top at 100 %. Each half has its own moon, icon and percentage, and its own cloud of points (or rays, or waves), so the sound's left and right show on the output that plays it.
   - **With three or four outputs**, the outer half circle is split into **equal arcs**, one per output, each lit from its bottom end toward the top (the arcs left of the middle from the left foot, those right of it from the right foot, so neighbours meet at the top at 100 %). Each arc has its own theme color, moon and icon, and the cloud of points is split into one sector per arc. Icons alone cannot tell two speakers apart, so each arc's **name and level** are written outside it; a long name is shortened, never the percentage.
   - **Colors** come from your theme: the outputs take `primary`, `secondary` and `tertiary` in turn, and this PC's half circle takes `tertiary`. When two would look alike (two pinks, a grey accent), one is turned to the hue farthest from the others, keeping its own saturation and lightness, so no two arcs read as one. With three or more outputs `tertiary` is already an arc, so this PC's color is the one turned.
@@ -383,7 +363,7 @@ The gauge around the source is the volume of the whole group. It is an open arc 
 - **One output's own level**: scroll over a copy. Its own level moves, and a thin arc around it shows it while the pointer is on it. The source's own level is on its [card](#the-two-volumes), and the gauge leaves it alone.
 - **A copy without a level of its own** (a device that follows this PC's level) says so in a short note, *… has no volume of its own*, with a link to this section: turn the gauge instead.
 - **From the command line**: `dms ipc call orbitBluetooth togetherVolume 40` sets the group's general level, the one the gauge moves, with the same rules: the gaps between outputs are kept and no output goes past 100 %. `up` and `down` take the same smart steps as the wheel, `N` is a level from 0 to 100, `+N` or `-N` a change (a negative one needs `--`: `togetherVolume -- -10`). With no group playing it answers *No group is playing* and writes nothing; anything else than these values is refused with the accepted forms.
-- Nothing is saved: Orbit sets the same levels the card sets, and only while you act. DMS's own volume pop-up waits while you do.
+- Nothing is saved: Orbit sets the same levels the card sets, and only while you act. DMS's own volume sound waits while you do.
 
 ### Wired outputs
 
@@ -710,7 +690,7 @@ Orbit keeps its night sky in every theme. With a light DMS theme, devices turn i
 | ![White devices on the night sky](../screenshots/light.png) | ![Soft off-white detail card](../screenshots/light-detail.png) |
 
 ## Settings
-A search field on top, the categories down the left (**Orbit**, **Scanning**, **Headphones**, **Volume**, **Pop-up**, **Audio details**, **Sounds**, **Desktop**, **Look**, **Reset & help**), one open at a time, see [Find a setting](#find-a-setting).
+A search field on top, the categories down the left (**Orbit**, **Scanning**, **Headphones**, **Volume**, **Audio details**, **Sounds**, **Desktop**, **Look**, **Reset & help**), one open at a time, see [Find a setting](#find-a-setting).
 
 ### Find a setting
 
@@ -749,9 +729,6 @@ Nothing runs while the page is still: no timer, no animation after the short fad
 | | Speed-up | Balanced | Gentle, Balanced or Fast: how far a quick run can go per notch |
 | | Step | 5 % | The step with *Fixed* steps |
 | | Volume keys | DMS | *Use smart steps* or *Give back to DMS*, see [Volume keys](#volume-keys) (niri) |
-| Pop-up | Pop-up | In the Dank Island | Under the bar widget, right screen edge or off (DMS's own OSD); with any other choice DMS's volume OSD is switched off, see [Volume pop-up](#volume-pop-up) |
-| | Size | Medium | Compact, Medium or Large |
-| | Screens | Where I am | Show the pop-up only on the screen with the focus, or on every screen, see [Volume pop-up](#volume-pop-up) |
 | | Visualizer | Points | Points, Rays, Waves or None |
 | | Visualizer motion | Light | Light (30 images/s) or Smooth (60) |
 | Audio details | Audio details | Line: connection, codec, sample rate, bit depth; unfolded: all | Two switches per fact, *on the line* and *more info*, see [What really plays](#what-really-plays) |
@@ -827,7 +804,7 @@ Removing Orbit leaves your machine exactly as it was before:
 - DMS deletes the plugin folder but keeps what it stored for the plugin. So when Orbit is unloaded and finds its folder gone, it erases its settings, its widgets (bars, Control Center, desktop and their positions) and its pictures cache.
 - It waits a few seconds first and checks again: an update that re-downloads the folder keeps everything.
 - Disabling Orbit, reloading or restarting the shell erase nothing.
-- One exception: if DMS saved its settings while Orbit held DMS's volume OSD or its volume sound off, that switch stays off, see [DMS's own volume OSD](#dmss-own-volume-osd) and [Orbit's tick only](#orbits-tick-only).
+- One exception: if DMS saved its settings while Orbit held DMS's volume sound off, that switch stays off, see [Orbit's tick only](#orbits-tick-only).
 
 - Your [volume keys](#volume-keys), if Orbit bound them, go back to DMS's default, with the step they had.
 

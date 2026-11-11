@@ -67,7 +67,7 @@ Item {
     // network at all). What an earlier version downloaded is erased once,
     // and its switch turned off, so this never runs again
     readonly property bool _oldPictures: prefs.oldRealPictures
-    on_OldPicturesChanged: _eraseOldPictures()
+    on_OldPicturesChanged: Qt.callLater(_eraseOldPictures)
     function _eraseOldPictures() {
         if (!_oldPictures)
             return;
@@ -91,30 +91,40 @@ Item {
         prefs: prefs
     }
 
-    // The pop-up that shows both levels whenever one changes (D252, D258)
-    // The volume keys and Orbit's smart steps: Orbit's from the first start
-    // unless the user gave them back (D265, NAK-214)
+    // The volume keys and Orbit's smart steps, on the user's word only
+    // (D265, NAK-214)
     VolumeKeys {
         id: keyBinder
         prefs: prefs
         Component.onCompleted: claim()
     }
 
-    VolumeOverlay {
-        route: audioRoute
-        prefs: prefs
-        keys: keyBinder
+    // One sound, and it is Orbit's tick: DMS's volume sound waits while Orbit
+    // moves a level, if the user chose the tick alone (D360). DMS's volume
+    // OSD is left alone (Orbit OSD was removed after 1.15)
+    DmsQuiet {
+        id: quiet
+        settings: SettingsData
+        replaceSound: prefs.volumeTick && prefs.tickAlone
+    }
+    Connections {
+        target: audioRoute
+        function onLevelWriting() {
+            quiet.hold();
+        }
     }
 
-    // The pairing sheet under the bar was removed after 1.15 (a new device is
-    // offered inside the open view only, OrbitOffer): its settings and the
-    // addresses refused with "Don't offer again" are cleared once
-    readonly property bool _oldSheet: prefs.oldSheetSettings
-    on_OldSheetChanged: _clearOldSheet()
-    function _clearOldSheet() {
-        if (!_oldSheet)
+    // Settings of features removed after 1.15 (the pairing sheet under the
+    // bar, with the addresses refused with "Don't offer again"; Orbit OSD;
+    // the old volume keys flags) are cleared once
+    readonly property bool _retired: prefs.retiredSettings
+    // After the change, not inside it: writing the settings from here would
+    // re-run this binding while it is being evaluated (a binding loop)
+    on_RetiredChanged: Qt.callLater(_clearRetired)
+    function _clearRetired() {
+        if (!_retired)
             return;
-        for (const key of prefs.sheetKeys)
+        for (const key of prefs.retiredKeys)
             prefs.set(key, null);
     }
 

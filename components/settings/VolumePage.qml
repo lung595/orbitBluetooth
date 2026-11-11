@@ -94,4 +94,54 @@ CategoryPage {
         ]
         defaultValue: "follow"
     }
+
+    // The sound drawn inside the card's two half circles
+    SelectionSetting {
+        settingKey: "scopeStyle"
+        visible: page.shown("scopeStyle")
+        label: page.label("scopeStyle")
+        description: page.help("scopeStyle")
+        options: [
+            {
+                label: "Points",
+                value: "points"
+            },
+            {
+                label: "Rays",
+                value: "rays"
+            },
+            {
+                label: "Waves",
+                value: "waves"
+            },
+            {
+                label: "None",
+                value: "none"
+            }
+        ]
+        defaultValue: "points"
+    }
+
+    SelectionSetting {
+        settingKey: "scopeFps"
+        visible: page.shown("scopeFps")
+        label: page.label("scopeFps")
+        description: page.help("scopeFps")
+        options: [
+            {
+                label: "Smooth",
+                value: "60"
+            },
+            {
+                label: "Light",
+                value: "30"
+            }
+        ]
+        defaultValue: "30"
+    }
+
+    BatteryPill {
+        forKey: "scopeFps"
+        visible: page.shown("scopeFps")
+    }
 }

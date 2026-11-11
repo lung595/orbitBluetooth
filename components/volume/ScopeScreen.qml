@@ -14,7 +14,7 @@ import "../scene"
 Item {
     id: screenItem
 
-    // VolumeOverlay: the levels to show, what to do with a gesture
+    // The TwoLevels it draws (the card's CardVolume): the levels to show, what to do with a gesture
     required property var overlay
     property bool live: false
     // The unfolded facts are for the visit they were asked in: the overlay
@@ -24,9 +24,6 @@ Item {
         overlay.scopeShown(true)
     Component.onDestruction: if (live)
         overlay?.scopeShown(false)
-    // Drawn lying flat, turned upright on a side (Route.popupLayout)
-    property bool upright: false
-    property real turn: 0
     // The frame's own corners (top-left, top-right, bottom-left,
     // bottom-right): the screen's corners run parallel to them
     property var radii: [Theme.cornerRadius, Theme.cornerRadius, Theme.cornerRadius, Theme.cornerRadius]
@@ -34,7 +31,7 @@ Item {
     // The note under the screen instead of over its foot (the detail card,
     // where it would hide the arcs); the item grows by noteRoom to hold it
     property bool noteBelow: false
-    readonly property real noteRoom: noteBelow && note && !upright ? notePill.height + Theme.spacingXS : 0
+    readonly property real noteRoom: noteBelow && note ? notePill.height + Theme.spacingXS : 0
 
     // A gesture: the caller keeps itself open a while longer
     signal touched
@@ -87,9 +84,8 @@ Item {
     PolarScope {
         id: scope
         anchors.centerIn: screen
-        width: (screenItem.upright ? screen.height : screen.width) - Theme.spacingXS * 2
-        height: (screenItem.upright ? screen.width : screen.height) - Theme.spacingXS * 2
-        rotation: screenItem.turn
+        width: screen.width - Theme.spacingXS * 2
+        height: screen.height - Theme.spacingXS * 2
 
         style: screenItem.overlay.style
         grid: true
@@ -143,7 +139,7 @@ Item {
     property bool showFacts: true
     FactsLine {
         id: facts
-        visible: screenItem.showFacts && !screenItem.note && !screenItem.upright
+        visible: screenItem.showFacts && !screenItem.note
         source: screenItem.overlay
         up: true
         width: implicitWidth
@@ -159,7 +155,7 @@ Item {
     }
     Rectangle {
         id: notePill
-        visible: !!screenItem.note && !screenItem.upright
+        visible: !!screenItem.note
         anchors.right: screenItem.noteBelow ? undefined : screen.right
         anchors.rightMargin: Theme.spacingM
         anchors.bottom: screenItem.noteBelow ? undefined : screen.bottom
