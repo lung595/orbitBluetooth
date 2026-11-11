@@ -1,5 +1,7 @@
 # External processes and system access in Orbit today, and what each becomes in orbitd
 
+> **Corrected 2026-11-11 (PLAN.md step 1, branch `fix/no-pipewire-utils`).** This pass assumed the `pw-*` tools were installed. They come with **pipewire-utils**, which a default install (Fedora) does not have, so the PC filter, the copies, the tick and the latency read were broken there. Step 1 moved every site to what the stock packages ship: the loopbacks to the `pipewire` binary, the tick to `pacat`, the graph dump to `wpexec`. Only `pw-top` is left, for the optional quantum. The sites below say what runs now; the original reasoning is kept where it still holds, and each correction is marked.
+
 Read-only pass over `components/`, `diagnostics/`, the root `*.qml` files and the three Python helpers that the QML launches. `tests/` and `scripts/preview/` are left out. I count **19 distinct process sites, 6 FileView sites, 4 kernel socket uses (all inside the ANC helper), 0 direct D-Bus calls from QML (D-Bus is reached through `busctl` or Quickshell services) and 0 network.**
 
 ## 0. The finding that shapes everything: static musl and PipeWire
@@ -17,10 +19,12 @@ What remains for audio:
 | Option | What it is | What it gives | Limits |
 |---|---|---|---|
 | (a) Pure-Rust PulseAudio native protocol (e.g. the `pulseaudio` crate) | Talks to pipewire-pulse over `$XDG_RUNTIME_DIR/pulse/native` | Sinks with props (replaces `pactl list sinks`), subscribe events (replaces polling), set volume/mute, record stream from `.monitor` (could replace cava's input) | Cannot see PipeWire-only data: Latency/Props params, quantum, profiler, explicit port links |
-| (b) Daemon keeps spawning the pw CLI tools, but resident | `pw-dump --monitor` is one long-lived process streaming JSON diffs | Replaces every one-shot `pw-dump`, and is event-driven | Still spawns pw-cat, pw-link, pw-loopback |
+| (b) Daemon keeps spawning the pw CLI tools, but resident | `pw-dump --monitor` is one long-lived process streaming JSON diffs | Replaces every one-shot `pw-dump`, and is event-driven | Needs pipewire-utils, which is not on a default install (correction below). The stock equivalents are `pipewire -c` (loopbacks), `pacat` (tick) and `wpexec` with a Lua script (graph reads, and events through an ObjectManager) |
 | (c) Write a native PipeWire protocol client in Rust | — | — | No mature crate; large and risky |
 
-**Recommendation to confirm with the owner: (b), optionally with (a) added for volume writes and events.** The `pw-*` tools are already a dependency of the plugin today.
+**Recommendation to confirm with the owner: (b), optionally with (a) added for volume writes and events.**
+
+*Correction:* the original line here said the `pw-*` tools were already a dependency of the plugin. They are not on a default install: pipewire-utils is a separate package that Fedora does not install, and on this machine `pw-loopback`, `pw-cat`, `pw-link`, `pw-dump`, `pw-top` and `pw-cli` are all missing. Since step 1 Orbit needs none of them; `pw-top` is optional (the quantum line). Spawning children from orbitd stays possible with the stock binaries named in (b).
 
 ## 1. Every process, FileView, socket and D-Bus access
 
@@ -42,45 +46,47 @@ Columns: **When** = trigger · **Rate** = how often in practice · **Parse** = w
 - Parse: `Wired.parse` (`Wired.js:104`) and `Wired.sameSet`.
 - Rust: same as A1. The daemon owns the sink list and emits `wiredOutputs`.
 
-**A3. `pw-dump`** · `components/volume/AudioGraph.qml:48`
+**A3. `wpexec graph/orbit_graph.lua`** (was `pw-dump`) · `components/volume/AudioGraph.qml:54`
 - When: `wantDump` becomes true (`Audiophile.needs`: latency or LDAC quality shown, card on screen), `sink` changes, or `refresh()`.
-- Rate: once per opening; output can be about 1 MB of JSON per run.
-- Parse: `AudioGraph.parseDump` (`AudioGraph.js:11`): the `Latency` param `maxNs` of direction Input, and `Props.quality`.
-- Rust: (b) the resident `pw-dump -m` carries the params. **(a) cannot give these PipeWire params**, which is why (b) is needed.
+- Rate: once per opening. `pw-dump` printed about 1 MB of JSON per run; the script prints only the sinks' name, Latency and quality (under 1 KB for three sinks), in pw-dump's shape. About 10 ms and 12 MB peak, and it quits by itself after 3 s at most.
+- Parse: `AudioGraph.parseDump` (`AudioGraph.js:12`): the `Latency` param `maxNs` of direction Input, and `Props.quality`.
+- Rust: (b) a resident graph reader carries the params (`pw-dump -m` needs pipewire-utils; a resident `wpexec` script with an ObjectManager is the stock way). **(a) cannot give these PipeWire params**, which is why (b) is needed.
 
-**A4. `pw-top -b -n 2`** · `components/volume/AudioGraph.qml:57`
+**A4. `pw-top -b -n 2`** · `components/volume/AudioGraph.qml:63` (optional: pipewire-utils; without it the quantum is left out)
 - When: `wantTop` (quantum fact shown, or details unfolded), `sink` change, or `refresh()`.
 - Rate: once per opening, about 1 s per run.
 - Parse: `AudioGraph.parseTop` (`:45`).
 - Rust: **no clean replacement.** Quantum and rate come from PipeWire's Profiler interface, which only libpipewire speaks. The daemon keeps spawning `pw-top` (risk flagged).
 
-**A5. `pw-dump`** · `components/together/MemberLatency.qml:47`
+**A5. `wpexec graph/orbit_graph.lua`** (was `pw-dump`) · `components/together/MemberLatency.qml:67`
 - When: a `settle` timer (400 ms) on session start and on each `signature` change (members, codec, profile: `TogetherSession.qml:265-272`). Only exists inside a Listen together session.
 - Rate: a few times per session.
 - Parse: `AudioGraph.parseDump`, then `Delay.latenciesOf`.
-- Rust: the same resident `pw-dump -m` as A3. Latencies are recomputed in the daemon and pushed out.
+- Since step 1: a reader that never starts (no wpexec) tells the group like a failed read, where `pw-dump` missing failed silently.
+- Rust: the same resident reader as A3. Latencies are recomputed in the daemon and pushed out.
 
-**A6. `bash -c LOOPBACK_SCRIPT … pw-loopback`, the PC-level smart filter**
-- Built by `Route.filterArgs` (`Route.js:122`, script at `:101`, `loopbackArgs` `:110`); run at `components/volume/RouteDevice.qml:107-108`.
+**A6. `bash -c LOOPBACK_SCRIPT … pipewire -c`** (was `pw-loopback`), **the PC-level smart filter**
+- Built by `Route.filterArgs` (`Route.js:176`, script at `:133`, `loopbackArgs` `:154`); run at `components/volume/RouteDevice.qml:116-117`.
+- Since step 1: the stock `pipewire` binary runs as a client with a config that loads `libpipewire-module-loopback`, as `pw-loopback` does. The config is in an unlinked file on fd 3, reached through the data-free link `$XDG_RUNTIME_DIR/orbit-loopback.conf`. Unlike `pw-loopback`, it does not exit when its loopback is destroyed, so RouteDevice and TogetherLink stop it when its node is missing for 2 s. Both ends carry the filter's `node.link-group`.
 - When: declarative, `running: dev.wanted` (Separate PC volume on, device has absolute volume, sink present).
 - Rate: one resident process per connected absolute-volume Bluetooth device.
 - Parse: output not read; exit is logged as ORB-E003.
-- Rust: `std::process` spawn of `pw-loopback` from orbitd. The bash watchdog (`cat` on stdin, then `kill`) becomes `prctl(PR_SET_PDEATHSIG)` plus killing children when the daemon's stdin closes. Loading `module-loopback` in-process needs libpipewire, so it is not an option.
+- Rust: `std::process` spawn of the same `pipewire -c` from orbitd (the original note said `pw-loopback`, which a default install lacks). The config can be handed over the same way (an unlinked file on a file descriptor), or through a memfd. The bash watchdog (`cat` on stdin, then `kill`) becomes `prctl(PR_SET_PDEATHSIG)` plus killing children when the daemon's stdin closes. Loading `module-loopback` in orbitd's own process needs libpipewire, so it is not an option; `pipewire -c` is the default-install way to run module-loopback.
 
-**A7. `bash -c … pw-loopback`, Listen together copies and the wired-source filter**
-- Built by `Together.args` (`Together.js:241`), `Route.wiredFilterArgs` (`Route.js:163`), `Together.commands` (`:262`) and `Together.diff`; run at `components/together/TogetherLink.qml:59-71` (Instantiator over a ListModel).
+**A7. `bash -c … pipewire -c`** (was `pw-loopback`), **Listen together copies and the wired-source filter**
+- Built by `Together.args` (`Together.js:241`), `Route.wiredFilterArgs` (`Route.js:217`), `Together.commands` (`:269`) and `Together.diff`; run at `components/together/TogetherLink.qml:62-66` (Instantiator over a ListModel).
+- The wired filter's wait (`target.delay.sec`) was measured to have no effect on a smart filter, with or without pipewire-utils; it is on the roadmap to verify on PipeWire 1.6.
 - When: a Listen together session's plan changes.
 - Rate: 1 to N resident processes (one per member, plus the filter) for the session's lifetime.
 - Rust: same as A6. The daemon keeps a `HashMap<key, Child>` and diffs it itself.
 
-**A8. `python3 -I tick/orbit_tick.py <sink> volume.wav`** · `components/volume/VolumeTick.qml:67`
+**A8. `python3 -I tick/orbit_tick.py <sink> volume.wav <link group>`** · `components/volume/VolumeTick.qml:71`
 - When: the first tick after idle on a given output. A stdin line `t <gain>` is written per tick. It stays resident until `Volume.IDLE_MS` = 2000 ms with no tick.
 - Limits: at most `MAX_TICKS` = 4 players, at most 20 ticks/s (`MIN_GAP_MS` = 50).
-- Inside the helper: `pw-cat -p --raw … -P node.name=orbit_tick_<pid>,node.autoconnect=false` (`orbit_tick.py:164`) and `pw-link -o`, `pw-link -i` polled up to 40 times at 50 ms, then `pw-link -- src dst` (`:144-151`).
-- Rust: mixing moves into orbitd (it is already pure arithmetic). It still needs a PipeWire playback stream with autoconnect off and explicit links:
-  - simplest: keep `pw-cat` plus `pw-link` as children;
-  - the link polling can be driven by the `pw-dump -m` stream instead of 40 polls.
-  - (a) the pulse protocol **cannot** do "autoconnect off, link to the sink's own input ports, bypassing the smart filter" (NAK-251). Risky if (a) is chosen.
+- Inside the helper, since step 1: one `pacat --playback --raw … -d <sink>` (`orbit_tick.py:132` `player_args`, run at `:163`) whose stream carries `node.link-group=<the filter's group>` (`Route.tickGroup`), `state.restore-props=false`, `state.restore-target=false`, `node.dont-reconnect=true` and `node.dont-fallback=true`. It was `pw-cat` with autoconnect off and `pw-link` polled up to 40 times, both from pipewire-utils.
+- Rust: mixing moves into orbitd (it is already pure arithmetic). It needs one playback stream aimed at the sink that carries the filter's link group: WirePlumber's smart-filter rules send such a stream where the filter goes, the sink itself, so it never passes through the filter the copies read (NAK-251).
+  - simplest: keep `pacat` as a child;
+  - *Correction:* the original note said (a), the pulse protocol, **cannot** keep the tick out of the smart filter. It can: a pulse stream with the filter's `node.link-group` is routed to the sink itself. Measured on PipeWire 1.6.11 and WirePlumber 0.5.19 with a null sink and a filter-shaped loopback: a plain `pacat -d sink` landed in the filter, the same with the group landed on the sink. The rule is WirePlumber's (not a documented API), so orbitd step 2 measures it again.
 
 **A9. `bash -c 'exec cava -p /dev/fd/3 3<<<"$1"'`** · `components/volume/ScopeFeed.qml:68`
 - When: `running: _go && _conf` (vectorscope on screen, motion allowed, no volume-key burst).
@@ -253,12 +259,12 @@ All stay in QML:
 
 ## 3. Risk list, most serious first
 
-1. **Static musl versus PipeWire** (section 0). It rules out `pipewire-rs` and `libpulse`. Choose between spawning `pw-*` tools, a pure-Rust pulse client, or both.
+1. **Static musl versus PipeWire** (section 0). It rules out `pipewire-rs` and `libpulse`. Choose between spawning stock tools (`pipewire -c`, `pacat`, `wpexec`; not the `pw-*` tools, which a default install lacks), a pure-Rust pulse client, or both.
 2. **Uninstall sweep after the binary is deleted** (F6). Needs a self-preserving daemon design, which goes against "dies with the shell".
 3. **Ownership of volume writes and echo detection** between Quickshell PipeWire and orbitd (section 2). Plus the key-press path niri → `dms ipc` → QML → orbitd.
-4. **Volume tick** must keep "autoconnect off and explicit links to the sink's input ports" (NAK-251). Not possible through the pulse protocol; keep `pw-cat` and `pw-link`.
+4. **Volume tick** must stay out of the smart filter the copies read (NAK-251). *Corrected:* the original line said this was not possible through the pulse protocol. It is, through a `node.link-group` shared with the filter, measured on PipeWire 1.6.11 (A8); it relies on WirePlumber's smart-filter rule.
 5. **cava, 60 lines/s**: through the daemon, in-daemon FFT, or stays in QML. That decision contradicts "no Process in QML".
-6. **`pw-top` quantum** has no library route without libpipewire.
+6. **`pw-top` quantum** has no library route without libpipewire, and `pw-top` itself needs pipewire-utils: today the quantum is simply left out without it.
 7. **Bluetooth sockets on musl**: no `bluetooth.h`. Hand-written sockaddr structs, plus a non-blocking connect with 8 s timeouts.
 8. **Two sources of BlueZ truth** (Quickshell.Bluetooth in QML, zbus in orbitd) for disconnect, forget and trust decisions.
 9. **CPU figure in the report** changes meaning (R2).
@@ -270,10 +276,10 @@ All stay in QML:
 
 **Today, in use:**
 - one-shots per opening: A1–A5, B1–B3;
-- residents: A6–A9 and B4, up to about 4 tick players + N pw-loopback + 1 cava + N ANC helpers.
+- residents: A6–A9 and B4, up to about 4 tick players (each python3 + one pacat) + N loopbacks (`pipewire -c`) + 1 cava + N ANC helpers.
 
 **With orbitd and choice (b):**
 - 1 orbitd;
-- 1 `pw-dump -m` (resident only while something needs graph data);
-- the same `pw-loopback`, `pw-cat`/`pw-link`, `cava`, `pw-top`, `dms` and `journalctl` children;
+- 1 resident graph reader (a `wpexec` script, or `pw-dump -m` where pipewire-utils is installed), only while something needs graph data;
+- the same `pipewire -c` loopbacks, `pacat`, `cava`, optional `pw-top`, `dms` and `journalctl` children;
 - every `pactl`, `busctl` and Python process disappears.
