@@ -2,10 +2,12 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQml
 import Quickshell.Io
+import Quickshell.Services.Pipewire
 import "Together.js" as Together
 
-// The processes of Listen together: one pw-loopback per member that is
-// copied to (Together.commands). It exists only while a session does, and
+// The processes of Listen together: one loopback process (pipewire -c,
+// Route.loopbackArgs) per member that is copied to, and the filter of a wired
+// source (Together.commands). It exists only while a session does, and
 // only the copies that changed are stopped or started: a newcomer never
 // cuts the others. Each command keeps bash watching its standard input: the
 // pipe closes when the shell goes away, even after a crash, and takes the
@@ -65,9 +67,46 @@ Item {
             // The pipe bash watches (see above)
             stdinEnabled: true
             onExited: {
-                if (JSON.stringify(link._running[proc.key]) === proc.commandJson)
-                    link.lost(proc.key);
+                if (!proc._cut)
+                    link._lose(proc);
+            }
+
+            // pipewire -c, unlike pw-loopback, keeps running when its loopback
+            // is destroyed (an output unplugged, PipeWire restarted): a node of
+            // this process that was there and has been missing for 2 s while
+            // it runs is taken as an exit. A node never seen is left alone.
+            // Only Quickshell's own node list is read, and only while a
+            // session runs: nothing polls.
+            readonly property string node: Together.nodeOf(JSON.parse(commandJson))
+            readonly property bool present: running && node !== "" && Pipewire.nodes.values.some(n => !!n && n.name === node)
+            property bool _seen: false
+            // Stopped by the watch: its exit, if one comes, is not lost twice
+            property bool _cut: false
+            onPresentChanged: {
+                if (present) {
+                    _seen = true;
+                    gone.stop();
+                } else if (_seen && running) {
+                    gone.restart();
+                }
+            }
+            property Timer _gone: Timer {
+                id: gone
+                interval: 2000
+                onTriggered: {
+                    if (!proc.running || proc.present)
+                        return;
+                    proc._cut = true;
+                    proc.running = false;
+                    link._lose(proc);
+                }
             }
         }
+    }
+
+    // A copy that ended by itself, unless it is no longer the one wanted for its key
+    function _lose(proc) {
+        if (JSON.stringify(_running[proc.key]) === proc.commandJson)
+            lost(proc.key);
     }
 }

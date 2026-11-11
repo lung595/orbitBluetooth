@@ -11,7 +11,8 @@
 //   software level of its own on that sink (it resets it to 100 % whenever
 //   the device's level moves), so this PC's level lives on a small virtual
 //   sink placed in front of the device: "orbit_pc_<address>", a WirePlumber
-//   smart filter run by one pw-loopback that dies with the shell (D259).
+//   smart filter run by one loopback process (pipewire -c, below) that dies
+//   with the shell (D259).
 
 var PREFIX = "orbit_pc_";
 
@@ -92,27 +93,70 @@ function description(deviceName, fallback) {
     return (clean || fallback || "Bluetooth") + " (Orbit)";
 }
 
-// The one way Orbit runs a pw-loopback (the PC-level filter below, Listen
-// together): bash watches its standard input (a pipe from the shell) and
-// stops pw-loopback the moment the shell goes away, even after a crash, so
-// nothing outlives the shell (value 12). Data only as "$1", "$2" and "$3"
-// (value 11): the capture and playback properties, and an optional delay in
-// seconds.
-const LOOPBACK_SCRIPT = '{ cat >/dev/null; kill "$$" 2>/dev/null; } <&0 & exec pw-loopback ${3:+-d "$3"} --capture-props="$1" --playback-props="$2" </dev/null';
+// The one way Orbit runs a loopback (the PC-level filter below, the wired
+// filter, Listen together): the stock `pipewire` binary run as a client with a
+// config that loads libpipewire-module-loopback in its own process, the way
+// pw-loopback does, so pipewire-utils is not needed (it is not on a default
+// install). pipewire only reads a config whose name ends in ".conf" and reads
+// a pipe as empty, so the config lives in an unlinked file of $XDG_RUNTIME_DIR
+// (tmpfs, 0700) held open on fd 3 and is reached through
+// "$XDG_RUNTIME_DIR/orbit-loopback.conf" -> /dev/fd/3, a link that holds no
+// data and is the same for every loopback (made atomically: link + rename).
+// The file is unlinked before anything is written to it, so no name on disk
+// ever holds data. An absolute config path also means no drop-in directory is
+// read, so it runs the same everywhere. With no absolute $XDG_RUNTIME_DIR it
+// exits 1 at once (bash's own error there is 127, which reads as "pipewire is
+// not installed"). The config:
+// - log.level 0: nothing about the devices goes to stderr (and the journal);
+// - application.name: mixers show "Orbit", not "pipewire";
+// - module-rt first, as PipeWire's own client.conf has it: the audio thread
+//   gets realtime priority when the system allows it, and nothing fails when
+//   it does not.
+// Data only as "$1", "$2" and "$3" (value 11): each is written as ONE quoted
+// SPA-JSON string (backslashes and quotes escaped), so it cannot close the
+// string and add modules. bash watches its standard input (a pipe from the
+// shell) and stops pipewire the moment the shell goes away, even after a
+// crash, so nothing outlives the shell (value 12). Unlike pw-loopback,
+// pipewire keeps running when its loopback is destroyed (PipeWire restarted):
+// RouteDevice and TogetherLink watch for the node going away and stop it.
+// Thanks to the PipeWire developers: module-loopback and the config format are
+// theirs, used from their documentation (no code copied).
+const LOOPBACK_SCRIPT = [
+    "d=$XDG_RUNTIME_DIR; [ \"${d#/}\" != \"$d\" ] || exit 1; l=$d/orbit-loopback.conf",
+    "[ \"$(readlink \"$l\")\" = /dev/fd/3 ] || { ln -sfn /dev/fd/3 \"$l.$$\" && mv -fT \"$l.$$\" \"$l\"; } || exit 1",
+    "q() { local s=${1//\\\\/\\\\\\\\}; printf '\"%s\"' \"${s//\\\"/\\\\\\\"}\"; }",
+    "f=$(mktemp \"$d/orbit-loopback.XXXXXX\") || exit 1",
+    "exec 3<>\"$f\"; rm -f -- \"$f\"",
+    "printf 'context.properties = { log.level = 0 application.name = Orbit }\\ncontext.spa-libs = { audio.convert.* = audioconvert/libspa-audioconvert support.* = support/libspa-support }\\ncontext.modules = [ { name = libpipewire-module-rt flags = [ ifexists nofail ] } { name = libpipewire-module-protocol-native } { name = libpipewire-module-client-node } { name = libpipewire-module-adapter } { name = libpipewire-module-loopback args = { capture.props = %s playback.props = %s target.delay.sec = %s } } ]\\n' \"$(q \"$1\")\" \"$(q \"$2\")\" \"$(q \"${3:-0}\")\" >&3",
+    "{ cat >/dev/null; kill \"$$\" 2>/dev/null; } <&0 3<&- &",
+    "exec pipewire -c \"$l\" </dev/null"
+].join("\n");
 
-// Nothing is remembered by WirePlumber for the two ends Orbit creates
-const FORGET = " state.restore-props=false state.restore-target=false";
+// Nothing is remembered by WirePlumber for the two ends Orbit creates. It goes
+// at the start of each property string, before anything the caller wrote, so
+// a value that never closes (a quote, a brace) cannot swallow it.
+const FORGET = "state.restore-props=false state.restore-target=false ";
 
-// The longest wait Orbit puts in a pw-loopback (ms). A Bluetooth output can
+// The longest wait Orbit puts in a loopback (ms). A Bluetooth output can
 // announce more than 600 ms (LDAC at its safest, a TV), and a wired copy or
 // filter waits for what that adds; a second of stereo audio is under 400 KB.
 var MAX_DELAY_MS = 1000;
 
 function loopbackArgs(capture, playback, delaySeconds) {
-    const args = ["bash", "-c", LOOPBACK_SCRIPT, "orbit", capture + FORGET, playback + FORGET];
+    const args = ["bash", "-c", LOOPBACK_SCRIPT, "orbit", FORGET + capture, FORGET + playback];
     if (delaySeconds)
         args.push(String(delaySeconds));
     return args;
+}
+
+// The link group of one of Orbit's filters, the filter's own node name, set on
+// both of its ends: set on one end only, WirePlumber sees two groups. A stream
+// that carries the same group is taken as the filter's own and goes where the
+// filter goes, the sink itself, never through the filter: the way for the
+// volume tick to stay out of the copies (NAK-251). Thanks to WirePlumber's smart-filter rules for the idea, read in
+// its documentation and find-filter-target.lua (no code copied).
+function group(name) {
+    return "node.link-group=" + name + " ";
 }
 
 // The PC-level filter: a WirePlumber smart filter, a virtual sink that
@@ -126,7 +170,7 @@ function filterArgs(address, master, deviceName) {
         return null;
     const capture = "media.class=Audio/Sink node.name=" + name + " node.description=\"" + description(deviceName) + "\"" + " filter.smart=true filter.smart.name=" + name + " filter.smart.target={ node.name = \"" + master + "\" }";
     const playback = "node.name=" + name + ".out node.passive=true";
-    return loopbackArgs(capture, playback);
+    return loopbackArgs(group(name) + capture, group(name) + playback);
 }
 
 // --- The filter in front of a wired source (D298; it also keeps the volume tick out of the copies, NAK-251) ---
@@ -169,7 +213,7 @@ function wiredFilterArgs(sink, delaySeconds, deviceName) {
         return null;
     const capture = "media.class=Audio/Sink node.name=" + name + " node.description=\"" + description(deviceName, "Wired output") + "\"" + " filter.smart=true filter.smart.name=" + name + " filter.smart.target={ node.name = \"" + sink + "\" }";
     const playback = "node.name=" + name + ".out node.passive=true node.dont-fallback=true";
-    return loopbackArgs(capture, playback, delay);
+    return loopbackArgs(group(name) + capture, group(name) + playback, delay);
 }
 
 // Clicking the planet: with one Bluetooth audio device connected, this PC

@@ -58,6 +58,11 @@ class Shell:
         })
         write(self.session, {"desktopWidgetInstancePositions": {"dw_1": {"x": 1}, "dw_2": {"x": 2}}, "other": 1})
 
+        # A made-up $XDG_RUNTIME_DIR, with the loopbacks' config link in it
+        self.runtime = os.path.join(root, "run")
+        os.makedirs(self.runtime)
+        self.link = os.path.join(self.runtime, "orbit-loopback.conf")
+        os.symlink("/dev/fd/3", self.link)
         # dms commands asked for, answered from a made-up keybind listing
         self.calls = []
         self.listing = {"binds": {"Audio": [
@@ -71,7 +76,7 @@ class Shell:
         return json.dumps(self.listing) if args[:2] == ["keybinds", "show"] else '{"success": true}'
 
     def run(self):
-        return U.sweep(ID, self.manifest, self.cache, self.settings, self.plugin_settings, self.session, grace=0, run=self.dms)
+        return U.sweep(ID, self.manifest, self.cache, self.settings, self.plugin_settings, self.session, grace=0, run=self.dms, runtime=self.runtime)
 
 
 class SweepTest(unittest.TestCase):
@@ -143,6 +148,38 @@ class SweepTest(unittest.TestCase):
         self.assertTrue(self.shell.run())
         with open(self.shell.settings) as f:
             self.assertEqual(f.read(), "{ not json")
+
+    def test_uninstall_removes_the_loopback_link(self):
+        os.remove(self.shell.manifest)
+        self.assertTrue(self.shell.run())
+        self.assertFalse(os.path.lexists(self.shell.link))
+
+    def test_the_loopback_link_stays_while_installed(self):
+        self.assertFalse(self.shell.run())
+        self.assertEqual(os.readlink(self.shell.link), "/dev/fd/3")
+
+    def test_other_files_in_runtime_are_left(self):
+        os.remove(self.shell.manifest)
+        os.remove(self.shell.link)
+        # A plain file of that name, then a link that points elsewhere: not Orbit's
+        with open(self.shell.link, "w") as f:
+            f.write("someone else's")
+        self.assertTrue(self.shell.run())
+        with open(self.shell.link) as f:
+            self.assertEqual(f.read(), "someone else's")
+        os.remove(self.shell.link)
+        os.symlink("/dev/fd/4", self.shell.link)
+        self.shell.run()
+        self.assertEqual(os.readlink(self.shell.link), "/dev/fd/4")
+
+    def test_no_or_relative_runtime_removes_nothing(self):
+        os.remove(self.shell.manifest)
+        cwd = os.getcwd()
+        self.addCleanup(os.chdir, cwd)
+        os.chdir(os.path.dirname(self.shell.runtime))
+        for runtime in ("", "run"):
+            U.sweep(ID, self.shell.manifest, self.shell.cache, self.shell.settings, self.shell.plugin_settings, self.shell.session, grace=0, run=self.shell.dms, runtime=runtime)
+            self.assertEqual(os.readlink(self.shell.link), "/dev/fd/3")
 
     def test_bad_arguments_erase_nothing(self):
         os.remove(self.shell.manifest)

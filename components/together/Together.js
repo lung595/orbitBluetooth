@@ -5,13 +5,13 @@
 
 // Pure logic of Listen together (D254, D277, D298): the same sound on several
 // outputs at once, Bluetooth or wired. Who may take part, which member the
-// sound is taken from, and the pw-loopback that copies it to each of the
+// sound is taken from, and the loopback that copies it to each of the
 // others. Tested by tests/together.test.js.
 //
 // A session is a list of 2 to MAX_MEMBERS outputs ("members", in the order
 // they joined), each one a token of Member.js: a Bluetooth address or the
 // node name of a wired (ALSA) output. A session can mix both. The sound is taken from one of them (the source) and copied
-// to every other by its own pw-loopback, run through Route.loopbackArgs so
+// to every other by its own loopback, run through Route.loopbackArgs so
 // that it dies with the shell. Both ends of a copy are passive and never fall
 // back to another sink: nothing is opened when nothing plays, so a member's
 // output goes idle and then suspends as it always did, which is what lets a
@@ -24,7 +24,7 @@
 // small process, and a half circle holds four arcs a finger can still hit.
 var MAX_MEMBERS = 4;
 // The longest wait of a copy or of a wired source's filter: one number for
-// every pw-loopback Orbit runs (Route.js)
+// every loopback Orbit runs (Route.js)
 var MAX_DELAY_MS = Route.MAX_DELAY_MS;
 
 // What the filter of a wired source is called in the list of processes: never
@@ -246,6 +246,13 @@ function args(tap, delayMs) {
     const capture = "node.name=" + NAME + key + "_in target.object=" + tap.capture + " stream.capture.sink=true" + stream;
     const playback = "node.name=" + NAME + key + "_out target.object=" + tap.playback + stream;
     return Route.loopbackArgs(capture, playback, delayArg(delayMs));
+}
+
+// The node a loopback command makes (the name its capture end is given), ""
+// for anything else: TogetherLink watches it to see the loopback go away
+function nodeOf(command) {
+    const m = /(?:^| )node\.name=(\S+)/.exec(command && typeof command[4] === "string" ? command[4] : "");
+    return m ? m[1] : "";
 }
 
 // The command of the filter in front of a wired source, or null when the

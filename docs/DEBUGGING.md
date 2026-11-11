@@ -48,7 +48,7 @@ A code is `ORB-` followed by a level letter (`E` error, `W` warning, `I` info, `
 |---|---|---|---|
 | `ORB-E001` | error | A Bluetooth action (connect, disconnect, pair, trust, forget, scan, power) failed | `action`, `reason` |
 | `ORB-E002` | error | Pairing failed | `reason` |
-| `ORB-E003` | error | A helper program (`pw-loopback`, `pw-play`, `cava`, `wl-copy`, `dms`, `pactl`, `python`, `bluetoothctl`) stopped unexpectedly | `tool`, `code` (its exit status) |
+| `ORB-E003` | error | A helper program (`pw_loopback`: the loopback process, `pipewire -c`; `pw-play`, `cava`, `wl-copy`, `dms`, `pactl`, `python`, `bluetoothctl`) stopped unexpectedly | `tool`, `code` (its exit status) |
 | `ORB-E004` | error | Retired after 1.15 (the picture lookup was removed); never reused | |
 | `ORB-E005` | error | Noise control (ANC) could not be changed | `reason` |
 | `ORB-W010` | warning | No usable Bluetooth adapter | `state` |
@@ -72,7 +72,7 @@ Look for `ORB-W010` (no usable adapter) and `ORB-I021` (a surface was unloaded) 
 
 ### A helper program keeps stopping
 
-`ORB-E003` names the program (`tool`) and its exit status (`code`); `ORB-W011` says it is not installed.
+`ORB-E003` names the program (`tool`) and its exit status (`code`); `ORB-W011` says it is not installed. For `tool=pw_loopback`, `code=-1` means the process still ran but its loopback was gone (PipeWire restarted, an output unplugged): Orbit stopped it, and starts the PC-level filter again by itself. `code=1` right at the start means `$XDG_RUNTIME_DIR` is not set, and `code=127` that `pipewire` itself is missing.
 
 ### The shell restarts or the bar freezes
 

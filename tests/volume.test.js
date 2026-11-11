@@ -8,7 +8,8 @@ const Volume = load("Volume.js", ["clamp", "step", "validSink", "stepSize", "ste
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "slices", "sliceAt", "partOf", "indexOf", "arc", "end", "point", "angleOf", "valueAt", "zone", "wheelPart", "iconSpot", "legendSpot", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
 const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded"]);
-const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "tickOutput", "description", "loopbackArgs", "filterArgs", "muteTarget", "levelNodes", "tickNodes", "writeLevel", "writeMuted", "ipcLevel", "transportPath", "transportVolume", "iconFor", "shownLevels"]);
+const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "tickOutput", "description", "loopbackArgs", "filterArgs", "wiredFilterArgs", "muteTarget", "levelNodes", "tickNodes", "writeLevel", "writeMuted", "ipcLevel", "transportPath", "transportVolume", "iconFor", "shownLevels"]);
+const Together = load("Together.js", ["args"]);
 
 // --- Volume tick (Volume.js) ------------------------------------------------------
 eq("the setting: 1 % by default, 5 % when it says so", [Volume.stepSize("1"), Volume.stepSize("5"), Volume.stepSize(undefined), Volume.stepSize("7")], [0.01, 0.05, 0.01, 0.01]);
@@ -87,7 +88,11 @@ eq("description drops quotes and escapes", Route.description('My "Buds" \\ $(x)'
 eq("empty name falls back", Route.description(""), "Bluetooth (Orbit)");
 const filter = Route.filterArgs(MAC, "bluez_output.AA_BB_CC_DD_EE_01.1", "Buds \"Pro\"");
 eq("smart filter: bash watches stdin, data only in $1 and $2", [filter.slice(0, 2), filter[3]], [["bash", "-c"], "orbit"]);
-eq("smart filter: targets the device, nothing remembered", [/filter\.smart\.target=\{ node\.name = "bluez_output\.AA_BB_CC_DD_EE_01\.1" \}/.test(filter[4]), /node\.name=orbit_pc_AA_BB_CC_DD_EE_01 /.test(filter[4]), /state\.restore-props=false state\.restore-target=false$/.test(filter[5])], [true, true, true]);
+eq("smart filter: targets the device, nothing remembered", [/filter\.smart\.target=\{ node\.name = "bluez_output\.AA_BB_CC_DD_EE_01\.1" \}/.test(filter[4]), /node\.name=orbit_pc_AA_BB_CC_DD_EE_01 /.test(filter[4]), /^state\.restore-props=false state\.restore-target=false /.test(filter[5])], [true, true, true]);
+eq("smart filter: both ends in the filter's link group", [filter[4].indexOf(" node.link-group=orbit_pc_AA_BB_CC_DD_EE_01 ") >= 0, filter[5].indexOf(" node.link-group=orbit_pc_AA_BB_CC_DD_EE_01 ") >= 0], [true, true]);
+eq("loopback: the stock pipewire binary, no pipewire-utils", [filter[2].indexOf("exec pipewire -c ") >= 0, /pw-loopback/.test(filter[2])], [true, false]);
+eq("loopback: no data in the script, one script for every loopback", [filter[2] === Route.loopbackArgs("a", "b")[2], filter[2] === Together.args({ "member": "AA:BB:CC:DD:EE:02", "capture": "orbit_pc_AA_BB_CC_DD_EE_01", "playback": "bluez_output.AA_BB_CC_DD_EE_02.1" }, 120)[2], filter[2] === Route.wiredFilterArgs("alsa_output.usb-x.analog-stereo", "0.100")[2], /AA_BB|orbit_pc|Buds/.test(filter[2])], [true, true, true, false]);
+eq("loopback: realtime module first, quiet, named Orbit", [/context\.modules = \[ \{ name = libpipewire-module-rt flags = \[ ifexists nofail \] \}/.test(filter[2]), /log\.level = 0/.test(filter[2]), /application\.name = Orbit/.test(filter[2])], [true, true, true]);
 eq("smart filter: quotes stripped from the name", /description="Buds Pro \(Orbit\)"/.test(filter[4]), true);
 eq("bad master or address: no command", [Route.filterArgs(MAC, "x y", "B"), Route.filterArgs("nope", "bluez_output.AA_BB_CC_DD_EE_01.1", "B")], [null, null]);
 eq("mute: one device mutes this PC, two mute the device", [Route.muteTarget(1), Route.muteTarget(2), Route.muteTarget(0)], ["pc", "device", "pc"]);

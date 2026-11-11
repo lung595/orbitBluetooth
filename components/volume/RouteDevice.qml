@@ -11,7 +11,8 @@ import "../../diagnostics/Log.js" as Log
 // default output stays the device: DMS's slider and the volume keys set the
 // device's own level, Orbit sets this PC's.
 // Processes: two busctl calls when the sound output appears, and one
-// pw-loopback that lives as long as the filter and dies with the shell.
+// loopback process (pipewire -c, Route.loopbackArgs) that lives as long as
+// the filter and dies with the shell.
 Item {
     id: dev
 
@@ -45,7 +46,15 @@ Item {
             absolute = -1;
         changed();
     }
-    onPcChanged: changed()
+    onPcChanged: {
+        if (pc && filter.running) {
+            _filterSeen = true;
+            filterGone.stop();
+        } else if (!pc && _filterSeen && filter.running) {
+            filterGone.restart();
+        }
+        changed();
+    }
     onAbsoluteChanged: changed()
 
     // --- Does the device have its own volume? --------------------------------
@@ -105,16 +114,50 @@ Item {
     Process {
         id: filter
         command: dev.sink ? (Route.filterArgs(dev.address, dev.sink.name, dev.name) || []) : []
-        running: dev.wanted && command.length > 0
+        running: dev.wanted && command.length > 0 && !dev._filterCut
         // The pipe bash watches: it closes when the shell goes away
         stdinEnabled: true
+        onRunningChanged: if (!running) {
+            dev._filterSeen = false;
+            filterGone.stop();
+        }
         onExited: code => {
-            if (dev.wanted && code !== 0)
+            // A process the watch below stopped was logged there already
+            if (dev.wanted && code !== 0 && !dev._filterCut)
                 Log.event("ORB-E003", {
                     "tool": "pw_loopback",
                     "code": code
                 });
         }
+    }
+
+    // pipewire -c, unlike pw-loopback, keeps running when its loopback is
+    // destroyed (PipeWire restarted): a filter that was there and has been
+    // missing for 2 s while its process runs is taken as an exit. The process
+    // is stopped, the exit logged, and a moment later `wanted` starts it again.
+    // A filter never seen is left alone, so a start that makes nothing cannot
+    // loop. Only the nodes AudioRoute already follows are read: nothing polls.
+    property bool _filterSeen: false
+    property bool _filterCut: false
+    Timer {
+        id: filterGone
+        interval: 2000
+        onTriggered: {
+            if (dev.pc || !filter.running)
+                return;
+            Log.event("ORB-E003", {
+                "tool": "pw_loopback",
+                "code": -1
+            });
+            dev._filterCut = true;
+            filterBack.restart();
+        }
+    }
+    // Long enough for the old process to be gone before the new one starts
+    Timer {
+        id: filterBack
+        interval: 1000
+        onTriggered: dev._filterCut = false
     }
 
     // Once the virtual sink is ready: this PC's saved level for this device

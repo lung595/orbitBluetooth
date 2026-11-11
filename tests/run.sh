@@ -1,6 +1,7 @@
 #!/bin/sh
-# Runs every pure-logic test file (tests/*.test.js) with gjs, then the shell test of
-# scripts/diagnose.sh, and adds up the checks. Run from anywhere: sh tests/run.sh
+# Runs every pure-logic test file (tests/*.test.js) with gjs, then the shell tests of
+# scripts/diagnose.sh and of the loopback script (Route.loopbackArgs), and adds up
+# the checks. Run from anywhere: sh tests/run.sh
 here=$(cd "$(dirname "$0")" && pwd)
 total=0
 status=0
@@ -11,6 +12,8 @@ for file in "$here"/*.test.js; do
     total=$((total + ${n:-0}))
 done
 out=$(sh "$here/diagnose.test.sh") || status=1
+echo "$out" | grep -v "^ok "
+out=$(sh "$here/loopback.test.sh") || status=1
 echo "$out" | grep -v "^ok "
 [ "$status" -eq 0 ] && echo "$total tests passed" || echo "failures (see above)"
 exit $status

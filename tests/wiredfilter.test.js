@@ -27,7 +27,8 @@ eq("the script has no data in it", /usb|alsa|orbit_wired|0\.195/.test(cmd[2]), f
 eq("the wait is the third parameter, in seconds", cmd[6], "0.195");
 eq("a smart filter in front of that output", [/filter\.smart=true/.test(cmd[4]), cmd[4].indexOf("filter.smart.target={ node.name = \"" + W1 + "\" }") > 0, cmd[4].indexOf("node.name=" + name + " ") >= 0, /media\.class=Audio\/Sink/.test(cmd[4])], [true, true, true, true]);
 eq("the playback never falls back to another output", [/node\.dont-fallback=true/.test(cmd[5]), /node\.passive=true/.test(cmd[5])], [true, true]);
-eq("nothing is remembered by WirePlumber", [/state\.restore-props=false state\.restore-target=false$/.test(cmd[4]), /state\.restore-props=false state\.restore-target=false$/.test(cmd[5])], [true, true]);
+eq("nothing is remembered by WirePlumber, said before anything else", [/^state\.restore-props=false state\.restore-target=false /.test(cmd[4]), /^state\.restore-props=false state\.restore-target=false /.test(cmd[5])], [true, true]);
+eq("both ends share the filter's link group, right after", [cmd[4].indexOf("state.restore-target=false node.link-group=" + name + " ") >= 0, cmd[5].indexOf("state.restore-target=false node.link-group=" + name + " ") >= 0], [true, true]);
 eq("no default-sink change, no module", /default|load-module/.test(cmd.join(" ")), false);
 eq("DMS's list shows a generic name, never the output's", /node\.description="Wired output \(Orbit\)"/.test(cmd[4]), true);
 eq("a label is cleaned like the PC-level filter's", /description="Studio \(Orbit\)"/.test(Route.wiredFilterArgs(W1, "0.100", "Stu\"dio")[4]), true);
@@ -37,10 +38,11 @@ eq("not a wired output's name: no command", [Route.wiredFilterArgs(btSink, "0.1"
 eq("the sink name is the only data in the properties, and it is quote-safe", cmd.slice(4).every(s => !/["'{},;$`\\]/.test(s.replace(/filter\.smart\.target=\{ node\.name = "[^"]*" \}/, "").replace(/node\.description="[^"]*"/, ""))), true);
 
 // --- The copies read the filter ---------------------------------------------------------------
-eq("one wait for every pw-loopback Orbit runs", [Route.MAX_DELAY_MS, Together.MAX_DELAY_MS], [1000, 1000]);
+eq("one wait for every loopback Orbit runs", [Route.MAX_DELAY_MS, Together.MAX_DELAY_MS], [1000, 1000]);
 const tap = { "member": BT, "capture": name, "playback": btSink };
 const copy = Together.args(tap, 0);
 eq("a copy may read the filter's monitor", [copy !== null, copy && copy[4].indexOf("target.object=" + name + " ") >= 0, copy && /stream\.capture\.sink=true/.test(copy[4])], [true, true, true]);
+eq("a copy is in no link group of Orbit's", [/node\.link-group/.test(copy[4]), /node\.link-group/.test(copy[5])], [false, false]);
 eq("a name that only looks like the filter is no source", [Together.args({ ...tap, "capture": name + " node.dont-fallback=false" }), Together.args({ ...tap, "capture": "orbit_wired_x y" }), Together.args({ ...tap, "capture": "orbit_wired_\"" })], [null, null, null]);
 
 // The plan of a wired source: its filter is `pc` once it exists, else the copy reads the sink

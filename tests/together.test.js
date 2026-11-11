@@ -90,7 +90,7 @@ const tap = p3.taps[0];
 const cmd = Together.args(tap, 0);
 eq("bash watches stdin, data only as positional parameters", [cmd.slice(0, 2), cmd[3], cmd.length], [["bash", "-c"], "orbit", 6]);
 eq("the script has no data in it", /AA_BB|orbit_pc/.test(cmd[2]), false);
-eq("capture: the filter, passive, never falls back, nothing remembered", [/target\.object=orbit_pc_AA_BB_CC_DD_EE_01 /.test(cmd[4]), /stream\.capture\.sink=true/.test(cmd[4]), /node\.passive=true node\.dont-fallback=true/.test(cmd[4]), /state\.restore-target=false$/.test(cmd[4])], [true, true, true, true]);
+eq("capture: the filter, passive, never falls back, nothing remembered", [/target\.object=orbit_pc_AA_BB_CC_DD_EE_01 /.test(cmd[4]), /stream\.capture\.sink=true/.test(cmd[4]), /node\.passive=true node\.dont-fallback=true/.test(cmd[4]), /^state\.restore-props=false state\.restore-target=false /.test(cmd[4])], [true, true, true, true]);
 eq("playback: the member's sink, passive, never falls back", [/target\.object=bluez_output\.AA_BB_CC_DD_EE_02\.1 /.test(cmd[5]), /node\.passive=true node\.dont-fallback=true/.test(cmd[5]), /state\.restore-props=false/.test(cmd[5])], [true, true, true]);
 eq("each copy has its own node names", [/node\.name=orbit_together_AA_BB_CC_DD_EE_02_in /.test(cmd[4]), /node\.name=orbit_together_AA_BB_CC_DD_EE_02_out /.test(cmd[5])], [true, true]);
 eq("no default-sink change, no module", /default|load-module/.test(cmd.join(" ")), false);
@@ -214,14 +214,15 @@ eq("a wired member never counts as in a call, whatever the profile says", Togeth
 const wcmd = Together.args(pw.taps[0], 0);
 eq("a copy to a wired output: bash, positional parameters, six items", [wcmd.slice(0, 2), wcmd[3], wcmd.length], [["bash", "-c"], "orbit", 6]);
 eq("the wired playback targets its sink, passive, never falls back", [wcmd[5].indexOf("target.object=" + W1 + " ") >= 0, /node\.passive=true node\.dont-fallback=true/.test(wcmd[5]), /state\.restore-props=false/.test(wcmd[5])], [true, true, true]);
-eq("the wired copy has node names of its own, safe in a property string", [/^node\.name=orbit_together_w_usb_acme_demo_he_[0-9a-f]{16}_in target\.object=orbit_pc_AA_BB_CC_DD_EE_01 /.test(wcmd[4]), /^node\.name=orbit_together_w_usb_acme_demo_he_[0-9a-f]{16}_out target\.object=/.test(wcmd[5])], [true, true]);
+eq("the wired copy has node names of its own, safe in a property string", [/ node\.name=orbit_together_w_usb_acme_demo_he_[0-9a-f]{16}_in target\.object=orbit_pc_AA_BB_CC_DD_EE_01 /.test(wcmd[4]), / node\.name=orbit_together_w_usb_acme_demo_he_[0-9a-f]{16}_out target\.object=/.test(wcmd[5])], [true, true]);
 eq("the script has no data in it", /usb|alsa|AA_BB/.test(wcmd[2]), false);
 eq("no node name has a character that splits a property string", wcmd.slice(4).every(s => !/["'{},;$`\\]/.test(s)), true);
 eq("a wired capture is accepted: a wired source", Together.args(pwSrc.taps[0], 0)[4].indexOf("target.object=" + W1 + " ") >= 0, true);
 eq("a copy between two wired outputs", Together.args({ "member": W1, "capture": W2, "playback": W1 }, 0) !== null, true);
 eq("a wired delay goes in as the third parameter", Together.args(pw.taps[0], 175)[6], "0.175");
 eq("a Bluetooth copy keeps its old key and node names", [/node\.name=orbit_together_AA_BB_CC_DD_EE_02_in /.test(Together.args(pw.taps[1], 0)[4]), /node\.name=orbit_together_AA_BB_CC_DD_EE_02_out /.test(Together.args(pw.taps[1], 0)[5])], [true, true]);
-eq("two wired outputs never share node names", Together.args({ "member": W1, "capture": W3, "playback": W1 }, 0)[4].split(" ")[0] !== Together.args({ "member": W2, "capture": W3, "playback": W2 }, 0)[4].split(" ")[0], true);
+eq("the node a loopback makes is its capture end's, nothing else", [Together.nodeOf(Together.args(pw.taps[1], 0)), Together.nodeOf(null), Together.nodeOf([]), Together.nodeOf(["bash", "-c", "s", "orbit", "target.object=x"])], ["orbit_together_AA_BB_CC_DD_EE_02_in", "", "", ""]);
+eq("two wired outputs never share node names", Together.nodeOf(Together.args({ "member": W1, "capture": W3, "playback": W1 }, 0)) !== Together.nodeOf(Together.args({ "member": W2, "capture": W3, "playback": W2 }, 0)), true);
 eq("an injected or malformed name: no command", [
     Together.args({ "member": W1, "capture": filter(XM), "playback": "alsa_output.x; rm -rf" }),
     Together.args({ "member": W1, "capture": "alsa_output.x y", "playback": W1 }),

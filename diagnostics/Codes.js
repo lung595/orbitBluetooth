@@ -17,6 +17,7 @@ var PLUGIN = "OrbitBluetooth";
 var FIELDS = {
     "action": ["connect", "disconnect", "pair", "trust", "forget", "scan", "power"],
     "reason": ["timeout", "refused", "no_adapter", "blocked", "not_found", "bad_data", "offline", "killed", "unknown"],
+    // pw_loopback: the loopback process (pipewire -c since 2.0; the name stays so old reports read the same)
     "tool": ["pw_loopback", "pw_play", "cava", "wl_copy", "dms", "pactl", "python", "bluetoothctl"],
     "state": ["off", "on", "missing", "ready", "waiting", "stuck", "hidden", "visible", "ambient"],
     "surface": ["widget", "desktop", "daemon", "settings", "popup"],

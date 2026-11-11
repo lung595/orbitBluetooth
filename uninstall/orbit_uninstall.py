@@ -12,6 +12,8 @@ memory with "python3 -c" and depends on nothing in it:
     python3 -c <this file> <plugin id> <plugin.json> <cache dir>
             <settings.json> <plugin_settings.json> <session.json>
 
+The link the loopbacks read their config through
+($XDG_RUNTIME_DIR/orbit-loopback.conf -> /dev/fd/3, no data) goes too.
 It waits a few seconds and checks again, because an update may delete the
 folder and clone it back: nothing is erased if plugin.json came back.
 If the volume keys are bound to Orbit (at its first start, NAK-214,
@@ -193,14 +195,36 @@ def valid(plugin_id, manifest, cache, files):
     return all(os.path.isabs(p) for p in [manifest, cache] + files)
 
 
-def sweep(plugin_id, manifest, cache, settings, plugin_settings, session, grace=GRACE_SECONDS, run=run_dms):
-    """Returns True when the plugin was found uninstalled and swept."""
+# The link every loopback of Orbit reads its config through (Route.js,
+# LOOPBACK_SCRIPT): it holds no data and goes at logout (tmpfs), but
+# "uninstalling leaves nothing" holds only if it goes now too
+LOOPBACK_LINK = "orbit-loopback.conf"
+LOOPBACK_TARGET = "/dev/fd/3"
+
+
+def forget_loopback_link(runtime):
+    """Removes Orbit's loopback config link from the runtime folder, only if
+    it is that exact link: a file or another link of that name stays."""
+    if not runtime or not os.path.isabs(runtime):
+        return
+    path = os.path.join(runtime, LOOPBACK_LINK)
+    try:
+        if os.path.islink(path) and os.readlink(path) == LOOPBACK_TARGET:
+            os.unlink(path)
+    except OSError:
+        pass
+
+
+def sweep(plugin_id, manifest, cache, settings, plugin_settings, session, grace=GRACE_SECONDS, run=run_dms, runtime=None):
+    """Returns True when the plugin was found uninstalled and swept.
+    `runtime` is $XDG_RUNTIME_DIR unless given (the tests give their own)."""
     if not valid(plugin_id, manifest, cache, [settings, plugin_settings, session]):
         return False
     time.sleep(grace)
     if os.path.exists(manifest):
         return False
     shutil.rmtree(cache, ignore_errors=True)
+    forget_loopback_link(os.environ.get("XDG_RUNTIME_DIR") if runtime is None else runtime)
     edit(plugin_settings, lambda d: drop_plugin_settings(plugin_id, d))
     result = edit(settings, lambda d: drop_widgets(plugin_id, d))
     removed = result[1] if isinstance(result, tuple) else []
