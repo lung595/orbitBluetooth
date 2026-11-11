@@ -53,7 +53,7 @@ A code is `ORB-` followed by a level letter (`E` error, `W` warning, `I` info, `
 | `ORB-E005` | error | Noise control (ANC) could not be changed | `reason` |
 | `ORB-W010` | warning | No usable Bluetooth adapter | `state` |
 | `ORB-W011` | warning | A helper program is missing | `tool` |
-| `ORB-I020` | info | A surface (widget, desktop, daemon, settings, pop-up) was loaded | `surface` |
+| `ORB-I020` | info | A surface (widget, desktop, daemon, settings) was loaded | `surface` |
 | `ORB-I021` | info | A surface was unloaded | `surface` |
 | `ORB-I030` | info | A diagnostic report was requested | `via` |
 | `ORB-D040` | debug | The scene changed state (hidden, visible, ambient) | `state`, `count` |

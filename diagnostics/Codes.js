@@ -20,6 +20,7 @@ var FIELDS = {
     // pw_loopback: the loopback process (pipewire -c since 2.0; the name stays so old reports read the same)
     "tool": ["pw_loopback", "pw_play", "cava", "wl_copy", "dms", "pactl", "python", "bluetoothctl"],
     "state": ["off", "on", "missing", "ready", "waiting", "stuck", "hidden", "visible", "ambient"],
+    // popup: Orbit's OSD, removed in 2.0; kept so reports from 1.x still read
     "surface": ["widget", "desktop", "daemon", "settings", "popup"],
     "via": ["button", "ipc", "script"],
     "code": "int",
@@ -41,7 +42,7 @@ var CODES = {
     "ORB-D040": { "text": "The scene changed state", "fields": ["state", "count"] }
 };
 
-// The surfaces a report may list as active
+// The surfaces a report may list as active (popup only in 1.x reports)
 var SURFACES = ["widget", "desktop", "daemon", "settings", "popup"];
 
 // The settings a report may show: the ones that choose a behaviour. Anything

@@ -13,7 +13,8 @@ eq("a setting without a cost has no pill", Use.use("showLabels"), null);
 eq("use() gives level, label and reason", Use.use("scopeFps").label, "Light on battery");
 
 // Each listed setting shows its pill in its page, and only those do
-const pages = ["Scanning", "Headphones", "Popup", "Desktop"].map(n => read("components/settings/" + n + "Page.qml")).join("\n");
+// The visualizer settings (scopeFps) moved from the removed Popup page to Volume (0c73f6a).
+const pages = ["Scanning", "Headphones", "Volume", "Desktop"].map(n => read("components/settings/" + n + "Page.qml")).join("\n");
 const shown = [...pages.matchAll(/BatteryPill \{\s*forKey: "(\w+)"/g)].map(m => m[1]).sort();
 eq("the pages carry exactly the listed pills", shown, Object.keys(Use.USES).sort());
 eq("the old one-line battery note is gone", /batteryNote|Uses more battery/.test(pages + read("OrbitBluetoothSettings.qml")), false);

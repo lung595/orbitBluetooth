@@ -35,7 +35,8 @@ eq("a nameless device has no volume", Guide.noVolumeNote("").title, "This device
 eq("a copy with no level of its own says why, and where to read more", [Guide.copyLevelNote("Marantz").title, anchors.indexOf(Guide.copyLevelNote("Marantz").anchor) >= 0, !!Guide.copyLevelNote("Marantz").hint], ["Marantz has no volume of its own", true, true]);
 eq("a nameless copy", Guide.copyLevelNote("").title, "This device has no volume of its own");
 eq("a nameless device stuck", Guide.stuckNote("").title, "This device is still connected");
-["noise-control", "pairing-safety", "if-it-does-not-connect", "if-it-does-not-disconnect", "bluetooth-is-off", "the-two-volumes", "new-headphones-pop-up"].forEach(a => eq("guide has #" + a, anchors.indexOf(a) >= 0, true));
+// "New devices" replaced "New headphones pop-up" when the pairing sheet went (d81f2cc).
+["noise-control", "pairing-safety", "if-it-does-not-connect", "if-it-does-not-disconnect", "bluetooth-is-off", "the-two-volumes", "new-devices"].forEach(a => eq("guide has #" + a, anchors.indexOf(a) >= 0, true));
 eq("guide url", Guide.url("noise-control"), "https://github.com/lung595/orbitBluetooth/blob/main/docs/GUIDE.md#noise-control");
 eq("a nameless device", Guide.connectNote("pair", "").title, "Could not pair this device");
 

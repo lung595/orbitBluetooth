@@ -13,7 +13,7 @@ var LEVELS = {
 var USES = {
     "scanSeconds": { level: "medium", why: "The radio stays on for the whole scan" },
     "ancEngine": { level: "medium", why: "Always connected keeps a link open to the headset" },
-    "scopeFps": { level: "low", why: "Only while the pop-up shows; Smooth draws twice as often" },
+    "scopeFps": { level: "low", why: "Only while a card shows; Smooth draws twice as often" },
     "desktopAmbient": { level: "medium", why: "Keeps moving while uncovered; frozen when hidden" }
 };
 

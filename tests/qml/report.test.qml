@@ -3,12 +3,13 @@ import Quickshell.Io
 import "components/common"
 
 // Test of the report and its copy: nothing runs until a report is asked for;
-// a request reads the CPU ticks, waits a second, runs the five short tools one
-// after the other and builds the report from their answers, with the shell's
-// CPU, the settings that choose a behaviour and no name, path or address. The
-// copy tries wl-copy --sensitive first with the text on its standard input,
-// falls back to DMS's own copy, and says so when neither works. Processes are
-// the stand-in of Quickshell.Io listed in ProcessLog. Run with tests/qml/run.sh.
+// a request reads the CPU ticks, waits a second, runs the short tools of
+// Gather.PROBES one after the other and builds the report from their answers,
+// with the shell's CPU, the settings that choose a behaviour and no name, path
+// or address. The copy tries wl-copy --sensitive first with the text on its
+// standard input, falls back to DMS's own copy, and says so when neither
+// works. Processes are the stand-in of Quickshell.Io listed in ProcessLog.
+// Run with tests/qml/run.sh.
 Item {
     id: h
 
@@ -46,7 +47,7 @@ Item {
     // Lets the process the service runs now end with this answer
     function answer(text) {
         const p = running()[0];
-        const program = p.command[0];
+        const program = h.toolOf(p.command);
         p.started();
         p.stdout.text = text;
         p.running = false;
@@ -68,12 +69,22 @@ Item {
         }
     }
 
+    // The tool a command runs: the file cat reads tells its two reads apart,
+    // and journalctl is run through env so its month is never localised
+    function toolOf(command) {
+        if (command[0] === "cat")
+            return command[command.length - 1];
+        return command[0] === "env" ? command[2] : command[0];
+    }
+
     readonly property var tools: ({
             "dms": "dms v1.6.3",
             "quickshell": "Quickshell 0.3.1 (revision , distributed by Someone)",
             "niri": "niri 26.04 (8ed0da4)",
             "rpm": "6.11.2",
-            "cat": "NAME=\"Fedora Linux\"\nPRETTY_NAME=\"Fedora Linux 44 (Workstation Edition)\"\n",
+            "/etc/os-release": "NAME=\"Fedora Linux\"\nPRETTY_NAME=\"Fedora Linux 44 (Workstation Edition)\"\n",
+            // The machine's name, read only to be hidden
+            "/etc/hostname": "bobs-pc\n",
             "journalctl": "Oct 08 12:00:00 bobs-pc qs[1]: [orbit] ORB-E001 failed at /home/bob/.cache/x\nOct 08 12:00:01 bobs-pc qs[1]: unrelated line"
         })
 
@@ -84,11 +95,10 @@ Item {
         onTriggered: {
             const asked = [];
             while (h.running().length > 0 && asked.length < 10) {
-                const program = h.running()[0].command[0];
-                asked.push(program);
-                h.answer(h.tools[program] || "");
+                asked.push(h.running()[0].command[0]);
+                h.answer(h.tools[h.toolOf(h.running()[0].command)] || "");
             }
-            h.check("the tools ran one after the other", asked, ["dms", "quickshell", "niri", "rpm", "cat", "journalctl"]);
+            h.check("the tools ran one after the other", asked, ["dms", "quickshell", "niri", "rpm", "cat", "cat", "env"]);
             h.check("the request ended", [svc.busy, svc.report === h.built, h.built.length > 100], [false, true, true]);
             h.check("versions, surfaces and the shell's CPU are in", [/DMS +: 1\.6\.3 +Quickshell : 0\.3\.1 +Qt : 6\.11\.2/.test(h.built), /Surfaces +: settings \(active\)/.test(h.built), /CPU +: 1[0-9](\.\d)?% of one core, whole shell/.test(h.built)], [true, true, true]);
             h.check("a setting that chooses a behaviour is in, one that holds a path is not", [/sounds=yes/.test(h.built), /holeStyle=blackhole/.test(h.built), /imageFolder|Pictures/.test(h.built)], [true, true, false]);
@@ -157,7 +167,7 @@ Item {
                     p.running = false;
                     missed++;
                 } else {
-                    h.answer(h.tools[p.command[0]] || "");
+                    h.answer(h.tools[h.toolOf(p.command)] || "");
                 }
             }
             h.check("a missing tool: the request still ends with the others' answers", [missed, svc.busy, /DMS +: 1\.6\.3/.test(h.built)], [1, false, true]);

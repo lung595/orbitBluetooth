@@ -132,7 +132,8 @@ eq("byId finds an entry by its key", View.byId(Index.ENTRIES).volumeTick.label, 
 
 // --- Categories and the view of a search ---------------------------------------
 const cats = Index.CATEGORIES.map(c => c.id);
-eq("ten categories, each with an icon, a name and a help line", [cats.length, Index.CATEGORIES.every(c => c.icon && c.name && c.help)], [10, true]);
+// Nine since the Pop-up category left with Orbit's OSD (0c73f6a); its visualizer settings live in Volume now
+eq("nine categories, each with an icon, a name and a help line", [cats.length, Index.CATEGORIES.every(c => c.icon && c.name && c.help)], [9, true]);
 eq("every entry sits in a known category", Index.ENTRIES.filter(e => !cats.includes(e.category)).map(e => e.id), []);
 eq("every category has entries", cats.filter(c => !Index.ENTRIES.some(e => e.category === c)), []);
 eq("every category has its page file", cats.filter(c => !qmlFiles(root + "/components/settings").includes(c[0].toUpperCase() + c.slice(1) + "Page.qml")), []);

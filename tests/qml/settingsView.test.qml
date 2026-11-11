@@ -99,7 +99,8 @@ Item {
             "then": 50,
             "run": () => {
                 SettingsData.reduceMotion = false;
-                h.check("ten categories on the rail", rail.view.categories.length, 10);
+                // Nine since the Pop-up category left with Orbit's OSD (0c73f6a)
+                h.check("nine categories on the rail", rail.view.categories.length, 9);
                 h.check("the first one is open", [view.current, h.entryOf("orbit").on], ["orbit", true]);
                 h.check("no page of another category shows", [sounds.visible, look.visible], [false, false]);
                 h.check("narrow? no: the rail is 160 px", rail.width, 160);

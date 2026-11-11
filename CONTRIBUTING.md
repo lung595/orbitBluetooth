@@ -105,7 +105,7 @@ orbitBluetooth/
 ├── OrbitBluetoothDesktop.qml    # desktop widget
 ├── OrbitBluetoothSettings.qml   # settings page: search field, category rail, one page per category
 ├── components/
-│   ├── settings/                # one page per category, `<Name>Page.qml` on `CategoryPage.qml` (Orbit, Scanning, Headphones, Volume, Popup, Audio, Sounds, Desktop, Look, Reset), `SettingsView.qml` (open category, query, the setting to light; `SettingsView.js` is its pure side), `SearchField.qml`, `CategoryRail.qml` + `RailEntry.qml` (the orbit rail), `NoResults.qml`; and their shared rows (`FineDelayRow.qml` is the Wired delay slider, `HabitsRow.qml` the learned-groups switch and button, `LinkedToggle.qml` a switch with the GitHub mark that opens its guide section, like *Orbit's tick only*)
+│   ├── settings/                # one page per category, `<Name>Page.qml` on `CategoryPage.qml` (Orbit, Scanning, Headphones, Volume, Audio, Sounds, Desktop, Look, Reset), `SettingsView.qml` (open category, query, the setting to light; `SettingsView.js` is its pure side), `SearchField.qml`, `CategoryRail.qml` + `RailEntry.qml` (the orbit rail), `NoResults.qml`; and their shared rows (`FineDelayRow.qml` is the Wired delay slider, `HabitsRow.qml` the learned-groups switch and button, `LinkedToggle.qml` a switch with the GitHub mark that opens its guide section, like *Orbit's tick only*)
 │   ├── scene/                   # the sky every surface shows
 │   │   ├── OrbitScene.qml       # the scene: composition and wiring of the files below
 │   │   ├── OrbitState.qml       # its base type: inputs, geometry, clocks, black hole, preferences
