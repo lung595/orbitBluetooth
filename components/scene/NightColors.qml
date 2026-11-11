@@ -53,7 +53,8 @@ QtObject {
     readonly property real apartMin: 0.08
     readonly property bool chargingApart: hueApart(chargingTheme, Theme.primary) >= apartMin
     readonly property color primaryText: onAccent(Theme.primary, Theme.primaryText)
-    readonly property color errorText: onAccent(Theme.error, Theme.errorText)
+    // DMS 2.1 renamed errorText to onError; the old name stays for older shells
+    readonly property color errorText: onAccent(Theme.error, Theme.onError ?? Theme.errorText)
 
     // A connected device's disc, its border and its glyph: one definition for
     // the Bluetooth bodies and the wired members of a group, so that both kinds

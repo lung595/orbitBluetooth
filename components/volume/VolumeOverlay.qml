@@ -141,7 +141,6 @@ TwoLevels {
                 p.show();
             }
         }
-        _quietIsland();
     }
 
     // The screen this burst shows on, "" for every screen (D286): read once

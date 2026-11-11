@@ -17,7 +17,9 @@ CategoryPage {
     SettingsDisplayPicker {
         visible: !!page.desktopInstance && !page.view.filtering
         displayPreferences: page.desktopInstance?.config?.displayPreferences ?? ["all"]
-        onPreferencesChanged: prefs => SettingsData.updateDesktopWidgetInstanceConfig(page.desktopInstance.id, {
+        // DMS 2.1 hands the new list to a callback, not a signal: a signal
+        // array arrives from Qt 6.12 as a sequence that fails Array.isArray
+        preferencesHandler: prefs => SettingsData.updateDesktopWidgetInstanceConfig(page.desktopInstance.id, {
                 "displayPreferences": prefs
             })
     }
