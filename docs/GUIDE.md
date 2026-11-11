@@ -756,17 +756,12 @@ A setting that costs battery has a small pill under it with its level, *High bat
 
 ## Disconnect after a delay
 
-Ask Orbit to disconnect a device later, without touching it. From the launcher, type the device and the minutes in any order:
+Ask Orbit to disconnect a device later, without touching it, from the command line:
 
-- `deco xm6 30` disconnects *xm6* in 30 minutes;
-- `in 5 min disconnect xm6` (or `dans 5 min deco xm6`) disconnects it in 5 minutes.
+- `dms ipc call orbitBluetooth disconnectIn xm6 30` disconnects the connected device whose name holds *xm6* in 30 minutes (1 to 1440); a Bluetooth address works too;
+- `dms ipc call orbitBluetooth cancelDisconnect xm6` drops the pending delay.
 
-Words that start a phrase are yours to change: `dms ipc call orbitBluetooth words disconnect deco,disconnect` sets them, and an empty list gives back the defaults. The delay runs from the moment you ask; a device that disconnects by itself before then drops its delay.
-
-From the command line:
-
-- `dms ipc call orbitBluetooth disconnectIn AA:BB:CC:DD:EE:01 30` (1 to 1440 minutes);
-- `dms ipc call orbitBluetooth cancelDisconnect AA:BB:CC:DD:EE:01` drops the pending delay.
+The delay runs from the moment you ask; a device that disconnects by itself before then drops its delay. Several devices that match are never guessed: type more of the name.
 
 Nothing is kept after the shell stops: pending delays live in memory only and are never written to disk. With no delay pending, nothing runs.
 

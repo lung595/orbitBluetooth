@@ -9,7 +9,6 @@ import "../together/Together.js" as Together
 import "../together/Wired.js" as Wired
 import "../noise/Anc.js" as Anc
 import "../delay/DisconnectPhrase.js" as Phrase
-import "../delay/LauncherWords.js" as Words
 import "../device/BeamStyle.js" as BeamStyle
 
 // The `dms ipc call orbitBluetooth ...` commands, for keyboard shortcuts.
@@ -28,7 +27,6 @@ import "../device/BeamStyle.js" as BeamStyle
 //   togetherOutputs | wiredDelay up | down | +10 | -10 | 20 | reset | status
 //   (a device is a Bluetooth address or a wired output's node name)
 //   disconnectIn <device> <minutes, 1 to 1440> | cancelDisconnect <device>
-//   words disconnect <comma-separated words>   (the launcher words, D424; empty = defaults)
 //   diagnostics   the anonymous report: the first call starts it, the next one (a
 //                 couple of seconds later) hands it over (scripts/diagnose.sh does both)
 // Every argument is checked and capped before it is used, and an answer never
@@ -89,17 +87,6 @@ Scope {
         function cancelDisconnect(device: string): string {
             const r = ipc.delays.stop(String(device || "").slice(0, 120));
             return r.ok ? "OK" : ipc._delayNote(r.why);
-        }
-
-        // Sets the launcher words of an action: the same settings key the settings page writes
-        function words(action: string, list: string): string {
-            const name = String(action || "").trim().toLowerCase();
-            const r = Words.setList(ipc.prefs.launcherWords, name, String(list || "").slice(0, 400));
-            if (!r.ok)
-                return "Use: words " + Words.ACTIONS.join(" | ") + " <comma-separated words> · " + Guide.url("disconnect-after-a-delay");
-            ipc.prefs.set("launcherWords", r.table);
-            const why = r.refused.map(x => x.why).filter((w, i, all) => all.indexOf(w) === i).join(", ");
-            return "OK: " + r.table[name].join(", ") + (why ? " · refused: " + why + " · " + Guide.url("disconnect-after-a-delay") : "");
         }
 
         function anc(mode: string): string {
@@ -186,7 +173,14 @@ Scope {
                 ipc.keys.disable();
             else if (a !== "status")
                 return "Use: volumeKeys on | off | status · " + Guide.url("volume-keys");
-            return a === "status" ? ipc.keys.keys : "OK";
+            if (a !== "status")
+                return "OK";
+            // Nothing reads the keys at start while they are DMS's: read now
+            if (ipc.keys.keys === "unknown") {
+                ipc.keys.refresh();
+                return "unknown (reading them now, ask again)";
+            }
+            return ipc.keys.keys;
         }
 
         function volume(direction: string): string {

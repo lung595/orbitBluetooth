@@ -12,16 +12,13 @@
         "daemon",
         "dankbar-widget",
         "control-center",
-        "desktop-widget",
-        "launcher"
+        "desktop-widget"
     ],
     "components": {
         "daemon": "./OrbitBluetoothDaemon.qml",
         "widget": "./OrbitBluetoothWidget.qml",
-        "desktop": "./OrbitBluetoothDesktop.qml",
-        "launcher": "./OrbitBluetoothLauncher.qml"
+        "desktop": "./OrbitBluetoothDesktop.qml"
     },
-    "trigger": "",
     "settings": "./OrbitBluetoothSettings.qml",
     "requires_dms": ">=1.6.0",
     "permissions": [

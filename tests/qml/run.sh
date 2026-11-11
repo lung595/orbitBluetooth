@@ -15,14 +15,14 @@ trap 'rm -rf "$work"' EXIT
 # The work folder mirrors the plugin root: components/ as it is, the tests
 # beside it, and a stand-in over the D-Bus read of the pairing guard
 cp -r "$root"/components "$root"/diagnostics "$work"/
-cp "$root"/plugin.json "$root"/OrbitBluetoothSettings.qml "$root"/OrbitBluetoothLauncher.qml "$work"/
+cp "$root"/plugin.json "$root"/OrbitBluetoothSettings.qml "$work"/
 cp "$here"/ProfileCheck.qml "$work"/components/pairing/
 cp "$here"/Device.qml "$here"/Player.qml "$here"/*.test.qml "$work"/
 # The preview's made-up route (and overlay) stand in for the daemon's
 mkdir "$work"/mock
 cp "$root"/scripts/preview/mock/*.qml "$root"/scripts/preview/mock/*.js "$work"/mock/
 # Quickshell's device list is a model with .values; the stub keeps a plain list
-sed -i 's/Bluetooth\.devices\.values/Bluetooth.list/g' "$work"/components/noise/*.qml "$work"/components/delay/*.qml "$work"/OrbitBluetoothLauncher.qml "$work"/components/common/ReportService.qml
+sed -i 's/Bluetooth\.devices\.values/Bluetooth.list/g' "$work"/components/noise/*.qml "$work"/components/delay/*.qml "$work"/components/common/ReportService.qml
 export QT_QPA_PLATFORM=offscreen
 # Print to the terminal, not to journald, including print() lines
 export QT_FORCE_STDERR_LOGGING=1 QT_LOGGING_RULES='qml.debug=true;js.debug=true'

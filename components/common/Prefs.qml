@@ -43,9 +43,9 @@ QtObject {
     readonly property bool offerNew: _get("offerNew", true)
     // Settings of features removed after 1.15: the pairing sheet under the
     // bar (and the addresses refused with "Don't offer again"), Orbit OSD,
-    // and the old way the volume keys were taken. The daemon clears them
+    // the old way the volume keys were taken, and the launcher's words. The daemon clears them
     // once (null reads as unset)
-    readonly property var retiredKeys: ["offerPopup", "offerScan", "offerEvery", "offerMinBattery", "ignoredDevices", "popupMode", "popupSize", "popupScreens", "keysOffered", "keysGivenBack"]
+    readonly property var retiredKeys: ["offerPopup", "offerScan", "offerEvery", "offerMinBattery", "ignoredDevices", "popupMode", "popupSize", "popupScreens", "keysOffered", "keysGivenBack", "launcherWords"]
     readonly property bool retiredSettings: retiredKeys.some(k => _data[k] !== undefined && _data[k] !== null)
     readonly property bool autoScan: _get("autoScan", true)
     // Hover × on connected devices; off by default (drag away or right-click instead)
@@ -138,8 +138,6 @@ QtObject {
     readonly property bool keysOrbit: _get("keysOrbit", false)
     // The keys an older version took by itself were given back, once
     readonly property bool keysReturned: _get("keysReturned", false)
-    // The words that start a launcher phrase, action -> list (D424); LauncherWords.resolve fills the gaps
-    readonly property var launcherWords: _get("launcherWords", ({}))
 
     readonly property bool reduceMotion: SettingsData.reduceMotion
 
