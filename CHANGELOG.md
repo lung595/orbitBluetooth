@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## Unreleased
 
+## 2.0.0 - 2026-11-11
+
 ### Added
 
 - **Connection rules engine (NAK-388), logic only.** `components/rules/ConnectRules.js` decides what happens when a device connects: its start volume, then its noise mode, all in memory and never written to DMS's settings. `components/rules/ConnectRulesRunner.qml` sequences the two steps; no view loads it yet, so nothing changes on screen. Tested by `tests/connectRules.test.js` and `tests/qml/connectRulesRunner.test.qml`.
