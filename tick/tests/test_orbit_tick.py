@@ -97,6 +97,7 @@ class PlayerArgsTest(unittest.TestCase):
         self.assertEqual(args[args.index("-d") + 1], "fake.sink")
 
     def test_nothing_is_remembered_and_it_never_moves_to_another_output(self):
+        # --volume=65536 is not redundant: without it the stream starts at 0 % and the tick is silent
         for wanted in ("--property=state.restore-props=false", "--property=state.restore-target=false",
                        "--property=node.dont-reconnect=true", "--property=node.dont-fallback=true", "--volume=65536"):
             self.assertIn(wanted, self.args())

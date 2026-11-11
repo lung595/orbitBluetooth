@@ -3,7 +3,8 @@
 
 usage: python3 tests/graph/wired_tick.py        (from the plugin root; ~30 s)
 
-Starts its own PipeWire and WirePlumber in a temporary runtime directory (the
+Starts its own PipeWire, WirePlumber and pipewire-pulse (the tick helper plays
+through pacat, a pulse client) in a temporary runtime directory (the
 bus, BlueZ and the sound cards are never touched: those monitors are switched
 off), makes two made-up outputs (a wired source and a Bluetooth copy), runs
 the very commands Listen together would run (tests/graph-commands.js) and the
@@ -75,8 +76,32 @@ def environment(tmp):
                 "monitor.bluez = disabled monitor.bluez-midi = disabled monitor.libcamera = disabled monitor.v4l2 = disabled } }\n")
     env = {k: v for k, v in os.environ.items() if k != "DBUS_SESSION_BUS_ADDRESS"}
     env.update(XDG_RUNTIME_DIR=run, HOME=home, XDG_CONFIG_HOME=home + "/.config", XDG_STATE_HOME=home + "/.state",
-               XDG_CACHE_HOME=home + "/.cache", PIPEWIRE_CORE="orbit-graph-test", PIPEWIRE_REMOTE="orbit-graph-test")
+               XDG_CACHE_HOME=home + "/.cache", PIPEWIRE_CORE="orbit-graph-test", PIPEWIRE_REMOTE="orbit-graph-test",
+               # The tick helper plays through pacat, a pulse client: pinned to the private
+               # pulse server, so it fails rather than reaching the real session's
+               PULSE_SERVER="unix:" + run + "/pulse/native")
     return env
+
+
+def start_graph(env):
+    """PipeWire, WirePlumber and the pulse server pacat talks to, all private.
+
+    The default pipewire.conf does not start pipewire-pulse (its exec is left
+    commented out), so without it pacat finds no server, the helper exits 0
+    in silence and every "ticks" check fails for the wrong reason.
+    """
+    spawn(["pipewire"], env)
+    time.sleep(1.5)
+    spawn(["wireplumber"], env)
+    spawn(["pipewire", "-c", "pipewire-pulse.conf"], env)
+    sock = env["XDG_RUNTIME_DIR"] + "/pulse/native"
+    for _ in range(50):
+        if os.path.exists(sock):
+            break
+        time.sleep(0.1)
+    else:
+        raise RuntimeError("the private pipewire-pulse did not start")
+    time.sleep(2.0)
 
 
 def make_sink(env, name):
@@ -189,10 +214,7 @@ def main():
     tmp = tempfile.mkdtemp(prefix="orbit-graph-")
     env = environment(tmp)
     try:
-        spawn(["pipewire"], env)
-        time.sleep(1.5)
-        spawn(["wireplumber"], env)
-        time.sleep(2.5)
+        start_graph(env)
         for name in (WIRED, WIRED2, BLUE):
             make_sink(env, name)
         time.sleep(1)

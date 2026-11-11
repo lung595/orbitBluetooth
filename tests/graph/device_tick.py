@@ -60,10 +60,7 @@ def main():
     tmp = tempfile.mkdtemp(prefix="orbit-graph-")
     env = w.environment(tmp)
     try:
-        w.spawn(["pipewire"], env)
-        time.sleep(1.5)
-        w.spawn(["wireplumber"], env)
-        time.sleep(2.5)
+        w.start_graph(env)
         for name in (w.WIRED, w.BLUE):
             w.make_sink(env, name)
         time.sleep(1)

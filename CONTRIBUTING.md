@@ -217,7 +217,8 @@ sh tests/qml/run.sh                                       # polar scope, audio f
 sh tests/run.sh                                          # every pure .js module, one test file per role (or gjs tests/volume.test.js for one), then the shell tests of scripts/diagnose.sh and of the loopback script (tests/loopback.test.sh: a stand-in pipewire, hostile values)
 python3 tests/graph/wired_tick.py                        # a private PipeWire + WirePlumber, made-up outputs: where a volume tick sounds in Listen together (about 30 s)
 python3 tests/graph/device_tick.py                       # same private graph: a device's tick stays in that device, alone and in Listen together (about 60 s)
-# tests/graph/ needs pipewire-utils (pw-cli, pw-cat, pw-link) on the developer's machine, to build and record the private graph; Orbit itself does not
+# tests/graph/ needs pipewire-utils (pw-cli, pw-cat, pw-link) on the developer's machine, to build and record the private graph; Orbit itself does not.
+# The private graph also runs its own pipewire-pulse, since the tick helper plays through pacat (PULSE_SERVER points at it, never at the real session)
 ```
 
 Run them all before every commit. A new headphone brand needs a module in `anc/protocols/` and tests in `anc/tests/`.

@@ -141,9 +141,9 @@ def player_args(sink, group, name):
     copied). Nothing is remembered (restore-props, restore-target), and the
     stream never falls back or moves to another output: a tick to a sink that
     is missing or goes away ends instead of playing on the default output.
-    The volume is set to 100 % rather than left to the server, so no level
-    kept for an earlier stream can apply to it; restore-props=false keeps this
-    one's from being stored.
+    The volume is set to 100 %: without it pacat's stream starts at 0 % here
+    (pactl shows "mono: 0 / 0%") and the tick is silent. restore-props=false
+    only keeps this level from being stored; it does not set one.
     """
     args = ["pacat", "--playback", "--raw", "--format=s16le", f"--rate={RATE}", "--channels=1",
             f"--latency-msec={LATENCY_MS}", "--volume=65536", "-d", sink,
