@@ -16,7 +16,6 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 - [Charging and battery](#charging-and-battery) · [Battery arc colours](#battery-arc-colours) · [Charging beam](#charging-beam)
 - [New headphones pop-up](#new-headphones-pop-up)
 - [Pairing safety](#pairing-safety)
-- [Real device pictures](#real-device-pictures)
 - [Device icons](#device-icons)
 - [Light theme](#light-theme)
 - [Settings](#settings) · [Find a setting](#find-a-setting) · [Report a problem](#report-a-problem)
@@ -706,8 +705,6 @@ The device falls out of the bar along a comet trail, is caught by an orbit with 
 - on battery, only above **No background scan below** (30 % by default); plugged in, always;
 - not while an Orbit view is already scanning (the pop-up uses that scan, and never stops it).
 
-With **Real device pictures** on, the headset's picture appears once it is paired, and the sheet's light takes the picture's colour. A device that is only nearby is never looked up.
-
 To see it without new headphones: `dms ipc call orbitBluetooth newDeviceDemo` (a made-up headset; *Connect* plays the pairing, nothing is paired, nothing is renamed). `dms ipc call orbitBluetooth newDeviceStatus` says whether the last background scan ran, or why it was skipped.
 
 Turn it all off with **Scanning → Pop-up for new headphones**; Orbit then only finds devices while a view is open, as before. While it is on, the small *Connect* card inside the orbit gives way to the sheet. Sounds (if on): a soft cue on arrival, the connect sound on success.
@@ -726,19 +723,6 @@ Orbit only trusts a new device once it has checked that it is what it looks like
 - **If Orbit cannot read its services**, it does not pair it and says so. Try again close to the device, or pair it from DMS's Bluetooth settings.
 
 Devices you paired before (from Orbit or DMS) are never asked about again, and keyboards and mice are never asked about at all.
-
-## Real device pictures
-
-Off by default, because it is the one feature that uses the internet. Turn it on in **Settings → Device pictures**: the icon of a paired or connected device is replaced by a photo of the model, cropped to a disc.
-
-- **What is sent**: only the model name, for example `WH-1000XM6`. Never the Bluetooth address, never the name of your machine, never devices you only see while scanning, except audio devices the [new headphones pop-up](#new-headphones-pop-up) offers you. Names that look personal (`Marie's iPhone`, `iPhone de Marie`) or that are only an address are skipped.
-- **Where it goes**, in this order, stopping at the first match: `commons.wikimedia.org` (real photos, the picture comes from `upload.wikimedia.org`), then `api.sketchfab.com` (previews of 3D models, from `media.sketchfab.com`).
-- **Licenses**: only CC0, CC BY, CC BY-SA and public domain. The title, author and license appear under the detail card.
-- **Accuracy**: a result counts only when its title contains the model name, so a missing picture is more likely than a wrong one. Very recent models may have none yet; the icon stays.
-- **Cache**: each model is looked up once and kept in `~/.cache/orbitBluetooth/pictures` (a model with no result is retried after a week). **Delete downloaded pictures** empties it.
-- Your own **Custom images folder** always wins over a downloaded picture.
-
-Not tested against the live services yet: the lookup logic is covered by unit tests with sample answers.
 
 ## Device icons
 
@@ -801,7 +785,6 @@ Nothing runs while the page is still: no timer, no animation after the short fad
 | | Turn off conversation awareness on disconnect | On | Turns *Conversation* off before Orbit disconnects a headset, and after it reconnects |
 | | Pause when you take the headset off | On | Sony headsets with a wearing sensor, see [Pause when you take the headset off](#pause-when-you-take-the-headset-off); keeps one control connection open |
 | | Engine | On demand | *Always connected* ⚡ shows headset button presses live |
-| | Real device pictures (uses the internet) | Off | Photo of the model instead of an icon, see [Real device pictures](#real-device-pictures) |
 | Volume | Separate PC volume | On | The device's level and this PC's, set apart, see [Separate PC volume](#separate-pc-volume) |
 | | Steps | Smart | Smart or Fixed, see [Smart volume steps](#smart-volume-steps) |
 | | Speed-up | Balanced | Gentle, Balanced or Fast: how far a quick run can go per notch |
@@ -865,7 +848,7 @@ The CPU figure is the whole shell (DMS and every plugin), not Orbit's share.
 
 ## Privacy
 
-- **No telemetry. No network access, except one opt-in feature, off by default**: [Real device pictures](#real-device-pictures), which sends only the model name of paired devices to `commons.wikimedia.org` and `api.sketchfab.com`.
+- **No telemetry. No network access at all**: everything Orbit does stays on your computer.
 - **Background scan** (the new headphones pop-up, on by default): Bluetooth discovery for 8 s about once a minute, local only, under the conditions in [New headphones pop-up](#new-headphones-pop-up). Devices you *Ignore* are stored with the plugin settings.
 - **Listen together** runs one small local sound process per output beyond the first, only while a session lasts, and talks to the local sound server (PipeWire) only. It saves no session, no list of devices, no address and nothing in the journal; the only thing kept, with **Learn my groups** on (default), is described next. [More](#listen-together)
 - **Learned groups**: with **Learn my groups** on (default), Orbit keeps in its own settings, for at most 8 groups, only short hashes of the outputs you listened to together (no name, no address), how many times and the day of the last time. It never leaves your computer, **Forget what Orbit learned** or switching the option off erases it at once, and uninstalling Orbit erases it with the rest. [More](#learn-my-groups)
@@ -873,7 +856,7 @@ The CPU figure is the whole shell (DMS and every plugin), not Orbit's share.
 - **The two volumes** talk to the local sound server (PipeWire) only; the tick is a sound file shipped with Orbit, played with `pw-cat` through a small helper that opens one stream per output and closes it 2 s after the last tick, and the picture of the sound is read locally with `cava`.
 - **One helper process**: the noise-control helper opens a local Bluetooth socket to your headset and nothing else, only while needed: while a card is open, or, with [Pause when you take the headset off](#pause-when-you-take-the-headset-off) on, for as long as a Sony headset with a wearing sensor is connected. That option reads and pauses your media players through MPRIS on the local D-Bus; it keeps nothing and sends nothing. `ORBIT_ANC_DEBUG=1` prints its raw packets on stderr; nothing is logged to a file.
 - **The anonymous report** is built in memory only when you ask for it ([Report a problem](#report-a-problem)); the 200 last events vanish with the shell and nothing is written to disk.
-- **Nothing written to disk by Orbit**, except the pictures cache of that opt-in feature (`~/.cache/orbitBluetooth/pictures`): connection times and battery history live in memory for the session.
+- **Nothing written to disk by Orbit**: connection times and battery history live in memory for the session.
 - **Files read**: only the sysfs `uevent` of kernel batteries, once each.
 - **Settings** (choices, custom icons, hidden devices, learned groups) are stored by DMS with your other plugin settings.
 - **Device names** you set are stored by BlueZ, like any Bluetooth alias.

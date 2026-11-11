@@ -1,4 +1,6 @@
 import QtQuick
+import Quickshell
+import qs.Common
 import qs.Services
 import "components/common"
 import "components/delay"
@@ -17,11 +19,9 @@ import "diagnostics/Log.js" as Log
 // The only processes are the noise-control helper (see AncService), only
 // while a supported headset is connected and being controlled (or, with
 // "Pause when you take the headset off" on, while a Sony headset with a
-// wearing sensor is connected), and the opt-in picture lookup.
+// wearing sensor is connected).
 // Privacy: all data stays in memory for the current session; nothing is
-// sent anywhere. The one exception is opt-in and off by default: with "Real
-// device pictures" on, PictureService looks up the model name of paired
-// devices (and of headphones the new-device pop-up offers) online and keeps the pictures in ~/.cache/orbitBluetooth.
+// sent anywhere, and nothing here uses the network.
 Item {
     id: root
 
@@ -65,15 +65,17 @@ Item {
         active: prefs.wearPause
     }
 
-    // Real device pictures: off by default, the only use of the network
-    PictureService {
-        id: pictureService
-        active: prefs.realPictures
-        clearToken: prefs.picturesClear
-        publish: map => root._publish("pictures", map)
+    // "Real device pictures" was removed after 1.15 (Orbit no longer uses the
+    // network at all). What an earlier version downloaded is erased once,
+    // and its switch turned off, so this never runs again
+    readonly property bool _oldPictures: prefs.oldRealPictures
+    on_OldPicturesChanged: _eraseOldPictures()
+    function _eraseOldPictures() {
+        if (!_oldPictures)
+            return;
+        Quickshell.execDetached(["rm", "-rf", "--", Paths.strip(Paths.xdgCache) + "/" + prefs.pluginId + "/pictures"]);
+        prefs.set("realPictures", false);
     }
-
-    readonly property alias pictureLookup: pictureService
 
     // The two volumes of Bluetooth audio devices: the device's own level and
     // this PC's level (D249, D255)
@@ -110,7 +112,6 @@ Item {
     NewDeviceWatch {
         id: newDeviceWatch
         prefs: prefs
-        pictureLookup: pictureService
         anc: ancService
     }
 

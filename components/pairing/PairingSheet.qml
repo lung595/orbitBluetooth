@@ -22,8 +22,6 @@ Item {
     // The guide section that explains the failure
     property string errorAnchor: "if-it-does-not-connect"
     property string kind: "headphonesSlim"
-    property url pictureSource: ""
-    property string credit: ""
     property int battery: -1
     // [{icon, value, label}] from Offer.features
     property var features: []
@@ -96,14 +94,9 @@ Item {
         pointerY: hover.point.position.y / root.cardHeight
         flash: stage.flash
     }
-    PictureColor {
-        id: picture
-        source: root.pictureSource
-    }
     PairingSkin {
         id: skin
         light: root.light
-        picked: picture.found
     }
 
     // Enter: connect (or retry, or done); Escape: later (or cancel)
@@ -298,17 +291,5 @@ Item {
             motion: motion
         }
 
-        // Credit of a downloaded picture: its license asks for it
-        StyledText {
-            visible: root.credit !== ""
-            anchors.horizontalCenter: parent.horizontalCenter
-            y: card.horizon - 18
-            width: card.width - 40
-            horizontalAlignment: Text.AlignHCenter
-            text: "Picture " + root.credit
-            elide: Text.ElideMiddle
-            color: skin.ink(0.32)
-            font.pixelSize: Theme.fontSizeSmall - 3
-        }
     }
 }

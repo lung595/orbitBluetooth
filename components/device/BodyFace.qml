@@ -73,11 +73,10 @@ Item {
 
     DeviceGlyph {
         anchors.centerIn: parent
-        width: parent.width * (pictureShown ? 0.92 : 0.52)
+        width: parent.width * 0.52
         height: width
         kind: face.body.kind
         imageSource: face.body.scene.prefs.imageFor(face.body.device)
-        pictureSource: face.body.picture ? face.body.picture.image : ""
         color: face.body.focused ? face.body.paper.ink : face.body.connected ? face.body.night.memberInk(face.body.solid) : face.body.night.whiteBodies ? face.body.night.bodyMuted : Qt.rgba(1, 1, 1, 0.86)
         opacity: Centre.inkOf(face.body.solid)
         stroke: face.body.focused ? 1.05 : 1.5

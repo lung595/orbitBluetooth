@@ -56,20 +56,4 @@ CategoryPage {
         description: page.help("wearPause")
         defaultValue: true
     }
-
-    ToggleSetting {
-        settingKey: "realPictures"
-        visible: page.shown("realPictures")
-        label: page.label("realPictures")
-        description: page.help("realPictures")
-        defaultValue: false
-    }
-
-    Row {
-        visible: page.shown("picturesClear")
-        ActionButton {
-            text: "Delete downloaded pictures"
-            onClicked: page.settings.saveValue("picturesClear", Date.now())
-        }
-    }
 }

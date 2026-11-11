@@ -34,7 +34,7 @@ var FACTS = [
 var CATEGORIES = [
     { "id": "orbit", "icon": "bluetooth", "name": "Orbit", "help": "What the orbit shows" },
     { "id": "scanning", "icon": "bluetooth_searching", "name": "Scanning", "help": "When Orbit looks for devices" },
-    { "id": "headphones", "icon": "headphones", "name": "Headphones", "help": "Noise control and pictures" },
+    { "id": "headphones", "icon": "headphones", "name": "Headphones", "help": "Noise control and the wearing sensor" },
     { "id": "volume", "icon": "volume_up", "name": "Volume", "help": "Levels, steps and keys" },
     { "id": "popup", "icon": "picture_in_picture_alt", "name": "Pop-up", "help": "The volume pop-up and its visualizer" },
     { "id": "audio", "icon": "info", "name": "Audio details", "help": "What the output is, read from PipeWire" },
@@ -70,8 +70,6 @@ var ENTRIES = [
     _entry("ancEngine", "headphones", "Engine", "\"Always connected\" shows headset button presses live", ["anc", "connection", "button", "battery", "demand"]),
     _entry("ancChatOff", "headphones", "Turn off conversation awareness on disconnect", "A disconnected headset would stay in conversation mode with no way to leave it", ["speak to chat", "talk", "voice", "anc", "sony", "chat"]),
     _entry("wearPause", "headphones", "Pause when you take the headset off", "Pauses what plays when you take the headset off, resumes when you put it back on", ["wear", "sensor", "music", "media", "player", "resume", "ears", "earbuds"]),
-    _entry("realPictures", "headphones", "Real device pictures (uses the internet)", "Looks up each device's model name online; the only feature that goes online", ["photo", "image", "download", "network", "privacy", "wikimedia", "sketchfab"]),
-    _entry("picturesClear", "headphones", "Delete downloaded pictures", "Erases the pictures kept on this computer", ["cache", "clear", "remove", "photo", "image", "privacy", "disk"]),
 
     // --- volume ----------------------------------------------------------------
     _entry("separatePc", "volume", "Separate PC volume", "For devices with a volume of their own: the device's level and what this PC sends to it, set apart", ["two", "double", "pipewire", "level", "device volume"]),

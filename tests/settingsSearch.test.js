@@ -146,7 +146,7 @@ eq("the first match is the best ranked", g.first.id, S.search(Index.ENTRIES, "ti
 eq("no match gives empty groups", View.group(S.search(Index.ENTRIES, "zzzzqq"), where), { ids: {}, counts: {}, firsts: {}, first: null });
 eq("junk results are ignored", View.group([{ id: "nope" }, null].filter(Boolean), where).first, null);
 eq("a category is found by id", [View.find(Index.CATEGORIES, "popup").name, View.find(Index.CATEGORIES, "x")], ["Pop-up", null]);
-eq("the old names still find their setting", [first(Index.ENTRIES, "Sounds"), first(Index.ENTRIES, "Device pictures"), ids(Index.ENTRIES, "Volume steps").includes("volumeSteps")], ["sounds", "realPictures", true]);
+eq("the old names still find their setting", [first(Index.ENTRIES, "Sounds"), ids(Index.ENTRIES, "Volume steps").includes("volumeSteps")], ["sounds", true]);
 
 // --- Speed ---------------------------------------------------------------------
 const prepared = S.prepare(Index.ENTRIES);

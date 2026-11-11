@@ -17,7 +17,6 @@ Item {
         property bool offerScan: true
         property int offerEvery: 60
         property int offerMinBattery: 30
-        property bool realPictures: false
         property bool reduceMotion: false
         property var ignoredDevices: ({})
         function setIgnored(a, n, on) {

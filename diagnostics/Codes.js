@@ -30,7 +30,7 @@ var CODES = {
     "ORB-E001": { "text": "A Bluetooth action failed", "fields": ["action", "reason"] },
     "ORB-E002": { "text": "Pairing failed", "fields": ["reason"] },
     "ORB-E003": { "text": "A helper program stopped unexpectedly", "fields": ["tool", "code"] },
-    "ORB-E004": { "text": "The real device pictures lookup failed", "fields": ["reason"] },
+    // ORB-E004 was the picture lookup (removed after 1.15): never reused, so old reports keep their meaning
     "ORB-E005": { "text": "Noise control (ANC) could not be changed", "fields": ["reason"] },
     "ORB-W010": { "text": "No usable Bluetooth adapter", "fields": ["state"] },
     "ORB-W011": { "text": "A helper program is missing", "fields": ["tool"] },
@@ -70,7 +70,6 @@ var SETTINGS = {
     "ancEngine": ["demand", "live"],
     "ancChatOff": "bool",
     "wearPause": "bool",
-    "realPictures": "bool",
     "holeStyle": ["blackhole", "tesseract"],
     "chargeBeamStyle": ["pulse", "filament", "chain", "horizon"],
     "separatePc": "bool",

@@ -99,11 +99,10 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 - **Noise control** for 13 headphone brands (Sony, Apple, Samsung, Bose, Huawei…).
 - **Pause when you take the headset off** (Sony headsets with a wearing sensor): what plays on the headset pauses when you take it off and resumes when you put it back, only what Orbit paused, and it never starts music; in a Listen together group it pauses nothing, the others keep playing. It keeps one control connection open ([more](docs/GUIDE.md#pause-when-you-take-the-headset-off)).
 - **How long a conversation lasts** (Sony): *Short*, *Standard*, *Long* or *Never*, right in the headset's card ([more](docs/GUIDE.md#how-long-a-conversation-lasts)).
-- **Real device pictures** (opt-in, uses the internet): a photo of your headphones, phone or TV instead of an icon.
 - **Hide what you never use**: drop a device into the black hole, or hide outputs from the group menu with an eye (or <kbd>H</kbd>) or by dragging a row onto the black hole ([more](docs/GUIDE.md#hiding-devices-the-black-hole)).
 - **28 device icons** matched by name, or your own pictures.
 - **Light and dark themes**; the sky always stays night.
-- **Lightweight and private**: no frames drawn at rest, no telemetry, nothing leaves your machine unless you turn on real device pictures.
+- **Lightweight and private**: no frames drawn at rest, no telemetry, no network access, nothing leaves your machine.
 
 ## Usage
 
@@ -163,7 +162,6 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Turn off conversation awareness on disconnect | On |
 | | Pause when you take the headset off (Sony with a wearing sensor; keeps a control connection open, [more](docs/GUIDE.md#pause-when-you-take-the-headset-off)) | On |
 | | Engine: *On demand* or *Always connected* ⚡ | On demand |
-| | Real device pictures (uses the internet) | Off |
 | Volume | Separate PC volume (the device's level and this PC's, [more](docs/GUIDE.md#separate-pc-volume)) | On |
 | | Steps: *Smart* or *Fixed* ([more](docs/GUIDE.md#smart-volume-steps)) / Speed-up / Step | Smart / Balanced / 5 % |
 | | Volume keys: *Give back to DMS* or *Use smart steps* (niri, Orbit's from the first start unless you give them back, [more](docs/GUIDE.md#volume-keys)) | Orbit's |
@@ -271,9 +269,9 @@ Some Sony headsets do not report charging, or drop Bluetooth while charging: thi
 - **Volume keys**: at its first start Orbit asks DMS (`dms keybinds`) to bind them to itself, unless you gave them back or they are your own shortcut; *Give back to DMS* (remembered in Orbit's settings) and uninstalling Orbit put DMS's exact line back. [More](docs/GUIDE.md#volume-keys)
 - **The anonymous report** (*Settings → Reset & help → Copy report*, `dms ipc call orbitBluetooth diagnostics`, `scripts/diagnose.sh`) holds versions, states and codes only; the last 200 events live in memory and vanish with the shell. It is built only when you ask, goes to your clipboard (marked sensitive with `wl-copy`, so DMS's history does not keep it) or your terminal, and is never sent anywhere: you read it, then paste it yourself. [More](docs/GUIDE.md#report-a-problem)
 - **Guide links**: the GitHub mark opens the guide in your browser only when you click it; Orbit itself makes no request.
-- **Network: only one opt-in feature, off by default.** **Real device pictures** sends only the *model name* of devices you have paired, never a stranger's device nearby, never the Bluetooth address. It contacts `commons.wikimedia.org`, then `api.sketchfab.com`, and downloads the picture from `upload.wikimedia.org` or `media.sketchfab.com`. Pictures are credited in the card, kept in `~/.cache/orbitBluetooth/pictures` (readable by you only) and erased when you turn the option off or from the settings.
+- **No network access at all.** Orbit talks to BlueZ, PipeWire and your headset over local sockets only.
 
-- **Uninstalling leaves nothing.** When you remove Orbit from DMS, it erases what DMS keeps for it (its settings, its bar, Control Center and desktop widgets) and its pictures cache, and your sound goes back exactly as before. [More](docs/GUIDE.md#uninstalling)
+- **Uninstalling leaves nothing.** When you remove Orbit from DMS, it erases what DMS keeps for it (its settings, its bar, Control Center and desktop widgets) and its cache folder, and your sound goes back exactly as before. [More](docs/GUIDE.md#uninstalling)
 
 Details in the [user guide](docs/GUIDE.md#privacy).
 
@@ -288,7 +286,7 @@ Details in the [user guide](docs/GUIDE.md#privacy).
 
 ## Credits
 
-Noise-control protocols were reimplemented from the public notes of Gadgetbridge, SonyHeadphonesClient, XMDeck, LibrePods, MagicPodsCore, GalaxyBudsClient, based-connect, bosectl, OpenSCQ30, OpenFreebuds, EarA-linux, earctl and cmfctl (no code copied). The Sony wearing sensor and the length of a conversation come from [mos9527](https://github.com/mos9527)'s MIT-licensed [SonyHeadphonesClient](https://github.com/mos9527/SonyHeadphonesClient), and the wearing sequence on the WH-1000XM6 was confirmed there by [phedoreanu](https://github.com/phedoreanu) (pull request [#63](https://github.com/mos9527/SonyHeadphonesClient/pull/63)): thank you both. The new-device pop-up is inspired by the nearby-device cards of Google Fast Pair and Apple's AirPods setup (the idea only: Orbit uses plain BlueZ discovery, no vendor protocol). Device pictures come from [Wikimedia Commons](https://commons.wikimedia.org) and [Sketchfab](https://sketchfab.com) (free licenses only, each author is credited in the card): thank you to the photographers and 3D artists who share their work. Built on [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell) and [Quickshell](https://quickshell.org).
+Noise-control protocols were reimplemented from the public notes of Gadgetbridge, SonyHeadphonesClient, XMDeck, LibrePods, MagicPodsCore, GalaxyBudsClient, based-connect, bosectl, OpenSCQ30, OpenFreebuds, EarA-linux, earctl and cmfctl (no code copied). The Sony wearing sensor and the length of a conversation come from [mos9527](https://github.com/mos9527)'s MIT-licensed [SonyHeadphonesClient](https://github.com/mos9527/SonyHeadphonesClient), and the wearing sequence on the WH-1000XM6 was confirmed there by [phedoreanu](https://github.com/phedoreanu) (pull request [#63](https://github.com/mos9527/SonyHeadphonesClient/pull/63)): thank you both. The new-device pop-up is inspired by the nearby-device cards of Google Fast Pair and Apple's AirPods setup (the idea only: Orbit uses plain BlueZ discovery, no vendor protocol). Built on [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell) and [Quickshell](https://quickshell.org).
 
 ## License
 

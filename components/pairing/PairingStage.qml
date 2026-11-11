@@ -189,10 +189,9 @@ Item {
         DeviceGlyph {
             id: glyph
             anchors.centerIn: parent
-            width: pictureShown ? 128 : 108
+            width: 108
             height: width
             kind: stage.sheet.kind
-            pictureSource: stage.sheet.pictureSource
             color: stage.look.light ? stage.look.accent : Qt.lighter(stage.look.accent, 1.08)
             stroke: stage.look.light ? 1.35 : 1.15
             layer.enabled: true

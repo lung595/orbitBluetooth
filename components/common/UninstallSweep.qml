@@ -25,7 +25,8 @@ Item {
     property string manifest: ""
     property string script: ""
 
-    // The opt-in picture cache (XDG cache, as pictures/orbit_pictures.py)
+    // The plugin's XDG cache folder: it may still hold pictures an older
+    // version downloaded (Real device pictures, removed after 1.15)
     readonly property string cacheDir: Paths.strip(Paths.xdgCache) + "/" + pluginId
     // The shell's files that keep the plugin's widgets and their positions
     readonly property string settingsPath: Paths.strip(Paths.config) + "/settings.json"

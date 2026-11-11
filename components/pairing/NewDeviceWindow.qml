@@ -5,7 +5,6 @@ import qs.Common
 import "../common"
 import "../device/DeviceCatalog.js" as Catalog
 import "Offer.js" as Offer
-import "../common/Pictures.js" as Pictures
 import "../noise/Anc.js" as Anc
 import "../card/Endurance.js" as Endurance
 import "../device/Glyphs.js" as Glyphs
@@ -92,8 +91,6 @@ PanelWindow {
             "hours": win.knownHours(win.model),
             "kind": win.kind
         })
-        pictureSource: win.watch.picture ? win.watch.picture.image : ""
-        credit: win.watch.picture ? Pictures.creditText(win.watch.picture.credit) : ""
         battery: win.device && win.device.batteryAvailable ? Math.round(win.device.battery * 100) : -1
         ancModes: {
             const modes = win.watch.ancInfo?.features?.modes ?? [];

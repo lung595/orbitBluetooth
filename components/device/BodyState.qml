@@ -1,11 +1,10 @@
 import QtQuick
 import "DeviceCatalog.js" as Catalog
 import "../card/Charge.js" as Charge
-import "../common/Pictures.js" as Pictures
 import "../card/Endurance.js" as Endurance
 
 // What a body knows about its device, as the base type of DeviceBody: the
-// name, kind and picture, the connection, the battery and its forecast, noise
+// name and kind, the connection, the battery and its forecast, noise
 // control and the signal. All of it is read from the scene's services by
 // address. Rule: nothing here reads a part of the body (its face, label,
 // pointer...) nor its motion; that stays in DeviceBody.
@@ -22,12 +21,6 @@ Item {
     // Recognition only (see Catalog.modelName): never changes on rename
     readonly property string model: Catalog.modelName(device) || address
     readonly property string kind: Catalog.resolve(device, scene.prefs.glyphOverrides)
-    // Real picture of the model (opt-in); the query is empty for anything
-    // that must not be looked up, see Pictures.js
-    readonly property string pictureQuery: scene.prefs.realPictures ? Pictures.queryFor(Catalog.modelName(device), paired || connected) : ""
-    readonly property var picture: pictureQuery ? scene.pictureFor(pictureQuery) : null
-    onPictureQueryChanged: scene.requestPicture(pictureQuery)
-    Component.onCompleted: scene.requestPicture(pictureQuery)
     readonly property bool connected: device?.connected ?? false
     readonly property bool paired: (device?.paired || device?.bonded) ?? false
     // The headset's own battery report (noise-control helper), trusted while

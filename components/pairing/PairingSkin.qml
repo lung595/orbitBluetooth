@@ -13,15 +13,12 @@ QtObject {
 
     // Follows DMS; the preview can force it
     required property bool light
-    // The device picture's colour (PictureColor.qml), transparent when unknown
-    required property color picked
 
     function rgb(o) {
         return Qt.rgba(o.r, o.g, o.b, 1);
     }
 
-    // A grey theme accent borrows the picture's colour when there is one
-    readonly property color seed: Palette.isGrey(Theme.primary) && picked.a > 0 ? picked : Theme.primary
+    readonly property color seed: Theme.primary
     readonly property color seed2: Palette.isGrey(Theme.tertiary) ? seed : Theme.tertiary
     readonly property real hue: Palette.toHsl(seed).h
 
@@ -35,8 +32,7 @@ QtObject {
     // Accents: lifted to glow on the night, deepened to read on the pearl
     readonly property color accent: light ? rgb(Palette.ensureContrast(seed, planetTop, 4.5)) : rgb(Palette.ensureContrast(Palette.lift(seed, 0.66), skyLow, 6))
     readonly property color accent2: light ? rgb(Palette.ensureContrast(seed2, planetTop, 3)) : rgb(Palette.ensureContrast(Palette.lift(seed2, 0.6), skyLow, 4))
-    // The device's own colour (picture) leads the light when known
-    readonly property color glow: picked.a > 0 ? (light ? rgb(Palette.ensureContrast(picked, planetTop, 3)) : rgb(Palette.ensureContrast(Palette.lift(picked, 0.6), skyLow, 4))) : accent
+    readonly property color glow: accent
     readonly property color inkOnAccent: rgb(Palette.onColor(accent))
     // Light itself (aurora, atmosphere, glows): on the pearl a dark accent
     // would look like smoke, so the light is a bright, saturated pastel

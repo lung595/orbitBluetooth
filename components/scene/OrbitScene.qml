@@ -75,12 +75,6 @@ OrbitState {
     function powerFor(address) {
         return daemon.powerFor(address);
     }
-    function pictureFor(model) {
-        return daemon.pictureFor(model);
-    }
-    function requestPicture(query) {
-        daemon.requestPicture(query);
-    }
 
     // --- Noise control (the daemon runs the helper, see AncService) ----------
     OrbitAnc {

@@ -3,7 +3,7 @@ import qs.Services
 import "../device/BeamStyle.js" as BeamStyle
 
 // What the daemon publishes for the scene (connection times, battery logs,
-// power readings, real device pictures) and the clock that keeps the
+// power readings) and the clock that keeps the
 // elapsed times fresh. The scene hands these to the bodies and the cards
 // through its own functions.
 Item {
@@ -11,7 +11,6 @@ Item {
     required property var scene
 
     readonly property var globals: PluginService.globalVars[scene.prefs.pluginId] || ({})
-    readonly property var _pictureService: PluginService.pluginDaemonInstances[scene.prefs.pluginId]?.pictureLookup ?? null
     property double now: Date.now()
     // The charging beam's style: what `beamStyle` (IPC) last asked for, kept in
     // memory only, else the saved setting
@@ -28,15 +27,6 @@ Item {
     function powerFor(address) {
         const p = globals.power || {};
         return address ? (p[address] || null) : null;
-    }
-    // Opt-in (Real device pictures): the daemon does the lookups
-    function pictureFor(model) {
-        const p = globals.pictures || {};
-        return scene.prefs.realPictures && model ? (p[model] || null) : null;
-    }
-    function requestPicture(query) {
-        if (query)
-            _pictureService?.request(query);
     }
 
     // Connection timers tick once per second, only while the scene is awake:

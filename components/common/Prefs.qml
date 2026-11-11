@@ -92,11 +92,9 @@ QtObject {
     // when it is put back (D277). On by default: it only acts on its own
     // pauses, and costs one open control connection per such headset
     readonly property bool wearPause: _get("wearPause", true)
-    // Look up real pictures of device models online (the only use of the
-    // network, off by default, see pictures/orbit_pictures.py)
-    readonly property bool realPictures: _get("realPictures", false)
-    // Changes when the user empties the pictures cache
-    readonly property var picturesClear: _get("picturesClear", 0)
+    // Left by "Real device pictures" (removed after 1.15): the daemon erases
+    // its old download folder once when this is still on
+    readonly property bool oldRealPictures: _get("realPictures", false)
     // Devices swallowed by the black hole: address -> name (the name keeps
     // the list readable when the device is out of range)
     property var hiddenDevices: ({})

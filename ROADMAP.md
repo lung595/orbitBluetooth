@@ -1,6 +1,6 @@
 # Roadmap
 
-Ideas, not promises, and no dates. Anything that would need the network or send data somewhere is out of scope, except an opt-in option that is off by default and sends the bare minimum (like *Real device pictures*).
+Ideas, not promises, and no dates. Anything that would need the network or send data somewhere is out of scope.
 
 ## Planned
 
@@ -17,7 +17,6 @@ Ideas, not promises, and no dates. Anything that would need the network or send 
 - **Pause when you take your headphones off, for other brands**: it ships for Sony headsets with a wearing sensor. AirPods, Galaxy Buds, Nothing, Huawei and the others each report wearing in their own vendor message, which needs a verified, freely licensed description (or a capture from a real headset) before Orbit sends anything: no packet is guessed.
 - **Conversation length for Samsung**: Sony ships. The Galaxy Buds message is only described in a GPL-3.0 project, and Orbit is MIT and copies no code, so it waits for a description it can rely on.
 - **Confirm the Sony wearing and conversation messages on a real headset**: they follow the MIT-licensed SonyHeadphonesClient (the wearing sequence was confirmed on a WH-1000XM6 there), but Orbit has not yet seen them answer on a headset of its own.
-- **3D models of devices** (to animate them): Sketchfab only lets a signed-in account download a model, which Orbit cannot ask for without an account and a token. Previews (pictures) are what ships today.
 - **Easier to read code**: split the largest files (`OrbitScene.qml`, `DeviceBody.qml`) by role, without changing behavior.
 - **More headphones tested on real hardware**: only Sony, Huawei and Nothing Ear (2) have been tested so far; reports for other brands are welcome.
 - **Distance from the signal strength**, once Quickshell exposes it (it does not in 0.3.1).

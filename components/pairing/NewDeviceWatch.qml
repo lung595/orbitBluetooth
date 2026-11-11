@@ -3,7 +3,6 @@ import Quickshell
 import Quickshell.Wayland
 import qs.Services
 import "../device/DeviceCatalog.js" as Catalog
-import "../common/Pictures.js" as Pictures
 import "../noise/Anc.js" as Anc
 
 // "New device nearby" pop-up. Lives in the daemon, so it works while every
@@ -16,8 +15,7 @@ import "../noise/Anc.js" as Anc
 //   under the right end of the bar (PairingSheet), never while a window
 //   is full screen; "Later" snoozes it, "Ignore" never offers it again;
 // - Connect pairs and connects it right there, and shows the battery.
-// Nothing leaves the machine, except the model name when the user turned
-// "Real device pictures" on (see Pictures.js).
+// Nothing leaves the machine.
 // The idea comes from the nearby-device cards of Google Fast Pair and of
 // Apple's AirPods setup; thanks to them. Only the idea: this is plain BlueZ
 // discovery, no vendor protocol.
@@ -25,8 +23,6 @@ Item {
     id: root
 
     required property var prefs
-    // PictureService of the daemon (lookups and the model -> picture map)
-    property var pictureLookup: null
     // AncService of the daemon: noise-control modes once connected
     property var anc: null
 
@@ -97,15 +93,6 @@ Item {
     property bool _ancWatching: false
     readonly property var ancInfo: anc && current && !_demo ? (anc.snapshots[current] || null) : null
     readonly property var device: _demo ? demoDevice : current ? offers.deviceFor(current) : null
-    // Only for a device that is paired with this computer: one merely seen
-    // in pairing mode may be a stranger's, and its name is not ours to send
-    readonly property string query: prefs.realPictures && device && (device.paired || device.bonded) ? Pictures.queryFor(Catalog.modelName(device), true) : ""
-    // Asked once the device pairs (and again if the sheet moves to another)
-    onQueryChanged: {
-        if (query && pictureLookup)
-            pictureLookup.request(query);
-    }
-    readonly property var picture: query && pictureLookup ? (pictureLookup.pictures[query] || null) : null
 
     // --- Demo (dms ipc call orbitBluetooth newDeviceDemo) ---------------------
     // The whole story with a made-up headset, to see the pop-up without

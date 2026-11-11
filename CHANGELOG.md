@@ -13,6 +13,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 - **Disconnect after a delay (NAK-403).** Say *deco xm6 30* or *in 5 min disconnect xm6* in the launcher (French and English, free word order) and the device disconnects in that many minutes (1 to 1440). `dms ipc call orbitBluetooth disconnectIn <device> <minutes>` does the same, `cancelDisconnect <device>` drops the pending delay, and `words disconnect <words>` sets the launcher words (empty = the defaults). The phrase parser (`components/delay/DisconnectPhrase.js`), the launcher words (`LauncherWords.js`) and the engine (`DisconnectDelays.qml`) are one timer per pending delay: with no delay pending nothing runs. A device that disconnects by itself drops its delay. Pending delays live in memory only and are never written to disk. Tests: `tests/disconnectPhrase.test.js`, `tests/launcherWords.test.js`, and the disconnect-delay bench scene. [Guide](docs/GUIDE.md#disconnect-after-a-delay)
 
+### Removed
+
+- **Real device pictures and the 3D model previews.** Orbit no longer uses the network at all: the opt-in lookup of model photos (Wikimedia Commons) and 3D previews (Sketchfab) is gone, with its two settings, the picture credit under the detail card and the pairing sheet, and the sheet's light borrowing the picture's colour (it was only used with a grey theme). Devices show their icon or your own *Custom images folder* picture, as they did with the option off. On the first start after the update, the pictures an earlier version downloaded (`~/.cache/orbitBluetooth/pictures`) are erased once and the old switch is turned off. Removed: `pictures/`, `PictureService.qml`, `Pictures.js`, `PictureColor.qml`; the report code `ORB-E004` is retired, never reused.
+
+### Fixed
+
+- **Settings page blank on DMS 2.1 (*Failed to load settings*).** DMS 2.1 replaced the display picker's `preferencesChanged` signal with a `preferencesHandler` callback, so the Desktop category could not load and took the whole page with it. The test stub follows the new API, so the QML suite catches it.
+- **A missing colour on DMS 2.1**: `Theme.errorText` became `Theme.onError`; Orbit reads the new name and falls back to the old one on older shells.
+- **A warning at every volume change**: the volume pop-up still called `_quietIsland()`, removed when the volume face moved into the Dank Island (its work is done by `_showInIslands`).
+
 ## 1.15.0 - 2026-10-10
 
 ### Added

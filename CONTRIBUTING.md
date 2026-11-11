@@ -91,8 +91,6 @@ Logic that can be tested lives in **pure `.js` files** with no QML: `card/Charge
 
 **Uninstalling leaves nothing** (value 12): `components/common/UninstallSweep.qml` (in the daemon) reads `uninstall/orbit_uninstall.py` when Orbit loads; when Orbit is unloaded and its `plugin.json` is gone, it starts that script detached, from memory (`python3 -c`), since the folder no longer exists. The script waits 4 s, checks again (an update may re-clone the folder) and only then edits the shell's JSON files, which DMS watches. Never create QML objects in `Component.onDestruction`: it crashed the shell.
 
-**Real device pictures** (opt-in) is the only network use: `components/common/PictureService.qml` runs `pictures/orbit_pictures.py` (Wikimedia Commons, then Sketchfab; standard library only), and `components/common/Pictures.js` decides which names may be sent. Keep the list of hosts in sync between the helper header, the settings description, the README and the GUIDE.
-
 Settings are read through `components/common/Prefs.qml`, a reactive view shared by every surface.
 
 **The charging beam** (`components/device/`). `ChargeBeam.qml` places the beam on the host-to-device axis and decides when it exists (charging, not leaving, not focused, not a Listen together member); `BeamLink.qml` is the only place that picks a style from `chargeBeamStyle` (`BeamStyle.js`, where an unknown value is the default) and builds only that one, in a `Loader` that is inactive while the beam is hidden. A style is a component with the same inputs (`running`, `time`, `offset`, `startColor`, `endColor`): `BeamPulse` (three capsules), `EnergyBeam` (Filament, the shader), `BeamChain` (a dashed rail and one gradient bar for the lit window), `BeamHorizon` (an arc, grains, a ring and a knot; its geometry is `HorizonShape.js`). Where each moving part is at a given moment is `BeamMotion.js`: pure functions of the scene's 30 Hz clock that answer the still frame when `running` is false (Reduce motion). A new style needs: its component, its clock in `BeamMotion.js`, its name in `BeamStyle.STYLES` and `LookTab.qml`, a `BeamLink` entry, tests in `tests/beamStyle.test.js` and `tests/qml/chargeBeam.test.qml`, a still frame, and a GUIDE section. No `FrameAnimation`, `Animator` or looping `NumberAnimation`: they redraw the whole shell.
@@ -179,7 +177,7 @@ orbitBluetooth/
 │   ├── pairing/                 # new device pop-up and pairing offer
 │   │   ├── NewDeviceWatch.qml, PairingFlow.qml, BackgroundScan.qml, OfferQueue.qml, DemoDevice.qml, Offer.js, Guard.js, ProfileCheck.qml  # pop-up, pairing steps, background scan, what to offer, demo, the input-device guard
 │   │   ├── NewDeviceWindow.qml, PairingSheet.qml, Palette.js  # the window and the sheet (the card, its keys and its parts)
-│   │   ├── PairingSkin.qml, PictureColor.qml, PairingMotion.qml  # the two skins' colours, the picture's colour, the sheet's clock and entrance
+│   │   ├── PairingSkin.qml, PairingMotion.qml  # the two skins' colours, the sheet's clock and entrance
 │   │   ├── PairingSky.qml, PairingPlanet.qml, PairingHeader.qml  # the scene behind the device, status and close button
 │   │   ├── PairingStage.qml, PairingIdentity.qml, PairingMiddle.qml, PairingButton.qml, Light.qml  # device, name and subtitle, tiles/steps/quick actions, actions, round light
 │   │   └── OfferCard.qml        # the scene's pairing offer
@@ -194,16 +192,12 @@ orbitBluetooth/
 │       ├── Hidden.js                                     # the one store of hidden devices, wired outputs included (pure, tested)
 │       ├── Text.js                                       # one clean line from a device or output name, for every note and answer (pure, tested)
 │       ├── Guide.js, GuideLink.qml, GitHubMark.qml       # guide links and notes (value 10)
-│       ├── PictureService.qml, Pictures.js               # real device pictures (opt-in)
 │       └── SoundFx.qml, UninstallSweep.qml
 ├── anc/
 │   ├── orbit_anc.py             # noise-control helper (JSON session)
 │   ├── sdp.py                   # minimal SDP client (finds RFCOMM channels)
 │   ├── protocols/               # one module per brand + shared checksums
 │   └── tests/                   # unittest: frames, checksums, each brand
-├── pictures/
-│   ├── orbit_pictures.py        # picture lookup (Wikimedia Commons, Sketchfab)
-│   └── tests/                   # unittest, no network
 ├── uninstall/
 │   ├── orbit_uninstall.py       # erases what DMS keeps once Orbit is removed
 │   └── tests/                   # unittest, on fake shell files
@@ -223,7 +217,6 @@ orbitBluetooth/
 
 ```sh
 (cd anc && python3 -m unittest discover -s tests -t .)   # noise-control protocols
-(cd pictures && python3 -m unittest discover -s tests -t .)   # picture lookup, without network
 (cd uninstall && python3 -m unittest discover -s tests -t .)  # uninstall sweep, on fake shell files
 (cd tick && python3 -m unittest discover -s tests -t .)       # volume-tick mixer and a whole session against a stand-in pw-cat
 sh tests/qml/run.sh                                       # new-device pop-up scenario, polar scope, audio facts, control sessions, pause on removal, Listen together session, center, group chooser, ghost group and wired members (Qt 6); one test: sh tests/qml/run.sh centreLoop
@@ -276,7 +269,7 @@ Short runs are noisy (about ±2 points while scanning).
 
 - **Language**: code, comments, UI and docs in English.
 - **Comments**: every file starts with a short comment saying what it is and why.
-- **Privacy**: no telemetry, ever. No network access except the opt-in, off-by-default **Real device pictures** (model names only). Nothing written to disk except settings through DMS and that feature's pictures cache.
+- **Privacy**: no telemetry, ever. No network access at all. Nothing written to disk except settings through DMS.
 - **Settings**: every option works out of the box; descriptions stay one short line; options that cost battery are marked ⚡.
 - **Docs**: user-facing changes go in `docs/GUIDE.md` (and the README if they change installation or the basics), plus an entry in `CHANGELOG.md`.
 
