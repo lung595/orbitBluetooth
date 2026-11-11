@@ -12,7 +12,7 @@ Window {
     id: win
     readonly property var opts: Qt.application.arguments.slice(Qt.application.arguments.indexOf("--") + 1)
     readonly property string mode: opts[0]
-    readonly property var words: ["t", "ti", "tic", "tick", "tick v", "tick vo", "", "dev", "devi", ""]
+    readonly property var words: ["s", "so", "sou", "sound", "sound v", "sound vo", "", "dev", "devi", ""]
     property int step: 0
     width: 550 + Theme.spacingL * 2
     height: 640
@@ -56,7 +56,7 @@ Window {
             if (win.mode === "type")
                 f.view.query = win.words[win.step++ % win.words.length];
             else if (win.mode === "jump") {
-                f.view.query = "tick";
+                f.view.query = "sound";
                 f.view.openFirst();
                 f.view.query = "";
             }

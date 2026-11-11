@@ -70,26 +70,6 @@ function sinkNamed(nodes, name) {
     return null;
 }
 
-// Where a tick for `node` must play: { name, bypass }. The PC-level filter is
-// left out, the tick plays in the device sink behind it (bypass): Listen
-// together copies read the filter's monitor, so a tick played through it
-// would be heard in every copy and not in the member that changed alone.
-// Any other node plays as it is.
-function tickOutput(nodes, node) {
-    const name = node ? node.name : "";
-    const device = isVirtual(name) ? deviceSink(nodes, addressOfVirtual(name)) : null;
-    return device ? { "name": device.name, "bypass": true } : { "name": name, "bypass": false };
-}
-
-// The link group the tick shares with Orbit's filter in front of `sink` (the
-// PC-level one of a Bluetooth device, the wired one of a wired output), so
-// WirePlumber sends it to the sink itself and never through that filter
-// (NAK-251, tick/orbit_tick.py). A name with no filter running is harmless:
-// no node carries it, and the tick goes to the sink as any stream would.
-function tickGroup(sink) {
-    return isDeviceSink(sink) ? virtualName(addressOfSink(sink)) : wiredFilterName(sink);
-}
-
 function virtualSink(nodes, address) {
     return sinkNamed(nodes, virtualName(address));
 }
@@ -159,11 +139,12 @@ function loopbackArgs(capture, playback, delaySeconds) {
 }
 
 // The link group of one of Orbit's filters, the filter's own node name, set on
-// both of its ends: set on one end only, WirePlumber sees two groups. A stream
-// that carries the same group is taken as the filter's own and goes where the
-// filter goes, the sink itself, never through the filter: the way for the
-// volume tick to stay out of the copies (NAK-251, tickGroup). Thanks to WirePlumber's smart-filter rules for the idea, read in
-// its documentation and find-filter-target.lua (no code copied).
+// both of its ends: WirePlumber's smart-filter rules take the nodes that share
+// it as the filter's own, so the playback end goes to the sink the filter
+// stands in front of, never back through the filter. Set on one end only,
+// WirePlumber sees two groups. Thanks to
+// WirePlumber's smart-filter rules for the idea, read in its documentation and
+// find-filter-target.lua (no code copied).
 function group(name) {
     return "node.link-group=" + name + " ";
 }
@@ -182,15 +163,17 @@ function filterArgs(address, master, deviceName) {
     return loopbackArgs(group(name) + capture, group(name) + playback);
 }
 
-// --- The filter in front of a wired source (D298; it also keeps the volume tick out of the copies, NAK-251) ---
+// --- The filter in front of a wired source (D298, NAK-251) ---
 // Bluetooth is never delayed, so when the sound is taken from a wired output
 // it is the wired output that waits, for what the Bluetooth ones add. The wait
 // cannot be put in a copy (the apps play straight to that output), so a smart
 // filter "orbit_wired_<key>" like the PC-level one is slipped in front of the
 // output for as long as it is the source of a Listen together group, even with
 // nothing to wait for. The copies read the filter's monitor, the sound before
-// the wait, never the sink itself: the volume tick plays in the sink (see
-// tickOutput), so it stays out of every copy (NAK-251).
+// the wait, never the sink itself: they read the same place whatever the wait,
+// so a wait that comes, changes or goes restarts the filter alone, never the
+// copies (Together.diff), and the filter's link group holds the group's
+// routing for the whole session.
 
 var WIRED_PREFIX = "orbit_wired_";
 
@@ -237,14 +220,6 @@ function muteTarget(audioDevices) {
 // members share one level, D254); else just itself
 function levelNodes(shared, node) {
     return shared.indexOf(node) >= 0 ? shared : [node];
-}
-
-// The nodes whose output ticks for a level written to `node`: that node's
-// alone, or every shared one when `group` says the hand moved the group's
-// general level. The level of a member reaches the others (levelNodes) but
-// the sound of its tick belongs to its own output (NAK-255).
-function tickNodes(shared, node, group) {
-    return group ? levelNodes(shared, node) : [node];
 }
 
 // A level written like a slider does: on every node it must reach, unmuted

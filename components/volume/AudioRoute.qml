@@ -155,49 +155,21 @@ Item {
         return dev.absolute === 1 ? null : dev.sink;
     }
 
-    // The tick that lets you hear where a level is, in the outputs it reached
-    VolumeTick {
-        id: tick
-        prefs: root.prefs
-    }
-
-    // Orbit is about to move a level. DMS answers a change of level with a
-    // sound of its own, which the tick replaces (DmsQuiet, D360): whoever holds
-    // it back must be in place before the level moves, so every write below
-    // says so first.
-    signal levelWriting
-
-    // The tick plays in the device behind each node, round the PC-level filter
-    function _tick(nodes, before, after, levels) {
-        const all = Pipewire.nodes.values;
-        tick.play(nodes.map(n => Route.tickOutput(all, n)), before, after, levels);
-    }
-
     // A level or a mute written to a node reaches every member's copy when
-    // it is the PC level of a Listen together session (Route.levelNodes), but
-    // the tick follows what the hand moved: that node's output alone, or every
-    // member's only when `group` says it is the group's general level
-    // (Route.tickNodes).
-    function writeLevel(node, level, group) {
-        levelWriting();
-        const before = node.audio.volume;
-        const reached = Route.levelNodes(together.sharedNodes, node);
-        reached.forEach(n => _wrote(n, level));
+    // it is the PC level of a Listen together session (Route.levelNodes)
+    function writeLevel(node, level) {
+        Route.levelNodes(together.sharedNodes, node).forEach(n => _wrote(n, level));
         Route.writeLevel(together.sharedNodes, node, level);
-        _tick(Route.tickNodes(together.sharedNodes, node, group), before, level);
     }
     // A level written to each of `nodes` on its own, unmuted: the group's
     // general level when the members keep their own levels (and their gaps),
-    // `levels` being what each one gets. Every one of them ticks, each at the
-    // gain its own level allows.
-    function writeLevels(nodes, levels, before, after) {
-        levelWriting();
+    // `levels` being what each one gets
+    function writeLevels(nodes, levels) {
         nodes.forEach((n, i) => {
             _wrote(n, levels[i]);
             n.audio.muted = false;
             n.audio.volume = levels[i];
         });
-        _tick(nodes, before, after, levels);
     }
     function writeMuted(node, muted) {
         Route.writeMuted(together.sharedNodes, node, muted);
@@ -243,9 +215,9 @@ Item {
         _stepState = r.state;
         return r.step;
     }
-    function stepNode(node, dir, group) {
+    function stepNode(node, dir) {
         const now = node.audio.volume;
-        writeLevel(node, Steps.apply(now, dir, stepFor(dir, now)), group);
+        writeLevel(node, Steps.apply(now, dir, stepFor(dir, now)));
     }
 
     // A member's own level: its Bluetooth device's, or its output's when it is
@@ -345,8 +317,7 @@ Item {
         const node = target === Target.PC ? pcNode(dev) : target ? ownNode(target) : (deviceNode(dev) || pcNode(dev));
         if (!node || !node.audio)
             return "no-pc-level";
-        // No target inside a group is the group's general level
-        stepNode(node, dir, together.active && !target);
+        stepNode(node, dir);
         return "";
     }
 

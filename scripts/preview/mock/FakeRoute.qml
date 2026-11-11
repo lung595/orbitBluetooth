@@ -250,8 +250,8 @@ QtObject {
         } : null;
     }
     // The same rules as the real route's (Route.levelNodes, tested in
-    // tests/volume.test.js): the shared PC half is on every member's copy; `group` is accepted and ignored, the mock has no tick
-    function writeLevel(node, level, group) {
+    // tests/volume.test.js): the shared PC half is on every member's copy
+    function writeLevel(node, level) {
         (node === shared ? together.sharedNodes : [node]).forEach(n => {
             n.audio.volume = level;
             n.audio.muted = false;
@@ -260,21 +260,12 @@ QtObject {
     function writeMuted(node, muted) {
         (node === shared ? together.sharedNodes : [node]).forEach(n => n.audio.muted = muted);
     }
-    // The real route's writeLevels: a level of its own for each node, and what
-    // it was asked to play as a tick
-    property var ticked: []
-    function writeLevels(nodes, levels, before, after) {
+    // The real route's writeLevels: a level of its own for each node
+    function writeLevels(nodes, levels) {
         nodes.forEach((n, i) => {
             n.audio.muted = false;
             n.audio.volume = levels[i];
         });
-        ticked = ticked.concat([
-            {
-                "nodes": nodes.map(n => n.name),
-                "before": before,
-                "after": after
-            }
-        ]);
     }
 
     function find(address) {
@@ -305,8 +296,8 @@ QtObject {
     function stepFor(dir, level) {
         return 5;
     }
-    function stepNode(node, dir, group) {
-        writeLevel(node, Math.max(0, Math.min(1, node.audio.volume + dir * 0.05)), group);
+    function stepNode(node, dir) {
+        writeLevel(node, Math.max(0, Math.min(1, node.audio.volume + dir * 0.05)));
     }
     function setLevel(which, arg, address) {
         return "";

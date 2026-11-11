@@ -6,8 +6,8 @@ import "../.."
 // Offscreen renders of the real settings page (rail, search, pages) with
 // stand-ins for DMS's setting widgets and made-up values.
 // Usage: QT_QPA_PLATFORM=offscreen qml -I imports settings.qml -- <state> <out.png>
-// States: default, category (Pop-up open), search ("tick"), jump (Enter on "tick":
-//         the volume tick lit), none (nothing matches), many (Audio details,
+// States: default, category (Pop-up open), search ("sound"), jump (Enter on "sound":
+//         the sounds switch lit), none (nothing matches), many (Audio details,
 //         20 switches), battery (Scanning, with its battery pills); suffixes: -light, -narrow, -reduce
 Window {
     id: win
@@ -82,11 +82,11 @@ Window {
             else if (win.state === "many")
                 view.open("audio", "");
             else if (win.state === "search")
-                view.query = "tick";
+                view.query = "sound";
             else if (win.state === "none")
                 view.query = "xylophone synth";
             else if (win.state === "jump") {
-                view.query = "tick";
+                view.query = "sound";
                 view.openFirst();
             }
             snap.start();

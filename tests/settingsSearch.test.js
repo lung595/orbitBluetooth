@@ -14,7 +14,7 @@ const first = (list, q) => ids(list, q)[0];
 const entries = [
     { id: "a", label: "Noise control", help: "Supported headphones, needs python3", keywords: ["anc", "cancelling"] },
     { id: "b", label: "Wired delay", help: "Nudge the wait that lines up wired outputs", keywords: ["cable", "sync"] },
-    { id: "c", label: "Volume tick", help: "A soft tick on each step", keywords: ["sound", "click"] },
+    { id: "c", label: "Volume step", help: "How far each notch moves", keywords: ["sound", "click"] },
     { id: "d", label: "Sounds", help: "On snap, connect and disconnect", keywords: ["audio"] },
     { id: "e", label: "Écran d’accueil", help: "Début de la journée", keywords: [] },
     { id: "f", label: "Pause when you take the headset off", help: "Resumes when you put it back", keywords: ["wear", "sensor"] }
@@ -28,11 +28,11 @@ eq("a decomposed accent is the same letter", ids(entries, "écran"), ["e"]);
 // "headset" in a label outranks "headphones" in a help text
 eq("a word prefix is enough", ids(entries, "head"), ["f", "a"]);
 eq("a prefix is not found in the middle of a word", ids(entries, "phones"), []);
-eq("a keyword finds the setting (sound finds the tick)", ids(entries, "sound"), ["c", "d"]);
+eq("a keyword finds the setting (sound finds the step)", ids(entries, "sound"), ["c", "d"]);
 eq("a synonym finds the wired setting (cable)", first(entries, "cable"), "b");
 eq("the help text is searched", ids(entries, "python3"), ["a"]);
-eq("every word must match (AND)", [ids(entries, "volume tick"), ids(entries, "volume headset")], [["c"], []]);
-eq("the words may come in any order", ids(entries, "tick volume"), ["c"]);
+eq("every word must match (AND)", [ids(entries, "volume step"), ids(entries, "volume headset")], [["c"], []]);
+eq("the words may come in any order", ids(entries, "step volume"), ["c"]);
 
 // --- Typos ---------------------------------------------------------------------
 eq("a letter too many is forgiven from 5 letters", ids(entries, "noisee"), ["a"]);
@@ -41,15 +41,15 @@ eq("a wrong letter is forgiven", ids(entries, "volune"), ["c"]);
 eq("a swap of neighbours is one edit", ids(entries, "cotnrol"), ["a"]);
 eq("a last letter doubled", ids(entries, "controll"), ["a"]);
 eq("a swap inside a word", ids(entries, "nosie"), ["a"]);
-eq("a short word is not forgiven (4 letters)", ids(entries, "tikc"), []);
+eq("a short word is not forgiven (4 letters)", ids(entries, "setp"), []);
 eq("two edits are too many", ids(entries, "volxxe"), []);
 eq("a typo in a word still being typed", ids(entries, "headphonx"), ["a"]);
 
 // --- Ranking -------------------------------------------------------------------
 eq("the label beats a keyword, which beats the help", first(
-    [{ id: "help", label: "Other", help: "the tick here", keywords: [] },
-     { id: "kw", label: "Other", help: "", keywords: ["tick"] },
-     { id: "label", label: "Tick", help: "", keywords: [] }], "tick"), "label");
+    [{ id: "help", label: "Other", help: "the step here", keywords: [] },
+     { id: "kw", label: "Other", help: "", keywords: ["step"] },
+     { id: "label", label: "Step", help: "", keywords: [] }], "step"), "label");
 eq("an exact word beats a prefix", first(
     [{ id: "p", label: "Stars density", help: "", keywords: [] }, { id: "x", label: "Star", help: "", keywords: [] }], "star"), "x");
 eq("equal scores keep the order of the page", ids([1, 2, 3].map(n => ({ id: "n" + n, label: "Same", help: "", keywords: [] })), "same"), ["n1", "n2", "n3"]);
@@ -79,7 +79,7 @@ eq("prepared entries give the same answer", S.search(S.prepare(entries), "sound"
 eq("entries are not changed", JSON.stringify(entries).length, JSON.stringify(entries.map(e => Object.assign({}, e))).length);
 
 // --- The real index ------------------------------------------------------------
-eq("the real index finds the ticks with 'sound'", ids(Index.ENTRIES, "sound").includes("volumeTick"), true);
+eq("the real index finds the sounds' volume with 'sound'", ids(Index.ENTRIES, "sound").includes("soundVolume"), true);
 eq("the real index finds the wired delay with 'cable'", ids(Index.ENTRIES, "cable").includes("togetherFineDelay"), true);
 eq("the real index finds the noise control with 'anc'", first(Index.ENTRIES, "anc"), "ancEnabled");
 eq("the real index forgives a typo", first(Index.ENTRIES, "vizualizer"), "scopeStyle");
@@ -128,7 +128,7 @@ for (const [file, keys] of [["HabitsRow.qml", ["learnHabits", "togetherHabits"]]
     const src = read("components/settings/" + file);
     eq(file + " reads its words from the index", Index.ENTRIES.filter(e => keys.includes(e.id) && (src.includes('"' + e.label + '"') || src.includes('"' + e.help + '"'))).map(e => e.id), []);
 }
-eq("byId finds an entry by its key", View.byId(Index.ENTRIES).volumeTick.label, "Volume tick");
+eq("byId finds an entry by its key", View.byId(Index.ENTRIES).soundVolume.label, "Volume");
 
 // --- Categories and the view of a search ---------------------------------------
 const cats = Index.CATEGORIES.map(c => c.id);
@@ -140,10 +140,10 @@ eq("every category has its page file", cats.filter(c => !qmlFiles(root + "/compo
 eq("entries are listed in the order of the rail", Index.ENTRIES.map(e => cats.indexOf(e.category)).every((n, i, a) => i === 0 || a[i - 1] <= n), true);
 
 const where = View.categoryOf(Index.ENTRIES);
-const g = View.group(S.search(Index.ENTRIES, "tick"), where);
-eq("a search groups its matches by category", [g.ids.volumeTick, g.counts.sounds >= 3, g.first.category], [true, true, "sounds"]);
-eq("each category names its best match", [g.firsts.sounds, Object.keys(g.firsts).every(c => g.counts[c] > 0)], [S.search(Index.ENTRIES, "tick").find(r => where[r.id] === "sounds").id, true]);
-eq("the first match is the best ranked", g.first.id, S.search(Index.ENTRIES, "tick")[0].id);
+const g = View.group(S.search(Index.ENTRIES, "sound"), where);
+eq("a search groups its matches by category", [g.ids.soundVolume, g.counts.sounds >= 2, g.first.category], [true, true, "sounds"]);
+eq("each category names its best match", [g.firsts.sounds, Object.keys(g.firsts).every(c => g.counts[c] > 0)], [S.search(Index.ENTRIES, "sound").find(r => where[r.id] === "sounds").id, true]);
+eq("the first match is the best ranked", g.first.id, S.search(Index.ENTRIES, "sound")[0].id);
 eq("no match gives empty groups", View.group(S.search(Index.ENTRIES, "zzzzqq"), where), { ids: {}, counts: {}, firsts: {}, first: null });
 eq("junk results are ignored", View.group([{ id: "nope" }, null].filter(Boolean), where).first, null);
 eq("a category is found by id", [View.find(Index.CATEGORIES, "volume").name, View.find(Index.CATEGORIES, "x")], ["Volume", null]);
@@ -153,7 +153,7 @@ eq("the old names still find their setting", [first(Index.ENTRIES, "Sounds"), id
 const prepared = S.prepare(Index.ENTRIES);
 const t0 = GLib.get_monotonic_time();
 for (let i = 0; i < 100; i++)
-    S.search(prepared, "volume tick sound");
+    S.search(prepared, "volume step sound");
 const per = (GLib.get_monotonic_time() - t0) / 100 / 1000;
 eq("a search over the whole index takes under 1 ms (" + per.toFixed(3) + " ms)", per < 1, true);
 

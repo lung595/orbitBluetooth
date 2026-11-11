@@ -8,7 +8,7 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 - [The orbit](#the-orbit) · [If it does not connect](#if-it-does-not-connect) · [If it does not disconnect](#if-it-does-not-disconnect) · [Bluetooth is off](#bluetooth-is-off)
 - [The detail card](#the-detail-card)
 - [Long press](#long-press)
-- [The two volumes](#the-two-volumes) · [Separate PC volume](#separate-pc-volume) · [Orbit's tick only](#orbits-tick-only) · [Visualizer](#visualizer) · [Smart volume steps](#smart-volume-steps) · [Volume keys](#volume-keys) · [Volume keys with a group](#volume-keys-with-a-group) · [What really plays](#what-really-plays)
+- [The two volumes](#the-two-volumes) · [Separate PC volume](#separate-pc-volume) · [Visualizer](#visualizer) · [Smart volume steps](#smart-volume-steps) · [Volume keys](#volume-keys) · [Volume keys with a group](#volume-keys-with-a-group) · [What really plays](#what-really-plays)
 - [Listen together](#listen-together) · [Create a group from the menu](#create-a-group-from-the-menu) · [Suggested groups](#suggested-groups) · [Learn my groups](#learn-my-groups) · [Forget what Orbit learned](#forget-what-orbit-learned) · [The source at the center](#the-source-at-the-center) · [Group icons](#group-icons) · [The volume at the center](#the-volume-at-the-center) · [Wired outputs](#wired-outputs) · [Wired outputs in the group](#wired-outputs-in-the-group) · [Pull a wired output out of the group](#pull-a-wired-output-out-of-the-group) · [Wired delay](#wired-delay) · [What it costs](#what-it-costs) · [Limits](#limits) · [Works with multipoint headsets](#works-with-multipoint-headsets) · [Two outputs, one radio](#two-outputs-one-radio)
 - [Earbuds: the trio](#earbuds-the-trio)
 - [Hiding devices: the black hole](#hiding-devices-the-black-hole)
@@ -124,7 +124,6 @@ Open a **connected** audio device (headphones, speaker, earbuds, TV…) and its 
 - **Click an icon** to mute that level. **Click the planet** to mute too: with one audio device connected it mutes this PC, with several it mutes that device only.
 - **Scroll over the planet** to change the level you hear move first (the device's own when it has one).
 - **A device with no level of its own** (no *absolute volume* over Bluetooth): its volume is this PC's, so the screen shows this PC's half circle alone and says *Its volume follows this PC*.
-- **Volume tick**: a soft, short tick plays at each step you make (every 1 % by default, or every 5 %: **Scanning → Tick every**), so you hear the level where it matters: on the card, with the volume keys and in the [radar](#the-volume-radar). It plays **in the output whose level you change**, and only there (also in Listen together: the source's tick is not heard in the copies, because it goes straight to the device and not through the filter the copies listen to: it carries that filter's link group, which WirePlumber sends where the filter goes), so turning one speaker does not make the whole room tick. When you change the **group's** level (the ring at the center, the group's arc, the radar's group dial) it plays in **every** output of the group at once. The tick is **live**: it follows your hand, so a fast change never replays late ticks. Each new tick replaces the one still sounding (no queue, nothing plays on after the last step), at most 20 a second (one every 50 ms), and a jump of the dial is one tick, not a run. Every tick fades in and out, peaks near -16 dBFS even when it replaces the one still sounding, so it never clicks, and it gets quieter as the output's level rises above 60 % (at 100 % it plays at 0.6 of its size), so it cannot saturate and crackle; at 0 % there is nothing to hear and nothing starts. Turn it off in **Scanning → Volume tick**. It needs `pacat` (pulseaudio-utils, the package `pactl` comes in) and `python3`. DMS's own volume sound waits while you change a level in Orbit, so only the tick plays: see [Orbit's tick only](#orbits-tick-only).
 - Devices that are not connected, or have no sound output, show no screen: scrolling over a connected keyboard or mouse says **…has no volume** instead of doing nothing. Right after a headset connects, its audio can take a second to appear.
 
 Everything talks to the local sound server (PipeWire) only. The picture of the sound is read with `cava` from the device's output, only while the card is open; with *Reduce motion* it does not run and the levels change at once.
@@ -139,17 +138,6 @@ Many Bluetooth devices have a volume of their own (*absolute volume*): the level
 - Turn it off in **Volume → Separate PC volume**: no filter, and every device shows one level, as before.
 
 Devices that follow this PC's level have one level only, whatever this setting says.
-
-### Orbit's tick only
-
-DMS plays a sound of its own when a volume changes (*Settings → Sounds → Volume Changed*). Next to Orbit's [volume tick](#the-two-volumes) that is two sounds for one change, so Orbit asks DMS's to wait while it moves a level.
-
-- **On by default**, in **Scanning → Orbit's tick only**. The row is shown only while **Volume tick** is on: without the tick, DMS's sound is the only one there is.
-- **Only around Orbit's own changes.** DMS's sound waits from the moment Orbit writes a level (a drag on the card or the radar, a scroll, the volume keys you gave to Orbit, a command line call) until about 0.4 second after the last one. DMS's own sliders and keys, and anything else that changes a volume, keep their sound.
-- **It is done in memory.** Orbit holds DMS's *Volume Changed* switch off, and DMS's own value comes back by itself 0.4 second later, when you turn the row off, when the plugin is turned off or when it is removed. Orbit writes nothing of DMS's, and nothing runs when no level moves.
-- **DMS's saves are guarded**: DMS saves all of its settings together whenever one changes (a theme, a bar...) and once when it starts; Orbit lets go of the switch for a quarter of a second around each save DMS makes, so the file keeps your own value and removing Orbit leaves nothing behind. In that moment DMS's sound could play along with the tick.
-- **If DMS changes how it saves or renames the switch** (an update), Orbit cannot see the saves or the switch any more: it then leaves DMS's sound alone, or the file may take it as off. In the second case turn **Volume Changed** back on in DMS's *Settings → Sounds*, and please open an issue.
-- Turn the row off to hear both sounds again.
 
 ## Visualizer
 
@@ -215,7 +203,7 @@ Without a group the keys move **the last level that changed**: a device's own le
 - A device that has just connected reports its own starting level; for a second and a half after it appears, its changes are not taken as a choice. A device without its own level (it follows this PC) behaves as before. `volume up|down` and the keys never pick a target themselves.
 - Nothing polls: PipeWire already reports each change, Orbit listens to the connected devices and this PC's level, and the echoes of its own writes are ignored.
 
-The member the keys move is **visible**: in the volume scope its arc has a firmer track and a brighter glow. When no arc is marked, the keys move the group. The tick follows the same target: it plays in the output of the member whose level moved, or in every member's when the group's level moves.
+The member the keys move is **visible**: in the volume scope its arc has a firmer track and a brighter glow. When no arc is marked, the keys move the group.
 
 ## What really plays
 
@@ -425,7 +413,7 @@ A wired output answers in a few milliseconds, a Bluetooth one a good deal later.
 
 **Wired delay** (Settings → Orbit) is for what the figures cannot know: a speaker with its own processing, a TV, a USB interface that does not report its latency. Move the slider until the wired output and the Bluetooth one are heard together: later if the wired one is early, earlier if it is late. It goes from −100 to +100 ms in 5 ms steps, starts at 0 and never moves by itself; it is saved once, when you let go of the slider, and **Reset to 0** puts it back. The same nudge is available from the command line: `dms ipc call orbitBluetooth wiredDelay up | down | +10 | -10 | 20 | reset | status` (`up` and `down` are one step, a signed number is a change from now, a plain number is the exact value from 0 to 100, and the answer is the correction in force).
 
-**When the sound comes from the wired output** (it is the output you hear), a Bluetooth copy can only arrive later than the wired sound, and nothing can speed a Bluetooth stream up. Orbit then holds the wired output back with a small filter of its own for as long as the group listens together, so both are heard together; the filter goes away with the group. The filter is there even when nothing has to wait: the copies listen to it and not to the output itself, which is why the [volume tick](#the-two-volumes) of the wired output stays out of them. If the wired output reports no latency, or the filter does not come up, the Bluetooth copy stays a little late: nudge it with **Wired delay**. This filter is checked on a simulated sound server only: it is not yet confirmed on real hardware, and one measurement on PipeWire 1.6 found its wait had no effect, which is still to be checked (see the [roadmap](../ROADMAP.md)).
+**When the sound comes from the wired output** (it is the output you hear), a Bluetooth copy can only arrive later than the wired sound, and nothing can speed a Bluetooth stream up. Orbit then holds the wired output back with a small filter of its own for as long as the group listens together, so both are heard together; the filter goes away with the group. The filter is there even when nothing has to wait: the copies listen to it and not to the output itself, so a wait that comes, changes or goes restarts the filter only, never the copies. If the wired output reports no latency, or the filter does not come up, the Bluetooth copy stays a little late: nudge it with **Wired delay**. This filter is checked on a simulated sound server only: it is not yet confirmed on real hardware, and one measurement on PipeWire 1.6 found its wait had no effect, which is still to be checked (see the [roadmap](../ROADMAP.md)).
 
 **Bluetooth copies are lined up too**: a Bluetooth copy that PipeWire says is quicker than the output you hear waits for the difference, see [Limits](#limits). The nudge above moves the wired copies only.
 
@@ -696,7 +684,7 @@ A search field on top, the categories down the left (**Orbit**, **Scanning**, **
 
 The categories are bodies on a dashed orbit, like a star chart: the open one is the planet in focus, the others are moons. Click one to open it; on a narrow window the rail keeps icons only and the name shows when you hover or focus one.
 
-![The settings filtered by "tick": the Sounds category open, a count on its body in the rail](../screenshots/settings-search.png)
+![The settings filtered by "sound": the matches of Volume and Sounds, a count on each body in the rail](../screenshots/settings-search.png)
 
 Type in the search field to filter the page in place: only the settings that match stay, grouped under their category, and you can change them right there. It looks at names, help lines and a few synonyms (type *cable*, *osd*, *latency* or *stars*), ignores case and accents, and forgives one typo. Each category on the rail shows how many matches it holds and the others fade; a click on one opens it at its best match.
 
@@ -733,9 +721,6 @@ Nothing runs while the page is still: no timer, no animation after the short fad
 | | Visualizer motion | Light | Light (30 images/s) or Smooth (60) |
 | Audio details | Audio details | Line: connection, codec, sample rate, bit depth; unfolded: all | Two switches per fact, *on the line* and *more info*, see [What really plays](#what-really-plays) |
 | Sounds | Sounds | Off | Short cues on snap, connect and disconnect |
-| | Volume tick | On | A soft tick in the device at each step made on its [card](#the-two-volumes) |
-| | Tick every | 1 % | The size of a step: *1 %* or *5 %*; shown with *Volume tick* |
-| | Orbit's tick only | On | DMS's own volume sound waits while you change a level in Orbit, see [Orbit's tick only](#orbits-tick-only); shown with *Volume tick* |
 | | Volume | 60 % | Of the short cues |
 | Desktop | Displays | All | Which displays show the desktop widget |
 | | Backdrop | 72 % | Depth of the veil behind the orbit |
@@ -783,7 +768,7 @@ The CPU figure is the whole shell (DMS and every plugin), not Orbit's share.
 - **Listen together** runs one small local sound process per output beyond the first, only while a session lasts, and talks to the local sound server (PipeWire) only. It saves no session, no list of devices, no address and nothing in the journal; the only thing kept, with **Learn my groups** on (default), is described next. [More](#listen-together)
 - **Learned groups**: with **Learn my groups** on (default), Orbit keeps in its own settings, for at most 8 groups, only short hashes of the outputs you listened to together (no name, no address), how many times and the day of the last time. It never leaves your computer, **Forget what Orbit learned** or switching the option off erases it at once, and uninstalling Orbit erases it with the rest. [More](#learn-my-groups)
 - **Hidden devices**: the list of what you hid in the black hole, Bluetooth devices and wired outputs (an address or a node name and the name it had, at most 64), is kept in Orbit's own settings; **Show** or the buttons of the settings empty it. [More](#hiding-devices-the-black-hole)
-- **The two volumes** talk to the local sound server (PipeWire) only; the tick is a sound file shipped with Orbit, played with `pacat` through a small helper that opens one stream per output and closes it 2 s after the last tick, and the picture of the sound is read locally with `cava`.
+- **The two volumes** talk to the local sound server (PipeWire) only, and the picture of the sound is read locally with `cava`.
 - **One helper process**: the noise-control helper opens a local Bluetooth socket to your headset and nothing else, only while needed: while a card is open, or, with [Pause when you take the headset off](#pause-when-you-take-the-headset-off) on, for as long as a Sony headset with a wearing sensor is connected. That option reads and pauses your media players through MPRIS on the local D-Bus; it keeps nothing and sends nothing. `ORBIT_ANC_DEBUG=1` prints its raw packets on stderr; nothing is logged to a file.
 - **The anonymous report** is built in memory only when you ask for it ([Report a problem](#report-a-problem)); the 200 last events vanish with the shell and nothing is written to disk.
 - **Nothing written to disk by Orbit**: connection times and battery history live in memory for the session.
@@ -799,7 +784,6 @@ Removing Orbit leaves your machine exactly as it was before:
 - DMS deletes the plugin folder but keeps what it stored for the plugin. So when Orbit is unloaded and finds its folder gone, it erases its settings, its widgets (bars, Control Center, desktop and their positions), its pictures cache and the link its sound processes read their settings through (`$XDG_RUNTIME_DIR/orbit-loopback.conf`, no data in it, gone at logout anyway).
 - It waits a few seconds first and checks again: an update that re-downloads the folder keeps everything.
 - Disabling Orbit, reloading or restarting the shell erase nothing.
-- One exception: if DMS saved its settings while Orbit held DMS's volume sound off, that switch stays off, see [Orbit's tick only](#orbits-tick-only).
 
 - Your [volume keys](#volume-keys), if Orbit bound them, go back to DMS's default, with the step they had.
 

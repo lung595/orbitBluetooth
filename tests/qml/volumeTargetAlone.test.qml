@@ -53,8 +53,6 @@ Item {
 
     QtObject {
         id: prefs
-        property bool volumeTick: false
-        property bool tickAlone: true
         property bool separatePc: true
         property var pcLevels: ({})
         property string volumeSteps: "fixed"

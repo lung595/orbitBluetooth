@@ -18,6 +18,7 @@ var FIELDS = {
     "action": ["connect", "disconnect", "pair", "trust", "forget", "scan", "power"],
     "reason": ["timeout", "refused", "no_adapter", "blocked", "not_found", "bad_data", "offline", "killed", "unknown"],
     // pw_loopback: the loopback process (pipewire -c since 2.0; the name stays so old reports read the same)
+    // pw_play: the volume tick's player, removed in 2.0; kept so reports from 1.x still read
     "tool": ["pw_loopback", "pw_play", "cava", "wl_copy", "dms", "pactl", "python", "bluetoothctl"],
     "state": ["off", "on", "missing", "ready", "waiting", "stuck", "hidden", "visible", "ambient"],
     // popup: Orbit's OSD, removed in 2.0; kept so reports from 1.x still read
@@ -56,9 +57,6 @@ var SETTINGS = {
     "quickDisconnect": "bool",
     "scanSeconds": "int",
     "sounds": "bool",
-    "volumeTick": "bool",
-    "tickAlone": "bool",
-    "tickEvery": "int",
     "shootingStars": "bool",
     "starDensity": ["low", "normal", "high"],
     "desktopAmbient": "bool",

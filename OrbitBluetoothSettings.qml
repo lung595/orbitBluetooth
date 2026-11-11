@@ -117,7 +117,6 @@ PluginSettings {
                         }
                         SoundsPage {
                             view: view
-                            settings: root
                         }
                         DesktopPage {
                             view: view

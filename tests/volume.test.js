@@ -1,64 +1,14 @@
-// Volumes: the tick, the two levels' routing, the vectorscope, smart steps, volume keys.
+// Volumes: the two levels' routing, the vectorscope, smart steps, volume keys.
 // Run from the plugin root: gjs tests/volume.test.js (or every file: sh tests/run.sh)
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
 const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNote", "stuckNote", "levelNote"]);
-const Volume = load("Volume.js", ["clamp", "step", "validSink", "stepSize", "stepsCrossed", "due", "tickGain", "linearGain", "MIN_GAIN", "audible", "tickTargets", "slotsFor", "MAX_TICKS", "MIN_GAP_MS", "TICK_KNEE", "IDLE_MS"]);
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "slices", "sliceAt", "partOf", "indexOf", "arc", "end", "point", "angleOf", "valueAt", "zone", "wheelPart", "iconSpot", "legendSpot", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
 const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded"]);
-const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "tickOutput", "tickGroup", "wiredFilterName", "isWiredFilter", "description", "loopbackArgs", "filterArgs", "wiredFilterArgs", "muteTarget", "levelNodes", "tickNodes", "writeLevel", "writeMuted", "ipcLevel", "transportPath", "transportVolume", "iconFor", "shownLevels"]);
+const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "wiredFilterName", "isWiredFilter", "description", "loopbackArgs", "filterArgs", "wiredFilterArgs", "muteTarget", "levelNodes", "writeLevel", "writeMuted", "ipcLevel", "transportPath", "transportVolume", "iconFor", "shownLevels"]);
 const Together = load("Together.js", ["args"]);
-
-// --- Volume tick (Volume.js) ------------------------------------------------------
-eq("the setting: 1 % by default, 5 % when it says so", [Volume.stepSize("1"), Volume.stepSize("5"), Volume.stepSize(undefined), Volume.stepSize("7")], [0.01, 0.05, 0.01, 0.01]);
-eq("the setting as a number, as Prefs exposes it", [Volume.stepSize(1), Volume.stepSize(5)], [0.01, 0.05]);
-eq("a rounding error does not move a step (0.57 is step 57)", [Volume.step(0.57, 0.01), Volume.step(0.29, 0.01), Volume.step(0.35, 0.05)], [57, 29, 7]);
-eq("levels are clamped", [Volume.clamp(-1), Volume.clamp(2), Volume.clamp("x")], [0, 1, 0]);
-eq("node name ok for the tick player", Volume.validSink("bluez_output.02_00_00_00_10_06.1"), true);
-eq("no shell characters", Volume.validSink("x; rm -rf ~"), false);
-eq("no option smuggling", Volume.validSink("--target=x y"), false);
-// Where the tick plays: the output whose level moved, or every member's for the group's
-const tickOne = Volume.stepSize("1"), tickFive = Volume.stepSize("5");
-eq("1 %: a tick per percent crossed, up or down", [Volume.stepsCrossed(0.5, 0.5, tickOne), Volume.stepsCrossed(0.5, 0.51, tickOne), Volume.stepsCrossed(0.5, 0.45, tickOne), Volume.stepsCrossed(0.2, 0.5, tickOne)], [0, 1, 5, 30]);
-eq("1 %: a change under half a percent crosses nothing", Volume.stepsCrossed(0.5, 0.504, tickOne), 0);
-eq("5 %: inside one step no tick, one tick per step across (0.62 is step 12, 0.68 is step 14)", [Volume.stepsCrossed(0.61, 0.62, tickFive), Volume.stepsCrossed(0.62, 0.68, tickFive), Volume.stepsCrossed(0.2, 0.5, tickFive)], [0, 2, 6]);
-eq("the ends of the dial are steps too (and levels are clamped)", [Volume.stepsCrossed(0.98, 1.2, tickOne), Volume.stepsCrossed(0.03, -1, tickOne)], [2, 3]);
-// Pacing: 20 a second at most, a jump is a run that never outlasts 300 ms
-eq("at most one tick every 50 ms is 20 a second", 1000 / Volume.MIN_GAP_MS, 20);
-eq("a jump is ONE tick, heard live: a long sweep crosses steps but nothing is replayed", Volume.stepsCrossed(0.1, 0.9, tickOne) > 0, true);
-eq("a tick is due after the gap, not before", [Volume.due(1000, 0), Volume.due(1049, 1000), Volume.due(1050, 1000), Volume.due(5000, 1000)], [true, false, true, true]);
-// A wheel at 240 events a second, through the real gate
-{
-    let last = NaN, played = 0;
-    for (let k = 0; k < 240; k++) {
-        const now = k * 1000 / 240;
-        if (Volume.due(now, last)) { last = now; played++; }
-    }
-    eq("240 events in one second let 20 ticks through at most", played <= 20, true);
-}
-eq("a clock that went back never blocks the tick", Volume.due(10, 1000), true);
-eq("a player outlasts the gap between two ticks", Volume.IDLE_MS > Volume.MIN_GAP_MS * 10, true);
-eq("quiet outputs get the tick in full", [Volume.tickGain(0.01), Volume.tickGain(0.3), Volume.tickGain(Volume.TICK_KNEE)], [1, 1, 1]);
-eq("above the knee the gain falls so the sound does not grow: gain times level stays at the knee", [0.8, 1].map(v => Math.round(Volume.tickGain(v) * v * 1000) / 1000), [0.6, 0.6]);
-eq("at 100 % the tick is 0.6 of itself", Volume.tickGain(1), 0.6);
-eq("the gain is never above 1 nor below the 100 % one, even for a broken level", [Volume.tickGain(5), Volume.tickGain(-1), Volume.tickGain(NaN), Volume.tickGain(undefined)], [0.6, 1, 1, 1]);
-eq("0 % is silent: nothing to tick in", [Volume.audible(0), Volume.audible(0.001), Volume.audible(-1), Volume.audible(undefined)], [false, true, false, false]);
-const at = (name, level) => ({ "name": name, "level": level });
-eq("one output: its own sink only, with its gain", Volume.tickTargets([at("bluez_output.AA_BB_CC_DD_EE_01.1", 0.5)]), [{ "name": "bluez_output.AA_BB_CC_DD_EE_01.1", "gain": 1 }]);
-eq("the group: every member's sink, each once, each at its own level's gain", Volume.tickTargets([at("a.1", 1), at("b.2", 0.3), at("a.1", 0.3), at("c.3", 0.6)]), [{ "name": "a.1", "gain": 0.6 }, { "name": "b.2", "gain": 1 }, { "name": "c.3", "gain": 1 }]);
-eq("never more than four outputs at once", [Volume.MAX_TICKS, Volume.tickTargets(["a", "b", "c", "d", "e", "f"].map(n => at(n, 0.5))).map(t => t.name)], [4, ["a", "b", "c", "d"]]);
-eq("a name that is not plain is dropped, the others stay", Volume.tickTargets([at("x; rm -rf ~", 0.5), at("--target=y z", 0.5), at("ok.1", 0.5), at("", 0.5), at(null, 0.5), at(7, 0.5), null]).map(t => t.name), ["ok.1"]);
-eq("a silent output (0 %) is left out", Volume.tickTargets([at("a.1", 0), at("b.2", 0.4)]).map(t => t.name), ["b.2"]);
-eq("a tick round the level's node carries the node's linear gain: level cubed, times the knee gain", Volume.tickTargets([{ "name": "a.1", "level": 0.5, "bypass": true }, { "name": "b.2", "level": 1, "bypass": true }, { "name": "c.3", "level": 0.25, "bypass": true }]).map(t => Math.round(t.gain * 1000) / 1000), [0.125, 0.6, 0.016]);
-eq("linearGain is level cubed and safe for a broken level", [Volume.linearGain(0.5), Volume.linearGain(1), Volume.linearGain(2), Volume.linearGain(NaN)], [0.125, 1, 1, 0]);
-eq("a bypassed tick too quiet to hear (gain under MIN_GAIN) starts no player", Volume.tickTargets([{ "name": "a.1", "level": 0.1, "bypass": true }, { "name": "b.2", "level": 0.1, "bypass": false }]).map(t => t.name), ["b.2"]);
-eq("nothing to tick in", [Volume.tickTargets(null), Volume.tickTargets([])], [[], []]);
-eq("a sink keeps its player", Volume.slotsFor(["a.1", "b.2", "", ""], ["b.2", "a.1"]), [1, 0]);
-eq("a new sink takes a free player", Volume.slotsFor(["a.1", "", "", ""], ["c.3"]), [1]);
-eq("with none free it takes one holding a sink not wanted now, never one that is", Volume.slotsFor(["a.1", "b.2", "c.3", "d.4"], ["a.1", "e.5"]), [0, 1]);
-eq("two new sinks take two different players", Volume.slotsFor(["a.1", "", "", ""], ["b.2", "c.3"]), [1, 2]);
 
 // Two volumes (D249, D255): this PC's level lives on a virtual sink in front of
 // the device. Made-up address and names.
@@ -80,16 +30,7 @@ const pwNodes = [
 eq("finds the device's sink, not a stream", Route.deviceSink(pwNodes, MAC), pwNodes[1]);
 eq("finds the virtual sink", Route.virtualSink(pwNodes, MAC), pwNodes[2]);
 eq("nothing for another device", [Route.deviceSink(pwNodes, "AA:BB:CC:DD:EE:02"), Route.virtualSink(pwNodes, "AA:BB:CC:DD:EE:02")], [null, null]);
-eq("a tick for the PC-level filter plays in the device behind it, round the filter", Route.tickOutput(pwNodes, pwNodes[2]), { "name": "bluez_output.AA_BB_CC_DD_EE_01.1", "bypass": true });
-eq("a tick for any other node plays in it as it is", [Route.tickOutput(pwNodes, pwNodes[0]), Route.tickOutput(pwNodes, pwNodes[1]), Route.tickOutput(pwNodes, null)], [{ "name": "alsa_output.usb-Card", "bypass": false }, { "name": "bluez_output.AA_BB_CC_DD_EE_01.1", "bypass": false }, { "name": "", "bypass": false }]);
-eq("a filter whose device sink is gone keeps its own name", Route.tickOutput([pwNodes[2]], pwNodes[2]), { "name": "orbit_pc_AA_BB_CC_DD_EE_01", "bypass": false });
-// The tick shares the link group of the filter in front of its sink, so WirePlumber sends it round that filter (NAK-251)
-eq("a Bluetooth sink's tick is in its PC-level filter's group", Route.tickGroup("bluez_output.AA_BB_CC_DD_EE_FF.1"), "orbit_pc_AA_BB_CC_DD_EE_FF");
-{
-    const wired = "alsa_output.usb-x.analog-stereo";
-    eq("a wired sink's tick is in its wired filter's group, a name of that exact shape", [Route.tickGroup(wired), Route.isWiredFilter(Route.tickGroup(wired))], [Route.wiredFilterName(wired), true]);
-}
-eq("anything else has no group", [Route.tickGroup("orbit_pc_X"), Route.tickGroup(""), Route.tickGroup(null)], ["", "", ""]);
+eq("a wired sink's filter name has that exact shape", Route.isWiredFilter(Route.wiredFilterName("alsa_output.usb-x.analog-stereo")), true);
 eq("description keeps the name", Route.description("WH-1000XM6"), "WH-1000XM6 (Orbit)");
 eq("description drops quotes and escapes", Route.description('My "Buds" \\ $(x)'), "My Buds (x) (Orbit)");
 eq("empty name falls back", Route.description(""), "Bluetooth (Orbit)");
@@ -110,11 +51,6 @@ const shared = [sharedA, sharedB, sharedC];
 eq("a shared node reaches all the shared ones", Route.levelNodes(shared, sharedB), shared);
 eq("another node reaches only itself", Route.levelNodes(shared, own), [own]);
 eq("with nothing shared, only itself", Route.levelNodes([], own), [own]);
-// The tick follows the hand, not the shared write: one output unless it is the group's level (NAK-255)
-eq("a member's shared level ticks its own output only", Route.tickNodes(shared, sharedB, false), [sharedB]);
-eq("a member's level ticks its own output when nothing says group", Route.tickNodes(shared, sharedB), [sharedB]);
-eq("the group's general level ticks every shared output", Route.tickNodes(shared, sharedB, true), shared);
-eq("a level outside the shared ones ticks itself, group or not", Route.tickNodes(shared, own, true), [own]);
 Route.writeLevel(shared, sharedC, 0.5);
 eq("a level written is on every copy, unmuted", shared.map(n => [n.audio.volume, n.audio.muted]), [[0.5, false], [0.5, false], [0.5, false]]);
 eq("and the node outside is left alone", [own.audio.volume, own.audio.muted], [0.3, true]);

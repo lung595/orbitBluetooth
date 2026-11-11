@@ -14,8 +14,6 @@ Item {
 
     QtObject {
         id: prefs
-        property bool volumeTick: false
-        property bool tickAlone: true
         property bool separatePc: true
         property var pcLevels: ({})
         property string volumeSteps: "fixed"
@@ -106,7 +104,7 @@ Item {
 
         // The group's level written by Orbit, the members keeping their gaps
         route.touch("");
-        route.writeLevels([a, b], [0.3, 0.4], 0.5, 0.35);
+        route.writeLevels([a, b], [0.3, 0.4]);
         check("the group's level by Orbit is not the headset", route.target, "");
         a.audio.volume = 0.9;
         check("a button press after the group's level picks the member", route.target, one);

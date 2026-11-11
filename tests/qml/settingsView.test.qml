@@ -39,13 +39,14 @@ Item {
             view: view
             category: "sounds"
             Item {
-                id: tick
-                property string settingKey: "volumeTick"
+                id: effects
+                property string settingKey: "sounds"
                 width: parent.width
                 height: 30
-                visible: sounds.shown("volumeTick")
+                visible: sounds.shown("sounds")
             }
             Item {
+                id: loudness
                 property string settingKey: "soundVolume"
                 width: parent.width
                 height: 30
@@ -113,18 +114,18 @@ Item {
                 h.check("a click on a category opens it, and only it", [view.current, sounds.visible, look.visible], ["sounds", true, false]);
                 h.check("it is the planet in focus now", [h.entryOf("sounds").on, h.entryOf("orbit").on], [true, false]);
                 input.mouseClick(search, 100, 20);
-                input.keyClick("t");
-                input.keyClick("i");
-                input.keyClick("c");
-                input.keyClick("k");
+                input.keyClick("s");
+                input.keyClick("n");
+                input.keyClick("a");
+                input.keyClick("p");
             }
         },
         {
             "then": 150,
             "run": () => {
-                h.check("typing sets the query", view.query, "tick");
+                h.check("typing sets the query", view.query, "snap");
                 h.check("the page is a filter now", [view.filtering, view.hasResults], [true, true]);
-                h.check("the sounds page shows its match and hides the other setting", [sounds.visible, tick.visible], [true, true]);
+                h.check("the sounds page shows its match and hides the other setting", [sounds.visible, effects.visible, loudness.visible], [true, true, false]);
                 h.check("the page with no match is gone", look.visible, false);
                 h.check("the rail counts per category", [h.entryOf("sounds").badge > 0, h.entryOf("look").badge], [true, 0]);
                 h.check("no planet while filtering, no match fades", [h.entryOf("sounds").on, h.entryOf("look").dim], [false, true]);
@@ -135,7 +136,7 @@ Item {
             "then": 150,
             "run": () => {
                 h.check("Esc clears the text and gives the page back", [view.query, view.filtering, view.current], ["", false, "sounds"]);
-                h.check("and the settings all show again", [sounds.visible, look.visible, tick.visible], [true, false, true]);
+                h.check("and the settings all show again", [sounds.visible, look.visible, effects.visible, loudness.visible], [true, false, true, true]);
                 input.keyClick("x");
                 input.keyClick("y");
                 input.keyClick("z");
@@ -148,10 +149,10 @@ Item {
             "run": () => {
                 h.check("a query with no match: nothing shows, rail stays", [view.filtering, view.hasResults, sounds.visible, look.visible], [true, false, false, false]);
                 input.keyClick(Qt.Key_Escape);
-                input.keyClick("t");
-                input.keyClick("i");
-                input.keyClick("c");
-                input.keyClick("k");
+                input.keyClick("s");
+                input.keyClick("n");
+                input.keyClick("a");
+                input.keyClick("p");
                 input.keyClick(Qt.Key_Return);
             }
         },

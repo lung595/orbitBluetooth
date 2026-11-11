@@ -99,21 +99,6 @@ Item {
         Component.onCompleted: claim()
     }
 
-    // One sound, and it is Orbit's tick: DMS's volume sound waits while Orbit
-    // moves a level, if the user chose the tick alone (D360). DMS's volume
-    // OSD is left alone (Orbit OSD was removed after 1.15)
-    DmsQuiet {
-        id: quiet
-        settings: SettingsData
-        replaceSound: prefs.volumeTick && prefs.tickAlone
-    }
-    Connections {
-        target: audioRoute
-        function onLevelWriting() {
-            quiet.hold();
-        }
-    }
-
     // Settings of features removed after 1.15 (the pairing sheet under the
     // bar, with the addresses refused with "Don't offer again"; Orbit OSD;
     // the old volume keys flags) are cleared once

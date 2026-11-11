@@ -463,7 +463,7 @@ Item {
         check("with no wait the filter still runs, the copy reads the sink until it is up", copies(), ["02<-test_one", "filter(test_one)"]);
         check("the filter made up no wait: its command has no delay argument", filterProcess().command.length, 6);
         filterUp(w1, true);
-        check("the filter is up: the copy reads its monitor, so the source's tick stays out of it", copies(), ["02<-f-test_one", "filter(test_one)"]);
+        check("the filter is up: the copy reads its monitor, not the sink", copies(), ["02<-f-test_one", "filter(test_one)"]);
         check("the face shows the wired source's own level", [session.sharedNode === route.wired[w1], session.memberNode(w2) === route.wired[w2], session.sharedNodes.length], [true, true, 0]);
 
         check("a wired output joins by a drop onto a member", [session.join(w2, b), session.members], [null, [w1, b, w2]]);

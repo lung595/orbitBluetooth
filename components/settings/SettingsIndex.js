@@ -37,7 +37,7 @@ var CATEGORIES = [
     { "id": "headphones", "icon": "headphones", "name": "Headphones", "help": "Noise control and the wearing sensor" },
     { "id": "volume", "icon": "volume_up", "name": "Volume", "help": "Levels, steps and keys" },
     { "id": "audio", "icon": "info", "name": "Audio details", "help": "What the output is, read from PipeWire" },
-    { "id": "sounds", "icon": "graphic_eq", "name": "Sounds", "help": "Sounds and the volume tick" },
+    { "id": "sounds", "icon": "graphic_eq", "name": "Sounds", "help": "Snap, connect and disconnect" },
     { "id": "desktop", "icon": "desktop_windows", "name": "Desktop", "help": "The desktop widget" },
     { "id": "look", "icon": "palette", "name": "Look", "help": "Black hole, stars and images" },
     { "id": "reset", "icon": "restart_alt", "name": "Reset & help", "help": "Put things back, report a problem" }
@@ -83,10 +83,7 @@ var ENTRIES = [
          [
     // --- sounds ----------------------------------------------------------------
     _entry("sounds", "sounds", "Sounds", "On snap, connect and disconnect", ["sound", "audio", "effects", "mute", "silent", "noise", "beep", "click"]),
-    _entry("volumeTick", "sounds", "Volume tick", "A soft tick on each step, so you hear the level where it plays", ["sound", "click", "feedback", "audio", "beep", "notch"]),
-    _entry("tickEvery", "sounds", "Tick every", "How big a step is: every 1 % ticks once per percent, every 5 % is sparser", ["sound", "click", "step", "percent", "density"]),
-    _entry("tickAlone", "sounds", "Orbit's tick only", "While you change a level, DMS's own volume sound waits, so only the tick plays", ["sound", "click", "double", "dms", "feedback"]),
-    _entry("soundVolume", "sounds", "Volume", "How loud the sounds and ticks are", ["sound", "loudness", "level", "quiet", "tick"]),
+    _entry("soundVolume", "sounds", "Volume", "How loud the sounds are", ["sound", "loudness", "level", "quiet"]),
 
     // --- desktop ---------------------------------------------------------------
     _entry("desktopBackdrop", "desktop", "Backdrop", "Veil behind the orbit", ["background", "dim", "darkness", "opacity", "transparency", "blur", "veil"]),

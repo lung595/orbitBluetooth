@@ -11,17 +11,16 @@ Rust buys **reliability and independence**, not lightness. Measured on the
 owner's machine: a Python helper costs about 11.5 MB and starts in 10–25 ms,
 only while it runs; the DMS shell is about 890 MB. A resident orbitd costs an
 estimated 2–4 MB at all times. What Rust fixes is that Orbit depends on tools
-a default install does not have: `pipewire-utils` (`pw-loopback`, `pw-cat`,
-`pw-link`, `pw-dump`, `pw-top`) is missing on stock Fedora, so the PC volume
-filter, the Listen together copies, the tick, latency and the graph facts fail
-silently today. Rust is also memory-safe where Orbit parses bytes sent by a
+a default install does not have: `pipewire-utils` (`pw-loopback`, `pw-link`,
+`pw-dump`, `pw-top`) is missing on stock Fedora, so the PC volume filter, the
+Listen together copies, latency and the graph facts fail silently today. Rust is also memory-safe where Orbit parses bytes sent by a
 headset (the ANC protocols).
 
 ## Decisions
 
 - **Scope: the system only.** orbitd owns what touches the system: the ANC
-  protocols (RFCOMM, SDP), the volume tick, PipeWire (PC filter, Listen
-  together copies, wired filter, latency, quantum, graph facts), D-Bus
+  protocols (RFCOMM, SDP), PipeWire (PC filter, Listen together copies,
+  wired filter, latency, quantum, graph facts), D-Bus
   (BlueZ, UPower, MPRIS) and the uninstall cleanup.
 - **The pure JS logic stays in JS**, all of it: Route, Together, Choice,
   Wired, Delay, Habits, Member, Charge, Endurance, Wear's state machine,
@@ -57,24 +56,21 @@ headset (the ANC protocols).
 1. **Release 2.0.0 first, without Rust.** `main` already holds the 2.0 work
    (DMS 2.1 fixes, pictures, pairing sheet, Orbit OSD and launcher removed).
    Before the bump, **repair the features broken without pipewire-utils** using
-   what a default install has (`pactl`, `pacat`/`paplay`, pipewire-pulse):
-   the PC volume filter, the Listen together copies, the wired filter, the tick.
+   what a default install has (`pactl`, pipewire-pulse): the PC volume
+   filter, the Listen together copies, the wired filter.
    Test without installing pipewire-utils. Then bump `plugin.json` and the
    CHANGELOG to 2.0.0. The owner tests and pushes.
 2. **Spike** (decides the PipeWire layer): pipewire-rs on this machine,
-   registry and node params (Latency, Props), loopback/filter creation, a
-   playback stream for the tick linked to one sink only (no leak into the
-   Listen together copies through WirePlumber's smart filter, NAK-251).
+   registry and node params (Latency, Props), loopback/filter creation.
    Measure lines and binary size.
 3. **orbitd skeleton:** handshake (`hello {proto, version, arch}`), single
    instance lock, EOF exit, parent death signal, child supervision, `log`
    events through the JS allowlist, QML client in `components/orbitd/`, arch
    pick, crash backoff, reduced mode when the binary is missing.
-4. **PipeWire** (replaces the pacat/pactl repair and pw-dump/pw-top).
+4. **PipeWire** (replaces the pactl repair and pw-dump/pw-top).
 5. **D-Bus:** BlueZ, UPower, MPRIS (replaces `busctl`).
-6. **Tick.**
-7. **Uninstall cleanup.**
-8. **ANC last**, once the rest has proven itself: SDP, the session runner,
+6. **Uninstall cleanup.**
+7. **ANC last**, once the rest has proven itself: SDP, the session runner,
    13 families ported from `anc/` with the Python tests ported 1:1, and real
    sessions recorded first (see Tests). Then delete `anc/`.
 

@@ -33,7 +33,7 @@ Column {
         width: parent.width
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.Wrap
-        text: "Try one word: tick, battery, pop-up, stars"
+        text: "Try one word: sound, battery, delay, stars"
         font.pixelSize: Theme.fontSizeSmall
         color: Theme.surfaceVariantText
     }

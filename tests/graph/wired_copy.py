@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
-"""Listen together on a PRIVATE PipeWire + WirePlumber: where does a volume tick sound?
+"""Listen together on a PRIVATE PipeWire + WirePlumber: does a wired source's sound reach its copies?
 
-usage: python3 tests/graph/wired_tick.py        (from the plugin root; ~30 s)
+usage: python3 tests/graph/wired_copy.py        (from the plugin root; ~20 s)
 
-Starts its own PipeWire, WirePlumber and pipewire-pulse (the tick helper plays
-through pacat, a pulse client) in a temporary runtime directory (the
+Starts its own PipeWire and WirePlumber in a temporary runtime directory (the
 bus, BlueZ and the sound cards are never touched: those monitors are switched
-off), makes two made-up outputs (a wired source and a Bluetooth copy), runs
-the very commands Listen together would run (tests/graph-commands.js) and the
-real tick helper (tick/orbit_tick.py), and records each output's input.
-Checked: a tick on the source stays out of the copy, a tick on the copy stays
-out of the source, the group's general level ticks both, the copied sound still
-passes, and (the counter-proof) without the filter the tick does leak into the
-copy. Also run for a source with a wait and for a wired copy. Exit 0 when all hold.
+off), makes two made-up outputs (a wired source and a Bluetooth copy),
+runs the very commands Listen together would run (tests/graph-commands.js:
+the filter kept in front of the wired source, and the copies reading its
+monitor) and records each output's input while a tone plays to the source.
+Checked: the played sound still reaches the source, and the copied sound
+reaches the copy, with and without a 150 ms wait.
+Exit 0 when all hold.
 Developer-only: building and recording the private graph needs pipewire-utils
 (pw-cli, pw-cat, pw-link), which Orbit itself does not.
 """
@@ -29,18 +28,12 @@ import wave
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 WIRED = "alsa_output.usb-Acme_Demo-00.analog-stereo"
-WIRED2 = "alsa_output.usb-Acme_Studio-00.analog-stereo"
 BLUE = "bluez_output.AA_BB_CC_DD_EE_01.1"
 TOKEN = "AA:BB:CC:DD:EE:01"
-# A tick peaks near 0.2 of full scale (Volume.tickGain); anything under this is silence
-HEARD = 0.02
 RATE = 48000
 
 procs = []
 failures = []
-# The link group the tick player gets for each output, as VolumeTick passes it
-# (Route.tickGroup, printed by tests/graph-commands.js and graph-ticks.js)
-GROUPS = {}
 
 
 def check(name, ok):
@@ -78,31 +71,15 @@ def environment(tmp):
                 "monitor.bluez = disabled monitor.bluez-midi = disabled monitor.libcamera = disabled monitor.v4l2 = disabled } }\n")
     env = {k: v for k, v in os.environ.items() if k != "DBUS_SESSION_BUS_ADDRESS"}
     env.update(XDG_RUNTIME_DIR=run, HOME=home, XDG_CONFIG_HOME=home + "/.config", XDG_STATE_HOME=home + "/.state",
-               XDG_CACHE_HOME=home + "/.cache", PIPEWIRE_CORE="orbit-graph-test", PIPEWIRE_REMOTE="orbit-graph-test",
-               # The tick helper plays through pacat, a pulse client: pinned to the private
-               # pulse server, so it fails rather than reaching the real session's
-               PULSE_SERVER="unix:" + run + "/pulse/native")
+               XDG_CACHE_HOME=home + "/.cache", PIPEWIRE_CORE="orbit-graph-test", PIPEWIRE_REMOTE="orbit-graph-test")
     return env
 
 
 def start_graph(env):
-    """PipeWire, WirePlumber and the pulse server pacat talks to, all private.
-
-    The default pipewire.conf does not start pipewire-pulse (its exec is left
-    commented out), so without it pacat finds no server, the helper exits 0
-    in silence and every "ticks" check fails for the wrong reason.
-    """
+    """PipeWire and WirePlumber, both private."""
     spawn(["pipewire"], env)
     time.sleep(1.5)
     spawn(["wireplumber"], env)
-    spawn(["pipewire", "-c", "pipewire-pulse.conf"], env)
-    sock = env["XDG_RUNTIME_DIR"] + "/pulse/native"
-    for _ in range(50):
-        if os.path.exists(sock):
-            break
-        time.sleep(0.1)
-    else:
-        raise RuntimeError("the private pipewire-pulse did not start")
     time.sleep(2.0)
 
 
@@ -112,19 +89,13 @@ def make_sink(env, name):
                    env=env, check=True, stdout=subprocess.DEVNULL)
 
 
-def commands(source, copy, token, wait, with_filter=True):
-    out = subprocess.run(["gjs", ROOT + "/tests/graph-commands.js", source, copy, token, str(wait)] + ([] if with_filter else ["nofilter"]), check=True, capture_output=True, text=True)
-    data = json.loads(out.stdout)
-    GROUPS.update(data["groups"])
-    return data["commands"]
+def commands(source, copy, token, wait):
+    out = subprocess.run(["gjs", ROOT + "/tests/graph-commands.js", source, copy, token, str(wait)], check=True, capture_output=True, text=True)
+    return json.loads(out.stdout)["commands"]
 
 
-def run_copies(env, source, copy, token, wait, with_filter=True):
-    started = []
-    for c in commands(source, copy, token, wait, with_filter):
-        # The old behaviour had no filter at all when nothing had to wait
-        if with_filter or c["key"] != "wired-source-filter":
-            started.append(spawn(c["command"], env))
+def run_copies(env, source, copy, token, wait):
+    started = [spawn(c["command"], env) for c in commands(source, copy, token, wait)]
     time.sleep(3.0)
     return started
 
@@ -134,8 +105,8 @@ recorders = [0]
 
 def record(env, sink, path, seconds):
     # The input of an output: its own monitor ports, linked by hand. A recorder that names the
-    # sink would be rerouted by WirePlumber to the smart filter in front of it, and the tick
-    # (played in the sink itself) would be missed: the very thing under test.
+    # sink would be rerouted by WirePlumber to the smart filter in front of it, and would no
+    # longer record what reaches the output itself.
     recorders[0] += 1
     name = "rec%d" % recorders[0]
     p = spawn(["timeout", str(seconds), "pw-cat", "--record", "-P", "node.name=%s node.autoconnect=false" % name,
@@ -161,19 +132,6 @@ def peak(path):
     return max((abs(x) for x in samples), default=0.0)
 
 
-def tick(env, sink, count=3):
-    p = subprocess.Popen(["python3", "-I", ROOT + "/tick/orbit_tick.py", sink, ROOT + "/sounds/volume.wav", GROUPS.get(sink, "")], env=env, stdin=subprocess.PIPE,
-                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    procs.append(p)
-    time.sleep(0.8)
-    for _ in range(count):
-        p.stdin.write(b"t 1.0\n")
-        p.stdin.flush()
-        time.sleep(0.3)
-    time.sleep(0.4)
-    stop(p)
-
-
 def tone(path):
     with wave.open(path, "wb") as w:
         w.setnchannels(1)
@@ -196,12 +154,9 @@ def heard_when(env, tmp, sinks, action, seconds=4):
     return {s: peak(files[s]) for s in sinks}
 
 
-def scenario(env, tmp, title, source, copy, token, wait, with_filter=True):
+def scenario(env, tmp, title, source, copy, token, wait):
     print("-- " + title)
-    started = run_copies(env, source, copy, token, wait, with_filter)
-    on_source = heard_when(env, tmp, [source, copy], lambda: tick(env, source))
-    on_copy = heard_when(env, tmp, [source, copy], lambda: tick(env, copy))
-    both = heard_when(env, tmp, [source, copy], lambda: (tick(env, source, 2), tick(env, copy, 2)))
+    started = run_copies(env, source, copy, token, wait)
     tone_path = tmp + "/tone.wav"
     tone(tone_path)
     music = heard_when(env, tmp, [source, copy], lambda: subprocess.run(["pw-cat", "--playback", "--target", source, tone_path], env=env, timeout=10,
@@ -209,7 +164,7 @@ def scenario(env, tmp, title, source, copy, token, wait, with_filter=True):
     for p in started:
         stop(p)
     time.sleep(0.5)
-    return on_source, on_copy, both, music
+    return music
 
 
 def main():
@@ -217,28 +172,14 @@ def main():
     env = environment(tmp)
     try:
         start_graph(env)
-        for name in (WIRED, WIRED2, BLUE):
+        for name in (WIRED, BLUE):
             make_sink(env, name)
         time.sleep(1)
 
         for title, wait in (("wired source, no wait, Bluetooth copy", 0), ("wired source with a 150 ms wait, Bluetooth copy", 150)):
-            s, c, b, m = scenario(env, tmp, title, WIRED, BLUE, TOKEN, wait)
-            check(title + ": tick on the source is heard on the source", s[WIRED] > HEARD)
-            check(title + ": tick on the source is not heard in the copy", s[BLUE] < HEARD)
-            check(title + ": tick on the copy is heard on the copy", c[BLUE] > HEARD)
-            check(title + ": tick on the copy is not heard on the source", c[WIRED] < HEARD)
-            check(title + ": both levels together tick both", b[WIRED] > HEARD and b[BLUE] > HEARD)
+            m = scenario(env, tmp, title, WIRED, BLUE, TOKEN, wait)
             check(title + ": the copied sound still reaches the copy", m[BLUE] > 0.1)
             check(title + ": the played sound still reaches the source", m[WIRED] > 0.1)
-
-        title = "wired source, wired copy"
-        s, c, b, m = scenario(env, tmp, title, WIRED, WIRED2, WIRED2, 0)
-        check(title + ": tick on the source is not heard in the copy", s[WIRED2] < HEARD)
-
-        # Counter-proof: take the filter away and the tick is heard in the copy, so the test can fail
-        title = "no filter (the old behaviour)"
-        s, c, b, m = scenario(env, tmp, title, WIRED, BLUE, TOKEN, 0, with_filter=False)
-        check(title + ": the tick leaks into the copy", s[BLUE] > HEARD)
     finally:
         for p in reversed(procs):
             stop(p)

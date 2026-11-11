@@ -257,8 +257,8 @@ function nodeOf(command) {
 
 // The command of the filter in front of a wired source, or null when the
 // source is not wired (`ms` is how long it waits, possibly nothing: the copies
-// still read the filter and not the sink, or the volume tick played in the
-// sink would sound in them)
+// still read the filter and not the sink, so a change of the wait restarts
+// the filter alone, never the copies; Route.wiredFilterArgs)
 function filterCommand(p, ms) {
     return p && Member.isWired(p.source) ? Route.wiredFilterArgs(p.source, delayArg(ms)) : null;
 }

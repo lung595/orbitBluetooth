@@ -88,21 +88,15 @@ Item {
         function pcNode(dev) {
             return dev ? dev.sink : null;
         }
-        // What the gestures pass on: the node and whether the level is the group's
+        // The node each gesture writes to
         property var writes: []
-        function writeLevel(node, level, group) {
-            writes.push({
-                "node": node,
-                "group": group
-            });
+        function writeLevel(node, level) {
+            writes.push(node);
         }
         function writeMuted(node, muted) {
         }
-        function stepNode(node, dir, group) {
-            writes.push({
-                "node": node,
-                "group": group
-            });
+        function stepNode(node, dir) {
+            writes.push(node);
         }
         function touch(address) {
         }
@@ -139,19 +133,20 @@ Item {
         check("it has the analog picture, and the group still shows four arcs", [levels.members.length, levels.members[3].icon, levels.members[3].label], [4, "cable", "Built-in Audio"]);
         session.remove(h.jackOut);
 
-        // Only the group's general level (the shared PC half) sounds on every member
+        // The general level (the shared PC half) and a member's own level each
+        // reach their own node, by drag and by wheel
         route.writes = [];
         levels.setLevel("pc", 0.3);
         levels.stepLevel("pc", 1);
         levels.setLevel("m1", 0.3);
         levels.stepLevel("m1", 1);
-        check("in a group the general level is written as the group's, by drag and by wheel", route.writes.slice(0, 2).map(w => w.group), [true, true]);
-        check("a member's own level is not", route.writes.slice(2).map(w => w.group), [false, false]);
+        check("in a group the general level is written to the PC half's node, by drag and by wheel", route.writes.slice(0, 2).map(n => !!n && n === levels._pcNode), [true, true]);
+        check("a wired member's own level is written to its sink", route.writes.slice(2).map(n => n === usbSink), [true, true]);
         route.writes = [];
         session.end("test");
         levels.setLevel("pc", 0.3);
         levels.stepLevel("pc", 1);
-        check("outside a group nothing is the group's", route.writes.map(w => w.group), [false, false]);
+        check("outside a group the PC half is written to its node", route.writes.map(n => !!n && n === levels._pcNode), [true, true]);
 
         // Not Bluetooth: the device card of a wired output is not split by this
         check("a wired output is not a Bluetooth device, so no device to split on", route.known(h.usbOut), null);

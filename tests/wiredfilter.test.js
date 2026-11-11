@@ -56,7 +56,7 @@ const all = Together.commands(plan, {}, 195);
 eq("the filter comes first, under a key no member has, then the copy", [all.map(c => c.key), Member.clean(Together.FILTER_KEY)], [[Together.FILTER_KEY, BT], ""]);
 eq("the filter's command is the one Route gives, with the wait in seconds", [all[0].command, all.length], [Route.wiredFilterArgs(W1, "0.195"), 2]);
 eq("the copy has no wait of its own", all[1].command.length, 6);
-// NAK-251: the copies must read the filter and not the sink, or the volume tick played in the sink sounds in them
+// NAK-251: the copies read the filter and not the sink, even with no wait, so a change of the wait restarts the filter alone
 const noWait = Route.wiredFilterArgs(W1, "");
 eq("no wait still has a filter, with no delay parameter", [noWait !== null, noWait.length, noWait.slice(0, 6), noWait[2] === cmd[2]], [true, 6, cmd.slice(0, 6), true]);
 eq("no wait: the filter is there all the same", [Together.commands(plan, {}, 0).map(c => c.key), Together.commands(plan, {}).map(c => c.key), Together.commands(plan, {}, -5).map(c => c.key)], [[Together.FILTER_KEY, BT], [Together.FILTER_KEY, BT], [Together.FILTER_KEY, BT]]);

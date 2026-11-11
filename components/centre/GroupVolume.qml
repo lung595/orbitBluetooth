@@ -43,11 +43,11 @@ QtObject {
         // Orbit shows the level itself: DMS's own pop-up waits a moment
         SessionData.suppressOSDTemporarily();
         if (shared) {
-            route.writeLevel(nodes[0], to, true);
+            route.writeLevel(nodes[0], to);
             return;
         }
-        // The members keep their gaps; the group's level is everyone's tick
-        route.writeLevels(nodes, Master.scale(levels, level, to), level, to);
+        // The members keep their gaps
+        route.writeLevels(nodes, Master.scale(levels, level, to));
     }
 
     // One smart step of the general level (the wheel, D264)
@@ -57,7 +57,7 @@ QtObject {
         route.touch("");
         if (shared) {
             SessionData.suppressOSDTemporarily();
-            route.stepNode(nodes[0], dir, true);
+            route.stepNode(nodes[0], dir);
         } else
             set(Steps.apply(level, dir, route.stepFor(dir, level)));
     }
