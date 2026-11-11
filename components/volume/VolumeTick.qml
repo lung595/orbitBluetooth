@@ -3,6 +3,7 @@ import QtQml
 import Quickshell.Io
 import qs.Common
 import "Volume.js" as Volume
+import "Route.js" as Route
 
 // The soft tick that tells where a level is (sounds/volume.wav), played in the
 // outputs a change of level reached: the one output whose own level moved, or
@@ -14,9 +15,12 @@ import "Volume.js" as Volume
 // so it cannot saturate.
 // A player per output (tick/orbit_tick.py) holds ONE PipeWire stream, fades
 // each tick in and out and lets a new tick replace the one still ringing: a
-// pw-play per tick cost a process, a connection and a stream each, too much at
-// 20 a second. It starts with the first tick, goes after Volume.IDLE_MS
-// without one (closing its standard input) and dies with the shell. Nothing
+// process per tick cost a start, a connection and a stream each, too much at
+// 20 a second. The stream shares the link group of Orbit's filter in front of
+// that output (Route.tickGroup), so it plays in the output itself and never
+// through the filter the Listen together copies read. It starts with the
+// first tick, goes after Volume.IDLE_MS without one (closing its standard
+// input) and dies with the shell. Nothing
 // here runs between two changes: no pacing timer, only the idle one-shot.
 Item {
     id: tick
@@ -64,7 +68,7 @@ Item {
         }
         if (!player.running) {
             player.sink = target.name;
-            player.command = ["python3", "-I", tick.helper, target.name, tick.path];
+            player.command = ["python3", "-I", tick.helper, target.name, tick.path, Route.tickGroup(target.name)];
             player.stdinEnabled = true;
             player.running = true;
         }

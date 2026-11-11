@@ -17,7 +17,7 @@ function step(v, size) {
     return Math.round(clamp(v) / size);
 }
 
-// Only a plain node name is ever passed to pw-play (value 11)
+// Only a plain node name is ever passed to the tick player (value 11)
 function validSink(name) {
     return typeof name === "string" && name.length > 0 && name.length <= 128 && /^[A-Za-z0-9_.:-]+$/.test(name);
 }

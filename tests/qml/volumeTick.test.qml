@@ -68,8 +68,14 @@ Item {
         tick.play([node("bluez_output.AA_01.1")], 0.5, 0.55);
         check("one output: the tick is in that sink only", h.sinks(), ["bluez_output.AA_01.1"]);
         const run = started()[0].command;
-        check("the shipped helper and sound, no shell", [run[0], run[1], run[2].endsWith("tick/orbit_tick.py"), run[4].endsWith("sounds/volume.wav"), run.length], ["python3", "-I", true, true, 5]);
+        check("the shipped helper and sound, no shell", [run[0], run[1], run[2].endsWith("tick/orbit_tick.py"), run[4].endsWith("sounds/volume.wav"), run.length], ["python3", "-I", true, true, 6]);
+        check("a name that is no Bluetooth address has no filter group", run[5], "");
         check("and the tick is a line on its input, at full gain at a quiet level", started()[0].written, ["t 1.00\n"]);
+
+        // A device's tick shares its PC-level filter's link group, so it plays round that filter
+        h.settle();
+        tick.play([node("bluez_output.AA_BB_CC_DD_EE_01.1")], 0.5, 0.55);
+        check("a device's tick carries its filter's group", started()[0].command[5], "orbit_pc_AA_BB_CC_DD_EE_01");
 
         h.settle();
         tick.play([node("a.1"), node("b.2"), node("c.3")], 0.5, 0.55);

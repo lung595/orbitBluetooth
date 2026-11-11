@@ -1,5 +1,6 @@
 // Prints, as JSON, the outputs a volume tick plays in for one change of level, for tests/graph/device_tick.py.
 // usage: gjs tests/graph-ticks.js <wired sink> <Bluetooth sink> <Bluetooth address> <hand> [old]
+// Also prints the link group the tick player is given for each output (Route.tickGroup).
 // <hand>: "wired" (the wired output's own level), "bluetooth" (the headset's PC level) or "group" (the group's general level).
 // The wired output is the source of a Listen together group and the headset its copy, so their levels are
 // shared (TogetherSession.sharedNodes). "old" ticks every shared output, as the code did before NAK-255.
@@ -17,4 +18,5 @@ const shared = [own, pc];
 const moved = hand === "wired" ? own : pc;
 const reached = old ? Route.levelNodes(shared, moved) : Route.tickNodes(shared, moved, hand === "group");
 const targets = Volume.tickTargets(reached.map(n => Object.assign({}, Route.tickOutput(all, n), { "level": 0.5 })));
-print(JSON.stringify({ "filter": Route.filterArgs(token, blue, "Headset"), "sinks": targets.map(t => t.name) }));
+const groups = Object.fromEntries([wired, blue].map(s => [s, Route.tickGroup(s)]));
+print(JSON.stringify({ "filter": Route.filterArgs(token, blue, "Headset"), "sinks": targets.map(t => t.name), "groups": groups }));

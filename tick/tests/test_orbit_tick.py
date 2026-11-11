@@ -85,57 +85,64 @@ class GainTest(unittest.TestCase):
         self.assertEqual([t.parse_gain(b""), t.parse_gain(b"x"), t.parse_gain(b"t 1 2")], [None, None, None])
 
 
-class LinkTest(unittest.TestCase):
-    outs = ["orbit_tick_7:output_MONO", "other_node:output_FL"]
-    ins = ["sink.1:playback_FL", "sink.1:playback_FR", "sink.12:playback_FL", "orbit_pc_x:playback_FL"]
+class PlayerArgsTest(unittest.TestCase):
+    group = "orbit_pc_AA_BB_CC_DD_EE_FF"
 
-    def test_the_stream_is_linked_to_each_input_of_the_sink_itself(self):
-        self.assertEqual(
-            t.link_plan(self.outs, self.ins, "orbit_tick_7", "sink.1"),
-            [("orbit_tick_7:output_MONO", "sink.1:playback_FL"), ("orbit_tick_7:output_MONO", "sink.1:playback_FR")])
+    def args(self, group=""):
+        return t.player_args("fake.sink", group, "orbit_tick_7")
 
-    def test_never_the_filter_in_front_of_the_sink(self):
-        pairs = t.link_plan(self.outs, self.ins, "orbit_tick_7", "sink.1")
-        self.assertFalse([p for p in pairs if p[1].startswith("orbit_pc_x:")])
+    def test_the_stream_is_aimed_at_the_sink(self):
+        args = self.args()
+        self.assertEqual(args[0], "pacat")
+        self.assertEqual(args[args.index("-d") + 1], "fake.sink")
 
-    def test_nothing_is_linked_until_both_ends_exist(self):
-        self.assertEqual(t.link_plan([], self.ins, "orbit_tick_7", "sink.1"), [])
-        self.assertEqual(t.link_plan(self.outs, self.ins, "orbit_tick_7", "gone.sink"), [])
+    def test_nothing_is_remembered_and_it_never_moves_to_another_output(self):
+        for wanted in ("--property=state.restore-props=false", "--property=state.restore-target=false",
+                       "--property=node.dont-reconnect=true", "--property=node.dont-fallback=true", "--volume=65536"):
+            self.assertIn(wanted, self.args())
+
+    def test_the_filter_link_group_goes_last(self):
+        self.assertEqual(self.args(self.group)[-1], "--property=node.link-group=" + self.group)
+        self.assertEqual(t.player_args("s", "orbit_wired_w_card_0123abcd", "n")[-1], "--property=node.link-group=orbit_wired_w_card_0123abcd")
+
+    def test_no_group_or_a_bad_one_sets_none(self):
+        for bad in ("", "x y", "orbit_pc_a,b", "node.autoconnect=false", "orbit_pc_A B", "other_AA"):
+            self.assertFalse([a for a in self.args(bad) if "link-group" in a], bad)
+
+    def test_autoconnect_is_never_touched(self):
+        for group in ("", self.group, "node.autoconnect=false"):
+            self.assertFalse([a for a in self.args(group) if "autoconnect" in a])
 
 
 class SessionTest(unittest.TestCase):
-    """The whole helper against a stand-in pw-cat that keeps what it is sent."""
+    """The whole helper against a stand-in pacat that keeps what it is sent."""
+
+    helper = os.path.join(os.path.dirname(__file__), "..", "orbit_tick.py")
+    wav = os.path.join(os.path.dirname(__file__), "..", "..", "sounds", "volume.wav")
+
+    def fake(self, tmp, body):
+        path = os.path.join(tmp, "pacat")
+        with open(path, "w") as f:
+            f.write("#!/bin/sh\n" + body)
+        os.chmod(path, os.stat(path).st_mode | stat.S_IXUSR)
+        return dict(os.environ, PATH=tmp + os.pathsep + os.environ["PATH"])
 
     def test_ticks_become_sound_and_the_end_of_input_ends_it_all(self):
         with tempfile.TemporaryDirectory() as tmp:
             sink = os.path.join(tmp, "got.raw")
-            fake = os.path.join(tmp, "pw-cat")
-            with open(fake, "w") as f:
-                f.write("#!/bin/sh\necho \"$@\" > " + tmp + "/args\nexec cat > " + sink + "\n")
-            os.chmod(fake, os.stat(fake).st_mode | stat.S_IXUSR)
-            # A stand-in pw-link that lists the stream (named as pw-cat was asked) and the sink's ports
-            links = os.path.join(tmp, "pw-link")
-            with open(links, "w") as f:
-                f.write("#!/bin/sh\ncase \"$1\" in\n"
-                        "-o) n=$(sed -n 's/.*node.name=\\([^,]*\\),.*/\\1/p' " + tmp + "/args); echo \"$n:output_MONO\";;\n"
-                        "-i) echo fake.sink:playback_FL; echo fake.sink:playback_FR;;\n"
-                        "*) echo \"$@\" >> " + tmp + "/links;;\nesac\n")
-            os.chmod(links, os.stat(links).st_mode | stat.S_IXUSR)
-            env = dict(os.environ, PATH=tmp + os.pathsep + os.environ["PATH"])
-            wav = os.path.join(os.path.dirname(__file__), "..", "..", "sounds", "volume.wav")
+            env = self.fake(tmp, "printf '%s\\n' \"$@\" > " + tmp + "/args\nexec cat > " + sink + "\n")
             proc = subprocess.run(
-                [sys.executable, "-E", "-s", os.path.join(os.path.dirname(__file__), "..", "orbit_tick.py"), "fake.sink", wav],
+                [sys.executable, "-E", "-s", self.helper, "fake.sink", self.wav, "orbit_pc_AA_BB_CC_DD_EE_FF"],
                 input=b"t\nt\n", env=env, timeout=10, capture_output=True)
             self.assertEqual(proc.returncode, 0)
             with open(sink, "rb") as f:
                 data = shorts(f.read())
-            with open(os.path.join(tmp, "links")) as f:
-                made = [line.split() for line in f]
             with open(os.path.join(tmp, "args")) as f:
-                args = f.read()
-        # Autoconnect is off and the stream is linked to the sink's two inputs by hand
-        self.assertIn("node.autoconnect=false", args)
-        self.assertEqual([m[2] for m in made], ["fake.sink:playback_FL", "fake.sink:playback_FR"])
+                args = f.read().splitlines()
+        # Aimed at the sink, in the filter's link group, and WirePlumber still places it (no autoconnect)
+        self.assertEqual(args[args.index("-d") + 1], "fake.sink")
+        self.assertIn("--property=node.link-group=orbit_pc_AA_BB_CC_DD_EE_FF", args)
+        self.assertFalse([a for a in args if "autoconnect" in a])
         # The two lines made one tick, then it stopped writing (whole chunks only)
         self.assertGreater(max(map(abs, data)), 1000)
         self.assertEqual(len(data) % t.CHUNK, 0)
@@ -143,19 +150,18 @@ class SessionTest(unittest.TestCase):
 
     def test_an_output_that_vanishes_ends_quietly(self):
         with tempfile.TemporaryDirectory() as tmp:
-            fake = os.path.join(tmp, "pw-cat")
-            with open(fake, "w") as f:
-                f.write("#!/bin/sh\nexit 0\n")
-            os.chmod(fake, os.stat(fake).st_mode | stat.S_IXUSR)
-            # Never the real pw-link: it would read the live graph
-            with open(os.path.join(tmp, "pw-link"), "w") as f:
-                f.write("#!/bin/sh\nexit 0\n")
-            os.chmod(os.path.join(tmp, "pw-link"), 0o755)
-            env = dict(os.environ, PATH=tmp + os.pathsep + os.environ["PATH"])
-            wav = os.path.join(os.path.dirname(__file__), "..", "..", "sounds", "volume.wav")
-            proc = subprocess.run(
-                [sys.executable, "-E", "-s", os.path.join(os.path.dirname(__file__), "..", "orbit_tick.py"), "gone.sink", wav],
-                input=b"t 0.5\n", env=env, timeout=10, capture_output=True)
+            # pacat's own answer to a sink that is not there ("No such entity")
+            env = self.fake(tmp, "exit 1\n")
+            proc = subprocess.run([sys.executable, "-E", "-s", self.helper, "gone.sink", self.wav],
+                                  input=b"t 0.5\n", env=env, timeout=10, capture_output=True)
+        self.assertEqual((proc.returncode, proc.stderr), (0, b""))
+
+    def test_no_pacat_ends_quietly(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            # A PATH with python and nothing else: pacat cannot be started
+            os.symlink(sys.executable, os.path.join(tmp, "python3"))
+            proc = subprocess.run([sys.executable, "-E", "-s", self.helper, "fake.sink", self.wav],
+                                  input=b"t\n", env=dict(os.environ, PATH=tmp), timeout=10, capture_output=True)
         self.assertEqual((proc.returncode, proc.stderr), (0, b""))
 
 

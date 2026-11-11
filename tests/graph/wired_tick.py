@@ -35,6 +35,9 @@ RATE = 48000
 
 procs = []
 failures = []
+# The link group the tick player gets for each output, as VolumeTick passes it
+# (Route.tickGroup, printed by tests/graph-commands.js and graph-ticks.js)
+GROUPS = {}
 
 
 def check(name, ok):
@@ -84,7 +87,9 @@ def make_sink(env, name):
 
 def commands(source, copy, token, wait, with_filter=True):
     out = subprocess.run(["gjs", ROOT + "/tests/graph-commands.js", source, copy, token, str(wait)] + ([] if with_filter else ["nofilter"]), check=True, capture_output=True, text=True)
-    return json.loads(out.stdout)["commands"]
+    data = json.loads(out.stdout)
+    GROUPS.update(data["groups"])
+    return data["commands"]
 
 
 def run_copies(env, source, copy, token, wait, with_filter=True):
@@ -130,7 +135,7 @@ def peak(path):
 
 
 def tick(env, sink, count=3):
-    p = subprocess.Popen(["python3", "-I", ROOT + "/tick/orbit_tick.py", sink, ROOT + "/sounds/volume.wav"], env=env, stdin=subprocess.PIPE,
+    p = subprocess.Popen(["python3", "-I", ROOT + "/tick/orbit_tick.py", sink, ROOT + "/sounds/volume.wav", GROUPS.get(sink, "")], env=env, stdin=subprocess.PIPE,
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     procs.append(p)
     time.sleep(0.8)

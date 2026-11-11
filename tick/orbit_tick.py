@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 """Resident player of Orbit's volume tick: one output, one PipeWire stream.
 
-usage: orbit_tick.py <sink node name> <mono 16-bit wav>
+usage: orbit_tick.py <sink node name> <mono 16-bit wav> [<filter link group>]
 
-The stream is linked to the sink's own input ports by this helper, with
-autoconnect off, so WirePlumber never slips a smart filter in front of it. That
-matters in Listen together: the copies read the monitor of the source's
-filter, so a tick sent through that filter would be heard in every copy. Linked
-to the sink itself, the tick sounds in this output alone.
+The stream is pacat's (pulseaudio-utils, on a default install where
+pipewire-utils is not), aimed at the sink. WirePlumber sends a stream aimed at
+a sink into the smart filter in front of it, and in Listen together the copies
+read the monitor of the source's filter, so a tick sent through that filter
+would be heard in every copy. The stream therefore carries the filter's own
+link group (the third argument, Route.tickGroup): WirePlumber takes it as the
+filter's own and sends it where the filter goes, the sink itself, so the tick
+sounds in this output alone.
 
 A tick per process (pw-play) costs a process start, a connection and a stream
 per tick: at the 40 ticks a second of the time that was half a core. This helper opens ONE
-stream (pw-cat, raw PCM on its standard input) and mixes the ticks into it:
+stream (pacat, raw PCM on its standard input) and mixes the ticks into it:
 every line "t" or "t <gain>" on the standard input plays one tick (gain 0..1,
 the cap the caller derives from the output's level). Ticks are live, never
 queued: a tick replaces the one still ringing, which is faded out in a few
@@ -21,12 +24,13 @@ It writes only while a tick rings and sleeps in select() the rest of the time,
 so nothing runs between two bursts.
 
 It dies with the shell (value 12): the end of its standard input, or SIGTERM,
-closes the stream and exits; pw-cat then also reads end of file and goes.
+closes the stream and exits; pacat then also reads end of file and goes.
 Standard library only, no network, nothing written to disk.
 """
 import array
 import math
 import os
+import re
 import select
 import signal
 import subprocess
@@ -38,7 +42,7 @@ RATE = 48000
 # One write is 10 ms of sound: short enough to start a tick within ~10 ms and
 # to keep the stream's queue small, long enough to wake 100 times a second only
 CHUNK = RATE // 100
-# What pw-cat is asked to buffer: ticks reach the speaker about this late
+# What pacat is asked to buffer: ticks reach the speaker about this late
 LATENCY_MS = 20
 # Each tick fades in and out (1.5 ms, 5 ms) so it starts and ends without a
 # click; a tick replaced while it rings fades out over FADE samples (5 ms), long
@@ -50,12 +54,11 @@ FADE = 240
 # -16 dBFS, so that even with the tick it replaces still fading the sum stays
 # under -12 dBFS and a loud output has room left (no saturation)
 HEADROOM = 0.5
-# How long the helper waits for its stream's ports to appear before linking
-# them: 40 polls, 50 ms apart (the stream needs a few ms to be announced)
-LINK_TRIES = 40
-LINK_POLL_S = 0.05
 # Longest line kept while waiting for its end: a tick line is a few bytes
 MAX_LINE = 64
+# The link group of Orbit's own filters (Route.filterArgs, wiredFilterArgs):
+# anything else is ignored, so no other text reaches a stream property
+GROUP = re.compile(r"orbit_(pc|wired)_[A-Za-z0-9_]{1,60}")
 
 
 def load(path):
@@ -126,47 +129,43 @@ def mix(sound, voices):
         return array.array("h", (max(-32768, min(32767, s)) for s in total)).tobytes()
 
 
-def link_plan(listed_out, listed_in, stream, sink):
-    """The (output, input) port pairs that link `stream` to `sink`'s own inputs.
+def player_args(sink, group, name):
+    """The pacat command of the one stream: raw s16 mono on its standard input, into `sink`.
 
-    `listed_out` and `listed_in` are the lines of `pw-link -o` and `pw-link -i`
-    ("node:port"). Empty until both ends have appeared. The sink's monitor
-    ports are outputs, so they never come up as inputs.
+    WirePlumber sends a stream aimed at a sink into the smart filter that
+    targets it, whatever the stream asks (NAK-251: the copies read that
+    filter's monitor). A stream that shares the filter's node.link-group is
+    taken as the filter's own and goes where the filter goes, the sink itself,
+    so the tick stays in that output alone. Thanks to WirePlumber's
+    smart-filter rules for that behaviour (find-filter-target.lua, read, not
+    copied). Nothing is remembered (restore-props, restore-target), and the
+    stream never falls back or moves to another output: a tick to a sink that
+    is missing or goes away ends instead of playing on the default output.
+    The volume is set to 100 % rather than left to the server, so no level
+    kept for an earlier stream can apply to it; restore-props=false keeps this
+    one's from being stored.
     """
-    outs = [p for p in listed_out if p.startswith(stream + ":")]
-    ins = [p for p in listed_in if p.startswith(sink + ":")]
-    return [(outs[0], i) for i in ins] if outs and ins else []
+    args = ["pacat", "--playback", "--raw", "--format=s16le", f"--rate={RATE}", "--channels=1",
+            f"--latency-msec={LATENCY_MS}", "--volume=65536", "-d", sink,
+            "--client-name=Orbit", "--stream-name=Volume tick",
+            f"--property=node.name={name}",
+            "--property=state.restore-props=false", "--property=state.restore-target=false",
+            "--property=node.dont-reconnect=true", "--property=node.dont-fallback=true"]
+    if group and GROUP.fullmatch(group):
+        args.append(f"--property=node.link-group={group}")
+    return args
 
 
-def link(stream, sink):
-    """Links the stream's port to the sink's input ports; False if they never came."""
-    def listing(flag):
-        done = subprocess.run(["pw-link", flag], capture_output=True, text=True, timeout=2)
-        return done.stdout.splitlines()
-    try:
-        for _ in range(LINK_TRIES):
-            pairs = link_plan(listing("-o"), listing("-i"), stream, sink)
-            if pairs:
-                for source, target in pairs:
-                    subprocess.run(["pw-link", "--", source, target], capture_output=True, timeout=2)
-                return True
-            time.sleep(LINK_POLL_S)
-    except (OSError, subprocess.TimeoutExpired):
-        # No pw-link, or PipeWire not answering: the tick stays silent, never an error
-        pass
-    return False
-
-
-def main(sink, path):
+def main(sink, path, group=""):
     sound = load(path)
-    # node.autoconnect=false: WirePlumber leaves the stream alone, link() places it
     name = f"orbit_tick_{os.getpid()}"
-    out = subprocess.Popen(
-        ["pw-cat", "-p", "--raw", "--rate", str(RATE), "--channels", "1", "--format", "s16",
-         "--latency", f"{LATENCY_MS}ms", "-P", f"node.name={name},node.autoconnect=false", "-"],
-        stdin=subprocess.PIPE)
+    try:
+        out = subprocess.Popen(player_args(sink, group, name), stdin=subprocess.PIPE,
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except OSError:
+        # No pacat (pulseaudio-utils left out): the tick stays silent, never an error
+        return
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
-    link(name, sink)
     voices = []
     fd = sys.stdin.fileno()
     open_input = True
@@ -211,4 +210,4 @@ def main(sink, path):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else "")

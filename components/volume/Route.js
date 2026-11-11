@@ -81,6 +81,15 @@ function tickOutput(nodes, node) {
     return device ? { "name": device.name, "bypass": true } : { "name": name, "bypass": false };
 }
 
+// The link group the tick shares with Orbit's filter in front of `sink` (the
+// PC-level one of a Bluetooth device, the wired one of a wired output), so
+// WirePlumber sends it to the sink itself and never through that filter
+// (NAK-251, tick/orbit_tick.py). A name with no filter running is harmless:
+// no node carries it, and the tick goes to the sink as any stream would.
+function tickGroup(sink) {
+    return isDeviceSink(sink) ? virtualName(addressOfSink(sink)) : wiredFilterName(sink);
+}
+
 function virtualSink(nodes, address) {
     return sinkNamed(nodes, virtualName(address));
 }
@@ -153,7 +162,7 @@ function loopbackArgs(capture, playback, delaySeconds) {
 // both of its ends: set on one end only, WirePlumber sees two groups. A stream
 // that carries the same group is taken as the filter's own and goes where the
 // filter goes, the sink itself, never through the filter: the way for the
-// volume tick to stay out of the copies (NAK-251). Thanks to WirePlumber's smart-filter rules for the idea, read in
+// volume tick to stay out of the copies (NAK-251, tickGroup). Thanks to WirePlumber's smart-filter rules for the idea, read in
 // its documentation and find-filter-target.lua (no code copied).
 function group(name) {
     return "node.link-group=" + name + " ";

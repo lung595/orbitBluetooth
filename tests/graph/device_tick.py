@@ -30,7 +30,10 @@ HEARD = w.HEARD
 def plan(hand, old=False):
     out = subprocess.run(["gjs", w.ROOT + "/tests/graph-ticks.js", w.WIRED, w.BLUE, w.TOKEN, hand] + (["old"] if old else []),
                          check=True, capture_output=True, text=True)
-    return json.loads(out.stdout)
+    data = json.loads(out.stdout)
+    # The tick player gets the group VolumeTick would pass it (Route.tickGroup)
+    w.GROUPS.update(data["groups"])
+    return data
 
 
 def tick_sinks(env, tmp, sinks):

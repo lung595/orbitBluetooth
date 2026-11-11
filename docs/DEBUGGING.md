@@ -48,7 +48,7 @@ A code is `ORB-` followed by a level letter (`E` error, `W` warning, `I` info, `
 |---|---|---|---|
 | `ORB-E001` | error | A Bluetooth action (connect, disconnect, pair, trust, forget, scan, power) failed | `action`, `reason` |
 | `ORB-E002` | error | Pairing failed | `reason` |
-| `ORB-E003` | error | A helper program (`pw_loopback`: the loopback process, `pipewire -c`; `pw-play`, `cava`, `wl-copy`, `dms`, `pactl`, `python`, `bluetoothctl`) stopped unexpectedly | `tool`, `code` (its exit status) |
+| `ORB-E003` | error | A helper program (`pw_loopback`: the loopback process, `pipewire -c`; `pw_play`, a tick player of older versions; `cava`, `wl-copy`, `dms`, `pactl`, `python`, `bluetoothctl`) stopped unexpectedly | `tool`, `code` (its exit status) |
 | `ORB-E004` | error | Retired after 1.15 (the picture lookup was removed); never reused | |
 | `ORB-E005` | error | Noise control (ANC) could not be changed | `reason` |
 | `ORB-W010` | warning | No usable Bluetooth adapter | `state` |

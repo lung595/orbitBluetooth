@@ -8,7 +8,7 @@ const Volume = load("Volume.js", ["clamp", "step", "validSink", "stepSize", "ste
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "slices", "sliceAt", "partOf", "indexOf", "arc", "end", "point", "angleOf", "valueAt", "zone", "wheelPart", "iconSpot", "legendSpot", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
 const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded"]);
-const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "tickOutput", "description", "loopbackArgs", "filterArgs", "wiredFilterArgs", "muteTarget", "levelNodes", "tickNodes", "writeLevel", "writeMuted", "ipcLevel", "transportPath", "transportVolume", "iconFor", "shownLevels"]);
+const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "tickOutput", "tickGroup", "wiredFilterName", "isWiredFilter", "description", "loopbackArgs", "filterArgs", "wiredFilterArgs", "muteTarget", "levelNodes", "tickNodes", "writeLevel", "writeMuted", "ipcLevel", "transportPath", "transportVolume", "iconFor", "shownLevels"]);
 const Together = load("Together.js", ["args"]);
 
 // --- Volume tick (Volume.js) ------------------------------------------------------
@@ -16,7 +16,7 @@ eq("the setting: 1 % by default, 5 % when it says so", [Volume.stepSize("1"), Vo
 eq("the setting as a number, as Prefs exposes it", [Volume.stepSize(1), Volume.stepSize(5)], [0.01, 0.05]);
 eq("a rounding error does not move a step (0.57 is step 57)", [Volume.step(0.57, 0.01), Volume.step(0.29, 0.01), Volume.step(0.35, 0.05)], [57, 29, 7]);
 eq("levels are clamped", [Volume.clamp(-1), Volume.clamp(2), Volume.clamp("x")], [0, 1, 0]);
-eq("node name ok for pw-play", Volume.validSink("bluez_output.02_00_00_00_10_06.1"), true);
+eq("node name ok for the tick player", Volume.validSink("bluez_output.02_00_00_00_10_06.1"), true);
 eq("no shell characters", Volume.validSink("x; rm -rf ~"), false);
 eq("no option smuggling", Volume.validSink("--target=x y"), false);
 // Where the tick plays: the output whose level moved, or every member's for the group's
@@ -83,6 +83,13 @@ eq("nothing for another device", [Route.deviceSink(pwNodes, "AA:BB:CC:DD:EE:02")
 eq("a tick for the PC-level filter plays in the device behind it, round the filter", Route.tickOutput(pwNodes, pwNodes[2]), { "name": "bluez_output.AA_BB_CC_DD_EE_01.1", "bypass": true });
 eq("a tick for any other node plays in it as it is", [Route.tickOutput(pwNodes, pwNodes[0]), Route.tickOutput(pwNodes, pwNodes[1]), Route.tickOutput(pwNodes, null)], [{ "name": "alsa_output.usb-Card", "bypass": false }, { "name": "bluez_output.AA_BB_CC_DD_EE_01.1", "bypass": false }, { "name": "", "bypass": false }]);
 eq("a filter whose device sink is gone keeps its own name", Route.tickOutput([pwNodes[2]], pwNodes[2]), { "name": "orbit_pc_AA_BB_CC_DD_EE_01", "bypass": false });
+// The tick shares the link group of the filter in front of its sink, so WirePlumber sends it round that filter (NAK-251)
+eq("a Bluetooth sink's tick is in its PC-level filter's group", Route.tickGroup("bluez_output.AA_BB_CC_DD_EE_FF.1"), "orbit_pc_AA_BB_CC_DD_EE_FF");
+{
+    const wired = "alsa_output.usb-x.analog-stereo";
+    eq("a wired sink's tick is in its wired filter's group, a name of that exact shape", [Route.tickGroup(wired), Route.isWiredFilter(Route.tickGroup(wired))], [Route.wiredFilterName(wired), true]);
+}
+eq("anything else has no group", [Route.tickGroup("orbit_pc_X"), Route.tickGroup(""), Route.tickGroup(null)], ["", "", ""]);
 eq("description keeps the name", Route.description("WH-1000XM6"), "WH-1000XM6 (Orbit)");
 eq("description drops quotes and escapes", Route.description('My "Buds" \\ $(x)'), "My Buds (x) (Orbit)");
 eq("empty name falls back", Route.description(""), "Bluetooth (Orbit)");
