@@ -11,8 +11,6 @@ var LEVELS = {
 };
 
 var USES = {
-    "offerScan": { level: "medium", why: "Radio scan of a few seconds, repeated while it is on" },
-    "offerEvery": { level: "medium", why: "The shorter the wait, the more scans" },
     "scanSeconds": { level: "medium", why: "The radio stays on for the whole scan" },
     "ancEngine": { level: "medium", why: "Always connected keeps a link open to the headset" },
     "scopeFps": { level: "low", why: "Only while the pop-up shows; Smooth draws twice as often" },

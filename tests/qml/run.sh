@@ -1,10 +1,8 @@
 #!/bin/sh
-# Runs the QML tests (the "new device" pop-up, the polar scope, the
-# keyboard-profile question of the connection flow, the noise-control sessions,
-# pausing music when a headset comes off) without Quickshell or a
-# Bluetooth adapter: stubs/ stands in for Quickshell and the DMS services,
-# Device.qml for a BlueZ device, and NewDeviceWindow.qml replaces the real
-# layer-shell window. Needs Qt 6 (qml, qml6, qml-qt6 or PySide6).
+# Runs the QML tests (the polar scope, the keyboard-profile question of the
+# connection flow, the noise-control sessions, pausing music when a headset
+# comes off) without Quickshell or a Bluetooth adapter: stubs/ stands in for
+# Quickshell and the DMS services, Device.qml for a BlueZ device. Needs Qt 6 (qml, qml6, qml-qt6 or PySide6).
 # A QML warning or TypeError printed by a test fails the run (NAK-60).
 # Run from anywhere: sh tests/qml/run.sh [name]   (a name keeps only the tests whose file name contains it)
 # The stubs come last: the last import path wins, and the preview imports
@@ -15,18 +13,16 @@ root=$(dirname "$(dirname "$here")")
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 # The work folder mirrors the plugin root: components/ as it is, the tests
-# beside it, and stand-ins over the real window and the D-Bus reads
+# beside it, and a stand-in over the D-Bus read of the pairing guard
 cp -r "$root"/components "$root"/diagnostics "$work"/
 cp "$root"/plugin.json "$root"/OrbitBluetoothSettings.qml "$root"/OrbitBluetoothLauncher.qml "$work"/
-# The real signal reader stays reachable as RealSignalRead for its own test
-cp "$work"/components/pairing/SignalRead.qml "$work"/components/pairing/RealSignalRead.qml
-cp "$here"/ProfileCheck.qml "$here"/SignalRead.qml "$here"/NewDeviceWindow.qml "$work"/components/pairing/
+cp "$here"/ProfileCheck.qml "$work"/components/pairing/
 cp "$here"/Device.qml "$here"/Player.qml "$here"/*.test.qml "$work"/
 # The preview's made-up route (and overlay) stand in for the daemon's
 mkdir "$work"/mock
 cp "$root"/scripts/preview/mock/*.qml "$root"/scripts/preview/mock/*.js "$work"/mock/
 # Quickshell's device list is a model with .values; the stub keeps a plain list
-sed -i 's/Bluetooth\.devices\.values/Bluetooth.list/g' "$work"/components/pairing/*.qml "$work"/components/noise/*.qml "$work"/components/delay/*.qml "$work"/OrbitBluetoothLauncher.qml "$work"/components/common/ReportService.qml
+sed -i 's/Bluetooth\.devices\.values/Bluetooth.list/g' "$work"/components/noise/*.qml "$work"/components/delay/*.qml "$work"/OrbitBluetoothLauncher.qml "$work"/components/common/ReportService.qml
 export QT_QPA_PLATFORM=offscreen
 # Print to the terminal, not to journald, including print() lines
 export QT_FORCE_STDERR_LOGGING=1 QT_LOGGING_RULES='qml.debug=true;js.debug=true'
@@ -49,7 +45,10 @@ for tool in qml6 qml-qt6 qml /usr/lib64/qt6/bin/qml; do
         exit 0
     fi
 done
-python3 - "$root/scripts/preview/imports" "$here/stubs" "$work/newDevice.test.qml" <<'PY'
+# Without a qml binary, PySide6 runs each test in turn
+for test in "$work"/*.test.qml; do
+    case ${test##*/} in *"${1:-}"*) ;; *) continue ;; esac
+    python3 - "$root/scripts/preview/imports" "$here/stubs" "$test" <<'PY' || exit 1
 import sys
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QGuiApplication
@@ -61,3 +60,4 @@ for path in sys.argv[1:3]:
 engine.load(QUrl.fromLocalFile(sys.argv[3]))
 sys.exit(app.exec() if engine.rootObjects() else 1)
 PY
+done

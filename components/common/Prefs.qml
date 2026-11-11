@@ -25,7 +25,7 @@ QtObject {
     // The settings that hold a map change only when their content does: a
     // fresh object on every save (a volume level, a hidden device) would
     // wake every view bound to any of them (P137)
-    readonly property var _maps: ["ignoredDevices", "glyphOverrides", "hiddenDevices", "pcLevels", "togetherHabits"]
+    readonly property var _maps: ["glyphOverrides", "hiddenDevices", "pcLevels", "togetherHabits"]
     function _load() {
         _data = SettingsData.getPluginSettingsForPlugin(pluginId) || ({});
         for (const key of _maps) {
@@ -41,18 +41,11 @@ QtObject {
     readonly property int maxDevices: parseInt(_get("maxDevices", "8"))
     // Offer to connect a new unpaired device found while scanning
     readonly property bool offerNew: _get("offerNew", true)
-    // The same offer as a pop-up under the bar, found by a short background
-    // scan while no view is open (see NewDeviceWatch)
-    readonly property bool offerPopup: _get("offerPopup", true)
-    // Orbit's own short scan every offerEvery seconds. Off by default: the
-    // pop-up already catches what any other scan finds (DMS's Bluetooth
-    // panel, system settings, an Orbit view), at no cost (P103)
-    readonly property bool offerScan: _get("offerScan", false)
-    readonly property int offerEvery: parseInt(_get("offerEvery", "60"))
-    // No background scan on battery below this level (%)
-    readonly property int offerMinBattery: _get("offerMinBattery", 30)
-    // Devices the pop-up must never offer again: address -> name
-    property var ignoredDevices: ({})
+    // Left by the pairing sheet under the bar (removed after 1.15): its
+    // settings, and the addresses refused with "Don't offer again". The
+    // daemon clears them once (null reads as unset)
+    readonly property var sheetKeys: ["offerPopup", "offerScan", "offerEvery", "offerMinBattery", "ignoredDevices"]
+    readonly property bool oldSheetSettings: sheetKeys.some(k => _data[k] !== undefined && _data[k] !== null)
     readonly property bool autoScan: _get("autoScan", true)
     // Hover × on connected devices; off by default (drag away or right-click instead)
     readonly property bool quickDisconnect: _get("quickDisconnect", false)
@@ -167,15 +160,6 @@ QtObject {
         else
             next[address] = kind;
         set("glyphOverrides", next);
-    }
-
-    function setIgnored(address, name, ignored) {
-        const next = Object.assign({}, ignoredDevices);
-        if (ignored)
-            next[address] = name || address;
-        else
-            delete next[address];
-        set("ignoredDevices", next);
     }
 
     function isHidden(address) {

@@ -71,15 +71,14 @@ Item {
         {
             "then": 50,
             "run": () => {
-                h.check("the Scanning page shows the battery pill of the background scan", h.pill("offerScan").visible, true);
-                h.check("the pill of the interval waits for the scan to be on", h.pill("offerEvery").visible, false);
+                h.check("the Scanning page shows the battery pill of the scan time", h.pill("scanSeconds").visible, true);
                 h.field.view.query = "wired delay";
             }
         },
         {
             "then": 50,
             "run": () => {
-                h.check("a search for another setting hides the pill", h.pill("offerScan").visible, false);
+                h.check("a search for another setting hides the pill", h.pill("scanSeconds").visible, false);
                 h.field.view.query = "";
             }
         }

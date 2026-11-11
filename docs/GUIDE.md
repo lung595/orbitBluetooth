@@ -14,7 +14,7 @@ Everything Orbit Bluetooth can do, in detail. To install it and add a widget, se
 - [Hiding devices: the black hole](#hiding-devices-the-black-hole)
 - [Noise control](#noise-control) · [Pause when you take the headset off](#pause-when-you-take-the-headset-off) · [How long a conversation lasts](#how-long-a-conversation-lasts)
 - [Charging and battery](#charging-and-battery) · [Battery arc colours](#battery-arc-colours) · [Charging beam](#charging-beam)
-- [New headphones pop-up](#new-headphones-pop-up)
+- [New devices](#new-devices)
 - [Pairing safety](#pairing-safety)
 - [Device icons](#device-icons)
 - [Light theme](#light-theme)
@@ -95,7 +95,7 @@ Click any device to open it: its glyph flies onto the card.
 - **Connection time and battery level.**
 - **Volume** of connected audio devices: the device's own level and this PC's, see [The two volumes](#the-two-volumes).
 - **Actions**: on the left, back and change icon (the card); on the right, connect or disconnect, hide, forget (asks twice) (the device).
-- **Forget** unpairs the device (BlueZ removes it) and clears what Orbit kept about it: its icon choice and a *Don't offer again* mark, so it can be offered as new next time. Also in the right-click menu: **Forget**, then click again to confirm.
+- **Forget** unpairs the device (BlueZ removes it) and clears what Orbit kept about it (its icon choice), so it can be offered as new next time. Also in the right-click menu: **Forget**, then click again to confirm.
 - **Battery gauge, session chart and stats** (see [Charging and battery](#charging-and-battery)).
 - The **earbuds trio** and **noise control** when the device supports them.
 
@@ -669,57 +669,20 @@ Each clip shows the style moving, as its still frame under Reduce motion, and wi
 - **A value Orbit does not know** (a typo, a style from a newer version) is Filament.
 - **From the command line**: `dms ipc call orbitBluetooth beamStyle pulse` (or `filament`, `chain`, `horizon`) tries a style until the shell restarts, in memory only, nothing is saved; `beamStyle reset` gives the setting back.
 
-## New headphones pop-up
+## New devices
 
-![The pairing sheet in a dark and a light theme: the headset falls into orbit, then connects](../screenshots/newdevice.gif)
+Put new headphones, earbuds or a speaker in pairing mode while an Orbit view is open and scanning: when it shows up, a small card at the bottom of the view says *… can be paired* with a **Connect** button. **Connect** pairs and connects it, with the same checks as dragging it into the orbit (see [Pairing safety](#pairing-safety)). The card goes away by itself after 12 s, or as soon as you open a detail card or drag a device.
 
-Switch on new headphones, earbuds or a speaker and put them in pairing mode, then open any Bluetooth panel (Orbit, DMS's Bluetooth panel, your system settings): a tall **pairing sheet** unfolds from the right end of the bar, even with every Orbit view closed. Orbit only listens to that search, so this costs nothing. With **Background scan** on, it also looks by itself, and the sheet comes within about a minute without opening anything.
-
-The device falls out of the bar along a comet trail, is caught by an orbit with a flash, then floats above the horizon of a planet, tilting a little towards the pointer, while sonar rings leave it and a small moon goes round. Stars twinkle and, now and then, one shoots across.
-
-![The sheet offering, then connected, in a dark and a light theme](../screenshots/newdevice.png)
-
-- **What you get**: up to three tiles Orbit knows before anything is paired: noise control when the brand is supported, the rated battery life when the model is known, the earbuds' case and buds, volume, and charging for anything with a battery (not a soundbar or a smart speaker).
-- **If pairing fails**, the sheet says why in plain words (declined, wrong code, no answer, busy), offers **Try again**, and the GitHub mark under the message opens [If it does not connect](#if-it-does-not-connect).
-- **Connect** (or <kbd>Enter</kbd>) pairs and connects it right there; accept the code in DMS's pairing dialog if the device asks. The button turns into a progress bar and the steps *Pair → Connect → Ready* follow along.
-- **Connected**: a burst of stars, a battery ring filling up to the real level, and the noise-control modes to pick one straight away. After 6 s without the pointer on it, the sheet folds back into the corner of the bar.
-- **Rename it first**: click the pencil next to the name, type, then <kbd>Enter</kbd> or click anywhere else (<kbd>Escape</kbd> gives the old name back). The name is given to the device once it is connected (as a rename in the detail card would).
-- **Later** (or <kbd>Escape</kbd>) closes it; the same device is not offered again for 10 minutes. No answer within 30 s counts as *Later*: the ring around × shows the time left, and stops while the pointer is over the sheet.
-- **Don't offer again** never offers that device again. **Offer ignored devices again** (end of the settings) clears the list.
-- **Several devices at once**: the next one peeks behind the sheet with a "+1", and comes forward when you are done with the first.
-- The keyboard is only taken once you click the sheet, so it never steals keys from the window you use.
-- If an Orbit view is open when the sheet arrives, it closes behind it, so the sheet never sits on top of the panel.
-
-**Two looks, any palette**: with a dark DMS theme the sheet is deep space (blue-black sky, glowing planet and device); with a light theme it is the stratosphere (pearly sky, porcelain planet, the device casting a real shadow). The DMS colours enter through the accent only, which each look brightens or deepens until it reads well, so pastel, neon or grey palettes all work.
-
-**What is offered**: only named, unpaired audio devices (headphones, earbuds, speakers) found by discovery, so the neighbours' phones and TVs never pop up. Devices BlueZ already knew when the shell started wait 10 minutes before they can be offered.
-
-**Several PCs running Orbit** (nearest first): each PC judges alone, from the signal its own Bluetooth adapter reads for the new device (nothing is sent between PCs). A device at arm's reach opens the sheet at once; a weaker one waits up to 6 s, so the nearest PC shows it first; a device weaker than -75 dBm does not open the sheet on this PC. When the wait ends the signal is read again, and the sheet stays closed if the device went away or connected to another PC meanwhile. A PC whose screen is off waits a little longer. If the signal cannot be read, the sheet opens at once, as before. The signal is read once per new device, nothing runs otherwise. These limits are starting points, still to be tuned with real hardware.
-
-**When it stays quiet**: no sheet while a window is full screen (it waits, then shows), or while the screen is locked or off. On the screen of the active window; with *Reduce motion* it simply appears, without any movement.
-
-**The background scan** is off by default: the sheet already catches what any other search finds, for free. Turned on (**Background scan**), it runs for 8 s every minute (**Background scan interval**: 30 s to 5 min), and only when it is harmless:
-
-- Bluetooth on, screen on and unlocked;
-- no Bluetooth audio device connected: discovery shares the radio with the audio link and makes music stutter on many adapters, so while you listen it waits;
-- on battery, only above **No background scan below** (30 % by default); plugged in, always;
-- not while an Orbit view is already scanning (the pop-up uses that scan, and never stops it).
-
-To see it without new headphones: `dms ipc call orbitBluetooth newDeviceDemo` (a made-up headset; *Connect* plays the pairing, nothing is paired, nothing is renamed). `dms ipc call orbitBluetooth newDeviceStatus` says whether the last background scan ran, or why it was skipped.
-
-Turn it all off with **Scanning → Pop-up for new headphones**; Orbit then only finds devices while a view is open, as before. While it is on, the small *Connect* card inside the orbit gives way to the sheet. Sounds (if on): a soft cue on arrival, the connect sound on success.
+- **What is offered**: a named device that is neither paired nor connected and appears during the scan. Devices already around when the view opens are not news: they are marked as seen during the first 3 s.
+- **Nothing runs while the view is closed**: Orbit only finds devices while a view is open. Nothing is remembered between sessions.
+- Turn it off with **Scanning → Offer new devices**; you can still drag any device into the orbit.
 
 ## Pairing safety
 
 Orbit only trusts a new device once it has checked that it is what it looks like.
 
-- **What is offered**: a device is offered only when Bluetooth itself says it is audio. A name such as "AirPods" is not enough, since any device can pick any name.
 - **After pairing, before connecting**, Orbit reads which kinds of service the device offers. Headphones, earbuds and speakers normally offer sound only, and connect straight away.
-- **Headphones that can also send key presses**: some do, so that their buttons can play, pause or change the volume. Orbit then asks first: *"It can also send key presses, often for its buttons. Only continue if it is yours."*
-  - **Pair anyway** connects it as usual. It is not asked again.
-  - **Cancel**, **Later** or closing the sheet forgets it.
-  - While you decide, Bluetooth keeps the device at a distance: it cannot connect, or type, until you say yes.
-- **Dragging a device into the orbit** checks the same way. If it can send key presses, a short message asks you to drag it in once more within a minute to pair it anyway; otherwise it is forgotten.
+- **Headphones that can also send key presses**: some do, so that their buttons can play, pause or change the volume. When you drag such a device into the orbit (or press **Connect** on its card), a short message asks you to drag it in once more within a minute to pair it anyway; otherwise it is forgotten. Until then it cannot connect, or type.
 - **If Orbit cannot read its services**, it does not pair it and says so. Try again close to the device, or pair it from DMS's Bluetooth settings.
 
 Devices you paired before (from Orbit or DMS) are never asked about again, and keyboards and mice are never asked about at all.
@@ -775,11 +738,7 @@ Nothing runs while the page is still: no timer, no animation after the short fad
 | | Learn my groups | On | Remember which outputs you listen to together, as short hashes, to suggest your usual group, see [Learn my groups](#learn-my-groups) |
 | | Forget what Orbit learned | | Erases the learned groups at once (shown with how many are remembered), see [Forget what Orbit learned](#forget-what-orbit-learned) |
 | Scanning | Scan automatically | On | Start discovery when a view opens; otherwise click the center |
-| | Offer new devices | On | A card with *Connect* inside the Orbit view; the pop-up has its own switch |
-| | Pop-up for new headphones | On | A pop-up under the bar for new headphones any search finds, see [New headphones pop-up](#new-headphones-pop-up); it only listens |
-| | Background scan | Off | Orbit also searches by itself, 8 s at a time ⚡ |
-| | Background scan interval | Every minute | 30 s, 1, 2 or 5 min (shown once *Background scan* is on) |
-| | No background scan below | 30 % | Battery of this computer, when unplugged (shown once *Background scan* is on) |
+| | Offer new devices | On | A card with *Connect* inside the Orbit view, see [New devices](#new-devices) |
 | | Scan duration | 45 s | 20 s, 45 s, 90 s or *While open* ⚡ |
 | Headphones | Noise control | On | Supported headphones (needs Python 3) |
 | | Turn off conversation awareness on disconnect | On | Turns *Conversation* off before Orbit disconnects a headset, and after it reconnects |
@@ -810,11 +769,11 @@ Nothing runs while the page is still: no timer, no animation after the short fad
 | | Stars | Normal | Low, Normal or High |
 | | Custom images folder | — | PNG files that replace built-in icons |
 
-Three buttons in **Reset & help** reset custom device icons, bring back every hidden device and offer ignored devices again. DMS's *Reduce motion* is respected.
+Two buttons in **Reset & help** reset custom device icons and bring back every hidden device. DMS's *Reduce motion* is respected.
 
 ### Battery pills
 
-A setting that costs battery has a small pill under it with its level, *High battery use*, *Some battery use* or *Light on battery*, and one line saying why (the background scan and its interval and duration, the headset *Always connected* engine, the visualizer motion, ambient motion). A setting with no real cost has none. The pill is still: nothing runs for it.
+A setting that costs battery has a small pill under it with its level, *High battery use*, *Some battery use* or *Light on battery*, and one line saying why (the scan duration, the headset *Always connected* engine, the visualizer motion, ambient motion). A setting with no real cost has none. The pill is still: nothing runs for it.
 
 ![The Scanning category with its battery pills](../screenshots/settings-battery.png)
 
@@ -849,7 +808,6 @@ The CPU figure is the whole shell (DMS and every plugin), not Orbit's share.
 ## Privacy
 
 - **No telemetry. No network access at all**: everything Orbit does stays on your computer.
-- **Background scan** (the new headphones pop-up, on by default): Bluetooth discovery for 8 s about once a minute, local only, under the conditions in [New headphones pop-up](#new-headphones-pop-up). Devices you *Ignore* are stored with the plugin settings.
 - **Listen together** runs one small local sound process per output beyond the first, only while a session lasts, and talks to the local sound server (PipeWire) only. It saves no session, no list of devices, no address and nothing in the journal; the only thing kept, with **Learn my groups** on (default), is described next. [More](#listen-together)
 - **Learned groups**: with **Learn my groups** on (default), Orbit keeps in its own settings, for at most 8 groups, only short hashes of the outputs you listened to together (no name, no address), how many times and the day of the last time. It never leaves your computer, **Forget what Orbit learned** or switching the option off erases it at once, and uninstalling Orbit erases it with the rest. [More](#learn-my-groups)
 - **Hidden devices**: the list of what you hid in the black hole, Bluetooth devices and wired outputs (an address or a node name and the name it had, at most 64), is kept in Orbit's own settings; **Show** or the buttons of the settings empty it. [More](#hiding-devices-the-black-hole)
@@ -877,7 +835,7 @@ If you deleted the folder while DMS was not running, Orbit could not clean up: i
 
 ## Performance
 
-Orbit costs nothing while you are not looking at it: no frames at rest, nothing running while views are closed (except the pop-up's short background scan, which you can turn off), everything paused while the session is locked. CPU of the whole shell (% of one core, 240 Hz screen; the first row is the baseline of each run):
+Orbit costs nothing while you are not looking at it: no frames at rest, nothing running while views are closed, everything paused while the session is locked. CPU of the whole shell (% of one core, 240 Hz screen; the first row is the baseline of each run):
 
 | State | 1.4.1 | 1.11.0 |
 | --- | --- | --- |
@@ -885,12 +843,9 @@ Orbit costs nothing while you are not looking at it: no frames at rest, nothing 
 | Idle (bar icon, view closed) | 0.5 | 0.6 |
 | View open, left alone | 3.8 | 4.5 |
 | View open while scanning | 5.2 | 2–3 |
-| Pairing sheet shown | – | 5.8 |
 | Desktop widget, *Ambient motion* on | 9.2 | 11.0 |
 
 Since 1.11.2, *Ambient motion* pauses on a screen whose desktop is hidden by windows. Measured on two screens, both covered: 1.43 % with Orbit against 1.38 % without (1.11.1: 3.33 %). On a screen where the orbit is visible, its drift runs at 20 Hz and costs about one point.
-
-The pairing sheet cost 67 % of a core before 1.11.0: two long QML animations made every shell window repaint at 240 Hz. They now run on timers, and only the sheet repaints.
 
 The card's picture of the sound runs only while the card is on screen; closed, `cava` is stopped and nothing redraws.
 

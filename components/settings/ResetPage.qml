@@ -9,7 +9,7 @@ CategoryPage {
     required property PluginSettings settings
 
     Row {
-        visible: page.shown("glyphOverrides") || page.shown("hiddenDevices") || page.shown("ignoredDevices")
+        visible: page.shown("glyphOverrides") || page.shown("hiddenDevices")
         spacing: Theme.spacingS
 
         ActionButton {
@@ -22,12 +22,6 @@ CategoryPage {
             visible: page.shown("hiddenDevices")
             text: "Show hidden devices"
             onClicked: page.settings.saveValue("hiddenDevices", ({}))
-        }
-        // Devices refused with "Ignore" in the pop-up
-        ActionButton {
-            visible: page.shown("ignoredDevices")
-            text: "Offer ignored devices again"
-            onClicked: page.settings.saveValue("ignoredDevices", ({}))
         }
     }
 

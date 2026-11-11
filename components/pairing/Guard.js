@@ -8,13 +8,6 @@
 // HID over classic Bluetooth (0x1124) and over Bluetooth LE (0x1812).
 var inputUuids = ["00001124-0000-1000-8000-00805f9b34fb", "00001812-0000-1000-8000-00805f9b34fb"];
 
-// Only BlueZ's own class (its icon) may say "this is audio". A name that
-// looks like a headset with no audio class is not offered.
-function offerFamily(bluezIcon) {
-    const i = (bluezIcon || "").toLowerCase();
-    return i.indexOf("audio") >= 0 ? "audio" : "";
-}
-
 function hasInput(uuids) {
     if (!uuids || !uuids.length)
         return false;

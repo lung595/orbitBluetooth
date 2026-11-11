@@ -17,8 +17,7 @@ Item {
     // Called with every fresh device list (OrbitDevices.listed)
     function update(list) {
         const s = offer.scene;
-        // The pop-up under the bar offers it instead (it sees the same discovery)
-        if (!_primed || !s.prefs.offerNew || s.prefs.offerPopup)
+        if (!_primed || !s.prefs.offerNew)
             return;
         for (const d of list) {
             if (_seen[d.address])

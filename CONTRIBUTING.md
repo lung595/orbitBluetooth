@@ -85,7 +85,7 @@ Logic that can be tested lives in **pure `.js` files** with no QML: `card/Charge
 
 **Pause on removal** (`components/wear/`): `AncService` keeps one session open for a Sony headset that reports a wearing sensor (only while the setting is on); `WearPause.qml` follows the headsets whose snapshot says so, and one `WearHeadset.qml` per headset reads the status, asks `HeadsetStreams.qml` which applications play on it (PipeWire) and pauses or resumes the matching MPRIS players. All decisions are in `Wear.js`.
 
-**New headphones pop-up**: `components/pairing/NewDeviceWatch.qml` (in the daemon) drives the pop-up and pairing, with `BackgroundScan.qml` (the opt-in short scan), `OfferQueue.qml` (what to offer next, snoozes; `Offer.js`, pure) and `DemoDevice.qml` (the made-up headset of the demo) and `PairingFlow.qml` (the pairing steps: pair, check, connect, time-out); `NewDeviceWindow.qml` is its layer-shell window and `PairingSheet.qml` the sheet itself (two skins, colours from `Palette.js`), which `scripts/preview/sheet.qml` renders offscreen with six test palettes, or records frame by frame. Before a new device is trusted, `ProfileCheck.qml` reads its Bluetooth profiles with `busctl` and `Guard.js` (pure, tested) decides: a non-input device that can also send key presses stays blocked until the user confirms. Never trust a device from its name alone.
+**New devices**: `scene/OrbitOffer.qml` picks a named, unpaired device that shows up while a view scans, and `pairing/OfferCard.qml` draws the small *Connect* card at the bottom of the view; **Connect** goes through the same `startConnect` as a drag. `pairing/ProfileCheck.qml` (with `Guard.js`, pure, tested) refuses a device that is not a keyboard or a mouse but can send key presses, until it is dragged in again.
 
 **Guided, never blocked**: `components/common/Guide.js` (pure, tested) builds the guide links and the short notes (`connectNote`); `scene/OrbitNote.qml` shows them at the bottom of the sky and `common/GuideLink.qml` is the GitHub mark (drawn by `common/GitHubMark.qml`) that opens a guide section on click. A new refusal gets a note and an anchor that exists in `docs/GUIDE.md` (the tests check it). Every new Quickshell import or service used by a component needs its mock in `scripts/preview/imports/`, or the previews break; the made-up devices and state of the screenshots live in `scripts/preview/mock/`.
 
@@ -174,13 +174,9 @@ orbitBluetooth/
 │   │   ├── WiredMembers.qml, WiredBody.qml, WiredPointer.qml, WiredLabel.qml, WiredCable.qml  # the wired members: the rounded square, its mouse, its name, its cable
 │   │   ├── BehindOutline.qml, CentreOrbit.qml  # a copy behind the source (its dashed outline) and the copies' trajectory (a light dashed ellipse, two halves)
 │   │   └── OrbitGhost.qml, GhostGroup.qml  # the ghost group: its state (no timer), its drawing
-│   ├── pairing/                 # new device pop-up and pairing offer
-│   │   ├── NewDeviceWatch.qml, PairingFlow.qml, BackgroundScan.qml, OfferQueue.qml, DemoDevice.qml, Offer.js, Guard.js, ProfileCheck.qml  # pop-up, pairing steps, background scan, what to offer, demo, the input-device guard
-│   │   ├── NewDeviceWindow.qml, PairingSheet.qml, Palette.js  # the window and the sheet (the card, its keys and its parts)
-│   │   ├── PairingSkin.qml, PairingMotion.qml  # the two skins' colours, the sheet's clock and entrance
-│   │   ├── PairingSky.qml, PairingPlanet.qml, PairingHeader.qml  # the scene behind the device, status and close button
-│   │   ├── PairingStage.qml, PairingIdentity.qml, PairingMiddle.qml, PairingButton.qml, Light.qml  # device, name and subtitle, tiles/steps/quick actions, actions, round light
-│   │   └── OfferCard.qml        # the scene's pairing offer
+│   ├── pairing/                 # the new-device card and the pairing guard
+│   │   ├── ProfileCheck.qml, Guard.js  # the input-device guard (Guard.js pure, tested)
+│   │   └── OfferCard.qml        # the Connect card at the bottom of the view
 │   ├── noise/                   # noise control
 │   │   └── AncService.qml, AncPanel.qml, ChatEnds.qml, Anc.js, AncSnapshot.js
 │   ├── wear/                    # pause on removal (Sony)
@@ -249,7 +245,7 @@ Orbit must cost nothing while nobody looks at it. Keep these rules when changing
 - **Display-synced frames only for gestures**, and only until the motion has calmed down.
 - **Paint backgrounds once** (stars, nebulae, veil); effects only move fixed geometry.
 - **Hidden means frozen**: the desktop orbit is asleep while windows fill its screen, even with *Ambient motion* on (`Cover.js`, pure, tested, reads niri's layout from DMS's `NiriService`).
-- **Run nothing while hidden**: discovery, polling and the noise-control helper only run while a view is open (the exceptions are the new-device pop-up's 8 s background scan, with its battery and audio rules, and the one idle control connection that *Pause when you take the headset off* keeps for a Sony headset with a wearing sensor: no timer, the headset reports by itself); everything pauses while the session is locked or the monitors are off.
+- **Run nothing while hidden**: discovery, polling and the noise-control helper only run while a view is open (the exception is the one idle control connection that *Pause when you take the headset off* keeps for a Sony headset with a wearing sensor: no timer, the headset reports by itself); everything pauses while the session is locked or the monitors are off.
 - **Load on demand**: the multimedia backend only when sounds are enabled.
 - **Listen together holds nothing at rest**: the copies are passive, never fall back to another output and no stream, silence or keep-alive is ever opened toward a member (a multipoint headset must be free to hand over to a phone). Check in an isolated PipeWire server (a scratch `PIPEWIRE_RUNTIME_DIR`, never the live one): with nothing playing every member output, copy and filter must be `idle`; a non-passive copy keeps the outputs `running`. Kill the shell stand-in with `kill -9` and every copy and node must be gone within two seconds.
 - **Honor DMS Reduce motion.**

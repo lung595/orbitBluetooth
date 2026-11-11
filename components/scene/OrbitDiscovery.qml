@@ -1,5 +1,4 @@
 import QtQuick
-import qs.Services
 
 // Bluetooth discovery for one Orbit view: it only runs while the view is
 // open and stops on its own after the scan time (prefs.scanSeconds).
@@ -9,25 +8,15 @@ Item {
 
     readonly property var adapter: discovery.scene.adapter
     property bool _ownsDiscovery: false
-    // The daemon's background scan for the pop-up must not end a view's scan
-    readonly property var _newDevices: PluginService.pluginDaemonInstances[discovery.scene.prefs.pluginId]?.newDevices ?? null
-    property bool _holdingScan: false
-    function _holdScan(on) {
-        if (_holdingScan === on)
-            return;
-        _holdingScan = on;
-        _newDevices?.holdScan(on);
-    }
 
     function start() {
         if (!adapter || !discovery.scene.btOn)
             return;
-        // Already running for the pop-up's background scan: take it over
-        if (!adapter.discovering || _newDevices?._owns)
+        // A scan someone else started (DMS's panel) is theirs to stop
+        if (!adapter.discovering) {
             _ownsDiscovery = true;
-        if (!adapter.discovering)
             adapter.discovering = true;
-        _holdScan(true);
+        }
         if (discovery.scene.prefs.scanSeconds > 0)
             scanStopTimer.restart();
     }
@@ -37,7 +26,6 @@ Item {
         if (adapter && _ownsDiscovery && adapter.discovering)
             adapter.discovering = false;
         _ownsDiscovery = false;
-        _holdScan(false);
     }
 
     // With the autoScan preference off, only the center or the Scan chip start

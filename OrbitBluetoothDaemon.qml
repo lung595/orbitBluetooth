@@ -5,7 +5,6 @@ import qs.Services
 import "components/common"
 import "components/delay"
 import "components/noise"
-import "components/pairing"
 import "components/together"
 import "components/volume"
 import "components/wear"
@@ -14,8 +13,7 @@ import "diagnostics/Log.js" as Log
 // Event-driven bookkeeping shared by every surface. BlueZ exposes neither a
 // connection timestamp, a charging state nor a discharge rate, so we record
 // them ourselves and merge what UPower knows.
-// Everything reacts to D-Bus property changes. The one timer is the short
-// background scan of the "new device" pop-up (NewDeviceWatch, setting).
+// Everything reacts to D-Bus property changes.
 // The only processes are the noise-control helper (see AncService), only
 // while a supported headset is connected and being controlled (or, with
 // "Pause when you take the headset off" on, while a Sony headset with a
@@ -108,21 +106,16 @@ Item {
         keys: keyBinder
     }
 
-    // "New device nearby" pop-up, with its own background scan
-    NewDeviceWatch {
-        id: newDeviceWatch
-        prefs: prefs
-        anc: ancService
-    }
-
-    readonly property alias newDevices: newDeviceWatch
-    // The bar popout closes when the sheet comes up (OrbitBluetoothWidget):
-    // a sheet stacked over the open orbit looks cluttered
-    Connections {
-        target: newDeviceWatch
-        function onShownChanged() {
-            root._publish("sheetShown", newDeviceWatch.shown);
-        }
+    // The pairing sheet under the bar was removed after 1.15 (a new device is
+    // offered inside the open view only, OrbitOffer): its settings and the
+    // addresses refused with "Don't offer again" are cleared once
+    readonly property bool _oldSheet: prefs.oldSheetSettings
+    on_OldSheetChanged: _clearOldSheet()
+    function _clearOldSheet() {
+        if (!_oldSheet)
+            return;
+        for (const key of prefs.sheetKeys)
+            prefs.set(key, null);
     }
 
     // Pairing prompts. DMS only shows its pairing dialog from the native
@@ -162,7 +155,6 @@ Item {
         wear: wearPause
         route: audioRoute
         keys: keyBinder
-        newDevices: newDeviceWatch
         prefs: prefs
         report: reportService
         delays: disconnectDelays

@@ -59,10 +59,6 @@ var ENTRIES = [
     // --- scanning --------------------------------------------------------------
     _entry("autoScan", "scanning", "Scan automatically", "When a view opens; otherwise click the center", ["search", "discover", "find", "start"]),
     _entry("offerNew", "scanning", "Offer new devices", "A card with Connect inside the view when an unpaired device shows up", ["pair", "unpaired", "discover", "card", "connect"]),
-    _entry("offerPopup", "scanning", "Pop-up for new headphones", "Headphones in pairing mode are offered under the bar, even with the view closed", ["notification", "pairing", "earbuds", "alert", "new device"]),
-    _entry("offerScan", "scanning", "Background scan", "Also look for new headphones by itself, a few seconds at a time", ["search", "battery", "power", "periodic", "discover"]),
-    _entry("offerEvery", "scanning", "Background scan interval", "How often the background scan looks for new headphones", ["frequency", "period", "minutes", "seconds", "battery"]),
-    _entry("offerMinBattery", "scanning", "No background scan below", "Battery level of this computer, when it is not plugged in", ["power", "laptop", "percent", "threshold", "low"]),
     _entry("scanSeconds", "scanning", "Scan duration", "How long a scan runs after it starts", ["time", "length", "seconds", "battery", "search"]),
 
     // --- headphones ------------------------------------------------------------
@@ -110,6 +106,5 @@ var ENTRIES = [
     // --- reset -----------------------------------------------------------------
     _entry("glyphOverrides", "reset", "Reset device icons", "Puts back the icon Orbit picks for each device", ["reset", "restore", "default", "pictures", "glyph"]),
     _entry("hiddenDevices", "reset", "Show hidden devices", "Brings back the devices sent to the black hole", ["reset", "restore", "unhide", "black hole"]),
-    _entry("ignoredDevices", "reset", "Offer ignored devices again", "Devices refused with Ignore in the pop-up are offered again", ["reset", "restore", "refused", "dismissed", "new device"]),
     _entry("report", "reset", "Report a problem", "Copies a report with nothing personal in it", ["bug", "issue", "diagnostic", "debug", "log", "support", "copy"])
 ]);

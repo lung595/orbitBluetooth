@@ -66,7 +66,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 1. **Open the orbit** from the widget you added. Discovery starts on its own.
 2. **Drag a device into the inner ring** to pair and connect it; drag it back out to disconnect.
 3. **Click a device** for its detail card: battery, charging, noise control, and the two volumes of audio devices.
-4. **New headphones?** Put them in pairing mode: within a minute a pairing sheet unfolds from the bar and offers to connect them, even with Orbit closed.
+4. **New headphones?** Put them in pairing mode with the orbit open: a small *Connect* card offers them.
 
 ## Features
 
@@ -78,11 +78,6 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 | --- | --- |
 | ![Chain: a lit window runs along a string of dots to the device](screenshots/charging-beam-chain.gif) | ![Horizon: light bends into a thin ring round the device](screenshots/charging-beam-horizon.gif) |
 
-| New headphones pop-up | Dark and light themes |
-| --- | --- |
-| ![The pairing sheet unfolds from the bar, the headset falls into orbit and connects](screenshots/newdevice.gif) | ![The pairing sheet offering, then connected, in a dark and a light theme](screenshots/newdevice.png) |
-
-- **New headphones? Orbit notices.** Put them in pairing mode and a pairing sheet unfolds from the bar: the headset falls into orbit and floats above a planet, *Connect* pairs it on the spot, shows its battery and its noise-control modes. Deep space in a dark theme, stratosphere in a light one, with any DMS palette. With several PCs running Orbit, the nearest one shows it first ([more](docs/GUIDE.md#new-headphones-pop-up)). Works with Orbit closed.
 - **Drag to connect** with a magnet snap, elastic tether to disconnect.
 - **Two volumes**: open a connected audio device and its card shows the device's own level and this PC's as two half circles, with the sound itself moving inside. Drag or scroll each, click the planet to mute, and a soft tick plays live in the device whose level you change (in every output when it is the group's).
 - **Volume pop-up and smart steps**: whenever a volume changes, the same screen shows both levels inside Dank Island (or in place of DMS's OSD, which is switched off); 1 % per slow notch, faster when you scroll or press fast, and your volume keys use it from the first start (niri; you can give them back).
@@ -108,7 +103,7 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 
 | Gesture | Result |
 | --- | --- |
-| Put new headphones in pairing mode | A pairing sheet under the bar offers to connect them (<kbd>Enter</kbd> connects, <kbd>Esc</kbd> later) |
+| Put new headphones in pairing mode, the orbit open | A *Connect* card in the view offers them |
 | Drag a device inside the inner ring | Pair and connect |
 | Drag a connected device outward | Disconnect (a device of a listening group only leaves the group) |
 | Click a device | Open its detail card |
@@ -154,9 +149,6 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 | | Forget what Orbit learned (erases it, [more](docs/GUIDE.md#forget-what-orbit-learned)) | |
 | Scanning | Scan automatically | On |
 | | Offer new devices (a *Connect* card in the view) | On |
-| | Pop-up for new headphones (listens to any search, free) | On |
-| | Background scan (Orbit searches by itself) ⚡ | Off |
-| | Background scan interval / battery threshold (shown when the scan is on) | Every minute / 30 % |
 | | Scan duration: 20 s, 45 s, 90 s or *While open* ⚡ | 45 s |
 | Headphones | Noise control | On |
 | | Turn off conversation awareness on disconnect | On |
@@ -194,8 +186,6 @@ dms ipc call orbitBluetooth ancStatus    # current noise-control state (JSON)
 dms ipc call orbitBluetooth chatEnds standard  # how long a conversation lasts: short, standard, long or never (Sony)
 dms ipc call orbitBluetooth wearStatus   # worn or removed, and what is held paused (Sony)
 dms ipc call orbitBluetooth beamStyle pulse     # try a charging beam style until restart: pulse, filament, chain, horizon or reset (not saved)
-dms ipc call orbitBluetooth newDeviceDemo    # show the new-headphones pop-up with a made-up headset
-dms ipc call orbitBluetooth newDeviceStatus  # is the background scan running, or why not
 dms ipc call orbitBluetooth hidden       # list hidden devices
 dms ipc call orbitBluetooth unhideAll    # bring every hidden device back
 dms ipc call orbitBluetooth volume up    # up or down, with smart steps
@@ -228,7 +218,6 @@ Bind the commands in your compositor, for example in niri: `Mod+N { spawn "dms" 
 | Something else does not work | *Settings → Reset & help → Copy report*, then paste it in a [bug report](https://github.com/lung595/orbitBluetooth/issues/new?template=bug.yml); see [Report a problem](docs/GUIDE.md#report-a-problem) |
 | Nothing changed after installing | Add one of its widgets, see [Add a widget](#3-add-a-widget) |
 | Earbuds disconnect after a few seconds | Accept the pairing code dialog once |
-| No pop-up for new headphones | It appears when any tool searches for devices (Orbit's **Scan**, your system settings); turn on **Background scan** to have Orbit search by itself; the pop-up waits for full-screen windows |
 | Something did not work | A short note says why, and the GitHub mark next to it opens the matching section of the guide |
 | Bluetooth is off and **Turn on** does nothing | Airplane mode or a hardware switch blocks it: `rfkill unblock bluetooth`, see [Bluetooth is off](docs/GUIDE.md#bluetooth-is-off) |
 | No devices appear while scanning | Put the device in pairing mode; turn on **Show unnamed devices** |
@@ -258,9 +247,8 @@ Some Sony headsets do not report charging, or drop Bluetooth while charging: thi
 ## Privacy
 
 - **Safe pairing.** A new device is only trusted once Orbit has checked it is what it looks like; headphones that can also send key presses (for their buttons) are paired only if you say so. [More](docs/GUIDE.md#pairing-safety)
-- **No telemetry.** Connection times and battery history stay in memory; settings, ignored devices, the hidden list (Bluetooth devices and wired outputs: an address or node name and the name it had, at most 64), whether its section is left open or folded and the learned groups are stored by DMS with Orbit's own settings.
+- **No telemetry.** Connection times and battery history stay in memory; settings, the hidden list (Bluetooth devices and wired outputs: an address or node name and the name it had, at most 64), whether its section is left open or folded and the learned groups are stored by DMS with Orbit's own settings.
 - **Noise control**: a small helper talks to your headset over a local Bluetooth socket, only while needed. With **Pause when you take the headset off** on, that connection stays open while a Sony headset with a wearing sensor is connected; Orbit pauses and resumes your players through MPRIS on the local D-Bus, keeps nothing and sends nothing; to the headset it sends one message when the connection opens, the request to log its wearing events.
-- **New headphones pop-up**: by default Orbit only listens to searches you start yourself; nothing runs in the background. The optional **Background scan** (off by default) does a local scan of 8 s about once a minute, only while the screen is on, no Bluetooth audio is connected and the battery is above the threshold.
 - **Two volumes**: talk to the local sound server (PipeWire) only; the tick is a sound file shipped with Orbit, played by a small local helper (one stream per output, open only while ticks play, gone with the shell, nothing written to disk), the picture of the sound is read locally with `cava` or with PipeWire's own peak meter.
 - **Listen together**: one small local sound process per output beyond the first, only while a group listens; it talks to PipeWire only, saves no session, no device list and no address (what it learns is the next line), logs nothing, and ends with the shell. Wired outputs are listed with `pactl list sinks` only when something asks (the *Create a group…* list, the suggested group) and kept in memory; a wired member's name is kept in memory for the session, and the groups you turn down are remembered in memory only, until the shell ends. The **Wired delay** nudge is one number in Orbit's own settings. Nothing is sent. [More](docs/GUIDE.md#listen-together)
 - **Learned groups**: with **Learn my groups** on (default), Orbit keeps in its own settings, for at most 8 groups, only short hashes of the outputs you listened to together (no name, no address), how many times and the day of the last time; it never leaves your computer, **Forget what Orbit learned** or switching it off erases it at once, and uninstalling Orbit erases it with the rest. [More](docs/GUIDE.md#learn-my-groups)
@@ -286,7 +274,7 @@ Details in the [user guide](docs/GUIDE.md#privacy).
 
 ## Credits
 
-Noise-control protocols were reimplemented from the public notes of Gadgetbridge, SonyHeadphonesClient, XMDeck, LibrePods, MagicPodsCore, GalaxyBudsClient, based-connect, bosectl, OpenSCQ30, OpenFreebuds, EarA-linux, earctl and cmfctl (no code copied). The Sony wearing sensor and the length of a conversation come from [mos9527](https://github.com/mos9527)'s MIT-licensed [SonyHeadphonesClient](https://github.com/mos9527/SonyHeadphonesClient), and the wearing sequence on the WH-1000XM6 was confirmed there by [phedoreanu](https://github.com/phedoreanu) (pull request [#63](https://github.com/mos9527/SonyHeadphonesClient/pull/63)): thank you both. The new-device pop-up is inspired by the nearby-device cards of Google Fast Pair and Apple's AirPods setup (the idea only: Orbit uses plain BlueZ discovery, no vendor protocol). Built on [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell) and [Quickshell](https://quickshell.org).
+Noise-control protocols were reimplemented from the public notes of Gadgetbridge, SonyHeadphonesClient, XMDeck, LibrePods, MagicPodsCore, GalaxyBudsClient, based-connect, bosectl, OpenSCQ30, OpenFreebuds, EarA-linux, earctl and cmfctl (no code copied). The Sony wearing sensor and the length of a conversation come from [mos9527](https://github.com/mos9527)'s MIT-licensed [SonyHeadphonesClient](https://github.com/mos9527/SonyHeadphonesClient), and the wearing sequence on the WH-1000XM6 was confirmed there by [phedoreanu](https://github.com/phedoreanu) (pull request [#63](https://github.com/mos9527/SonyHeadphonesClient/pull/63)): thank you both. The *Connect* card for a new device is inspired by the nearby-device cards of Google Fast Pair and Apple's AirPods setup (the idea only: Orbit uses plain BlueZ discovery, no vendor protocol). Built on [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell) and [Quickshell](https://quickshell.org).
 
 ## License
 

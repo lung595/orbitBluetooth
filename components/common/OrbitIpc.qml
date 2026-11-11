@@ -22,7 +22,7 @@ import "../device/BeamStyle.js" as BeamStyle
 //   deviceVolume | pcVolume | togetherVolume up | down | +5 | -5 | 40
 //   volume up | down   (smart steps, D264)   volumeKeys on | off | status
 //   beamStyle pulse | filament | chain | horizon | reset   (this session only)
-//   hidden | unhideAll      newDeviceDemo | newDeviceStatus
+//   hidden | unhideAll
 //   together <devices, 2 to 4> | togetherAdd <device> | togetherRemove <device>
 //   separate | togetherStatus | togetherDelay <device> <ms>
 //   togetherOutputs | wiredDelay up | down | +10 | -10 | 20 | reset | status
@@ -41,7 +41,6 @@ Scope {
     required property var wear
     required property var route
     required property var keys
-    required property var newDevices
     required property var prefs
     required property var report
     required property var delays
@@ -101,23 +100,6 @@ Scope {
             ipc.prefs.set("launcherWords", r.table);
             const why = r.refused.map(x => x.why).filter((w, i, all) => all.indexOf(w) === i).join(", ");
             return "OK: " + r.table[name].join(", ") + (why ? " · refused: " + why + " · " + Guide.url("disconnect-after-a-delay") : "");
-        }
-
-        // Shows the new-device pop-up with a made-up headset
-        function newDeviceDemo(): string {
-            return ipc.newDevices.demo();
-        }
-
-        // Why the pop-up's last background scan was skipped, if it was
-        function newDeviceStatus(): string {
-            return JSON.stringify({
-                "enabled": ipc.newDevices.offering,
-                "backgroundScan": ipc.newDevices.prefs.offerScan,
-                "lastScan": ipc.newDevices.lastSkip ? "skipped: " + ipc.newDevices.lastSkip : "ran",
-                "showing": ipc.newDevices.current,
-                "phase": ipc.newDevices.current ? ipc.newDevices.phase : "",
-                "lastError": ipc.newDevices.lastError
-            });
         }
 
         function anc(mode: string): string {

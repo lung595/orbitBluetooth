@@ -1,36 +1,12 @@
-// The new-device pop-up: scan rules, offers, sheet colours, the input-device guard.
+// Colours that read on either skin, and the input-device guard of pairing.
 // Run from the plugin root: gjs tests/pairing.test.js (or every file: sh tests/run.sh)
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
 const Palette = load("Palette.js", ["contrast", "ensureContrast", "onColor", "lift", "isGrey", "toHsl", "apart"]);
-const Offer = load("Offer.js", ["scanBlocker", "isCandidate", "offerable", "headline", "features", "errorText"]);
-const Guard = load("Guard.js", ["offerFamily", "hasInput", "refused", "parseUuids"]);
+const Guard = load("Guard.js", ["hasInput", "refused", "parseUuids"]);
 
-// New device pop-up: when the background scan may run, what is offered
-const ctx = { enabled: true, btOn: true, asleep: false, busy: false, audioConnected: false, onBattery: true, level: 50, minLevel: 30 };
-eq("scan: allowed", Offer.scanBlocker(ctx), "");
-eq("scan: low battery", Offer.scanBlocker(Object.assign({}, ctx, { level: 29 })), "battery below 30%");
-eq("scan: low but plugged in", Offer.scanBlocker(Object.assign({}, ctx, { level: 10, onBattery: false })), "");
-eq("scan: no battery", Offer.scanBlocker(Object.assign({}, ctx, { level: -1 })), "");
-eq("scan: audio playing", Offer.scanBlocker(Object.assign({}, ctx, { audioConnected: true })), "audio device connected");
-eq("scan: screen off", Offer.scanBlocker(Object.assign({}, ctx, { asleep: true })), "screen locked or off");
-eq("offer: new headphones", Offer.isCandidate({ address: "A", name: "WH-1000XM6" }, "audio", {}), true);
-eq("offer: paired", Offer.isCandidate({ address: "A", name: "WH-1000XM6", paired: true }, "audio", {}), false);
-eq("offer: a phone", Offer.isCandidate({ address: "A", name: "Pixel 8" }, "phone", {}), false);
-eq("offer: ignored", Offer.isCandidate({ address: "A", name: "WH-1000XM6" }, "audio", { A: "WH-1000XM6" }), false);
-eq("offer: address only", Offer.isCandidate({ address: "A", name: "AA:BB:CC:DD:EE:FF" }, "audio", {}), false);
-eq("offer: snoozed", Offer.offerable("A", { A: 2000 }, 1000), false);
-eq("offer: snooze over", Offer.offerable("A", { A: 2000 }, 3000), true);
-eq("headline: earbuds", Offer.headline("earbudsRound"), "New earbuds nearby");
-eq("tiles: portable speaker charges", Offer.features({ family: "", hours: 0, kind: "speaker" }).map(t => t.value), ["Volume", "Charging"]);
-eq("tiles: soundbar has no battery", Offer.features({ family: "", hours: 0, kind: "soundbar" }).map(t => t.value), ["Volume"]);
-eq("tiles: headphones", Offer.features({ family: "sony", hours: 30, kind: "headphonesSlim" }).map(t => t.value), ["Noise control", "≈ 30 h", "Volume"]);
-eq("error: declined", Offer.errorText("org.bluez.Error.AuthenticationRejected"), "The pairing was declined.");
-eq("error: timeout", Offer.errorText("Page Timeout"), "No answer. Is it still in pairing mode?");
-eq("error: unknown", Offer.errorText(""), "Could not connect. Is it still in pairing mode?");
-
-// Pairing sheet colours: any accent reads on either skin
+// Theme colours: any accent reads on either skin
 const hex = h => ({ r: parseInt(h.slice(1, 3), 16) / 255, g: parseInt(h.slice(3, 5), 16) / 255, b: parseInt(h.slice(5, 7), 16) / 255 });
 const night = hex("#0A0C14"), pearl = hex("#E6E8EF");
 for (const accent of ["#F2B8C6", "#1A3A8F", "#C5E66A", "#4B6818", "#00FFD1", "#BDBDBD"]) {
@@ -55,9 +31,6 @@ eq("grey: unchanged", hue(Palette.apart(hex("#BDBDBD"), hex("#FCABF6"))), hue(he
 
 // Pairing guard (P115): a fake "headset" that can type is refused
 const HID = "00001124-0000-1000-8000-00805f9b34fb", HOG = "00001812-0000-1000-8000-00805F9B34FB", A2DP = "0000110b-0000-1000-8000-00805f9b34fb";
-eq("offer: audio class", Guard.offerFamily("audio-headset"), "audio");
-eq("offer: no class, headset name is not enough", Guard.offerFamily(""), "");
-eq("offer: keyboard class", Guard.offerFamily("input-keyboard"), "");
 eq("refuse: headset with HID", Guard.refused("audio", [A2DP, HID]), true);
 eq("refuse: headset with HID over LE (upper case)", Guard.refused("audio", [HOG]), true);
 eq("refuse: unknown family with HID", Guard.refused("", [HID]), true);
