@@ -87,9 +87,9 @@ Item {
     }
 
     // The processes of the session: the copies and the source filter of a wired
-    // source, not the graph reader
+    // source, not the graph reader (which has no command until its first read)
     function live() {
-        return ProcessLog.live.filter(p => p.command[0] !== "wpexec");
+        return ProcessLog.live.filter(p => p.command.length > 0 && p.command[0] !== "wpexec");
     }
     // A node as the lines below name it: a Bluetooth output or filter by the
     // last two digits of its address (and "pc" for the filter), a wired output

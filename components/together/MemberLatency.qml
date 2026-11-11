@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell.Io
 import qs.Common
+import "../common"
 import "../volume/AudioGraph.js" as Graph
 import "Delay.js" as Delay
 
@@ -56,30 +57,20 @@ Item {
             if (dumper.running) {
                 root._again = true;
             } else {
-                dumper._started = false;
-                dumper.running = true;
+                dumper.launch(["wpexec", root._script]);
             }
         }
     }
 
-    Process {
+    // ToolProcess: one `finished` per read, -1 when wpexec could not start
+    // (no WirePlumber), so the group is told then too, never left waiting
+    ToolProcess {
         id: dumper
-        command: ["wpexec", root._script]
-        // Whether this read really started: a program that is not installed
-        // sends neither `started` nor `exited`, only `running` going back
-        property bool _started: false
-        onStarted: _started = true
-        onRunningChanged: {
-            // No wpexec (no WirePlumber): the figures are unknown and the
-            // group is told, as for a failed read, never left waiting in silence
-            if (!running && !_started)
-                root._over({});
-        }
         stdout: StdioCollector {
             id: dumped
         }
         // A failed read leaves every figure unknown: none is kept from an
         // earlier read, and the group is told as well
-        onExited: code => root._over(code === 0 ? Delay.latenciesOf(root.sinks, Graph.parseDump(dumped.text)) : ({}))
+        onFinished: code => root._over(code === 0 ? Delay.latenciesOf(root.sinks, Graph.parseDump(dumped.text)) : ({}))
     }
 }

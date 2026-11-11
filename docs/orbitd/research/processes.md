@@ -55,7 +55,7 @@ Columns: **When** = trigger · **Rate** = how often in practice · **Parse** = w
 **A4. `pw-top -b -n 2`** · `components/volume/AudioGraph.qml:63` (optional: pipewire-utils; without it the quantum is left out)
 - When: `wantTop` (quantum fact shown, or details unfolded), `sink` change, or `refresh()`.
 - Rate: once per opening, about 1 s per run.
-- Parse: `AudioGraph.parseTop` (`:45`).
+- Parse: `AudioGraph.parseTop` (`:46`).
 - Rust: **no clean replacement.** Quantum and rate come from PipeWire's Profiler interface, which only libpipewire speaks. The daemon keeps spawning `pw-top` (risk flagged).
 
 **A5. `wpexec graph/orbit_graph.lua`** (was `pw-dump`) · `components/together/MemberLatency.qml:67`

@@ -42,17 +42,21 @@ eq("the reported delay and the LDAC setting", parsed["bluez_output.AA_BB_CC_DD_E
 eq("a wired output reports no delay in time: nothing is made up", parsed["alsa_output.usb-X.HiFi__Line1__sink"], {});
 eq("a delay of zero is not a delay", parsed["bluez_output.11_22_33_44_55_66.1"], { quality: 0 });
 eq("not JSON, or not a list, gives nothing", [Graph.parseDump("oops"), Graph.parseDump("{}"), Graph.parseDump("")], [{}, {}, {}]);
-// What `wpexec graph/orbit_graph.lua` printed on a real graph (WirePlumber
-// 0.5.19, ALSA sinks: no time in ns, no quality), keys in its own order
+// The first entry is what `wpexec graph/orbit_graph.lua` printed on a real
+// graph (WirePlumber 0.5.19, ALSA sinks: no time in ns, no quality), keys in
+// its own order. The reader has not been run beside a Bluetooth sink yet, so
+// the bluez entry is written by hand in that same shape
 const printed = '[{"info":{"params":{"Props":[], "Latency":[{"direction":"Input", "maxNs":0, "minNs":0}, {"direction":"Output", "maxNs":0, "minNs":0}]}, "props":{"media.class":"Audio/Sink", "node.name":"alsa_output.pci-0000_01_00.1.hdmi-stereo"}}}, {"info":{"params":{"Props":[{"quality":1}], "Latency":[{"direction":"Input", "maxNs":184600000, "minNs":184600000}]}, "props":{"media.class":"Audio/Sink", "node.name":"bluez_output.AA_BB_CC_DD_EE_FF.1"}}}]';
 eq("the reader's own output reads the same", Graph.parseDump(printed), { "alsa_output.pci-0000_01_00.1.hdmi-stereo": {}, "bluez_output.AA_BB_CC_DD_EE_FF.1": { latencyMs: 184.6, quality: 1 } });
 eq("a reader that timed out printed nothing: nothing is known", Graph.parseDump(""), {});
 
 // The reader is fixed and read only (value 11): it makes, changes and
-// destroys nothing, touches no file and takes no argument, and it always ends
+// destroys nothing, touches no file and takes no argument (wpexec hands a
+// script its arguments as the chunk's `...`, so that is banned too), and it
+// always ends
 const [, luaBytes] = GLib.file_get_contents(root + "/graph/orbit_graph.lua");
 const lua = new TextDecoder().decode(luaBytes).replace(/--[^\n]*/g, "");
-eq("the graph reader writes nothing and reads no argument", ["Link(", "Node(", "SessionItem", "set_param", "request_destroy", "os.", "io.", "arg", "Core.require_api", "load("].filter(word => lua.includes(word)), []);
+eq("the graph reader writes nothing and reads no argument", ["Link(", "Node(", "SessionItem", "set_param", "request_destroy", "os.", "io.", "arg", "...", "Core.require_api", "load("].filter(word => lua.includes(word)), []);
 eq("the graph reader always ends", [lua.includes("Core.timeout_add"), lua.includes("Core.quit")], [true, true]);
 
 // --- pw-top: the quantum of the nodes that run ---------------------------------------
