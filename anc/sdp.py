@@ -21,13 +21,30 @@ PDU_SEARCH_ATTR_RESPONSE = 0x07
 # Data element types (the upper 5 bits of the header byte)
 T_NIL, T_UINT, T_INT, T_UUID, T_TEXT, T_BOOL, T_SEQ, T_ALT, T_URL = range(9)
 
+# The answer comes from the headset, so it is bounded: real records nest 3 or
+# 4 deep and fit in one or two PDUs. Past these limits the reply is garbage
+# (or hostile) and the lookup gives up instead of recursing or looping.
+MAX_DEPTH = 8
+MAX_ROUNDS = 16
+MAX_COLLECTED = 64 * 1024
+# RFCOMM server channels are 1 to 30 (RFCOMM spec, TS 07.10 adaptation)
+RFCOMM_CHANNELS = range(1, 31)
 
-def parse_element(buf, pos=0):
+
+class SdpError(OSError):
+    """A malformed SDP reply: treated like an unreachable service."""
+
+
+def parse_element(buf, pos=0, depth=0):
     """Decode one data element; returns (value, next position).
 
     Sequences become Python lists, UUIDs become ints (16/32-bit) or
     uuid.UUID (128-bit), integers become ints and text becomes bytes.
     """
+    if depth > MAX_DEPTH:
+        raise SdpError("SDP reply nested too deep")
+    if pos >= len(buf):
+        raise SdpError("truncated SDP element")
     head = buf[pos]
     kind, size_index = head >> 3, head & 7
     pos += 1
@@ -44,7 +61,7 @@ def parse_element(buf, pos=0):
     if kind in (T_SEQ, T_ALT):
         items, inner = [], 0
         while inner < len(data):
-            value, inner = parse_element(data, inner)
+            value, inner = parse_element(data, inner, depth + 1)
             items.append(value)
         return items, end
     if kind == T_UUID:
@@ -54,7 +71,7 @@ def parse_element(buf, pos=0):
     if kind == T_INT:
         return int.from_bytes(data, "big", signed=True), end
     if kind == T_BOOL:
-        return bool(data[0]), end
+        return (len(data) > 0 and data[0] != 0), end
     return bytes(data), end
 
 
@@ -68,10 +85,16 @@ def build_request(service_uuid, transaction=1, continuation=b""):
 
 def split_response(pdu):
     """Returns (attribute list bytes, continuation state) of one response PDU."""
+    if len(pdu) < 5:
+        raise SdpError("truncated SDP reply")
     pdu_id, _transaction, _length = struct.unpack(">BHH", pdu[:5])
     if pdu_id != PDU_SEARCH_ATTR_RESPONSE:
-        raise OSError("SDP error response")
+        raise SdpError("SDP error response")
+    if len(pdu) < 7:
+        raise SdpError("truncated SDP reply")
     count = struct.unpack(">H", pdu[5:7])[0]
+    if len(pdu) < 8 + count:
+        raise SdpError("truncated SDP reply")
     lists = pdu[7:7 + count]
     cont_len = pdu[7 + count]
     return lists, pdu[8 + count:8 + count + cont_len]
@@ -80,14 +103,20 @@ def split_response(pdu):
 def rfcomm_channel(attribute_lists):
     """Finds the RFCOMM channel inside the decoded attribute lists, or None."""
     records, _ = parse_element(attribute_lists)
-    for record in records or []:
+    # Every level is checked for its type: a reply of the wrong shape means
+    # "no channel", never an exception (P-audit 2026-11)
+    for record in records if isinstance(records, list) else []:
+        if not isinstance(record, list):
+            continue
         # record = [attrId, value, attrId, value, ...]
         for i in range(0, len(record) - 1, 2):
-            if record[i] != ATTR_PROTOCOL_DESCRIPTOR_LIST:
+            if record[i] != ATTR_PROTOCOL_DESCRIPTOR_LIST or not isinstance(record[i + 1], list):
                 continue
             for layer in record[i + 1]:
                 if isinstance(layer, list) and len(layer) >= 2 and layer[0] == UUID_RFCOMM:
-                    return layer[1]
+                    channel = layer[1]
+                    if isinstance(channel, int) and not isinstance(channel, bool) and channel in RFCOMM_CHANNELS:
+                        return channel
     return None
 
 
@@ -98,13 +127,24 @@ def find_rfcomm_channel(address, service_uuid, timeout=5.0):
     try:
         sock.connect((address, SDP_PSM))
         collected, continuation, transaction = b"", b"", 1
+        seen = set()
         while True:
             sock.send(build_request(service_uuid, transaction, continuation))
             lists, continuation = split_response(sock.recv(4096))
             collected += lists
             if not continuation:
                 break
+            # A headset that keeps answering "more" (or repeats itself) would
+            # hold the helper here for ever, out of the shell's reach
+            if continuation in seen or transaction >= MAX_ROUNDS or len(collected) > MAX_COLLECTED:
+                raise SdpError("SDP reply never ends")
+            seen.add(continuation)
             transaction += 1
-        return rfcomm_channel(collected) if collected else None
+        if not collected:
+            return None
+        try:
+            return rfcomm_channel(collected)
+        except (IndexError, ValueError, TypeError) as err:
+            raise SdpError("malformed SDP reply") from err
     finally:
         sock.close()

@@ -44,6 +44,10 @@ def tlv(payload, index_at=1):
     while i + index_at < len(payload):
         length = payload[i]
         record = payload[i:i + length + 1]
+        # A zero or short length (bad headset) leaves no index byte: stop
+        # there instead of raising (audit 2026-11)
+        if len(record) <= index_at:
+            return
         yield record[index_at], record
         i += length + 1
 
