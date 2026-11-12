@@ -25,14 +25,19 @@ Item {
     width: 128
     height: 80
 
-    NumberAnimation on t {
-        running: sketch.running && !sketch.reduceMotion
-        from: 0
-        to: 1
-        duration: 5000
-        loops: Animation.Infinite
-        onRunningChanged: if (!running)
-            sketch.t = sketch.still
+    // A plain Timer, not a looping NumberAnimation: a running QML animation
+    // makes every shell window redraw at the display rate (CONTRIBUTING,
+    // "Never loop a QML animation"). About 30 Hz is plenty for a 5 s story.
+    // `visible` is the effective one, so a category hidden inside a page
+    // that still shows stops the clock too.
+    readonly property bool _ticking: running && visible && !reduceMotion
+    // The story starts over from the top; a stopped clock shows the finished picture
+    on_TickingChanged: t = _ticking ? 0 : still
+    Timer {
+        interval: 33
+        repeat: true
+        running: sketch._ticking
+        onTriggered: sketch.t = (sketch.t + interval / 5000) % 1
     }
 
     // 0 before a, 1 after b, smooth in between
