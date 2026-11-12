@@ -7,7 +7,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 
-- **A cover picture for the README** (`screenshots/hero.png`, 2560 × 1280, also sized for GitHub's social preview), in DMS's default theme (Purple), with the orbit at the size the Control Center really gives it (568 × 314); made from mock data by `scripts/preview/hero.qml` (`render.sh`). The previews find DMS's icon font in its new folder (`DCommon/`, `DankCommon/` before DMS 2.1).
+- **A cover picture for the README** (`screenshots/hero.png`, 2560 × 1280, also sized for GitHub's social preview), in DMS's default theme (Purple), with the orbit at the size the Control Center really gives it (568 × 314); made from mock data by `scripts/preview/hero.qml` (`render.sh`). The same picture without the words, `screenshots/registry.png` (16:9), is the one the DMS plugin registry shows: its card adds the name and the description itself. The previews find DMS's icon font in its new folder (`DCommon/`, `DankCommon/` before DMS 2.1).
 
 ## 2.0.0 - 2026-11-11
 

@@ -14,13 +14,17 @@ import "mock/State.js" as State
 // The README's cover picture (and GitHub's social preview): 1280 x 640, in
 // DMS's default theme (Purple), with the real scene at the size the Control
 // Center gives it, on made-up devices.
-// Usage: QT_SCALE_FACTOR=2 QT_QPA_PLATFORM=offscreen qml -I imports hero.qml -- <out.png>
-// (render.sh makes it at twice the size, sharp on HiDPI screens)
+// Usage: QT_SCALE_FACTOR=2 QT_QPA_PLATFORM=offscreen qml -I imports hero.qml -- [plain] <out.png>
+// (render.sh makes it at twice the size, sharp on HiDPI screens). "plain"
+// leaves the words out, 896 x 504 (16:9): the plugin registry wraps the
+// picture in its own card with the name and the description, and asks for
+// the interface alone.
 Window {
     id: win
     readonly property string out: Qt.application.arguments[Qt.application.arguments.length - 1]
-    width: 1280
-    height: 640
+    readonly property bool plain: Qt.application.arguments.indexOf("plain") >= 0
+    width: plain ? 896 : 1280
+    height: plain ? 504 : 640
     visible: true
     color: Theme.surface
 
@@ -157,6 +161,7 @@ Window {
     // Left: what it is, in a few words
     Column {
         id: pitch
+        visible: !win.plain
         x: 80
         anchors.verticalCenter: parent.verticalCenter
         width: 500
@@ -278,7 +283,7 @@ Window {
     }
     Rectangle {
         id: sheet
-        x: 640
+        x: win.plain ? (win.width - width) / 2 : 640
         anchors.verticalCenter: parent.verticalCenter
         width: win.ccWidth + 2 * win.sheetPadding
         height: win.ccHeight + 2 * win.sheetPadding
