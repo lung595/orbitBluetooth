@@ -35,6 +35,19 @@ Item {
         hold._elapsed = 0;
         tick.start();
     }
+    // Catches up with the clock: the Timer only looks every 33 ms, so a
+    // release that lands after HOLD_MS but before the next tick calls this
+    // first, or that press would be neither a click nor a hold
+    function settle() {
+        if (!tick.running)
+            return;
+        hold._elapsed = Date.now() - hold._start;
+        if (!Hold.done(hold.elapsed))
+            return;
+        tick.stop();
+        hold._fired = true;
+        hold.held();
+    }
     // Ends the press: the ring goes, `fired` is forgotten
     function cancel() {
         tick.stop();
@@ -46,14 +59,7 @@ Item {
         id: tick
         interval: 33
         repeat: true
-        onTriggered: {
-            hold._elapsed = Date.now() - hold._start;
-            if (!Hold.done(hold.elapsed))
-                return;
-            tick.stop();
-            hold._fired = true;
-            hold.held();
-        }
+        onTriggered: hold.settle()
     }
 
     // Painted only while the press is held and past the plain-click delay

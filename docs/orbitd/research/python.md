@@ -23,8 +23,8 @@ On the "16 brands" figure: there are 16 *files* in `anc/protocols/`, but only 13
 ## 1. `anc/orbit_anc.py`: noise-control session runner
 
 ### Lifecycle today
-- **Who starts it:** `components/noise/AncService.qml:90-108` (`_open`), with `["python3","-E","-s", helper, address, family]`.
-- **Device name:** passed in the environment as `ORBIT_ANC_NAME` (`AncService.qml:99-101`). This is a privacy choice: argv is readable by every user through `/proc`. The runner caps the name at 248 chars (`orbit_anc.py:224-225`).
+- **Who starts it:** `components/noise/AncService.qml:90-108` (`_open`), with `["python3","-E","-s", helper, "-", family]`; the `-` means the address comes from `ORBIT_ANC_ADDRESS` (audit 2026-11).
+- **Device address and name:** passed in the environment as `ORBIT_ANC_ADDRESS` and `ORBIT_ANC_NAME` (`AncService.qml:101-104`). This is a privacy choice: argv is readable by every user through `/proc`. The runner caps the name at 248 chars (`orbit_anc.py:234-238`).
 - **One process per headset.** It is opened when one of these holds (`_wanted`, `AncService.qml:84-88`):
   - engine `"live"`;
   - a viewer count above 0;
@@ -36,7 +36,7 @@ On the "16 brands" figure: there are 16 *files* in `anc/protocols/`, but only 13
   - handshake timeout 10 s (`HANDSHAKE_TIMEOUT`, `:165-166`);
   - connect timeout 8 s (`CONNECT_TIMEOUT`);
   - the shell's `Component.onDestruction` sets `running=false` (`AncService.qml:345`).
-- **Exit codes:** 0 ok, 1 socket error, 2 unsupported family or bad argv.
+- **Exit codes:** 0 ok, 1 socket error or protocol error (a frame no parser expected, audit 2026-11; the shell does not retry it), 2 unsupported family or bad argv.
 - **What QML does on exit** (`_onExit`, `AncService.qml:263-293`). The daemon needs an explicit "ended" event to replace the process exit:
   - marks the snapshot `live:false`;
   - replays queued `set` lines into a new session;

@@ -10,7 +10,7 @@ What it creates, in order:
 |---|---|---|---|
 | 38 | `UninstallSweep` | Erases traces on uninstall | `python3 -c <script>` detached, on destruction (`UninstallSweep.qml:287`) |
 | 43 | `Prefs` | View over the plugin settings | none |
-| 49 | `AncService` → `_publish("anc")` | ANC sessions, one per headset | `python3 -E -s anc/orbit_anc.py <addr> <family>`, name passed in env `ORBIT_ANC_NAME` (`AncService.qml:98`) |
+| 49 | `AncService` → `_publish("anc")` | ANC sessions, one per headset | `python3 -E -s anc/orbit_anc.py - <family>`, address and name passed in env `ORBIT_ANC_ADDRESS` / `ORBIT_ANC_NAME` (`AncService.qml:100`) |
 | 59 | `WearPause` → `WearHeadset` → `HeadsetStreams` | Pause/resume through Quickshell MPRIS | none |
 | 69-76 | `_eraseOldPictures` | One-time cleanup | `rm -rf ~/.cache/orbitBluetooth/pictures` (line 74), then sets `realPictures=false` |
 | 80 | `AudioRoute` → `_publish("route")` | Two volumes, key target, tick | see the rows below |

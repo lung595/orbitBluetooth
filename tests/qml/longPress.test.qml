@@ -120,6 +120,16 @@ Item {
         mouse.mouseRelease(p, c, c);
         check("released at 470 ms: a click, it focuses", took(), ["focus"]);
 
+        // Released past 500 ms but before the Timer's next look (it ticks every
+        // 33 ms): the hold is due, so the menu opens. It used to do nothing at
+        // all, neither a click nor a menu. The press is dated back so that no
+        // tick can come between.
+        mouse.mousePress(p, c, c);
+        r._start -= 520;
+        p.pressTime -= 520;
+        mouse.mouseRelease(p, c, c);
+        check("released at 520 ms before a tick: the menu opens", [took(), r.active, r.fired], [["menu"], false, false]);
+
         // A drag past 5 px cancels the hold, and carries the device
         mouse.mousePress(p, c, c);
         mouse.mouseMove(p, c + 12, c);

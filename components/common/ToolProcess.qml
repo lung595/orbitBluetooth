@@ -14,6 +14,11 @@ Process {
 
     // "idle", "launching" (asked, not started yet), "running" or "ended"
     property string _phase: "idle"
+    // Asked or running: a caller with a queue must not launch again then.
+    // Quickshell runs the command once more after the current run when
+    // `running` is set during it, and that extra run's answer would be read
+    // for the next job
+    readonly property bool busy: _phase === "launching" || _phase === "running"
 
     function launch(argv) {
         command = argv;

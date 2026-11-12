@@ -71,7 +71,9 @@ MouseArea {
     onReleased: m => {
         if (m.button === Qt.RightButton)
             return;
-        // The menu is open: the release of the press that opened it is no click
+        // The menu is open: the release of the press that opened it is no click.
+        // settle() first, for a release past HOLD_MS the Timer has not seen yet
+        hold.settle();
         const spent = hold.fired;
         hold.cancel();
         if (spent)

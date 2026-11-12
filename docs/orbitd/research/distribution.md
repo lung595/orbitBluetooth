@@ -42,7 +42,7 @@ Read-only pass: no files were edited. The only things run were the Python test s
   - `tick/orbit_tick.py`, which plays through `pw-cat`.
   - `uninstall/orbit_uninstall.py`, plus `components/common/UninstallSweep.qml:63`, which runs `python3 -c`.
   - `components/**/*.js` adds up to 6,934 lines, some of which move.
-- **Current ANC wire format**: one Python process per headset (`AncService.qml:98`, `["python3","-E","-s",_helper,address,family]`). stdin takes text commands (`get`, `set <key> <value>`, e.g. `AncService.qml:302` `"set wear on"`). stdout sends JSON lines (`orbit_anc.py:61`). With a single resident `orbitd` this becomes many devices over one channel, so every message needs a device address.
+- **Current ANC wire format**: one Python process per headset (`AncService.qml:100`, `["python3","-E","-s",_helper,"-",family]`, address in `ORBIT_ANC_ADDRESS`). stdin takes text commands (`get`, `set <key> <value>`, e.g. `AncService.qml:109` `"set wear on"`). stdout sends JSON lines (`orbit_anc.py:61`). With a single resident `orbitd` this becomes many devices over one channel, so every message needs a device address.
 - **Process spawns `orbitd` would replace**:
   - `pw-dump`: `together/MemberLatency.qml:47`, `volume/AudioGraph.qml/.js`
   - `pactl --format=json list sinks`: `volume/AudioFacts.qml:40`

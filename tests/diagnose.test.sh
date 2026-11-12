@@ -38,7 +38,8 @@ echo bobs-pc
 SH
 chmod +x "$work/bin/dms" "$work/bin/id" "$work/bin/hostname"
 
-out=$(HOME="$work/home/bobby" PATH="$work/bin:$PATH" sh "$script" 2>&1)
+# LC_ALL emptied: the stub must see the locale of a user who never set C
+out=$(LC_ALL= HOME="$work/home/bobby" PATH="$work/bin:$PATH" sh "$script" 2>&1)
 check "the plugin's report is printed" "$(echo "$out" | grep -c 'ORB-E001 action=connect')" 1
 check "the first call only started it: its answer is not printed" "$(echo "$out" | grep -c 'Collecting')" 0
 check "the crash folder is read: the latest one, reduced" "$(echo "$out" | grep -c 'crash at ~/.config/quickshell on host')" 1
@@ -50,16 +51,24 @@ cat >"$work/bin/dms" <<'SH'
 [ "$1" = "version" ] && { echo "dms v1.6.3"; exit 0; }
 exit 1
 SH
-out=$(HOME="$work/home/bobby" PATH="$work/bin:$PATH" sh "$script" 2>&1)
+# LC_ALL emptied: the stub must see the locale of a user who never set C
+out=$(LC_ALL= HOME="$work/home/bobby" PATH="$work/bin:$PATH" sh "$script" 2>&1)
 check "without the plugin the fallback report says so" "$(echo "$out" | grep -c 'the plugin did not answer')" 1
 check "the fallback holds the DMS version" "$(echo "$out" | grep -c 'DMS          : dms v1.6.3')" 1
 # The journal names the machine as it was called then, not as `hostname` says now
 cat >"$work/bin/journalctl" <<'SH'
 #!/bin/sh
-echo "Nov 12 18:00:00 old-name dms[42]: [orbit] ORB-W002 something"
+# Writes the dates of the user's locale, as journalctl does: French here
+# unless the script asks for C
+if [ "$LC_ALL" = C ]; then
+    echo "Nov 12 18:00:00 old-name dms[42]: [orbit] ORB-W002 something"
+else
+    echo "nov. 12 18:00:00 old-name dms[42]: [orbit] ORB-W002 something"
+fi
 SH
 chmod +x "$work/bin/journalctl"
-out=$(HOME="$work/home/bobby" PATH="$work/bin:$PATH" sh "$script" 2>&1)
+# LC_ALL emptied: the stub must see the locale of a user who never set C
+out=$(LC_ALL= HOME="$work/home/bobby" PATH="$work/bin:$PATH" sh "$script" 2>&1)
 check "the journal's host column is dropped from its indented lines" "$(echo "$out" | grep -c '^  Nov 12 18:00:00 dms\[42\]: \[orbit\] ORB-W002')$(echo "$out" | grep -c old-name)" 10
 check "the fallback leaks nothing either" "$(echo "$out" | grep -ciE 'bobby|bobs-pc|/home/')" 0
 

@@ -144,6 +144,8 @@ Item {
                 hold.cancel();
         }
         onReleased: {
+            // A release past HOLD_MS the Timer has not seen yet is a hold too
+            hold.settle();
             spent = hold.fired;
             hold.cancel();
         }

@@ -113,7 +113,10 @@ def drop_positions(instance_ids, data):
 def edit(path, change):
     """Loads a JSON file, applies change(data) -> bool and, when it returns
     True, writes it back atomically with the same permissions. A missing or
-    unreadable file is left alone."""
+    unreadable file is left alone. What it returns says what was written:
+    a file that could not be written gives the unchanged answer, so that
+    what depends on it (the desktop widgets' positions) is kept too."""
+    unchanged = (False, [])
     try:
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
@@ -125,7 +128,13 @@ def edit(path, change):
     # A settings file kept as a link (stow, home-manager...) stays a link:
     # the new content goes to the file it points to, not over the link
     path = os.path.realpath(path)
-    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path), prefix=".orbit-")
+    # A file that cannot be written there (a link into home-manager's
+    # read-only /nix/store) is left as it is: the rest of the clean-up, the
+    # volume keys above all, must still run
+    try:
+        fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path), prefix=".orbit-")
+    except OSError:
+        return unchanged if isinstance(result, tuple) else False
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             # Same layout as the shell's JSON.stringify(data, null, 2)
@@ -137,6 +146,7 @@ def edit(path, change):
             os.unlink(tmp)
         except OSError:
             pass
+        return unchanged if isinstance(result, tuple) else False
     return result
 
 

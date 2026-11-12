@@ -530,7 +530,7 @@ Noise control only talks to **paired** headsets: opening a channel to a device t
 
 **Conversation awareness** (the *Conversation* chip) cannot be turned off once the headset is disconnected, so a headset could stay stuck in conversation mode. When you disconnect a headset from Orbit (drag away, menu, × button), Orbit first turns conversation awareness off, then disconnects (at most 4 s of waiting). It does the same about 2.5 s after any reconnection, which covers a headset switched off, out of range or disconnected from another app. The noise-control mode (noise cancelling, ambient, off) is never changed. Switch it off with **Headphones → Turn off conversation awareness on disconnect**; Orbit then never changes it by itself.
 
-**AirPods Max (including the Max 2): noise control does not work yet.** The headset does not answer the way AirPods 3 and 4 do. Orbit asks twice, then offers off / noise cancelling / ambient anyway (commands are sent blind), but this is unverified and may do nothing. To help decode it, run the shell with `ORBIT_ANC_DEBUG=1` and open an issue with the packets.
+**AirPods Max (including the Max 2): noise control does not work yet.** The headset does not answer the way AirPods 3 and 4 do. Orbit asks twice, then offers off / noise cancelling / ambient anyway (commands are sent blind), but this is unverified and may do nothing. To help decode it, run the shell with `ORBIT_ANC_DEBUG=1` and open an issue with the packets. Before you post them, take out the headset's serial number and name, which the packets can hold, and unset the variable once done (with DMS as a systemd service they also land in the journal).
 
 ### Pause when you take the headset off
 
@@ -792,6 +792,7 @@ Removing Orbit leaves your machine exactly as it was before:
 - Disabling Orbit, reloading or restarting the shell erase nothing.
 
 - Your [volume keys](#volume-keys), if Orbit bound them, go back to DMS's default, with the step they had.
+- A DMS settings file you keep as a link (stow, home-manager) stays a link: Orbit writes to the file it points to. If that file cannot be written (home-manager's read-only `/nix/store`), Orbit leaves it as it is and cleans up the rest; remove Orbit's entries in your dotfiles yourself.
 
 If you deleted the folder while DMS was not running, Orbit could not clean up: install it again, then remove it from DMS while it runs. Your volume keys keep working meanwhile (they fall back to DMS); to give them back by hand: `dms keybinds set niri XF86AudioRaiseVolume "spawn dms ipc call audio increment 3" --allow-when-locked`, and the same with `XF86AudioLowerVolume` and `decrement`.
 

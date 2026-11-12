@@ -32,10 +32,12 @@ BodyState {
     property real homeHash: Catalog.hash01(address)
 
     // Where the signal is going. `signal` follows it inside OrbitPhysics.step,
-    // so distance and size glide instead of jumping on each RSSI update. Not a
-    // Behavior: BlueZ sends RSSI over and over during a scan, so a 900 ms
-    // animation was running nearly all the time, and a running QML animation
-    // redraws every shell window at the display rate (CONTRIBUTING). A change
+    // so distance and size glide instead of jumping on each change. Not a
+    // Behavior: once Quickshell gives RSSI (0.3.x does not, so today it only
+    // moves when `paired` flips), BlueZ would send it over and over during a
+    // scan, a 900 ms animation would run nearly all the time, and a running
+    // QML animation redraws every shell window at the display rate
+    // (CONTRIBUTING). A change
     // wakes the scene, which settles again once the signal has arrived.
     readonly property real signalTarget: rawSignal > 0 ? rawSignal : (paired ? 0.12 : 0.2)
     // Set once, not bound: a binding would jump to every new value itself

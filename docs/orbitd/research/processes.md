@@ -71,7 +71,7 @@ Columns: **When** = trigger · **Rate** = how often in practice · **Parse** = w
 - When: declarative, `running: dev.wanted` (Separate PC volume on, device has absolute volume, sink present).
 - Rate: one resident process per connected absolute-volume Bluetooth device.
 - Parse: output not read; exit is logged as ORB-E003.
-- Rust: `std::process` spawn of the same `pipewire -c` from orbitd (the original note said `pw-loopback`, which a default install lacks). The config can be handed over the same way (an unlinked file on a file descriptor), or through a memfd. The bash watchdog (`cat` on stdin, then `kill`) becomes `prctl(PR_SET_PDEATHSIG)` plus killing children when the daemon's stdin closes. Loading `module-loopback` in orbitd's own process needs libpipewire, so it is not an option; `pipewire -c` is the default-install way to run module-loopback.
+- Rust: `std::process` spawn of the same `pipewire -c` from orbitd (the original note said `pw-loopback`, which a default install lacks). The config can be handed over the same way (an unlinked file on a file descriptor), or through a memfd. The watchdog (since audit 2026-11 its own small `sh` holding only the shell's process number, so the device's name and address are in no long-running command line: `cat` on stdin, then `kill`) becomes `prctl(PR_SET_PDEATHSIG)` plus killing children when the daemon's stdin closes. Loading `module-loopback` in orbitd's own process needs libpipewire, so it is not an option; `pipewire -c` is the default-install way to run module-loopback.
 
 **A7. `bash -c … pipewire -c`** (was `pw-loopback`), **Listen together copies and the wired-source filter**
 - Built by `Together.args` (`Together.js:241`), `Route.wiredFilterArgs` (`Route.js:217`), `Together.commands` (`:269`) and `Together.diff`; run at `components/together/TogetherLink.qml:62-66` (Instantiator over a ListModel).
@@ -117,7 +117,7 @@ Columns: **When** = trigger · **Rate** = how often in practice · **Parse** = w
 - Rust: a zbus `Device1.UUIDs` read.
 - Note: the follow-up writes (`trusted`, `blocked`, `forget()`) are done in QML today through Quickshell.Bluetooth (`ProfileCheck.qml:40-49,76-77`). Either keep them in QML, or have the daemon do `Device1.Trusted`/`Blocked` and `Adapter1.RemoveDevice` through zbus. Having both writing would race.
 
-**B4. `python3 -E -s anc/orbit_anc.py <addr> <family>`**, with env `ORBIT_ANC_NAME` · `components/noise/AncService.qml:98` (Component at `:306-321`)
+**B4. `python3 -E -s anc/orbit_anc.py - <family>`**, with env `ORBIT_ANC_ADDRESS` and `ORBIT_ANC_NAME` (kept out of `/proc/*/cmdline`; audit 2026-11) · `components/noise/AncService.qml:100` (Component at `:309-324`)
 - When:
   - engine "demand": while a detail card is open, or a command is in flight;
   - engine "live": per connected supported headset;

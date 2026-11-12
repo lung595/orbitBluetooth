@@ -80,7 +80,9 @@ report_without_shell() {
     echo "Compositor   : $(niri --version 2>/dev/null | head -n 1)"
     echo "Distribution : $(sed -n 's/^PRETTY_NAME="\{0,1\}\([^"]*\)"\{0,1\}$/\1/p' /etc/os-release 2>/dev/null | head -n 1)"
     echo "Journal lines (last 50 at most):"
-    lines=$(journalctl --user -u dms -n 300 --no-pager 2>/dev/null | grep -F '[orbit]' | tail -n 50)
+    # LC_ALL=C: the host-column rule in reduce() knows the C month names
+    # ("Nov 12"); a French journal writes "nov. 12" and its host would stay
+    lines=$(LC_ALL=C journalctl --user -u dms -n 300 --no-pager 2>/dev/null | grep -F '[orbit]' | tail -n 50)
     if [ -n "$lines" ]; then
         printf '%s\n' "$lines" | sed 's/^/  /'
     else

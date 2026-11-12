@@ -150,6 +150,47 @@ class SweepTest(unittest.TestCase):
         self.assertTrue(os.path.islink(self.shell.settings))
         self.assertEqual(read(real)["controlCenterWidgets"], [{"id": "volume"}])
 
+    def test_a_link_into_a_read_only_folder_is_left_and_the_sweep_goes_on(self):
+        # home-manager links a file into /nix/store, which nobody can write.
+        # The plugin's settings are the first file edited: everything after
+        # them must still run, the volume keys above all.
+        os.remove(self.shell.manifest)
+        store = os.path.join(self.shell.tmp.name, "store")
+        os.mkdir(store)
+        real = os.path.join(store, "hm-plugin_settings.json")
+        os.replace(self.shell.plugin_settings, real)
+        os.symlink(real, self.shell.plugin_settings)
+        self.read_only(store)
+        before = read(real)
+        self.assertTrue(self.shell.run())
+        self.assertTrue(os.path.islink(self.shell.plugin_settings))
+        self.assertEqual(read(real), before)
+        self.assertEqual(read(self.shell.settings)["controlCenterWidgets"], [{"id": "volume"}])
+        self.assertEqual(len([c for c in self.shell.calls if c[1] == "set"]), 1)
+
+    def read_only(self, folder):
+        os.chmod(folder, 0o555)
+        self.addCleanup(os.chmod, folder, 0o755)
+        # Root writes through folder permissions: nothing to test then
+        if os.access(folder, os.W_OK):
+            self.skipTest("the folder can still be written (root)")
+
+    def test_widgets_left_in_a_read_only_file_keep_their_positions(self):
+        # settings.json itself in the store: its desktop widgets stay, so
+        # their positions in the session file must stay with them
+        os.remove(self.shell.manifest)
+        store = os.path.join(self.shell.tmp.name, "store")
+        os.mkdir(store)
+        real = os.path.join(store, "hm-settings.json")
+        os.replace(self.shell.settings, real)
+        os.symlink(real, self.shell.settings)
+        self.read_only(store)
+        before, session = read(real), read(self.shell.session)
+        self.assertTrue(self.shell.run())
+        self.assertEqual(read(real), before)
+        self.assertEqual(read(self.shell.session), session)
+        self.assertEqual(len([c for c in self.shell.calls if c[1] == "set"]), 1)
+
     def test_missing_or_broken_files_are_left_alone(self):
         os.remove(self.shell.manifest)
         os.remove(self.shell.session)
