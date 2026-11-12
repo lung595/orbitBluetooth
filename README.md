@@ -1,13 +1,11 @@
 <div align="center">
 
-# Orbit Bluetooth
+<img src="screenshots/hero.png" alt="Orbit Bluetooth, a plugin for DankMaterialShell: Bluetooth devices orbit the computer in the Control Center, with battery, charging and noise control" width="100%">
 
 **A planetary Bluetooth manager for [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell).**
 
 Your machine sits at the center of a small star system and nearby devices float around it.
 Drag a device to the center to connect it, pull it away to disconnect it.
-
-![Orbit view in the Control Center](screenshots/orbit.png)
 
 [Getting started](#getting-started) · [Usage](#usage) · [Settings](#settings) · [Troubleshooting](#troubleshooting) · [User guide](docs/GUIDE.md) · [Changelog](CHANGELOG.md)
 

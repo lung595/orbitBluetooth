@@ -10,6 +10,8 @@ mkdir -p "$out"
 # offscreen backend is software-only and skips shaders.
 qml() { QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=rhi QSG_RHI_BACKEND=opengl qml-qt6 -I imports "$@"; }
 run() { qml shot.qml -- "$1" "$(realpath "$out")/$2"; }
+# The cover: twice the size, so it stays sharp on HiDPI screens
+QT_SCALE_FACTOR=2 qml hero.qml -- "$(realpath "$out")/hero.png"
 run orbit orbit.png
 run zoom charging.png
 run orbitfocus detail-charging.png
