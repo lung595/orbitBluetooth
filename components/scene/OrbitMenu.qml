@@ -58,6 +58,7 @@ Item {
         if (b.ancCapable)
             scene.ancWatch(b.address, true);   // fetch the current mode
         _watching = b.ancCapable ? b.address : "";
+        _service = scene.ancService ?? null;
         scene.forceActiveFocus();
     }
 
@@ -69,6 +70,16 @@ Item {
     }
 
     property string _watching: ""
+    // The daemon's AncService, kept from the popup: it outlives the scene,
+    // which may already be half gone when the menu is destroyed
+    property var _service: null
+    // The popout or the Control Center closed with the menu open: the view
+    // it took is given back, or the helper would keep running for nobody
+    // (audit 2026-11)
+    Component.onDestruction: {
+        if (_watching && _service)
+            _service.watch(_watching, false);
+    }
     function close() {
         if (_watching)
             scene.ancWatch(_watching, false);
