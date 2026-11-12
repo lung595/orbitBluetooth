@@ -75,6 +75,7 @@ def open_socket(address, transport):
             try:
                 channel = sdp.find_rfcomm_channel(address, service)
             except OSError:
+                # sdp.SdpError (a malformed reply) is an OSError too
                 channel = None
             if channel:
                 channels.append(channel)
@@ -204,6 +205,13 @@ def run(address, family, name=""):
                 deadline = min(deadline, time.monotonic() + 0.2)
     except (OSError, ConnectionError) as err:
         emit({"status": "error", "error": str(err) or "connection lost"})
+        return 1
+    except Exception:
+        # A frame no parser expected (a buggy or hostile headset): end with
+        # an error status, which the shell does not retry, rather than a
+        # traceback it would read as a clean exit and reconnect at once.
+        # Nothing of the frame goes out: it may carry serials or the name.
+        emit({"status": "error", "error": "protocol error"})
         return 1
     finally:
         sock.close()

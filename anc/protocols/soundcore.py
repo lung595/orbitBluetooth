@@ -67,7 +67,7 @@ class Soundcore(Protocol):
             if len(self.buffer) < 10:
                 return
             total = int.from_bytes(self.buffer[7:9], "little")
-            if total < 10:
+            if total < 10 or total > self.MAX_FRAME:
                 del self.buffer[:1]
                 continue
             if len(self.buffer) < total:

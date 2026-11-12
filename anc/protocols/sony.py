@@ -106,8 +106,10 @@ class Sony(SonyExtras, Protocol):
                 self.inflight = None
                 self._pump()
             return
-        # Acknowledge every data frame, replies and notifications alike
-        self.send(encode(T_ACK, 1 - seq, b""))
+        # Acknowledge every data frame, replies and notifications alike.
+        # The sequence is one bit; a headset sending another value must not
+        # turn the ack into an out-of-range byte (audit 2026-11)
+        self.send(encode(T_ACK, (1 - seq) & 1, b""))
         if dtype == T_DATA and payload:
             self._data(payload)
         elif dtype == T_DATA2 and payload:
@@ -179,6 +181,8 @@ class Sony(SonyExtras, Protocol):
                 self.mark_ready()  # no noise control at all
 
     def _on_noise(self, p, reply=False):
+        if len(p) < 2:
+            return
         kind, v = p[1], p[2:]
         if self.version == 1 and kind == 0x02 and len(v) >= 6:
             effect, nc_setting, nc_value, _asm, voice, level = v[:6]
@@ -222,6 +226,8 @@ class Sony(SonyExtras, Protocol):
     def _on_battery(self, p):
         # The status byte is a bit field: bit 0 = charging. Older models send
         # 01, the WH-1000XM6 sends 03 while charging (seen on real hardware)
+        if len(p) < 2:
+            return
         kind, v = p[1], p[2:]
         if kind in (0x00, 0x08) and len(v) >= 2:
             self.set_battery("single", v[0], v[1] & 0x01)
@@ -235,6 +241,8 @@ class Sony(SonyExtras, Protocol):
             self.set_battery("case", v[0], v[1] & 0x01)
 
     def _on_speak_to_chat(self, p):
+        if len(p) < 2:
+            return
         if self.version == 2 and p[1] == 0x0C and len(p) >= 3:
             self.state["chat"] = p[2] == 0x00  # v2 inverts it: 00 means on
         elif self.version == 1 and p[1] == 0x05 and len(p) >= 4 and p[2] == 0x01:
