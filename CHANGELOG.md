@@ -22,6 +22,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - **Smart steps could be lost on the way.** A `volumeKeys status` (or any plain re-read) arriving while *use smart steps* or *give back* waited for its read cancelled it: the keys stayed DMS's while the setting said Orbit's. A plain re-read now keeps the waiting step (`VolumeKeys.qml`; test in `tests/qml/volumeKeys.test.qml`).
 - **The *Getting started* drawings no longer keep the whole shell redrawing.** Their clock was a looping `NumberAnimation`, which makes every shell window (bars, wallpaper) redraw at the display rate while the page is open, and it kept turning when the category was hidden inside a page still shown. It is now a 30 Hz `Timer` that runs only while the drawing itself is visible (`WidgetSketch.qml`; test: `tests/qml/widgetSketch.test.qml`).
 - **`scripts/diagnose.sh` now drops the journal's host column.** The rule never matched, because the journal lines are printed indented by two spaces, so a machine renamed since (its old name in the journal, not `hostname`) stayed in the report. Test in `tests/diagnose.test.sh`.
+- **Closing the popout or the Control Center with a device's menu open no longer leaves the noise-control helper running.** The menu's view of the headset's mode was given back only by *close*; it now is when the menu goes away too (`OrbitMenu.qml`; test: `tests/qml/menuAnc.test.qml`).
 
 ### Security
 
