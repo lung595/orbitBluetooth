@@ -122,6 +122,9 @@ def edit(path, change):
     result = change(data)
     if not (result[0] if isinstance(result, tuple) else result):
         return result
+    # A settings file kept as a link (stow, home-manager...) stays a link:
+    # the new content goes to the file it points to, not over the link
+    path = os.path.realpath(path)
     fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path), prefix=".orbit-")
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as f:

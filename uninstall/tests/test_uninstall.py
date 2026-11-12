@@ -140,6 +140,16 @@ class SweepTest(unittest.TestCase):
         self.shell.run()
         self.assertEqual(os.stat(self.shell.plugin_settings).st_mode & 0o777, 0o600)
 
+    def test_a_linked_settings_file_stays_a_link(self):
+        # dotfiles kept elsewhere and linked in (stow, home-manager)
+        os.remove(self.shell.manifest)
+        real = os.path.join(self.shell.tmp.name, "dotfiles-settings.json")
+        os.replace(self.shell.settings, real)
+        os.symlink(real, self.shell.settings)
+        self.shell.run()
+        self.assertTrue(os.path.islink(self.shell.settings))
+        self.assertEqual(read(real)["controlCenterWidgets"], [{"id": "volume"}])
+
     def test_missing_or_broken_files_are_left_alone(self):
         os.remove(self.shell.manifest)
         os.remove(self.shell.session)
