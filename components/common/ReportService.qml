@@ -107,7 +107,9 @@ Item {
         // line is cleaned: read now, bound to nothing
         const devices = Bluetooth.devices.values;
         for (const device of devices)
-            Redact.register("device", device.deviceName || device.name || "");
+            // Both names: "name" is the alias the user may have given it
+            // (a person's name, often), "deviceName" the one it announces
+            Redact.register("device", [device.name, device.deviceName]);
         const a = _answers;
         const text = Report.build({
             "now": Date.now(),

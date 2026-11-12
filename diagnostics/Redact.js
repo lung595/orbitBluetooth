@@ -88,14 +88,20 @@ function _variants(name, alias, cut) {
 }
 
 // Returns the alias the name is hidden under ("" when it is not a name).
-// kind: "device", "user" or "host". A list of names shares one alias.
+// kind: "device", "user" or "host". A list of names shares one alias: the
+// names of one device (its alias and the name it announces) read as one
+// device in the report, not two.
 function register(kind, name) {
     if (Array.isArray(name)) {
-        var first = "";
+        var shared = "";
         for (var n = 0; n < name.length && n < 8; n++)
-            first = register(kind, name[n]) || first;
-        return first;
+            shared = _register(kind, name[n], shared) || shared;
+        return shared;
     }
+    return _register(kind, name, "");
+}
+
+function _register(kind, name, shared) {
     // A name may come as a number or a String object from the engine
     if ((typeof name === "number" && isFinite(name)) || name instanceof String)
         name = String(name);
@@ -113,8 +119,11 @@ function register(kind, name) {
     var key = "=" + name.toLowerCase();
     if (_byName[key])
         return _byName[key];
-    _counts[kind] = (_counts[kind] || 0) + 1;
-    var alias = kind + "#" + _counts[kind];
+    var alias = shared;
+    if (!alias) {
+        _counts[kind] = (_counts[kind] || 0) + 1;
+        alias = kind + "#" + _counts[kind];
+    }
     _add(name, alias, cut, personal);
     if (!personal)
         _variants(name, alias, cut);
