@@ -4,7 +4,7 @@ imports.searchPath.unshift(imports.system.programPath ? imports.system.programPa
 const { load, eq, done } = imports.lib;
 
 const Cover = load("Cover.js", ["covered"]);
-const Orbit = load("Orbit.js", ["pick", "plan", "changes"]);
+const Orbit = load("Orbit.js", ["pick", "plan", "changes", "idle", "signature"]);
 const Physics = load("Physics.js", ["spring", "norm", "ringSlot", "beltSlot", "beltRadius", "dragTarget", "dragArm", "HIT_MIN", "hitDiameter", "dropRadius", "dropOnto", "separate", "moving"]);
 
 // Ambient motion pauses on a screen hidden behind windows (P123).
@@ -62,6 +62,14 @@ eq("a window without layout yet does not count", Cover.covered(spaces, [{ worksp
     eq("a new device gets a body", step.added, ["d"]);
     eq("a leaving device stays resolvable", Object.keys(step.devices), ["a", "c", "d", "b"]);
     eq("nothing changes, nothing to do", Orbit.plan([{ address: "a", leaving: false }], { a: a }, { a: a }), { marks: [], added: [], devices: { a: a } });
+    // The slow poll that finds nothing new does nothing (audit 2026-11)
+    const same = Orbit.plan([{ address: "a", leaving: false }], { a: a }, { a: a });
+    const seen = Orbit.signature([a]);
+    eq("idle: same devices, same objects, same list", Orbit.idle(same, { a: a }, [a], seen), true);
+    eq("not idle: a device object was replaced", Orbit.idle(same, { a: Object.assign({}, a) }, [a], seen), false);
+    eq("not idle: one connected since", Orbit.idle(same, { a: a }, [Object.assign({}, a, { connected: !a.connected })], seen), false);
+    eq("not idle: a body to add", Orbit.idle(Orbit.plan([], { a: a }, {}), {}, [a], ""), false);
+    eq("not idle: the first refresh", Orbit.idle(same, { a: a }, [a], "\u0000"), false);
     eq("an unknown leaving entry is not resolved", Object.keys(Orbit.plan([{ address: "z", leaving: true }], {}, {}).devices), []);
     eq("changes: what to start and stop, in order", Orbit.changes(["a", "b", "c"], ["d", "c", "a", "e"]), { added: ["d", "e"], removed: ["b"] });
     eq("changes: same set in another order, nothing", Orbit.changes(["a", "b"], ["b", "a"]), { added: [], removed: [] });

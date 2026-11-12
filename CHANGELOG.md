@@ -16,6 +16,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - **A cover picture for the README** (`screenshots/hero.png`, 2560 × 1280, also sized for GitHub's social preview), in DMS's default theme (Purple), with the orbit at the size the Control Center really gives it (568 × 314); made from mock data by `scripts/preview/hero.qml` (`render.sh`). The same picture without the words, `screenshots/registry.png` (16:9), is the one the DMS plugin registry shows: its card adds the name and the description itself. The previews find DMS's icon font in its new folder (`DCommon/`, `DankCommon/` before DMS 2.1).
 - **The plugin's name is *Orbit Bluetooth* again** in `plugin.json` (it was *OrbitBluetooth* since 1.7.1), as the DMS plugin registry lists it: the registry checks that both match. The Control Center tile keeps its own *OrbitBluetooth* label. The description now names live charging and Listen together.
 
+### Fixed
+
+- **A scene at rest stays at rest.** The slow device poll (every 1.5 s while someone looks or a scan runs) built a new device map, checked the new-device offer and woke the scene every time, even when nothing had changed, which restarted the settle loop over and over (most visible with *Reduce motion*). When the picked devices, their order, their connected and paired state and their objects are the same, it now does nothing (`Orbit.idle`, `OrbitDevices.qml`; tests: `tests/scene.test.js`, `tests/qml/devicesIdle.test.qml`).
+
 ## 2.0.0 - 2026-11-11
 
 ### Added
