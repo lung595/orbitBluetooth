@@ -173,6 +173,16 @@ Item {
         for (const b of all) {
             if (!b.spawned)
                 _spawn(b, geo);
+            // The signal glides to its new value (about 0.9 s, as the old
+            // Behavior did); with Reduce motion it is put there at once
+            const ds = b.signalTarget - b.signal;
+            if (!s.motion || Math.abs(ds) < 0.002) {
+                if (ds !== 0)
+                    b.signal = b.signalTarget;
+            } else {
+                b.signal += ds * Math.min(1, dt * 4);
+                moving = true;
+            }
             const held = centre.target(b, dt);
             const t = _target(b, all, geo, inner, outer, innerPhase, outerPhase, amp, held);
             if (t.snap) {

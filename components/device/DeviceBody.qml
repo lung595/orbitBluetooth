@@ -31,14 +31,17 @@ BodyState {
     property bool spawned: false
     property real homeHash: Catalog.hash01(address)
 
-    // Smoothed signal so distance/size glide instead of jumping on each RSSI update
-    property real signal: rawSignal > 0 ? rawSignal : (paired ? 0.12 : 0.2)
-    Behavior on signal {
-        NumberAnimation {
-            duration: 900
-            easing.type: Easing.OutCubic
-        }
-    }
+    // Where the signal is going. `signal` follows it inside OrbitPhysics.step,
+    // so distance and size glide instead of jumping on each RSSI update. Not a
+    // Behavior: BlueZ sends RSSI over and over during a scan, so a 900 ms
+    // animation was running nearly all the time, and a running QML animation
+    // redraws every shell window at the display rate (CONTRIBUTING). A change
+    // wakes the scene, which settles again once the signal has arrived.
+    readonly property real signalTarget: rawSignal > 0 ? rawSignal : (paired ? 0.12 : 0.2)
+    // Set once, not bound: a binding would jump to every new value itself
+    property real signal: 0
+    Component.onCompleted: signal = signalTarget
+    onSignalTargetChanged: scene.wake()
 
     property bool dragging: false
     property bool armed: false          // inside the snap/detach zone while dragging

@@ -14,6 +14,8 @@ QtObject {
     property bool batteryAvailable: connected
     property real battery: 0.8
     property bool blocked: false
+    // BlueZ RSSI as Quickshell scales it (0 to 100), 0 when unknown
+    property int signalStrength: 0
     property bool trusted: false
     property bool forgotten: false
     // Bluetooth profiles the device exposes (BlueZ Device1.UUIDs)
