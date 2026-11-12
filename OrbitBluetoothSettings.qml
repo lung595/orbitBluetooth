@@ -32,6 +32,7 @@ PluginSettings {
 
         SettingsView {
             id: view
+            pluginId: root.pluginId
             compact: page.width < root.narrowWidth
         }
 
@@ -98,6 +99,9 @@ PluginSettings {
                         id: pages
                         width: parent.width
 
+                        StartPage {
+                            view: view
+                        }
                         OrbitPage {
                             view: view
                             settings: root

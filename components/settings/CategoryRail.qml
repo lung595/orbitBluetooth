@@ -3,8 +3,9 @@ import QtQuick.Shapes
 import qs.Common
 
 // The categories of the settings page, left of the content: bodies on one
-// dashed orbit like a star chart. 160 px wide, 48 px with icons only when
-// the page is narrow. Static by construction: no timer, no animation.
+// dashed orbit like a star chart. 172 px wide (room for "Getting started"
+// beside the planet's ring), 48 px with icons only when the page is narrow.
+// Static by construction: no timer, no animation.
 Item {
     id: rail
 
@@ -13,7 +14,7 @@ Item {
     readonly property real bodyX: view.compact ? 24 : 28
     readonly property int rowHeight: 44
 
-    width: view.compact ? 48 : 160
+    width: view.compact ? 48 : 172
     height: view.categories.length * rowHeight
     Accessible.role: Accessible.PageTabList
 

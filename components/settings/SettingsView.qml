@@ -1,4 +1,6 @@
 import QtQuick
+import qs.Common
+import "Placement.js" as Placement
 import "SettingsIndex.js" as Index
 import "SettingsSearch.js" as Search
 import "SettingsView.js" as View
@@ -10,7 +12,14 @@ QtObject {
     id: view
 
     readonly property var categories: Index.CATEGORIES
-    property string current: Index.CATEGORIES[0].id
+    property string pluginId: "orbitBluetooth"
+    // Where Orbit's widget is placed in DMS's layout (read only, see Placement.js)
+    readonly property var placed: Placement.where(SettingsData.barConfigs, SettingsData.controlCenterWidgets, SettingsData.desktopWidgetInstances, pluginId)
+    // Opens on "Getting started" while the widget is placed nowhere, on the
+    // Orbit settings otherwise. Set once: adding a widget while the page is
+    // open must not move the page under the pointer.
+    property string current: ""
+    Component.onCompleted: current = placed.any ? "orbit" : "start"
     property string query: ""
     // A narrow page (the plugin settings of a small window): icons only
     property bool compact: false

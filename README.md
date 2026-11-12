@@ -52,12 +52,14 @@ In **Settings → Plugins**, turn **Orbit Bluetooth** on.
 
 | Where | How to add it |
 | --- | --- |
-| **Control Center** | Open the Control Center, enter **edit mode**, add the **Bluetooth** tile from *Orbit Bluetooth* |
-| **Bar** | **Settings → Appearance → DankBar Layout**, add **Orbit Bluetooth** to a section |
-| **Desktop** | **Settings → Desktop Widgets**, add **Orbit Bluetooth**, then move and resize it |
+| **Control Center** | Open the Control Center, press **Edit** (the pencil), then **Add widget** and pick **Orbit Bluetooth** |
+| **Bar** | **Settings → Bar widgets → Add**, then pick **Orbit Bluetooth** |
+| **Desktop** | **Settings → Desktop widgets → Add**, pick **Orbit Bluetooth**, then move and resize it |
+
+Orbit's settings open on **Getting started** while no widget is placed: the same three ways, each with a small moving drawing, and a check on the places that already have Orbit. It only explains; it never changes your layout.
 
 > [!TIP]
-> To avoid two Bluetooth tiles in the Control Center, remove the built-in one in edit mode.
+> DMS's own Bluetooth widget stays as it is: both live side by side. To avoid two Bluetooth tiles in the Control Center, remove the built-in one in edit mode.
 
 ### 4. First steps
 
@@ -132,7 +134,7 @@ In the **Control Center**, the tile icon turns Bluetooth on or off and the arrow
 
 ## Settings
 
-**Settings → Plugins → Orbit Bluetooth**, a search field on top and the categories down the left (Orbit, Scanning, Headphones, Volume, Audio details, Sounds, Desktop, Look, Reset & help), one open at a time. Type to filter the page in place (names, help lines and synonyms, a typo is forgiven); **Esc** gives the page back, **Ctrl+F** or **/** goes to the field, **Enter** opens the best match and lights it. A setting with a real battery cost carries a pill under it (*High battery use*, *Some battery use* or *Light on battery*) and one line saying why; options marked ⚡ below are the ones that have one.
+**Settings → Plugins → Orbit Bluetooth**, a search field on top and the categories down the left (Getting started, Orbit, Scanning, Headphones, Volume, Audio details, Sounds, Desktop, Look, Reset & help), one open at a time. Type to filter the page in place (names, help lines and synonyms, a typo is forgiven); **Esc** gives the page back, **Ctrl+F** or **/** goes to the field, **Enter** opens the best match and lights it. A setting with a real battery cost carries a pill under it (*High battery use*, *Some battery use* or *Light on battery*) and one line saying why; options marked ⚡ below are the ones that have one.
 
 | Section | Setting | Default |
 | --- | --- | --- |

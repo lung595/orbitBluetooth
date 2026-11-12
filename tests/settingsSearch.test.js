@@ -103,7 +103,7 @@ const pageOf = file => { const m = /^(\w+)Page\.qml$/.exec(file); return m && m[
 const inIndex = new Map(Index.ENTRIES.map(e => [e.id, e]));
 
 eq("every index id is unique", inIndex.size, Index.ENTRIES.length);
-const used = new Set(["volumeKeys", "report"]);
+const used = new Set(["volumeKeys", "report", "gettingStarted"]);
 for (const name of qmlFiles(root + "/components/settings")) {
     const src = read("components/settings/" + name);
     const keys = [...src.matchAll(/settingKey: "(\w+)"\s*\n/g)].map(m => m[1]).concat([...src.matchAll(/saveValue\("(\w+)"/g)].map(m => m[1]));
@@ -118,7 +118,7 @@ eq("the facts of the audio page are all there", Audiophile.INFOS.every(i => inIn
 eq("the audio page still builds the fact keys the index lists", /"factCard_" \+/.test(read("components/settings/AudioPage.qml")) && /"factMore_" \+/.test(read("components/settings/AudioPage.qml")), true);
 for (const i of Audiophile.INFOS) { used.add("factCard_" + i.key); used.add("factMore_" + i.key); }
 eq("the index lists nothing the pages no longer have", Index.ENTRIES.map(e => e.id).filter(id => !used.has(id)), []);
-eq("the keyless rows exist in the pages", [/VolumeKeysRow \{/.test(read("components/settings/VolumePage.qml")), /ReportRow \{/.test(read("components/settings/ResetPage.qml"))], [true, true]);
+eq("the keyless rows exist in the pages", [/VolumeKeysRow \{/.test(read("components/settings/VolumePage.qml")), /ReportRow \{/.test(read("components/settings/ResetPage.qml")), /shown\("gettingStarted"\)/.test(read("components/settings/StartPage.qml"))], [true, true, true]);
 eq("every entry has a label, a help line and keywords", Index.ENTRIES.filter(e => !e.label || !e.help || !e.keywords.length).map(e => e.id), []);
 eq("every help is one short line", Index.ENTRIES.filter(e => e.help.length > 100).map(e => e.id), []);
 // Label and help are worded once, in the index: a page that spells its own would drift from what a search matches
@@ -132,8 +132,10 @@ eq("byId finds an entry by its key", View.byId(Index.ENTRIES).soundVolume.label,
 
 // --- Categories and the view of a search ---------------------------------------
 const cats = Index.CATEGORIES.map(c => c.id);
-// Nine since the Pop-up category left with Orbit's OSD (0c73f6a); its visualizer settings live in Volume now
-eq("nine categories, each with an icon, a name and a help line", [cats.length, Index.CATEGORIES.every(c => c.icon && c.name && c.help)], [9, true]);
+// Nine since the Pop-up category left with Orbit's OSD (0c73f6a); its visualizer settings live in Volume now.
+// Ten with Getting started, first on the rail
+eq("ten categories, each with an icon, a name and a help line", [cats.length, Index.CATEGORIES.every(c => c.icon && c.name && c.help)], [10, true]);
+eq("Getting started comes first", cats[0], "start");
 eq("every entry sits in a known category", Index.ENTRIES.filter(e => !cats.includes(e.category)).map(e => e.id), []);
 eq("every category has entries", cats.filter(c => !Index.ENTRIES.some(e => e.category === c)), []);
 eq("every category has its page file", cats.filter(c => !qmlFiles(root + "/components/settings").includes(c[0].toUpperCase() + c.slice(1) + "Page.qml")), []);
@@ -147,6 +149,7 @@ eq("the first match is the best ranked", g.first.id, S.search(Index.ENTRIES, "so
 eq("no match gives empty groups", View.group(S.search(Index.ENTRIES, "zzzzqq"), where), { ids: {}, counts: {}, firsts: {}, first: null });
 eq("junk results are ignored", View.group([{ id: "nope" }, null].filter(Boolean), where).first, null);
 eq("a category is found by id", [View.find(Index.CATEGORIES, "volume").name, View.find(Index.CATEGORIES, "x")], ["Volume", null]);
+eq("how to add the widget is found by the words a lost user types", ["add widget", "tutorial", "control center", "where is orbit", "getting started"].map(q => first(Index.ENTRIES, q)), ["gettingStarted", "gettingStarted", "gettingStarted", "gettingStarted", "gettingStarted"]);
 eq("the old names still find their setting", [first(Index.ENTRIES, "Sounds"), ids(Index.ENTRIES, "Volume steps").includes("volumeSteps")], ["sounds", true]);
 
 // --- Speed ---------------------------------------------------------------------

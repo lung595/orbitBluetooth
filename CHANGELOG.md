@@ -5,7 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## Unreleased
 
+### Added
+
+- **Getting started**, a new first category in the settings, for the many people who expect Orbit to replace DMS's Bluetooth and never add a widget. It shows the three places Orbit's widget can go (Control Center, bar, desktop), each with a small moving drawing in the theme's colours and the steps in DMS's own words, and puts a check on the places that already have Orbit. The settings open on it while no Orbit widget is placed, on *Orbit* otherwise. It only explains: no button, and DMS's layout is read, never written (`Placement.js`, `StartPage.qml`, `WidgetSketch.qml`). The drawings move only while the page shows and stand still with *Reduce motion*. Search *add widget* or *tutorial* finds it. Tests: `tests/placement.test.js`, `tests/settingsSearch.test.js`, `tests/qml/settingsView.test.qml`, `tests/qml/realSettings.test.qml`.
+
 ### Changed
+
+- The settings rail is 172 px wide (160 before), so *Getting started* fits beside the planet's ring.
+- README: the "Add a widget" steps follow DMS's current menus (*Bar widgets*, *Desktop widgets*, *Add widget* in the Control Center's edit mode).
 
 - **A cover picture for the README** (`screenshots/hero.png`, 2560 × 1280, also sized for GitHub's social preview), in DMS's default theme (Purple), with the orbit at the size the Control Center really gives it (568 × 314); made from mock data by `scripts/preview/hero.qml` (`render.sh`). The previews find DMS's icon font in its new folder (`DCommon/`, `DankCommon/` before DMS 2.1).
 

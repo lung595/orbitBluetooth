@@ -678,7 +678,13 @@ Orbit keeps its night sky in every theme. With a light DMS theme, devices turn i
 | ![White devices on the night sky](../screenshots/light.png) | ![Soft off-white detail card](../screenshots/light-detail.png) |
 
 ## Settings
-A search field on top, the categories down the left (**Orbit**, **Scanning**, **Headphones**, **Volume**, **Audio details**, **Sounds**, **Desktop**, **Look**, **Reset & help**), one open at a time, see [Find a setting](#find-a-setting).
+A search field on top, the categories down the left (**Getting started**, **Orbit**, **Scanning**, **Headphones**, **Volume**, **Audio details**, **Sounds**, **Desktop**, **Look**, **Reset & help**), one open at a time, see [Find a setting](#find-a-setting).
+
+### Getting started
+
+Orbit does not replace DMS's Bluetooth by itself: it shows up where you add its widget. While no Orbit widget is placed (in a bar, the Control Center or on the desktop), the settings open on **Getting started**. It shows the three places, each with a small drawing that moves (the widget is added, then opened) and the steps in DMS's own words; a place that already has Orbit carries a check. Once a widget is placed, the settings open on **Orbit**. The page only explains: it reads DMS's layout and never changes it. Search *add widget*, *tutorial* or *where* to find it again.
+
+DMS's own Bluetooth widget stays as it is: both live side by side, and you may remove DMS's if you like.
 
 ### Find a setting
 
@@ -693,7 +699,7 @@ Type in the search field to filter the page in place: only the settings that mat
 - **Ctrl+F** goes to the field from anywhere in the settings window; **/** does too once the page has been clicked, and a slash typed into a text field stays a slash.
 - Nothing matches? The page says so and suggests a word; the rail stays usable.
 
-Nothing runs while the page is still: no timer, no animation after the short fade.
+Nothing runs while the page is still: no timer, no animation after the short fade. The one exception is the drawings of *Getting started*, which move only while that page is open, and stand still with *Reduce motion*.
 
 | Section | Setting | Default | Description |
 | --- | --- | --- | --- |

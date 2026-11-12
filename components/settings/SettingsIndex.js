@@ -32,6 +32,7 @@ var FACTS = [
 // The categories of the settings page, in the order of the rail: the id that
 // entries name in `category`, the Material icon and the one-line help of the title
 var CATEGORIES = [
+    { "id": "start", "icon": "rocket_launch", "name": "Getting started", "help": "Where Orbit shows up" },
     { "id": "orbit", "icon": "bluetooth", "name": "Orbit", "help": "What the orbit shows" },
     { "id": "scanning", "icon": "bluetooth_searching", "name": "Scanning", "help": "When Orbit looks for devices" },
     { "id": "headphones", "icon": "headphones", "name": "Headphones", "help": "Noise control and the wearing sensor" },
@@ -44,6 +45,9 @@ var CATEGORIES = [
 ];
 
 var ENTRIES = [
+    // --- getting started --------------------------------------------------------
+    _entry("gettingStarted", "start", "Add Orbit's widget", "Orbit shows up once its widget is in the Control Center, the bar or on the desktop", ["getting started", "tutorial", "guide", "help", "how", "add", "widget", "place", "install", "setup", "control center", "bar", "desktop", "replace", "missing", "where", "onboarding"]),
+
     // --- orbit -----------------------------------------------------------------
     _entry("maxDevices", "orbit", "Devices in orbit", "Connected devices always show", ["count", "number", "how many", "limit", "max"]),
     _entry("showLabels", "orbit", "Always show names", "Otherwise on hover", ["labels", "text", "title", "hover"]),

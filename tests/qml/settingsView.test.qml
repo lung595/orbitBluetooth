@@ -65,6 +65,12 @@ Item {
             }
         }
     }
+    // A second view, made once a widget is placed: it opens on the Orbit settings
+    Loader {
+        id: later
+        active: false
+        sourceComponent: SettingsView {}
+    }
     TestCase {
         id: input
         name: "settingsView"
@@ -100,11 +106,11 @@ Item {
             "then": 50,
             "run": () => {
                 SettingsData.reduceMotion = false;
-                // Nine since the Pop-up category left with Orbit's OSD (0c73f6a)
-                h.check("nine categories on the rail", rail.view.categories.length, 9);
-                h.check("the first one is open", [view.current, h.entryOf("orbit").on], ["orbit", true]);
+                // Nine since the Pop-up category left with Orbit's OSD (0c73f6a), ten with Getting started
+                h.check("ten categories on the rail", rail.view.categories.length, 10);
+                h.check("no Orbit widget placed: Getting started is open", [view.current, h.entryOf("start").on], ["start", true]);
                 h.check("no page of another category shows", [sounds.visible, look.visible], [false, false]);
-                h.check("narrow? no: the rail is 160 px", rail.width, 160);
+                h.check("narrow? no: the rail is 172 px", rail.width, 172);
                 input.mouseClick(h.entryOf("sounds"), 80, 20);
             }
         },
@@ -199,6 +205,18 @@ Item {
             "then": 100,
             "run": () => {
                 h.check("a click on a category with a match opens it at its best match", [view.query, view.current, view.litKey], ["", "look", "shootingStars"]);
+                SettingsData.controlCenterWidgets = [{ "id": "plugin_orbitBluetooth", "enabled": true }];
+                later.active = true;
+            }
+        },
+        {
+            "then": 50,
+            "run": () => {
+                h.check("the view knows where Orbit is placed", [view.placed.cc, view.placed.bar, view.placed.any], [true, false, true]);
+                h.check("Orbit in the Control Center: the settings open on Orbit", later.item.current, "orbit");
+                h.check("a widget added while the page is open does not move it", view.current, "look");
+                SettingsData.controlCenterWidgets = [];
+                later.active = false;
             }
         }
     ]

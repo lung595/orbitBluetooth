@@ -2,10 +2,11 @@ import QtQuick
 import qs.Common
 import "."
 
-// Test of the real settings page (NAK-261): the ten pages load with no QML
-// error (run.sh fails on any warning), the page opens on the Orbit category
-// with its habit rows following the search filter: they show while browsing,
-// and a search that matches another setting hides them. The other tests use
+// Test of the real settings page (NAK-261): the pages load with no QML
+// error (run.sh fails on any warning), the page opens on Getting started
+// while no Orbit widget is placed (the stand-in layout is empty), and the
+// Orbit category's habit rows follow the search filter: they show while
+// browsing, and a search that matches another setting hides them. The other tests use
 // stand-ins; this one loads OrbitBluetoothSettings.qml itself, so a page that
 // refers to something that no longer exists cannot pass unseen. Run with
 // tests/qml/run.sh.
@@ -49,6 +50,14 @@ Item {
             "run": () => {
                 h.check("the search field is there", h.field !== null, true);
                 h.check("so is the habit row, wired to its page", h.habits !== null, true);
+                h.check("no widget placed: it opens on Getting started", h.field.view.current, "start");
+                h.check("which shows its three places", h.find(settings, i => i.kind === "desktop" && i.steps !== undefined) !== null, true);
+                h.field.view.open("orbit", "");
+            }
+        },
+        {
+            "then": 50,
+            "run": () => {
                 h.check("browsing shows the habit switch", h.habits.children[0].visible, true);
                 h.field.view.query = "wired delay";
             }
