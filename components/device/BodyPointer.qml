@@ -78,7 +78,9 @@ MouseArea {
             return;
         if (pointer.body.dragging)
             pointer.body.scene.endDrag();
-        else if (Date.now() - pressTime < 450)
+        // Released before the hold fired is a click, up to the very moment the
+        // menu would open: one threshold (Hold.HOLD_MS), so no gap does nothing
+        else if (!Hold.done(Date.now() - pressTime))
             pointer.body.scene.focusOn(body);
     }
     onCanceled: {
