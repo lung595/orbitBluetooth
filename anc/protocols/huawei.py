@@ -87,6 +87,9 @@ class Huawei(Protocol):
             if len(self.buffer) < 4:
                 return
             total = 3 + int.from_bytes(self.buffer[1:3], "big") + 2
+            if total > self.MAX_FRAME:
+                del self.buffer[:1]
+                continue
             if len(self.buffer) < total:
                 return
             raw = bytes(self.buffer[:total])

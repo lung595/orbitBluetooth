@@ -114,6 +114,11 @@ class Protocol:
     # No real frame comes near this; a device sending endless bytes without
     # a frame end must not make the helper grow without limit (P117)
     MAX_BUFFER = 64 * 1024
+    # The longest frame a 16-bit length may announce. Real ones are a few
+    # hundred bytes; a stray start byte read as a header could otherwise
+    # make every real frame after it wait for 64 KB that never come
+    # (audit 2026-11). Such a header is skipped, one byte, to resync.
+    MAX_FRAME = 4096
     # Features a headset announces after "ready": their settings can arrive first
     LATE_FEATURES = ("chat", "chatEnds")
 

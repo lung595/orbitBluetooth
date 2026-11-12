@@ -45,6 +45,26 @@ class XiaomiRecords(unittest.TestCase):
         proto.receive(frame)
 
 
+class StrayHeaders(unittest.TestCase):
+    """A start byte read as a header announcing ~64 KB: it is skipped at
+    once, so the real frames after it are not held back."""
+
+    def test_real_frame_after_a_false_header(self):
+        cases = {
+            "huawei": b"\x5a\xff\xff\x00",
+            "nothing": b"\x55\x00\x00\x00\x00\xff\xff\x00",
+            "soundcore": b"\x09\xff\x00\x00\x01\x00\x00\xff\xff\x00",
+            "xiaomi": xiaomi.HEAD + b"\x04\x02\xff\xff\x00",
+        }
+        for family, junk in cases.items():
+            with self.subTest(family):
+                proto, _sent = make(family)
+                proto.handle = lambda frame: None
+                proto.receive(junk)
+                # nothing waits for the announced 64 KB: the header was skipped
+                self.assertLess(len(proto.buffer), len(junk), family)
+
+
 class SdpReplies(unittest.TestCase):
     def test_truncated_pdus(self):
         for pdu in (b"", b"\x07", b"\x07\x00", b"\x07\x00\x01\x00\x05", b"\x07\x00\x01\x00\x05\x00\x09\x35"):

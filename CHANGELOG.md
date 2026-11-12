@@ -18,7 +18,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Security
 
-- **A buggy or hostile headset can no longer crash the noise-control helper** (audit 2026-11). Sony frames with a sequence number other than 0/1 or a one-byte payload, Xiaomi records of length 0 and malformed SDP replies (truncated, nested 1 000 deep, a channel that is not 1 to 30) used to end the helper with a traceback; once a session had been ready, the shell then reopened it at once, in a loop. The SDP lookup also gives up after 16 rounds or 64 KB instead of following a "more to come" reply for ever, out of the shell's reach. Any frame no parser expected now ends the session with a plain *protocol error*, which the shell does not retry, and nothing of the frame is sent. Tests: `anc/tests/test_hostile.py`.
+- **A buggy or hostile headset can no longer crash the noise-control helper** (audit 2026-11). Sony frames with a sequence number other than 0/1 or a one-byte payload, Xiaomi records of length 0 and malformed SDP replies (truncated, nested 1 000 deep, a channel that is not 1 to 30) used to end the helper with a traceback; once a session had been ready, the shell then reopened it at once, in a loop. The SDP lookup also gives up after 16 rounds or 64 KB instead of following a "more to come" reply for ever, out of the shell's reach. A stray start byte read as a header announcing about 64 KB (Huawei, Nothing, Soundcore, Xiaomi) no longer holds back every real frame after it: frames longer than 4 KB are skipped to resync. Any frame no parser expected now ends the session with a plain *protocol error*, which the shell does not retry, and nothing of the frame is sent. Tests: `anc/tests/test_hostile.py`.
 
 ## 2.0.0 - 2026-11-11
 

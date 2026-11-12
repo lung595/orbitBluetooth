@@ -80,6 +80,9 @@ class Xiaomi(Protocol):
             kind, opcode = self.buffer[3], self.buffer[4]
             length = int.from_bytes(self.buffer[5:7], "big")
             total = 7 + length + 1
+            if total > self.MAX_FRAME:
+                del self.buffer[:1]
+                continue
             if len(self.buffer) < total:
                 return
             raw = bytes(self.buffer[:total])

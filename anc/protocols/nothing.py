@@ -76,6 +76,9 @@ class Nothing(Protocol):
             control = int.from_bytes(self.buffer[1:3], "little")
             length = int.from_bytes(self.buffer[5:7], "little")
             total = 8 + length + (2 if control & 0x20 else 0)
+            if total > self.MAX_FRAME:
+                del self.buffer[:1]
+                continue
             if len(self.buffer) < total:
                 return
             frame = bytes(self.buffer[:total])
