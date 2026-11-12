@@ -108,6 +108,7 @@ Item {
             check("option on: a Sony headset gets a session", s !== null, true);
             check("it is asked for the wearing sensor", s.written, ["set wear on\n"]);
             check("the device name goes through the environment", [s.command.indexOf("WH-1000XM6"), s.environment.ORBIT_ANC_NAME], [-1, "WH-1000XM6"]);
+            check("the address goes through the environment too", [s.command.some(a => a.indexOf(":") >= 0), s.command[4], s.environment.ORBIT_ANC_ADDRESS.length], [false, "-", 17]);
             check("the first, unknown, headset is probed too", h.session(h.b) !== null, true);
             check("another brand gets none", h.session(h.c), null);
             check("a headset that is not connected gets none", h.session(h.d), null);

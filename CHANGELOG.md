@@ -16,6 +16,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - **A cover picture for the README** (`screenshots/hero.png`, 2560 × 1280, also sized for GitHub's social preview), in DMS's default theme (Purple), with the orbit at the size the Control Center really gives it (568 × 314); made from mock data by `scripts/preview/hero.qml` (`render.sh`). The same picture without the words, `screenshots/registry.png` (16:9), is the one the DMS plugin registry shows: its card adds the name and the description itself. The previews find DMS's icon font in its new folder (`DCommon/`, `DankCommon/` before DMS 2.1).
 - **The plugin's name is *Orbit Bluetooth* again** in `plugin.json` (it was *OrbitBluetooth* since 1.7.1), as the DMS plugin registry lists it: the registry checks that both match. The Control Center tile keeps its own *OrbitBluetooth* label. The description now names live charging and Listen together.
 
+### Security
+
+- **No device name or address in a command line any more** (audit 2026-11). Any user of the machine can read every process's command line in `/proc`. A loopback's watcher (the PC filter, Listen together copies) was a bash subshell that kept the device's name and address in it for as long as the loopback ran; it is now its own small `sh` with nothing but the shell's process number. The noise-control helper gets the address from `ORBIT_ANC_ADDRESS`, like the name already came from `ORBIT_ANC_NAME`. The guide and CONTRIBUTING say that `ORBIT_ANC_DEBUG` output reaches the journal when DMS runs as a systemd service. Tests: `tests/loopback.test.sh`, `tests/qml/ancSessions.test.qml`.
+
 ## 2.0.0 - 2026-11-11
 
 ### Added
