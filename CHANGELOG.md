@@ -16,6 +16,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - **A cover picture for the README** (`screenshots/hero.png`, 2560 × 1280, also sized for GitHub's social preview), in DMS's default theme (Purple), with the orbit at the size the Control Center really gives it (568 × 314); made from mock data by `scripts/preview/hero.qml` (`render.sh`). The same picture without the words, `screenshots/registry.png` (16:9), is the one the DMS plugin registry shows: its card adds the name and the description itself. The previews find DMS's icon font in its new folder (`DCommon/`, `DankCommon/` before DMS 2.1).
 - **The plugin's name is *Orbit Bluetooth* again** in `plugin.json` (it was *OrbitBluetooth* since 1.7.1), as the DMS plugin registry lists it: the registry checks that both match. The Control Center tile keeps its own *OrbitBluetooth* label. The description now names live charging and Listen together.
 
+### Fixed
+
+- **Two pairings at once could trust a device that types.** When a second device finished pairing while the first one's profiles were still being read, its check took over the first's `busctl` call: the second device got the verdict of the first one's profiles (a headset that can also send key presses could be trusted without the question) and the first never got an answer. The checks now wait their turn, each answer is read for its own device, and a device gone meanwhile is not trusted (`ProfileCheck.qml`; test: `tests/qml/profileQueue.test.qml`, which runs the real check: `tests/qml/run.sh` also copies it as `RealProfileCheck.qml` beside the scenes' stand-in).
+
 ## 2.0.0 - 2026-11-11
 
 ### Added

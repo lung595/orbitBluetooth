@@ -16,6 +16,8 @@ trap 'rm -rf "$work"' EXIT
 # beside it, and a stand-in over the D-Bus read of the pairing guard
 cp -r "$root"/components "$root"/diagnostics "$work"/
 cp "$root"/plugin.json "$root"/OrbitBluetoothSettings.qml "$work"/
+# The scene tests get the stand-in; profileQueue tests the real one under another name
+cp "$work"/components/pairing/ProfileCheck.qml "$work"/components/pairing/RealProfileCheck.qml
 cp "$here"/ProfileCheck.qml "$work"/components/pairing/
 cp "$here"/Device.qml "$here"/Player.qml "$here"/*.test.qml "$work"/
 # The preview's made-up route (and overlay) stand in for the daemon's
