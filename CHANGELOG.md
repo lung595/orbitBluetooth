@@ -16,6 +16,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - **A cover picture for the README** (`screenshots/hero.png`, 2560 × 1280, also sized for GitHub's social preview), in DMS's default theme (Purple), with the orbit at the size the Control Center really gives it (568 × 314); made from mock data by `scripts/preview/hero.qml` (`render.sh`). The same picture without the words, `screenshots/registry.png` (16:9), is the one the DMS plugin registry shows: its card adds the name and the description itself. The previews find DMS's icon font in its new folder (`DCommon/`, `DankCommon/` before DMS 2.1).
 - **The plugin's name is *Orbit Bluetooth* again** in `plugin.json` (it was *OrbitBluetooth* since 1.7.1), as the DMS plugin registry lists it: the registry checks that both match. The Control Center tile keeps its own *OrbitBluetooth* label. The description now names live charging and Listen together.
 
+### Fixed
+
+- **Smart steps could be lost on the way.** A `volumeKeys status` (or any plain re-read) arriving while *use smart steps* or *give back* waited for its read cancelled it: the keys stayed DMS's while the setting said Orbit's. A plain re-read now keeps the waiting step (`VolumeKeys.qml`; test in `tests/qml/volumeKeys.test.qml`).
+
 ## 2.0.0 - 2026-11-11
 
 ### Added
