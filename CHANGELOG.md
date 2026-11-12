@@ -19,6 +19,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ### Fixed
 
 - **Uninstalling Orbit keeps a linked settings file a link** (audit 2026-11). With DMS's `settings.json` (or the plugin or session file) linked in from a dotfiles folder (stow, home-manager), the clean-up used to write a plain file over the link, cutting it off from the dotfiles; it now writes to the file the link points to. Test: `uninstall/tests/test_uninstall.py`.
+- **Smart steps could be lost on the way.** A `volumeKeys status` (or any plain re-read) arriving while *use smart steps* or *give back* waited for its read cancelled it: the keys stayed DMS's while the setting said Orbit's. A plain re-read now keeps the waiting step (`VolumeKeys.qml`; test in `tests/qml/volumeKeys.test.qml`).
 
 ### Security
 

@@ -149,6 +149,21 @@ Item {
                 h.answer(h.shower(), h.listing("spawn pamixer -i 5", h.dmsDown));
                 check("the user's own shortcut is left alone", [keys.keys, h.setter().running], ["custom", false]);
             }
+        },
+        {
+            "run": () => {
+                keys.disable();
+                h.answer(h.shower(), h.listing(h.dmsUp, h.dmsDown));
+                keys.enable();
+                // `volumeKeys status` from the command line while the read runs
+                keys.refresh();
+                h.answer(h.shower(), h.listing(h.dmsUp, h.dmsDown));
+                check("a status read meanwhile does not cancel the bind", [h.setter().running, h.setter().command[4]], [true, "XF86AudioRaiseVolume"]);
+                h.answer(h.setter(), '{"success":true}');
+                h.answer(h.setter(), '{"success":true}');
+                h.answer(h.shower(), h.listing(KeyBinds.action("up", 5), KeyBinds.action("down", 5)));
+                check("and the keys end up Orbit's", keys.keys, "orbit");
+            }
         }
     ]
     property int at: 0

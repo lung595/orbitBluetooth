@@ -36,7 +36,11 @@ Item {
                 then();
             return;
         }
-        _then = then || null;
+        // A plain re-read (`volumeKeys status`, the read after a set) must
+        // not drop a bind or a give-back still waiting for its read: the
+        // keys would stay DMS's while keysOrbit says Orbit's (audit 2026-11)
+        if (then)
+            _then = then;
         if (!show.running)
             show.running = true;
     }
