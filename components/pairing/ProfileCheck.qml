@@ -15,9 +15,11 @@ Item {
 
     readonly property string guideUrl: Guide.url("pairing-safety")
 
-    property var _device: null
-    property string _family: ""
-    property var _done: null
+    // Checks waiting for busctl, the running one first. Two pairings can
+    // overlap (two devices dragged in): one call at a time, each answer read
+    // for its own device. A second check used to take over the first's call,
+    // so a device that can type got the verdict of the other's profiles.
+    property var _queue: []
 
     // done(verdict): "ok" (trust and connect), "input" (blocked, ask the
     // user, then call allow() or deny()) or "refused" (already forgotten)
@@ -27,10 +29,23 @@ Item {
             _refuse(device, done);
             return;
         }
-        _device = device;
-        _family = family;
-        _done = done;
-        proc.command = ["busctl", "--json=short", "get-property", "--", "org.bluez", path, "org.bluez.Device1", "UUIDs"];
+        _queue = _queue.concat([
+            {
+                "device": device,
+                "family": family,
+                "done": done,
+                "path": path
+            }
+        ]);
+        if (!proc.running && _queue.length === 1)
+            _next();
+    }
+
+    function _next() {
+        const job = _queue[0];
+        if (!job || proc.running)
+            return;
+        proc.command = ["busctl", "--json=short", "get-property", "--", "org.bluez", job.path, "org.bluez.Device1", "UUIDs"];
         proc.running = true;
     }
 
@@ -64,13 +79,20 @@ Item {
             id: out
         }
         onExited: code => {
-            const d = root._device, cb = root._done;
-            root._device = null;
-            root._done = null;
+            const job = root._queue[0] || {};
+            root._queue = root._queue.slice(1);
+            // Started from here the next call would not run: the process is
+            // still finishing this one
+            Qt.callLater(root._next);
+            const d = job.device, cb = job.done;
             const uuids = code === 0 ? Guard.parseUuids(out.text) : null;
-            if (uuids === null) {
+            if (!d) {
+                // Gone while busctl ran (forgotten, adapter off): nothing to trust
+                if (cb)
+                    cb("refused");
+            } else if (uuids === null) {
                 root._refuse(d, cb);
-            } else if (Guard.refused(root._family, uuids)) {
+            } else if (Guard.refused(job.family, uuids)) {
                 // BlueZ drops every connection from a blocked device, the
                 // keyboard profile included, while the user decides
                 d.trusted = false;
