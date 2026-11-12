@@ -98,6 +98,9 @@ eq("a one-character name is hidden where it stands alone, not inside a word", (R
 eq("a one-digit name does not eat the number of an alias", (Redact.register("device", "1"), Redact.text(Redact.text("x and 1"))), "device#1 and device#2");
 Redact.forget();
 eq("a name that is a number or a String object is a name", [Redact.register("device", 4242), Redact.register("device", new String("Boxed Bob")), Redact.text("4242 and Boxed Bob")], ["device#1", "device#2", "device#1 and device#2"]);
+Redact.forget();
+eq("a device's two names share one alias", [Redact.register("device", ["Alice's headphones", "WH-1000XM6"]), Redact.register("device", "Other"), Redact.text("Alice's headphones is WH-1000XM6")], ["device#1", "device#2", "device#1 is device#1"]);
+eq("an empty name in the list takes no alias", [Redact.register("device", ["", "Solo"]), Redact.register("device", [undefined, null])], ["device#3", ""]);
 eq("what cannot be a name is refused", [null, undefined, true, {}, [], NaN, Infinity].map(n => Redact.register("device", n)), Array(7).fill(""));
 // A name longer than a Bluetooth name can be (D5): no pattern too big, and nothing of it left
 Redact.forget();
