@@ -68,6 +68,25 @@ function plan(entries, shown, previous) {
     };
 }
 
+// Whether a plan changes nothing: no mark, no new body, and every address
+// still maps to the very same device object. `list` and `before` are the
+// picked devices now and at the last refresh (their order and state are what
+// the scene and the new-device offer read).
+function idle(step, previous, list, before) {
+    if (step.marks.length || step.added.length)
+        return false;
+    const keys = Object.keys(step.devices);
+    if (keys.length !== Object.keys(previous).length || keys.some(a => step.devices[a] !== previous[a]))
+        return false;
+    return signature(list) === before;
+}
+
+// The picked devices as one string: their order and the state that changes
+// where they go (connected, paired)
+function signature(list) {
+    return list.map(d => d.address + (d.connected ? "+" : "-") + (d.paired || d.bonded ? "p" : "")).join(" ");
+}
+
 // What changed between two address lists: the addresses to start (in
 // `want` only) and to stop (in `had` only), each in its list's order
 function changes(had, want) {

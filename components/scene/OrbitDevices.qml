@@ -13,6 +13,8 @@ Item {
     // address -> device for every body, leaving ones included
     property var deviceMap: ({})
     property bool anyConnected: false
+    // Orbit.signature of the devices picked at the last refresh
+    property string _listedAs: "\u0000"
 
     // The devices just picked, best first
     signal listed(var list)
@@ -47,6 +49,12 @@ Item {
             });
         }
         const next = Orbit.plan(entries, shown, deviceMap);
+        // The slow poll below finds nothing new most of the time: then no new
+        // map (every body's `device` binding would run again), no offer
+        // check and no wake, which restarted the settle loop every 1.5 s
+        if (Orbit.idle(next, deviceMap, list, _listedAs))
+            return;
+        _listedAs = Orbit.signature(list);
         for (const [i, leaving] of next.marks)
             bodyModel.setProperty(i, "leaving", leaving);
         for (const address of next.added)
