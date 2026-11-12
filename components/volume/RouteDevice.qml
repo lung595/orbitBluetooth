@@ -42,8 +42,13 @@ Item {
     onSinkChanged: {
         if (sink && absolute < 0)
             probe();
-        if (!sink)
+        // Gone: the next connection is a new device to BlueZ (another
+        // transport, maybe another answer), so it gets its own look and retry
+        if (!sink) {
             absolute = -1;
+            _retried = false;
+            retry.stop();
+        }
         changed();
     }
     onPcChanged: {
@@ -94,6 +99,11 @@ Item {
     // Some devices agree on absolute volume a moment after their sound
     // output appears: one more look, once, a few seconds later
     function _settle(value) {
+        // An answer that comes after the sound output went is about a
+        // transport that no longer exists: kept, it would stop the next
+        // connection from probing (absolute is no longer -1)
+        if (!sink)
+            return;
         absolute = value;
         if (value === 0 && !_retried && sink) {
             _retried = true;

@@ -16,6 +16,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - **A cover picture for the README** (`screenshots/hero.png`, 2560 × 1280, also sized for GitHub's social preview), in DMS's default theme (Purple), with the orbit at the size the Control Center really gives it (568 × 314); made from mock data by `scripts/preview/hero.qml` (`render.sh`). The same picture without the words, `screenshots/registry.png` (16:9), is the one the DMS plugin registry shows: its card adds the name and the description itself. The previews find DMS's icon font in its new folder (`DCommon/`, `DankCommon/` before DMS 2.1).
 - **The plugin's name is *Orbit Bluetooth* again** in `plugin.json` (it was *OrbitBluetooth* since 1.7.1), as the DMS plugin registry lists it: the registry checks that both match. The Control Center tile keeps its own *OrbitBluetooth* label. The description now names live charging and Listen together.
 
+### Fixed
+
+- **Separate PC volume after a reconnection.** The check for a volume of the device's own (absolute volume) got its retry 4 s later on the first connection only, and a `busctl` answer that came after the device left was kept, so the next connection did not look at all: a device that agrees on absolute volume late could stay without its separate PC level until the shell restarted. Each connection now gets its own look and retry, and a late answer is dropped (`RouteDevice.qml`; test: `tests/qml/routeProbe.test.qml`).
+
 ## 2.0.0 - 2026-11-11
 
 ### Added
