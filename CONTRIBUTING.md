@@ -23,7 +23,7 @@ Everything needed to work on Orbit Bluetooth or take over the project.
 
 2. Add at least one widget (Control Center, bar or desktop) to see your changes.
 3. DMS reloads QML on save, but Qt keeps `components/` and `.js` files cached in the running shell: **run `dms restart`** after changing them.
-4. Set `ORBIT_ANC_DEBUG=1` in the shell's environment to see the noise-control packets on stderr.
+4. Set `ORBIT_ANC_DEBUG=1` in the shell's environment to see the noise-control packets on stderr. The packets can hold a headset's serial number and name, and when DMS runs as a systemd service its stderr goes to the journal: unset it once done.
 
 Tools: `gjs` (JS tests), Python 3 (helper and its tests), `ffmpeg` (GIFs), Qt 6 `qsb` (shaders).
 

@@ -5,6 +5,9 @@ Started by OrbitBluetoothDaemon.qml, never by itself:
 
     python3 orbit_anc.py <address> <family> [name]
 
+The shell passes "-" as the address and puts it in ORBIT_ANC_ADDRESS (the
+name in ORBIT_ANC_NAME): argv is readable by every user in /proc.
+
 - stdin: one command per line: "get", "set <key> <value>".
 - stdout: one JSON object per line, whenever something changes:
       {"status": "connecting" | "ready" | "error", "error": "...",
@@ -230,4 +233,6 @@ if __name__ == "__main__":
     # The device name comes from the environment (kept out of /proc/*/cmdline);
     # a third argument still works, for running the helper by hand
     name = sys.argv[3] if len(sys.argv) == 4 else os.environ.get("ORBIT_ANC_NAME", "")
-    sys.exit(run(sys.argv[1], sys.argv[2], name[:248]))
+    # The same for the address: "-" reads it from ORBIT_ANC_ADDRESS
+    address = os.environ.get("ORBIT_ANC_ADDRESS", "") if sys.argv[1] == "-" else sys.argv[1]
+    sys.exit(run(address, sys.argv[2], name[:248]))

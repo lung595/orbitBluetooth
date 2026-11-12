@@ -105,7 +105,11 @@ function description(deviceName, fallback) {
 // SPA-JSON string (backslashes and quotes escaped), so it cannot close the
 // string and add modules. bash watches its standard input (a pipe from the
 // shell) and stops pipewire the moment the shell goes away, even after a
-// crash, so nothing outlives the shell (value 12). Unlike pw-loopback,
+// crash, so nothing outlives the shell (value 12). The watcher is its own
+// small sh, not a bash subshell: a subshell would keep bash's argv, with the
+// device's name and address in it, readable by every user in /proc for as
+// long as the loopback runs (pipewire's exec replaces only the main one).
+// Unlike pw-loopback,
 // pipewire keeps running when its loopback is destroyed under it:
 // RouteDevice and TogetherLink watch for the node going away and stop it.
 // Thanks to the PipeWire developers: module-loopback and the config format are
@@ -117,7 +121,7 @@ const LOOPBACK_SCRIPT = [
     "f=$(mktemp \"$d/orbit-loopback.XXXXXX\") || exit 1",
     "exec 3<>\"$f\"; rm -f -- \"$f\"",
     "printf 'context.properties = { log.level = 0 application.name = Orbit }\\ncontext.spa-libs = { audio.convert.* = audioconvert/libspa-audioconvert support.* = support/libspa-support }\\ncontext.modules = [ { name = libpipewire-module-rt flags = [ ifexists nofail ] } { name = libpipewire-module-protocol-native } { name = libpipewire-module-client-node } { name = libpipewire-module-adapter } { name = libpipewire-module-loopback args = { capture.props = %s playback.props = %s target.delay.sec = %s } } ]\\n' \"$(q \"$1\")\" \"$(q \"$2\")\" \"$(q \"${3:-0}\")\" >&3",
-    "{ cat >/dev/null; kill \"$$\" 2>/dev/null; } <&0 3<&- &",
+    "sh -c 'cat >/dev/null; kill \"$1\" 2>/dev/null' orbit-watch \"$$\" <&0 3<&- &",
     "exec pipewire -c \"$l\" </dev/null"
 ].join("\n");
 

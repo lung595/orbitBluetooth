@@ -57,6 +57,9 @@ check "each value is one escaped string" "$(printf '%s' "$conf" | grep -cF "capt
 bare=$(printf '%s\n' "$conf" | sed -E 's/"([^"\\]|\\.)*"/""/g')
 check "outside the strings: Orbit's modules alone, no context.exec" "$(printf '%s' "$bare" | grep -o '{ name = [a-z-]*' | tr '\n' ' ')$(printf '%s' "$bare" | grep -c 'context\.exec')" "{ name = libpipewire-module-rt { name = libpipewire-module-protocol-native { name = libpipewire-module-client-node { name = libpipewire-module-adapter { name = libpipewire-module-loopback 0"
 check "the rt module comes first and may be missing" "$(printf '%s' "$bare" | grep -c 'context.modules = \[ { name = libpipewire-module-rt flags = \[ ifexists nofail \] }')" 1
+# argv is readable by every user in /proc: once running, no process of the
+# loopback still carries the values (the watcher used to keep bash's argv)
+check "no process shows the values in its argv" "$(pgrep -fc 'orbit-pwned')" 0
 check "quiet and named Orbit" "$(printf '%s\n' "$conf" | head -1)" "context.properties = { log.level = 0 application.name = Orbit }"
 
 # The shell goes away: its pipe closes and the stand-in is stopped
