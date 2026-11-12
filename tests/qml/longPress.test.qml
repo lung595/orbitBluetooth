@@ -113,6 +113,13 @@ Item {
         mouse.wait(400);
         check("released before 500 ms: no menu, even later", took().indexOf("menu"), -1);
 
+        // Released just before the menu would open: still a click. The click
+        // used to end at 450 ms, so 450 to 500 ms did nothing at all.
+        mouse.mousePress(p, c, c);
+        mouse.wait(470);
+        mouse.mouseRelease(p, c, c);
+        check("released at 470 ms: a click, it focuses", took(), ["focus"]);
+
         // A drag past 5 px cancels the hold, and carries the device
         mouse.mousePress(p, c, c);
         mouse.mouseMove(p, c + 12, c);
