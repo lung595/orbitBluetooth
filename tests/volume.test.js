@@ -18,6 +18,7 @@ eq("lower-case address is accepted", Route.virtualName("aa:bb:cc:dd:ee:01"), "or
 eq("not an address: no name", [Route.virtualName("AA:BB"), Route.virtualName("x; rm -rf"), Route.virtualName(null)], ["", "", ""]);
 eq("name back to address", Route.addressOfVirtual("orbit_pc_AA_BB_CC_DD_EE_01"), MAC);
 eq("other sinks are not Orbit's", [Route.isVirtual("bluez_output.AA_BB_CC_DD_EE_01.1"), Route.addressOfVirtual("orbit_pc_nope")], [false, ""]);
+eq("only Orbit's exact name is Orbit's", [Route.isVirtual("orbit_pc_AA_BB_CC_DD_EE_01"), Route.isVirtual("orbit_pc_AA_BB_CC_DD_EE_01\" } x"), Route.isVirtual("orbit_pc_aa_bb_cc_dd_ee_01"), Route.isVirtual("orbit_pc_")], [true, false, false, false]);
 eq("device sink recognised", [Route.isDeviceSink("bluez_output.AA_BB_CC_DD_EE_01.1"), Route.isDeviceSink("bluez_output.AA_BB_CC_DD_EE_01"), Route.isDeviceSink("alsa_output.usb-Card")], [true, true, false]);
 eq("device sink address", Route.addressOfSink("bluez_output.aa_bb_cc_dd_ee_01.1"), MAC);
 eq("a sink name never takes colons", [Route.isDeviceSink("bluez_output.AA:BB:CC:DD:EE:01.1"), Route.addressOfSink("alsa_output.usb-Card")], [false, ""]);

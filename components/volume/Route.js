@@ -21,8 +21,11 @@ function virtualName(address) {
     return key ? PREFIX + key : "";
 }
 
+// The exact name Orbit gives, nothing else: Together.isSource takes this as
+// the guard for text that goes into a loopback's property string, so a node
+// that only starts like one ("orbit_pc_x\" } ...") must not pass (audit 2026-11)
 function isVirtual(name) {
-    return typeof name === "string" && name.indexOf(PREFIX) === 0;
+    return typeof name === "string" && name.indexOf(PREFIX) === 0 && virtualName(name.slice(PREFIX.length)) === name;
 }
 
 // "orbit_pc_AA_BB_CC_DD_EE_FF" -> "AA:BB:CC:DD:EE:FF"
