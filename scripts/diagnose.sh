@@ -29,7 +29,9 @@ replace_fixed() {
 }
 
 # The reduction, as a filter. The plugin's own report is already clean; this
-# is the second wall for what only the shell or the journal knows.
+# is the second wall for what only the shell or the journal knows. The
+# journal's host column is dropped even when it is not `hostname` (a renamed
+# machine): its lines come indented by two spaces, hence the leading ` *`.
 reduce() {
     user=$(id -un 2>/dev/null || echo "")
     host=$(hostname 2>/dev/null || echo "")
@@ -37,7 +39,7 @@ reduce() {
         sed -E \
             -e 's#(/var)?/home/[^/ :"]+#~#g' \
             -e 's#/run/user/[0-9]+#/run/user/<uid>#g' \
-            -e 's#^([A-Z][a-z]{2} [ 0-9][0-9] [0-9:]{8}) [^ ]+ #\1 #' \
+            -e 's#^( *)([A-Z][a-z]{2} [ 0-9][0-9] [0-9:]{8}) [^ ]+ #\1\2 #' \
             -e 's#([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}#<mac>#g' \
             -e 's#([0-9A-Fa-f]{2}_){5}[0-9A-Fa-f]{2}#<mac>#g' \
             -e 's#([0-9]{1,3}\.){3}[0-9]{1,3}#<ip>#g' \

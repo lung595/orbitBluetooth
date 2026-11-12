@@ -53,6 +53,14 @@ SH
 out=$(HOME="$work/home/bobby" PATH="$work/bin:$PATH" sh "$script" 2>&1)
 check "without the plugin the fallback report says so" "$(echo "$out" | grep -c 'the plugin did not answer')" 1
 check "the fallback holds the DMS version" "$(echo "$out" | grep -c 'DMS          : dms v1.6.3')" 1
+# The journal names the machine as it was called then, not as `hostname` says now
+cat >"$work/bin/journalctl" <<'SH'
+#!/bin/sh
+echo "Nov 12 18:00:00 old-name dms[42]: [orbit] ORB-W002 something"
+SH
+chmod +x "$work/bin/journalctl"
+out=$(HOME="$work/home/bobby" PATH="$work/bin:$PATH" sh "$script" 2>&1)
+check "the journal's host column is dropped from its indented lines" "$(echo "$out" | grep -c '^  Nov 12 18:00:00 dms\[42\]: \[orbit\] ORB-W002')$(echo "$out" | grep -c old-name)" 10
 check "the fallback leaks nothing either" "$(echo "$out" | grep -ciE 'bobby|bobs-pc|/home/')" 0
 
 # A host name is text, not a pattern: "." is a dot and "/" or "&" cannot bend the filter
