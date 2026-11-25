@@ -51,37 +51,11 @@ function fromHsl(h, s, l) {
     return { r: hue(p, q, h + 1 / 3), g: hue(p, q, h), b: hue(p, q, h - 1 / 3) };
 }
 
-// The same hue, moved away from the background's lightness until it reaches
-// the wanted contrast (it keeps its saturation, so a palette stays itself)
-function ensureContrast(c, bg, ratio) {
-    if (contrast(c, bg) >= ratio)
-        return { r: c.r, g: c.g, b: c.b };
-    const hsl = toHsl(c);
-    const up = luminance(bg) < 0.4;
-    let out = { r: c.r, g: c.g, b: c.b };
-    for (let i = 1; i <= 40; i++) {
-        const l = Math.max(0, Math.min(1, hsl.l + (up ? 1 : -1) * i * 0.025));
-        out = fromHsl(hsl.h, hsl.s, l);
-        if (contrast(out, bg) >= ratio || l === 0 || l === 1)
-            break;
-    }
-    return out;
-}
-
 // The same hue and saturation at least this light: how Orbit turns a light
 // theme's dark accent into one that glows on the night (NightColors.night)
 function lift(c, minLightness) {
     const hsl = toHsl(c);
     return fromHsl(hsl.h, hsl.s, Math.max(hsl.l, minLightness));
-}
-
-// Ink for text on an accent fill: a deep or a pale shade of the accent's
-// own hue, whichever reads better
-function onColor(c) {
-    const hsl = toHsl(c);
-    const dark = fromHsl(hsl.h, Math.min(hsl.s, 0.5), 0.12);
-    const light = fromHsl(hsl.h, Math.min(hsl.s, 0.3), 0.97);
-    return contrast(dark, c) >= contrast(light, c) ? dark : light;
 }
 
 // A colour without hue reads as grey: its glow then borrows the accent

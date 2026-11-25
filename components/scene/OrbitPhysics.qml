@@ -177,8 +177,7 @@ Item {
             // Behavior did); with Reduce motion it is put there at once
             const ds = b.signalTarget - b.signal;
             if (!s.motion || Math.abs(ds) < 0.002) {
-                if (ds !== 0)
-                    b.signal = b.signalTarget;
+                b.signal = b.signalTarget;
             } else {
                 b.signal += ds * Math.min(1, dt * 4);
                 moving = true;
@@ -242,13 +241,11 @@ Item {
             fx = fx || comet;
         }
         const fast = comet || s.detailOpen || centre.travelling || ghost.fading;
-        if (_fxFast !== fast)
-            _fxFast = fast;
+        _fxFast = fast;
         // Ambient's slow drift on the desktop with nobody around: bodies move
         // a few px per second, more frames would not show (P123)
         const ambientOnly = s.freezeWhenIdle && !s.interacting && !s.dragBody && !s.focusBody && !fx;
-        if (_ambientOnly !== ambientOnly)
-            _ambientOnly = ambientOnly;
+        _ambientOnly = ambientOnly;
 
         // Sleep when nothing moves and time-driven motion is off
         if (!moving && !timeDriven && !fx) {

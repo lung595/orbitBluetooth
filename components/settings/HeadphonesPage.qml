@@ -1,5 +1,4 @@
 import QtQuick
-import qs.Common
 import qs.Modules.Plugins
 
 // Noise control and the opt-in device pictures (D234).

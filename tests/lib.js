@@ -5,7 +5,7 @@ var GLib = imports.gi.GLib;
 var root = GLib.path_get_dirname(GLib.path_get_dirname(GLib.canonicalize_filename(imports.system.programPath ?? "tests/run.test.js", GLib.get_current_dir())));
 
 // The modules live in feature folders: components/<feature>/<Name>.js
-const features = ["settings", "card", "centre", "common", "delay", "device", "noise", "pairing", "radar", "radio", "rules", "scene", "together", "volume", "wear"];
+const features = ["settings", "battery", "card", "centre", "common", "delay", "device", "noise", "pairing", "radar", "radio", "rules", "scene", "together", "volume", "wear"];
 function pathOf(file) {
     // The diagnostics module is not a component feature: it has its own folder
     if (GLib.file_test(root + "/diagnostics/" + file, GLib.FileTest.EXISTS))
@@ -39,6 +39,17 @@ function eq(what, got, expected) {
         failures++;
         print("\u2717 " + what + "\n    expected: " + JSON.stringify(expected) + "\n    got:      " + JSON.stringify(got));
     }
+}
+
+// A repo file's text, by its path from the plugin root
+function read(path) {
+    const [, bytes] = GLib.file_get_contents(root + "/" + path);
+    return new TextDecoder().decode(bytes);
+}
+
+// GUIDE.md's section anchors, as GitHub builds them from the ## and ### headings
+function guideAnchors() {
+    return read("docs/GUIDE.md").split("\n").filter(l => /^#{2,3} /.test(l)).map(l => l.replace(/^#+ /, "").toLowerCase().replace(/[^a-z0-9 -]/g, "").replace(/ /g, "-"));
 }
 
 // Prints the tally and ends with a non-zero status if a check failed

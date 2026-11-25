@@ -161,8 +161,6 @@ Scope {
             return why ? Guide.levelNote(why) + " · " + Guide.url("the-volume-at-the-center") : "OK";
         }
 
-        // The level heard: the device's own when it has one, else this PC's.
-        // Bound to the volume keys, a slow press is 1 %, a fast run speeds up
         // Binds the volume keys to Orbit's smart steps ("on"), gives them
         // back to DMS ("off"), or tells what they do now ("status")
         function volumeKeys(arg: string): string {
@@ -183,6 +181,8 @@ Scope {
             return ipc.keys.keys;
         }
 
+        // The level heard: the device's own when it has one, else this PC's.
+        // Bound to the volume keys, a slow press is 1 %, a fast run speeds up
         function volume(direction: string): string {
             const d = String(direction || "").trim().toLowerCase();
             if (d !== "up" && d !== "down")

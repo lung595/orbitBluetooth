@@ -1,6 +1,5 @@
 import QtQuick
 import Quickshell.Wayland
-import qs.Common
 import qs.Modules.Plugins
 import qs.Services
 import "components/scene"

@@ -23,7 +23,7 @@ body:
     attributes:
       label: Anonymous report
       description: |
-        In the plugin settings, Orbit tab, press "Copy report" and paste it here. Or run `sh scripts/diagnose.sh`, or `dms ipc call orbitBluetooth diagnostics` twice, two seconds apart. Read it before you send it.
+        In the plugin settings, Reset & help, press "Copy report" and paste it here. Or run `sh scripts/diagnose.sh`, or `dms ipc call orbitBluetooth diagnostics` twice, two seconds apart. Read it before you send it.
         See [Debugging Orbit](https://github.com/lung595/orbitBluetooth/blob/main/docs/DEBUGGING.md).
       render: text
     validations:

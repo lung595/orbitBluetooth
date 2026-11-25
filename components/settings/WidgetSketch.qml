@@ -120,7 +120,6 @@ Item {
         }
     }
     Rectangle {
-        id: ccTile
         visible: sketch.kind === "cc"
         x: 102
         y: 23

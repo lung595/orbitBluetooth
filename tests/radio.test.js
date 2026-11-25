@@ -1,7 +1,7 @@
 // The shared-radio warning: which outputs play, which pair is told about, and when.
 // Run from the plugin root: gjs tests/radio.test.js (or every file: sh tests/run.sh)
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
-const { load, eq, done, root, GLib } = imports.lib;
+const { load, eq, done, guideAnchors } = imports.lib;
 
 const Radio = load("Radio.js", ["playing", "sharedKey", "outputCount", "due"]);
 const Guide = load("Guide.js", ["radioNote"]);
@@ -46,9 +46,7 @@ eq("no pair, nothing to say", Radio.due("", [], true), false);
 
 // The note: short, says what to do, links to a real guide section (value 10)
 const note = Guide.radioNote();
-const [, bytes] = GLib.file_get_contents(root + "/docs/GUIDE.md");
-const guide = new TextDecoder().decode(bytes);
-const anchors = guide.split("\n").filter(l => /^#{2,3} /.test(l)).map(l => l.replace(/^#+ /, "").toLowerCase().replace(/[^a-z0-9 -]/g, "").replace(/ /g, "-"));
+const anchors = guideAnchors();
 eq("the note names the problem and the way out", [note.title, !!note.hint], ["Two outputs share one Bluetooth radio", true]);
 eq("the note links to a real section", anchors.indexOf(note.anchor) >= 0, true);
 

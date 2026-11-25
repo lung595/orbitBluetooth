@@ -17,16 +17,13 @@ Item {
     readonly property string beamStyle: BeamStyle.parse(globals.beamStyle || scene.prefs.chargeBeamStyle)
 
     function sinceFor(address) {
-        const s = globals.since || {};
-        return address && s[address] ? s[address] : 0;
+        return globals.since?.[address] || 0;
     }
     function batteryLogFor(address) {
-        const l = globals.batteryLog || {};
-        return address ? (l[address] || []) : [];
+        return globals.batteryLog?.[address] || [];
     }
     function powerFor(address) {
-        const p = globals.power || {};
-        return address ? (p[address] || null) : null;
+        return globals.power?.[address] || null;
     }
 
     // Connection timers tick once per second, only while the scene is awake:

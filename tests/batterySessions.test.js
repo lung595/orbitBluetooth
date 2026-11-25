@@ -1,14 +1,9 @@
 // Battery sessions, low-battery decision, autonomy estimate and history file
 // content (components/battery/BatterySessions.js). Run: gjs tests/batterySessions.test.js
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
-const { eq, done } = imports.lib;
-const GLib = imports.gi.GLib;
+const { load, eq, done } = imports.lib;
 
-// The shared loader only knows the older feature folders; this module is loaded the same way
-const dir = GLib.path_get_dirname(GLib.path_get_dirname(GLib.canonicalize_filename(imports.system.programPath, GLib.get_current_dir())));
-const [, bytes] = GLib.file_get_contents(dir + "/components/battery/BatterySessions.js");
-const src = new TextDecoder().decode(bytes).replace(".pragma library", "");
-const S = new Function(src + "; return { feed, disconnect, usable, estimate, thresholdOf, newTracker, newAlert, lowBattery, sha256, deviceKey, newHistory, parse, serialize, prune, record, touch, lastSeen, sessionsOf, writeCommand, eraseCommand, KEEP_MS, MAX_GAP_MS };")();
+const S = load("BatterySessions.js");
 
 const H = 3600000, T0 = Date.UTC(2026, 8, 1, 8, 0, 0);
 const rnd = () => 0.5;

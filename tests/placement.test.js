@@ -2,12 +2,8 @@
 // the settings open on "Getting started" while it is placed nowhere.
 // Run from the plugin root: gjs tests/placement.test.js
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
-const { load, eq, done, root, GLib } = imports.lib;
+const { load, eq, done, read } = imports.lib;
 
-function read(path) {
-    const [, bytes] = GLib.file_get_contents(root + "/" + path);
-    return new TextDecoder().decode(bytes);
-}
 
 const P = load("Placement.js");
 const id = "orbitBluetooth";

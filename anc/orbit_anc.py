@@ -206,7 +206,7 @@ def run(address, family, name=""):
             if not stdin_open and proto.ready and not proto.pending and not proto.deferred and not proto.awaiting:
                 # Everything answered: no need to wait for the full linger
                 deadline = min(deadline, time.monotonic() + 0.2)
-    except (OSError, ConnectionError) as err:
+    except OSError as err:
         emit({"status": "error", "error": str(err) or "connection lost"})
         return 1
     except Exception:

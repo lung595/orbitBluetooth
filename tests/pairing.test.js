@@ -1,21 +1,12 @@
-// Colours that read on either skin, and the input-device guard of pairing.
+// Accent colours (lifted, grey, two kept apart) and the input-device guard of pairing.
 // Run from the plugin root: gjs tests/pairing.test.js (or every file: sh tests/run.sh)
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const Palette = load("Palette.js", ["contrast", "ensureContrast", "onColor", "lift", "isGrey", "toHsl", "apart"]);
+const Palette = load("Palette.js", ["lift", "isGrey", "toHsl", "apart"]);
 const Guard = load("Guard.js", ["hasInput", "refused", "parseUuids"]);
 
-// Theme colours: any accent reads on either skin
 const hex = h => ({ r: parseInt(h.slice(1, 3), 16) / 255, g: parseInt(h.slice(3, 5), 16) / 255, b: parseInt(h.slice(5, 7), 16) / 255 });
-const night = hex("#0A0C14"), pearl = hex("#E6E8EF");
-for (const accent of ["#F2B8C6", "#1A3A8F", "#C5E66A", "#4B6818", "#00FFD1", "#BDBDBD"]) {
-    eq("readable on night: " + accent, Palette.contrast(Palette.ensureContrast(hex(accent), night, 6), night) >= 6, true);
-    eq("readable on pearl: " + accent, Palette.contrast(Palette.ensureContrast(hex(accent), pearl, 4.5), pearl) >= 4.5, true);
-    const fill = Palette.ensureContrast(hex(accent), pearl, 4.5);
-    eq("button ink: " + accent, Palette.contrast(Palette.onColor(fill), fill) >= 4.5, true);
-}
-eq("hue kept when fixed", Math.round(Palette.toHsl(Palette.ensureContrast(hex("#F2B8C6"), pearl, 4.5)).h * 100), Math.round(Palette.toHsl(hex("#F2B8C6")).h * 100));
 eq("lift", Math.round(Palette.toHsl(Palette.lift(hex("#4B6818"), 0.66)).l * 100), 66);
 eq("grey", Palette.isGrey(hex("#BDBDBD")), true);
 

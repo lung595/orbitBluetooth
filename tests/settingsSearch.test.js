@@ -1,7 +1,7 @@
 // The settings search (SettingsSearch.js) and the index it searches
 // (SettingsIndex.js). Run from the plugin root: gjs tests/settingsSearch.test.js
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
-const { load, eq, done, root, GLib } = imports.lib;
+const { load, eq, done, root, GLib, read } = imports.lib;
 
 const S = load("SettingsSearch.js");
 const Index = load("SettingsIndex.js");
@@ -85,10 +85,6 @@ eq("the real index finds the noise control with 'anc'", first(Index.ENTRIES, "an
 eq("the real index forgives a typo", first(Index.ENTRIES, "vizualizer"), "scopeStyle");
 
 // --- The index follows the real pages -------------------------------------------
-function read(path) {
-    const [, bytes] = GLib.file_get_contents(root + "/" + path);
-    return new TextDecoder().decode(bytes);
-}
 // The QML files of the settings page: pages and their rows
 function qmlFiles(path) {
     const d = GLib.Dir.open(path, 0);

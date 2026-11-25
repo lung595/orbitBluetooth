@@ -58,7 +58,7 @@ Item {
         if (b.ancCapable)
             scene.ancWatch(b.address, true);   // fetch the current mode
         _watching = b.ancCapable ? b.address : "";
-        _service = scene.ancService ?? null;
+        _service = scene.ancService;
         scene.forceActiveFocus();
     }
 

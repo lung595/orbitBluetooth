@@ -28,11 +28,6 @@ function isVirtual(name) {
     return typeof name === "string" && name.indexOf(PREFIX) === 0 && virtualName(name.slice(PREFIX.length)) === name;
 }
 
-// "orbit_pc_AA_BB_CC_DD_EE_FF" -> "AA:BB:CC:DD:EE:FF"
-function addressOfVirtual(name) {
-    return isVirtual(name) ? Address.colon(name.slice(PREFIX.length)) : "";
-}
-
 // A Bluetooth device's own output sink is named bluez_output.AA_BB_CC_DD_EE_FF.1:
 // its address in key form ("AA_BB_CC_DD_EE_FF"), or "" for any other sink
 function sinkKey(name) {

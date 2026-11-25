@@ -76,7 +76,7 @@ Item {
         if (!b || b.phase !== "connecting")
             return;
         if (why)
-            connections.scene.explain(Guide.connectNote(why, b.device ? Catalog.deviceName(b.device) : ""));
+            connections.scene.explain(Guide.connectNote(why, Catalog.deviceName(b.device)));
         b.phase = "idle";
         b.shake();
         connections.scene.sounds.play("error");
@@ -129,7 +129,7 @@ Item {
             b.phase = "idle";
             b.shake();
             connections.scene.sounds.play("error");
-            connections.scene.explain(Guide.stuckNote(b.device ? Catalog.deviceName(b.device) : ""));
+            connections.scene.explain(Guide.stuckNote(Catalog.deviceName(b.device)));
             connections.scene.wake();
         }
     }
@@ -151,14 +151,13 @@ Item {
             b.device.disconnect();
             return;
         }
+        b.phase = "idle";
         if (isConnected) {
-            b.phase = "idle";
             b.celebrate();
             connections.scene.world.pulseCore();
             connections.scene.emitWave(true);
             connections.scene.sounds.play("connect");
         } else {
-            b.phase = "idle";
             b.release();
             connections.scene.emitWave(false);
             connections.scene.sounds.play("disconnect");

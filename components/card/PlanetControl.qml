@@ -49,7 +49,7 @@ Item {
         onTurned: notches => {
             if (!planet.hasSound) {
                 if (!planet.scene.note || planet.scene.note.anchor !== "the-two-volumes")
-                    planet.scene.explain(Guide.noVolumeNote(planet.body.device ? Catalog.deviceName(planet.body.device) : ""));
+                    planet.scene.explain(Guide.noVolumeNote(Catalog.deviceName(planet.body.device)));
                 return;
             }
             SessionData.suppressOSDTemporarily();

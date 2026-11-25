@@ -1,7 +1,7 @@
 // Shared rules: address forms and the guide links (Address.js, Guide.js).
 // Run from the plugin root: gjs tests/common.test.js (or every file: sh tests/run.sh)
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
-const { load, eq, done, root, GLib } = imports.lib;
+const { load, eq, done, guideAnchors } = imports.lib;
 
 const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNote", "stuckNote", "copyLevelNote", "levelNote"]);
 const Address = load("Address.js", ["key", "colon", "find", "isDevicePath"]);
@@ -20,8 +20,7 @@ eq("path: empty", Address.isDevicePath(undefined), false);
 eq("path: adapter number capped at three digits", [Address.isDevicePath("/org/bluez/hci999/dev_AA_BB_CC_DD_EE_FF"), Address.isDevicePath("/org/bluez/hci1000/dev_AA_BB_CC_DD_EE_FF")], [true, false]);
 
 // Guide links (value 10): every anchor used must exist in docs/GUIDE.md
-const guide = new TextDecoder().decode(GLib.file_get_contents(root + "/docs/GUIDE.md")[1]);
-const anchors = guide.split("\n").filter(l => /^#{2,3} /.test(l)).map(l => l.replace(/^#+ /, "").toLowerCase().replace(/[^a-z0-9 -]/g, "").replace(/ /g, "-"));
+const anchors = guideAnchors();
 ["pair", "check", "connect"].forEach(why => {
     const n = Guide.connectNote(why, "Momentum 4");
     eq("note " + why + " has a title and a hint", !!(n.title && n.hint), true);

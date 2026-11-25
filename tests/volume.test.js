@@ -7,7 +7,7 @@ const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNo
 const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "slices", "sliceAt", "partOf", "indexOf", "arc", "end", "point", "angleOf", "valueAt", "zone", "wheelPart", "iconSpot", "legendSpot", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
 const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
 const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded"]);
-const Route = load("Route.js", ["virtualName", "isVirtual", "addressOfVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "wiredFilterName", "isWiredFilter", "description", "loopbackArgs", "filterArgs", "wiredFilterArgs", "muteTarget", "levelNodes", "writeLevel", "writeMuted", "ipcLevel", "transportPath", "transportVolume", "iconFor", "shownLevels"]);
+const Route = load("Route.js", ["virtualName", "isVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "wiredFilterName", "isWiredFilter", "description", "loopbackArgs", "filterArgs", "wiredFilterArgs", "muteTarget", "levelNodes", "writeLevel", "writeMuted", "ipcLevel", "transportPath", "transportVolume", "iconFor", "shownLevels"]);
 const Together = load("Together.js", ["args"]);
 
 // Two volumes (D249, D255): this PC's level lives on a virtual sink in front of
@@ -16,8 +16,7 @@ const MAC = "AA:BB:CC:DD:EE:01";
 eq("virtual sink name", Route.virtualName(MAC), "orbit_pc_AA_BB_CC_DD_EE_01");
 eq("lower-case address is accepted", Route.virtualName("aa:bb:cc:dd:ee:01"), "orbit_pc_AA_BB_CC_DD_EE_01");
 eq("not an address: no name", [Route.virtualName("AA:BB"), Route.virtualName("x; rm -rf"), Route.virtualName(null)], ["", "", ""]);
-eq("name back to address", Route.addressOfVirtual("orbit_pc_AA_BB_CC_DD_EE_01"), MAC);
-eq("other sinks are not Orbit's", [Route.isVirtual("bluez_output.AA_BB_CC_DD_EE_01.1"), Route.addressOfVirtual("orbit_pc_nope")], [false, ""]);
+eq("other sinks are not Orbit's", Route.isVirtual("bluez_output.AA_BB_CC_DD_EE_01.1"), false);
 eq("only Orbit's exact name is Orbit's", [Route.isVirtual("orbit_pc_AA_BB_CC_DD_EE_01"), Route.isVirtual("orbit_pc_AA_BB_CC_DD_EE_01\" } x"), Route.isVirtual("orbit_pc_aa_bb_cc_dd_ee_01"), Route.isVirtual("orbit_pc_")], [true, false, false, false]);
 eq("device sink recognised", [Route.isDeviceSink("bluez_output.AA_BB_CC_DD_EE_01.1"), Route.isDeviceSink("bluez_output.AA_BB_CC_DD_EE_01"), Route.isDeviceSink("alsa_output.usb-Card")], [true, true, false]);
 eq("device sink address", Route.addressOfSink("bluez_output.aa_bb_cc_dd_ee_01.1"), MAC);

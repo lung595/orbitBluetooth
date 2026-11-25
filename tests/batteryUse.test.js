@@ -1,10 +1,9 @@
 // The battery pills of the settings page (BatteryUse.js). Run from the plugin root: gjs tests/batteryUse.test.js
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
-const { load, eq, done, root, GLib } = imports.lib;
+const { load, eq, done, read } = imports.lib;
 
 const Use = load("BatteryUse.js");
 const Index = load("SettingsIndex.js");
-const read = f => new TextDecoder().decode(GLib.file_get_contents(root + "/" + f)[1]);
 
 eq("three levels, as in Abyss", Object.values(Use.LEVELS), ["High battery use", "Some battery use", "Light on battery"]);
 eq("every pill sits on a setting of the index", Object.keys(Use.USES).filter(k => !Index.ENTRIES.some(e => e.id === k)), []);

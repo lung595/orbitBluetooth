@@ -26,7 +26,7 @@ Item {
     function refresh() {
         const s = devices.scene;
         const a = s.adapter;
-        const all = (a && a.devices ? a.devices.values : []).concat(s.previewDevices);
+        const all = (a?.devices?.values ?? []).concat(s.previewDevices);
         const list = Orbit.pick(all, {
             "isHidden": address => s.prefs.isHidden(address),
             "isUnnamed": Catalog.isUnnamed,

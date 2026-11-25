@@ -1,5 +1,4 @@
 import QtQuick
-import qs.Common
 import qs.Modules.Plugins
 import "../device/BeamStyle.js" as BeamStyle
 

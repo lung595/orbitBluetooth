@@ -2,12 +2,10 @@
 // folder (content of the second write, modes 0700/0600, no leftover) and the
 // erase command. Run: gjs tests/historyDisk.test.js
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
-const { eq, done } = imports.lib;
+const { load, eq, done } = imports.lib;
 const { GLib, Gio } = imports.gi;
 
-const dir = GLib.path_get_dirname(GLib.path_get_dirname(GLib.canonicalize_filename(imports.system.programPath, GLib.get_current_dir())));
-const [, bytes] = GLib.file_get_contents(dir + "/components/battery/BatterySessions.js");
-const S = new Function(new TextDecoder().decode(bytes).replace(".pragma library", "") + "; return { writeCommand, eraseCommand };")();
+const S = load("BatterySessions.js");
 
 const work = GLib.dir_make_tmp("orbit-history-XXXXXX");
 const folder = work + "/battery", file = folder + "/history.json";

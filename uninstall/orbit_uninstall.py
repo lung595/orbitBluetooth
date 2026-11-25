@@ -45,10 +45,7 @@ def mine(plugin_id, value):
     """True for this plugin's widget ids: "<id>", "<id>:<variant>" and the
     Control Center's "plugin_<id>"."""
     text = str(value)
-    for prefix in (plugin_id, "plugin_" + plugin_id):
-        if text == prefix or text.startswith(prefix + ":"):
-            return True
-    return False
+    return any(text == p or text.startswith(p + ":") for p in (plugin_id, "plugin_" + plugin_id))
 
 
 def widget_id(widget):

@@ -3,7 +3,7 @@
 // the leak ones: whatever goes in, none of it may come out.
 // Run from the plugin root: gjs tests/diagnostics.test.js (or every file: sh tests/run.sh)
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
-const { load, eq, done } = imports.lib;
+const { load, eq, done, root, read } = imports.lib;
 const GLib = imports.gi.GLib;
 const Gio = imports.gi.Gio;
 
@@ -221,7 +221,7 @@ eq("every code is well formed and uses declared fields", Object.keys(Codes.CODES
 eq("every code has a sentence for the guide", Object.keys(Codes.CODES).filter(c => !Codes.CODES[c].text), []);
 eq("no field name or setting is a free-text kind", [...Object.values(Codes.FIELDS), ...Object.values(Codes.SETTINGS), ...Object.values(Codes.FACTS)].filter(s => !(s === "int" || s === "bool" || Array.isArray(s))), []);
 // The guide explains each code (value 7): a code added without its entry fails here
-const guide = new TextDecoder().decode(GLib.file_get_contents(GLib.path_get_dirname(GLib.path_get_dirname(GLib.canonicalize_filename(imports.system.programPath, GLib.get_current_dir()))) + "/docs/DEBUGGING.md")[1]);
+const guide = read("docs/DEBUGGING.md");
 eq("every code is explained in docs/DEBUGGING.md", Object.keys(Codes.CODES).filter(c => guide.indexOf("`" + c + "`") < 0), []);
 
 // --- Log.js: the buffer and the journal line ---------------------------------------
@@ -328,7 +328,7 @@ eq("a journal line dated the ISO way loses its machine name too", [isoHost.index
 // Zero cost at rest (value 6) and no way out (value 5): the module holds no timer, no
 // file, no process and no network call, so nothing in it can run on its own
 const files = ["Allow", "Codes", "Cpu", "Log", "Redact", "RedactRules", "Report", "ReportFile"];
-const sources = files.map(f => new TextDecoder().decode(GLib.file_get_contents(GLib.path_get_dirname(GLib.path_get_dirname(GLib.canonicalize_filename(imports.system.programPath, GLib.get_current_dir()))) + "/diagnostics/" + f + ".js")[1]));
+const sources = files.map(f => read("diagnostics/" + f + ".js"));
 eq("no timer, file, process, network or QML import in the module", sources.map((src, i) => new RegExp("Timer|setTimeout|setInterval|FileView|Process|XML" + HT.toUpperCase().slice(0, 0) + "HttpRequest|fetch\\(|WebSocket|\\bimport (Qt|Quickshell|qs)|Qt\\.|" + HT + "s?:").test(src) ? files[i] : null).filter(Boolean), []);
 eq("only warn and error reach the console, never log", sources.filter(src => /console\.(log|debug|info)/.test(src)).length, 0);
 
@@ -356,7 +356,7 @@ eq("a numeric setting is reported, not shown as ?", Allow.pick(Codes.SETTINGS, {
 // Three behaviour flags live in Prefs.qml without a settings control of their own
 const KEPT_PREFS = ["keysOrbit", "keysReturned", "learnHabits"];
 const OMITTED = ["imageFolder", "factCard_", "factMore_"];
-const settingsDir = GLib.path_get_dirname(GLib.path_get_dirname(GLib.canonicalize_filename(imports.system.programPath, GLib.get_current_dir()))) + "/components/settings";
+const settingsDir = root + "/components/settings";
 const keysFound = {};
 const dirEnum = Gio.File.new_for_path(settingsDir).enumerate_children("standard::name", 0, null);
 for (let info = dirEnum.next_file(null); info; info = dirEnum.next_file(null)) {
@@ -390,7 +390,7 @@ eq("Codes.SETTINGS holds no key the pages no longer have", Object.keys(Codes.SET
 
 // The QML engine of Quickshell rejects lookbehind patterns that gjs accepts, which broke
 // Redact.js the first time QML loaded it: no diagnostics file may use one.
-const diagDir = GLib.path_get_dirname(GLib.path_get_dirname(GLib.canonicalize_filename(imports.system.programPath, GLib.get_current_dir()))) + "/diagnostics";
+const diagDir = root + "/diagnostics";
 const lookbehind = [];
 const diagEnum = Gio.File.new_for_path(diagDir).enumerate_children("standard::name", 0, null);
 for (let info = diagEnum.next_file(null); info; info = diagEnum.next_file(null)) {

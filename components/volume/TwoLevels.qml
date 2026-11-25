@@ -1,6 +1,5 @@
 import QtQuick
 import qs.Common
-import qs.Services
 import "Audiophile.js" as Audiophile
 import "Members.js" as Members
 import "Polar.js" as Polar

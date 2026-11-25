@@ -33,9 +33,7 @@ StyledText {
             }
             return b.armed ? "Release to connect" : "Bring it closer to connect";
         }
-        if (!hint.scene.btOn)
-            return "";
-        if (hint.bodyCount === 0)
+        if (hint.scene.btOn && hint.bodyCount === 0)
             return hint.scene.discovering ? "Looking for devices..." : "Tap the center to scan";
         return "";
     }

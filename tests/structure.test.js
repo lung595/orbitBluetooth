@@ -4,12 +4,8 @@
 // in that one file.
 // Run from the plugin root: gjs tests/structure.test.js (or every file: sh tests/run.sh)
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
-const { eq, done, root, GLib } = imports.lib;
+const { eq, done, read } = imports.lib;
 
-function read(path) {
-    const [, bytes] = GLib.file_get_contents(root + "/" + path);
-    return new TextDecoder().decode(bytes);
-}
 // Code only: comments may name the parts to explain the rule
 const code = src => src.split("\n").map(l => l.replace(/\/\/.*$/, "")).join("\n");
 

@@ -1,7 +1,7 @@
 // Listen together: who may take part, where the sound is taken from, the copies' commands.
 // Run from the plugin root: gjs tests/together.test.js (or every file: sh tests/run.sh)
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
-const { load, eq, done, root, GLib } = imports.lib;
+const { load, eq, done, guideAnchors } = imports.lib;
 
 const Together = load("Together.js");
 const Guide = load("Guide.js", ["url", "togetherNote"]);
@@ -257,8 +257,7 @@ eq("status says what each member adds before it is heard, a wired output with no
 eq("a session that has no latencies yet says none", JSON.parse(Together.status({ "members": [XM, W1], "source": W1, "delays": {}, "latencies": null })).latenciesMs, {});
 
 // --- Notes (value 10) -----------------------------------------------------------------
-const guide = new TextDecoder().decode(GLib.file_get_contents(root + "/docs/GUIDE.md")[1]);
-const anchors = guide.split("\n").filter(l => /^#{2,3} /.test(l)).map(l => l.replace(/^#+ /, "").toLowerCase().replace(/[^a-z0-9 -]/g, "").replace(/ /g, "-"));
+const anchors = guideAnchors();
 const reasons = ["same", "bad-address", "not-connected", "no-audio", "in-call", "too-few", "too-many", "outside", "already", "in-group", "not-member", "source", "no-session", "member-out", "member-left", "link-stopped", "none", "pick-more", "full", "unknown"];
 reasons.forEach(w => {
     const n = Guide.togetherNote(w, "WH-1000XM6");

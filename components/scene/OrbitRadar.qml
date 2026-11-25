@@ -86,20 +86,20 @@ Item {
 
     // --- Gestures on a dial: the group's level, or a member's own -----------------
     // A member whose device keeps no level of its own says why, never silence
-    function _noLevel(id) {
-        if (!scene.note || scene.note.anchor !== "the-volume-at-the-center")
+    function _ownNode(id) {
+        const node = volume.ownNode(id);
+        if (!node && scene.note?.anchor !== "the-volume-at-the-center")
             scene.explain(Guide.copyLevelNote(nameOf(id)));
+        return node;
     }
     function setLevel(id, value) {
         if (id === "group") {
             volume.set(value);
             return;
         }
-        const node = volume.ownNode(id);
-        if (!node) {
-            _noLevel(id);
+        const node = _ownNode(id);
+        if (!node)
             return;
-        }
         const to = Math.round(Math.max(0, Math.min(1, value)) * 100) / 100;
         if (Math.abs(to - node.audio.volume) < 0.005)
             return;
@@ -112,11 +112,9 @@ Item {
             volume.step(dir);
             return;
         }
-        const node = volume.ownNode(id);
-        if (!node) {
-            _noLevel(id);
+        const node = _ownNode(id);
+        if (!node)
             return;
-        }
         SessionData.suppressOSDTemporarily();
         route.touch(id);
         route.stepNode(node, dir);
@@ -126,11 +124,9 @@ Item {
             volume.toggleMute();
             return;
         }
-        const node = volume.ownNode(id);
-        if (!node) {
-            _noLevel(id);
+        const node = _ownNode(id);
+        if (!node)
             return;
-        }
         SessionData.suppressOSDTemporarily();
         route.writeMuted(node, !node.audio.muted);
     }

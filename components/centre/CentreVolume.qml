@@ -22,7 +22,7 @@ GroupVolume {
             SessionData.suppressOSDTemporarily();
             route.touch(address);
             route.stepNode(node, dir);
-        } else if (!scene.note || scene.note.anchor !== "the-volume-at-the-center")
+        } else if (scene.note?.anchor !== "the-volume-at-the-center")
             scene.explain(Guide.copyLevelNote(Catalog.deviceName(scene.deviceMap[address]) || session.nameOf(address)));
     }
 }

@@ -19,8 +19,7 @@ Item {
     property var _viewing: []
 
     function infoFor(address) {
-        const a = scene.globals.anc || {};
-        return address ? (a[address] || null) : null;
+        return scene.globals.anc?.[address] || null;
     }
     function capable(body) {
         return scene.prefs.ancEnabled && !!body && body.connected && body.paired && Anc.family(body.model) !== "";
