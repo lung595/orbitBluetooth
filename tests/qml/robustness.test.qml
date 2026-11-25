@@ -75,12 +75,8 @@ Item {
         active: true
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
 
     property var headset: null
@@ -92,14 +88,14 @@ Item {
             h.headset = h.make(h.a, "WH-1000XM6", true);
             h.setDevices([h.headset]);
         }, () => {
-            check("the connection is recorded", [typeof log.since[h.a], (log.batteryLog[h.a] || []).length], ["number", 1]);
+            tally.check("the connection is recorded", [typeof log.since[h.a], (log.batteryLog[h.a] || []).length], ["number", 1]);
             h.headset.battery = 0.7;
         }, () => {
-            check("a battery change is recorded", log.batteryLog[h.a].length, 2);
+            tally.check("a battery change is recorded", log.batteryLog[h.a].length, 2);
             // It disconnects in mid-play, then BlueZ drops it from the list
             h.headset.connected = false;
         }, () => {
-            check("a disconnection forgets the connection", [log.since[h.a], log.batteryLog[h.a]], [undefined, undefined]);
+            tally.check("a disconnection forgets the connection", [log.since[h.a], log.batteryLog[h.a]], [undefined, undefined]);
             // BlueZ destroys the object while the list still holds it
             h.headset.destroy();
         }, () => {
@@ -120,41 +116,41 @@ Item {
             });
             UPower.devices = [h.up];
         }, () => {
-            check("UPower facts are recorded", log.power[h.b]?.percentage, 50);
+            tally.check("UPower facts are recorded", log.power[h.b]?.percentage, 50);
             h.up.destroy();
         }, () => {
             UPower.devices = [];
         }, () => {
-            check("and forgotten when the battery vanishes", log.power[h.b], undefined);
+            tally.check("and forgotten when the battery vanishes", log.power[h.b], undefined);
             // Its default output vanishes, comes back, or has no name
             feed.node = nodeType.createObject(h, {
                 "name": "bluez_output.x.1"
             });
         }, () => {
-            check("an output with a name feeds cava", feed._conf !== "", true);
+            tally.check("an output with a name feeds cava", feed._conf !== "", true);
             feed.node.destroy();
         }, () => {
             feed.node = null;
         }, () => {
-            check("no output: no cava", feed._conf, "");
+            tally.check("no output: no cava", feed._conf, "");
             feed.node = nodeType.createObject(h, {});
         }, () => {
-            check("an output with an empty name still starts a feed", feed._conf !== "", true);
+            tally.check("an output with an empty name still starts a feed", feed._conf !== "", true);
             feed.node = null;
         }, () => {
             // The helper dies while a command is waiting, and the headset is gone
             h.headset = h.make(h.a, "WH-1000XM6", true);
             h.setDevices([h.headset]);
         }, () => {
-            check("a command opens a session", svc.send(h.a, "mode", "nc"), true);
+            tally.check("a command opens a session", svc.send(h.a, "mode", "nc"), true);
             h.headset.connected = false;
             h.setDevices([]);
         }, () => {
             const proc = svc._sessions[h.a];
             if (proc)
                 proc.exited(1);
-            check("the dead helper leaves no session", svc._sessions[h.a] ?? null, null);
-            check("a command for a headset that left is refused", svc.send(h.a, "mode", "ambient"), false);
+            tally.check("the dead helper leaves no session", svc._sessions[h.a] ?? null, null);
+            tally.check("a command for a headset that left is refused", svc.send(h.a, "mode", "ambient"), false);
             svc.disconnectDevice(h.a);
         }, () => {
             // The shell stops while one helper is open and another has died
@@ -166,7 +162,7 @@ Item {
             svc.send(h.b, "mode", "off");
             svc.destroy();
         }, () => {
-            check("no helper outlives the service", ProcessLog.live.filter(p => p.address !== undefined).length, 0);
+            tally.check("no helper outlives the service", ProcessLog.live.filter(p => p.address !== undefined).length, 0);
         }]
     property int i: 0
     // A step that throws is a failure, not a test that never ends
@@ -178,12 +174,11 @@ Item {
             try {
                 h.steps[h.i++]();
             } catch (e) {
-                h.failures++;
+                tally.failures++;
                 print("FAIL step " + h.i + " threw: " + e);
             }
             if (h.i >= h.steps.length) {
-                print(h.failures ? h.failures + " failure(s)" : "all passed");
-                Qt.exit(h.failures ? 1 : 0);
+                tally.finish();
             }
         }
     }

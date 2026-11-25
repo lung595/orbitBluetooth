@@ -56,12 +56,8 @@ Item {
         }
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
 
     property var menu: null
@@ -70,13 +66,13 @@ Item {
             menu = menuMaker.createObject(fakeScene);
             menu.popup(body, Qt.point(10, 10));
             menu.close();
-            check("open then close: the view is taken and given back", calls, ["00:00:00:00:00:01+", "00:00:00:00:00:01-"]);
+            tally.check("open then close: the view is taken and given back", calls, ["00:00:00:00:00:01+", "00:00:00:00:00:01-"]);
             calls = [];
             menu.popup(body, Qt.point(10, 10));
             menu.destroy();
         },
         () => {
-            check("destroyed while open: the view is given back too", calls, ["00:00:00:00:00:01+", "00:00:00:00:00:01-"]);
+            tally.check("destroyed while open: the view is given back too", calls, ["00:00:00:00:00:01+", "00:00:00:00:00:01-"]);
         }
     ]
     property int at: 0
@@ -87,8 +83,7 @@ Item {
     }
     function next() {
         if (at >= steps.length) {
-            print(failures ? failures + " failure(s)" : "all passed");
-            Qt.exit(failures ? 1 : 0);
+            tally.finish();
             return;
         }
         steps[at++]();

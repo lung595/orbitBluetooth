@@ -19,7 +19,7 @@ cp "$root"/plugin.json "$root"/OrbitBluetoothSettings.qml "$work"/
 # The scene tests get the stand-in; profileQueue tests the real one under another name
 cp "$work"/components/pairing/ProfileCheck.qml "$work"/components/pairing/RealProfileCheck.qml
 cp "$here"/ProfileCheck.qml "$work"/components/pairing/
-cp "$here"/Device.qml "$here"/Player.qml "$here"/*.test.qml "$work"/
+cp "$here"/Device.qml "$here"/Player.qml "$here"/Tally.qml "$here"/*.test.qml "$work"/
 # The preview's made-up route (and overlay) stand in for the daemon's
 mkdir "$work"/mock
 cp "$root"/scripts/preview/mock/*.qml "$root"/scripts/preview/mock/*.js "$work"/mock/

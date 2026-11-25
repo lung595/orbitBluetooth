@@ -34,12 +34,8 @@ Item {
         audioRoute: route
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
 
     // The worst gap (px) between the ring's middle and the source disc's, and
@@ -72,9 +68,9 @@ Item {
         };
     }
     function fits(label) {
-        check(label + ": the ring's middle is the disc's (within a pixel)", worst.move < 1, true);
-        check(label + ": the ring's size follows the disc's", worst.size < 1, true);
-        check(label + ": it was measured", worst.samples > 20, true);
+        tally.check(label + ": the ring's middle is the disc's (within a pixel)", worst.move < 1, true);
+        tally.check(label + ": the ring's size follows the disc's", worst.size < 1, true);
+        tally.check(label + ": it was measured", worst.samples > 20, true);
         print("     (worst middle gap " + worst.move.toFixed(2) + " px, worst size gap " + worst.size.toFixed(2) + " px, " + worst.samples + " samples)");
     }
     Timer {
@@ -114,7 +110,7 @@ Item {
             "then": 0,
             "run": () => {
                 h.fits("Fedora's view");
-                check("the group is on the host's ring (it stepped back)", scene.centre.stage, 1);
+                tally.check("the group is on the host's ring (it stepped back)", scene.centre.stage, 1);
             }
         }
     ]
@@ -126,8 +122,7 @@ Item {
     }
     function advance() {
         if (round >= steps.length) {
-            print(failures ? failures + " failure(s)" : "all passed");
-            Qt.exit(failures ? 1 : 0);
+            tally.finish();
             return;
         }
         const step = steps[round++];

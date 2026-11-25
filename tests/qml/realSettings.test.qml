@@ -19,12 +19,8 @@ Item {
         id: settings
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
     // The first item below `from` that `test` accepts, looking everywhere
     function find(from, test) {
@@ -48,31 +44,31 @@ Item {
         {
             "then": 50,
             "run": () => {
-                h.check("the search field is there", h.field !== null, true);
-                h.check("so is the habit row, wired to its page", h.habits !== null, true);
-                h.check("no widget placed: it opens on Getting started", h.field.view.current, "start");
-                h.check("which shows its three places", h.find(settings, i => i.kind === "desktop" && i.steps !== undefined) !== null, true);
+                tally.check("the search field is there", h.field !== null, true);
+                tally.check("so is the habit row, wired to its page", h.habits !== null, true);
+                tally.check("no widget placed: it opens on Getting started", h.field.view.current, "start");
+                tally.check("which shows its three places", h.find(settings, i => i.kind === "desktop" && i.steps !== undefined) !== null, true);
                 h.field.view.open("orbit", "");
             }
         },
         {
             "then": 50,
             "run": () => {
-                h.check("browsing shows the habit switch", h.habits.children[0].visible, true);
+                tally.check("browsing shows the habit switch", h.habits.children[0].visible, true);
                 h.field.view.query = "wired delay";
             }
         },
         {
             "then": 50,
             "run": () => {
-                h.check("a search for another setting hides the habit switch", h.habits.children[0].visible, false);
+                tally.check("a search for another setting hides the habit switch", h.habits.children[0].visible, false);
                 h.field.view.query = "learn my groups";
             }
         },
         {
             "then": 50,
             "run": () => {
-                h.check("a search for it shows it", h.habits.children[0].visible, true);
+                tally.check("a search for it shows it", h.habits.children[0].visible, true);
                 h.field.view.query = "";
                 h.field.view.open("scanning", "");
             }
@@ -80,14 +76,14 @@ Item {
         {
             "then": 50,
             "run": () => {
-                h.check("the Scanning page shows the battery pill of the scan time", h.pill("scanSeconds").visible, true);
+                tally.check("the Scanning page shows the battery pill of the scan time", h.pill("scanSeconds").visible, true);
                 h.field.view.query = "wired delay";
             }
         },
         {
             "then": 50,
             "run": () => {
-                h.check("a search for another setting hides the pill", h.pill("scanSeconds").visible, false);
+                tally.check("a search for another setting hides the pill", h.pill("scanSeconds").visible, false);
                 h.field.view.query = "";
             }
         }
@@ -109,8 +105,7 @@ Item {
     }
     function next() {
         if (step >= steps.length) {
-            print(failures ? failures + " failure(s)" : "all passed");
-            Qt.exit(failures ? 1 : 0);
+            tally.finish();
             return;
         }
         const s = steps[step++];

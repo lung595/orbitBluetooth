@@ -96,12 +96,8 @@ Item {
         when: false
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
     function named(item, name) {
         for (const child of item.children) {
@@ -136,60 +132,60 @@ Item {
 
     function run() {
         const tag = named(ring, "reading");
-        check("at rest: nothing is written out", tag.visible, false);
+        tally.check("at rest: nothing is written out", tag.visible, false);
 
         // Hover: the level is written out while the pointer is on the band, and only there
         moveTo(0.5);
-        check("hovering the band writes the level out", tag.visible, true);
+        tally.check("hovering the band writes the level out", tag.visible, true);
         mouse.mouseMove(ring, gap().x, gap().y);
-        check("the gap is not the gauge: moving into it ends the hover", tag.visible, false);
+        tally.check("the gap is not the gauge: moving into it ends the hover", tag.visible, false);
         mouse.mouseMove(ring, ring.width / 2, ring.height / 2);
-        check("the middle (the planet) is not the gauge either", tag.visible, false);
+        tally.check("the middle (the planet) is not the gauge either", tag.visible, false);
 
         // Press: it lands where the pointer is, whatever the level was
         fake.level = 0.4;
         pressAt(0.75);
-        check("a press jumps to the place", Math.abs(fake.level - 0.75) < tol, true);
-        check("held, the reading stays on", tag.visible, true);
+        tally.check("a press jumps to the place", Math.abs(fake.level - 0.75) < tol, true);
+        tally.check("held, the reading stays on", tag.visible, true);
 
         // Drag along the arc, both ways
         moveTo(0.9);
-        check("a drag follows the pointer up", Math.abs(fake.level - 0.9) < tol, true);
+        tally.check("a drag follows the pointer up", Math.abs(fake.level - 0.9) < tol, true);
         moveTo(0.2);
-        check("and down", Math.abs(fake.level - 0.2) < tol, true);
+        tally.check("and down", Math.abs(fake.level - 0.2) < tol, true);
 
         // Across the gap it holds the end it came from, no jump to the other end
         mouse.mouseMove(ring, gap().x, gap().y);
-        check("dragged into the gap from the low end: held at 0", fake.level, 0);
+        tally.check("dragged into the gap from the low end: held at 0", fake.level, 0);
         moveTo(0.95);
         mouse.mouseMove(ring, gap().x, gap().y);
-        check("dragged into the gap from the high end: held at 1", fake.level, 1);
+        tally.check("dragged into the gap from the high end: held at 1", fake.level, 1);
 
         // Release: the drag is over, a move changes nothing
         const p = at(0.3);
         mouse.mouseRelease(ring, p.x, p.y);
         const kept = fake.level;
         moveTo(0.6);
-        check("after the release a move changes nothing", fake.level, kept);
+        tally.check("after the release a move changes nothing", fake.level, kept);
 
         // A press in the gap is not the gauge's
         fake.level = 0.5;
         mouse.mousePress(ring, gap().x, gap().y);
         mouse.mouseRelease(ring, gap().x, gap().y);
-        check("a press in the gap does nothing", fake.level, 0.5);
+        tally.check("a press in the gap does nothing", fake.level, 0.5);
 
         // A press fresh from a drag starts over, from where it lands
         pressAt(0.1);
         mouse.mouseRelease(ring, at(0.1).x, at(0.1).y);
-        check("a new press lands again", Math.abs(fake.level - 0.1) < tol, true);
+        tally.check("a new press lands again", Math.abs(fake.level - 0.1) < tol, true);
 
         // The speaker mutes, and is not a drag to zero
         fake.level = 0.6;
         const chip = named(ring, "speaker");
         mouse.mouseClick(chip, chip.width / 2, chip.height / 2);
-        check("the speaker mutes the group and leaves the level", [fake.muted, fake.level], [true, 0.6]);
+        tally.check("the speaker mutes the group and leaves the level", [fake.muted, fake.level], [true, 0.6]);
         mouse.mouseClick(chip, chip.width / 2, chip.height / 2);
-        check("and brings it back", fake.muted, false);
+        tally.check("and brings it back", fake.muted, false);
     }
 
     // The window has to be up before the events go in
@@ -198,8 +194,7 @@ Item {
         running: true
         onTriggered: {
             h.run();
-            print(h.failures ? h.failures + " failure(s)" : "all passed");
-            Qt.exit(h.failures ? 1 : 0);
+            tally.finish();
         }
     }
     // A step that throws must fail the test, not leave it waiting for ever

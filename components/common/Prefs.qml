@@ -18,8 +18,7 @@ QtObject {
     property var _data: SettingsData.getPluginSettingsForPlugin(pluginId) || ({})
 
     function _get(key, def) {
-        const v = _data[key];
-        return v === undefined || v === null ? def : v;
+        return _data[key] ?? def;
     }
 
     // The settings that hold a map change only when their content does: a

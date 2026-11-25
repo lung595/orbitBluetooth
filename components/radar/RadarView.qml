@@ -18,6 +18,7 @@ Item {
 
     required property var radar
     readonly property var night: radar.scene.night
+    readonly property string heroKind: radar.kindOf(radar.heroId)
     readonly property bool motion: radar.scene.motion
     readonly property PaperColors paper: PaperColors {}
     readonly property alias clock: clock
@@ -185,12 +186,12 @@ Item {
         scene: view.radar.scene
         paper: view.paper
         title: view.infoOf(view.radar.heroId).name
-        subtitle: Radar.subtitle(view.radar.kindOf(view.radar.heroId), view.radar.members.length)
+        subtitle: Radar.subtitle(view.heroKind, view.radar.members.length)
         heroInfo: view.infoOf(view.radar.heroId)
         // A Bluetooth member's planet flies to the card (the scene's focusBody); the group and a
         // wired output have none, so the card carries their picture
-        carried: view.radar.kindOf(view.radar.heroId) !== "bluetooth"
-        round: view.radar.kindOf(view.radar.heroId) === "group"
+        carried: view.heroKind !== "bluetooth"
+        round: view.heroKind === "group"
         heroKey: view.radar.heroId
         canGoBack: view.radar.heroId !== "group"
         onBack: view.radar.show("")
@@ -215,7 +216,6 @@ Item {
     Repeater {
         model: view.radar.ids
         delegate: RadarDial {
-            id: dial
             required property string modelData
             readonly property var slot: view.slotOf(modelData)
 
@@ -243,7 +243,7 @@ Item {
         y: view.cy + view.places.hero.r + Radar.UNDER
         paper: view.paper
         opacity: view.cardIn
-        rows: Radar.chipRows(view.radar.kindOf(view.radar.heroId))
+        rows: Radar.chipRows(view.heroKind)
         onChosen: id => view.radar.choose(id)
     }
 }

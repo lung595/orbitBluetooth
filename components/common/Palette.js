@@ -1,23 +1,8 @@
 .pragma library
 
-// Colour helpers, so Orbit looks right with any DMS palette: a theme's
-// accent can be too pale for a light surface (pastels) or too dark for a
-// dark one (deep blues), and two accents can be near twins.
+// Colour helpers, so Orbit looks right with any DMS palette: two of a
+// theme's accents can be near twins.
 // Colours are {r, g, b} in 0..1 (a QML color works as input).
-// Contrast follows WCAG 2.x relative luminance.
-
-function _lin(v) {
-    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-}
-
-function luminance(c) {
-    return 0.2126 * _lin(c.r) + 0.7152 * _lin(c.g) + 0.0722 * _lin(c.b);
-}
-
-function contrast(a, b) {
-    const la = luminance(a), lb = luminance(b);
-    return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
-}
 
 function toHsl(c) {
     const max = Math.max(c.r, c.g, c.b), min = Math.min(c.r, c.g, c.b);
@@ -49,13 +34,6 @@ function fromHsl(h, s, l) {
     const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
     const p = 2 * l - q;
     return { r: hue(p, q, h + 1 / 3), g: hue(p, q, h), b: hue(p, q, h - 1 / 3) };
-}
-
-// The same hue and saturation at least this light: how Orbit turns a light
-// theme's dark accent into one that glows on the night (NightColors.night)
-function lift(c, minLightness) {
-    const hsl = toHsl(c);
-    return fromHsl(hsl.h, hsl.s, Math.max(hsl.l, minLightness));
 }
 
 // A colour without hue reads as grey: its glow then borrows the accent

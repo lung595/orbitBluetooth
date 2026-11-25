@@ -100,7 +100,7 @@ Item {
         return d.sink && d.sink.properties ? d.sink.properties["api.bluez5.profile"] : "";
     }
     function _codec(d) {
-        return d.sink && d.sink.properties ? d.sink.properties["api.bluez5.codec"] || "" : "";
+        return d.sink?.properties?.["api.bluez5.codec"] || "";
     }
 
     // --- Who takes part ---------------------------------------------------------------

@@ -12,12 +12,8 @@ Item {
     width: 200
     height: 200
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
     Item {
         id: holder
@@ -33,21 +29,21 @@ Item {
             seen = sketch.t;
         },
         () => {
-            check("the clock moves while it shows", sketch.t !== seen, true);
+            tally.check("the clock moves while it shows", sketch.t !== seen, true);
             holder.visible = false;
         },
         () => {
-            check("a hidden parent stops it on the finished picture", sketch.t, sketch.still);
+            tally.check("a hidden parent stops it on the finished picture", sketch.t, sketch.still);
             holder.visible = true;
             sketch.running = false;
         },
         () => {
-            check("running false: the finished picture", sketch.t, sketch.still);
+            tally.check("running false: the finished picture", sketch.t, sketch.still);
             sketch.running = true;
             SettingsData.reduceMotion = true;
         },
         () => {
-            check("Reduce motion: the finished picture", sketch.t, sketch.still);
+            tally.check("Reduce motion: the finished picture", sketch.t, sketch.still);
             SettingsData.reduceMotion = false;
         }
     ]
@@ -59,8 +55,7 @@ Item {
     }
     function next() {
         if (at >= steps.length) {
-            print(failures ? failures + " failure(s)" : "all passed");
-            Qt.exit(failures ? 1 : 0);
+            tally.finish();
             return;
         }
         steps[at++]();

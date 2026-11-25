@@ -42,12 +42,8 @@ Item {
         chatOffOnDisconnect: false
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
 
     function session(address) {
@@ -95,67 +91,67 @@ Item {
             };
             Bluetooth.list = Bluetooth.devices = Object.values(h.headsets);
         }, () => {
-            check("option off: no session at rest", [h.session(h.a), h.session(h.b)], [null, null]);
+            tally.check("option off: no session at rest", [h.session(h.a), h.session(h.b)], [null, null]);
             svc.watch(h.a, true);
-            check("a view opens one", h.session(h.a) !== null, true);
+            tally.check("a view opens one", h.session(h.a) !== null, true);
             svc.watch(h.a, false);
-            check("the view leaves, the session closes", h.session(h.a).stdinEnabled, false);
+            tally.check("the view leaves, the session closes", h.session(h.a).stdinEnabled, false);
             h.end(h.a, 0);
-            check("and does not come back", h.session(h.a), null);
+            tally.check("and does not come back", h.session(h.a), null);
             svc.wearPause = true;
         }, () => {
             const s = h.session(h.a);
-            check("option on: a Sony headset gets a session", s !== null, true);
-            check("it is asked for the wearing sensor", s.written, ["set wear on\n"]);
-            check("the device name goes through the environment", [s.command.indexOf("WH-1000XM6"), s.environment.ORBIT_ANC_NAME], [-1, "WH-1000XM6"]);
-            check("the address goes through the environment too", [s.command.some(a => a.indexOf(":") >= 0), s.command[4], s.environment.ORBIT_ANC_ADDRESS.length], [false, "-", 17]);
-            check("the first, unknown, headset is probed too", h.session(h.b) !== null, true);
-            check("another brand gets none", h.session(h.c), null);
-            check("a headset that is not connected gets none", h.session(h.d), null);
+            tally.check("option on: a Sony headset gets a session", s !== null, true);
+            tally.check("it is asked for the wearing sensor", s.written, ["set wear on\n"]);
+            tally.check("the device name goes through the environment", [s.command.indexOf("WH-1000XM6"), s.environment.ORBIT_ANC_NAME], [-1, "WH-1000XM6"]);
+            tally.check("the address goes through the environment too", [s.command.some(a => a.indexOf(":") >= 0), s.command[4], s.environment.ORBIT_ANC_ADDRESS.length], [false, "-", 17]);
+            tally.check("the first, unknown, headset is probed too", h.session(h.b) !== null, true);
+            tally.check("another brand gets none", h.session(h.c), null);
+            tally.check("a headset that is not connected gets none", h.session(h.d), null);
             h.say(h.a, h.ready(true));
             h.say(h.b, h.ready(false));
-            check("with a sensor: the session stays", h.session(h.a).stdinEnabled, true);
-            check("without a sensor: it closes at once", h.session(h.b).stdinEnabled, false);
-            check("the wearing status is published", svc.snapshots[h.a].state.wearing, 0);
+            tally.check("with a sensor: the session stays", h.session(h.a).stdinEnabled, true);
+            tally.check("without a sensor: it closes at once", h.session(h.b).stdinEnabled, false);
+            tally.check("the wearing status is published", svc.snapshots[h.a].state.wearing, 0);
         }, () => {
             h.end(h.b, 0);
-            check("no sensor: no reopening, no loop", h.session(h.b), null);
+            tally.check("no sensor: no reopening, no loop", h.session(h.b), null);
             h.old = h.session(h.a);
             h.end(h.a, 1);
-            check("a session that was ready and dropped comes back", [h.session(h.a) !== null, h.session(h.a) !== h.old], [true, true]);
+            tally.check("a session that was ready and dropped comes back", [h.session(h.a) !== null, h.session(h.a) !== h.old], [true, true]);
             h.say(h.a, {
                 "status": "error",
                 "error": "refused"
             });
-            check("an error closes it", h.session(h.a).stdinEnabled, false);
+            tally.check("an error closes it", h.session(h.a).stdinEnabled, false);
             h.end(h.a, 1);
-            check("and nothing retries until a reconnection", h.session(h.a), null);
+            tally.check("and nothing retries until a reconnection", h.session(h.a), null);
         }, () => {
             h.headsets.a.connected = false;
-            check("a disconnection forgets the state", svc.snapshots[h.a], undefined);
+            tally.check("a disconnection forgets the state", svc.snapshots[h.a], undefined);
             svc.chatOffOnDisconnect = true;
             h.headsets.a.connected = true;
-            check("a fresh link is left to settle", h.session(h.a), null);
+            tally.check("a fresh link is left to settle", h.session(h.a), null);
             h.settle();
             const s = h.session(h.a);
-            check("then one session opens, wear first", s.written, ["set wear on\n", "set chat off\n"]);
+            tally.check("then one session opens, wear first", s.written, ["set wear on\n", "set chat off\n"]);
             h.end(h.a, 1);
-            check("a helper that never got ready does not loop", h.session(h.a), null);
+            tally.check("a helper that never got ready does not loop", h.session(h.a), null);
         }, () => {
             svc.watch(h.a, true);
             h.say(h.a, h.ready(true, true));
             svc.watch(h.a, false);
-            check("the viewer leaves, the wearing keeps the session", h.session(h.a).stdinEnabled, true);
+            tally.check("the viewer leaves, the wearing keeps the session", h.session(h.a).stdinEnabled, true);
             svc.disconnectDevice(h.a);
             const s = h.session(h.a);
-            check("disconnecting from Orbit turns chat off first", s.written.slice(-1), ["set chat off\n"]);
-            check("and lets the session close", s.stdinEnabled, false);
-            check("the headset is still connected", h.headsets.a.connected, true);
+            tally.check("disconnecting from Orbit turns chat off first", s.written.slice(-1), ["set chat off\n"]);
+            tally.check("and lets the session close", s.stdinEnabled, false);
+            tally.check("the headset is still connected", h.headsets.a.connected, true);
             // BlueZ takes a moment to say it is gone: the link must not be reopened meanwhile
             h.headsets.a.lingers = true;
             h.end(h.a, 0);
-            check("once confirmed it disconnects", h.headsets.a.disconnects, 1);
-            check("and the session is not reopened", [h.session(h.a), svc._leaving], [null,
+            tally.check("once confirmed it disconnects", h.headsets.a.disconnects, 1);
+            tally.check("and the session is not reopened", [h.session(h.a), svc._leaving], [null,
                 {}
             ]);
             h.headsets.a.connected = false;
@@ -165,17 +161,17 @@ Item {
             h.settle();
             h.say(h.a, h.ready(true));
             svc.wearPause = false;
-            check("option off: the headset is told to stop reporting", h.session(h.a).written.slice(-1), ["set wear off\n"]);
-            check("and the session closes", h.session(h.a).stdinEnabled, false);
+            tally.check("option off: the headset is told to stop reporting", h.session(h.a).written.slice(-1), ["set wear off\n"]);
+            tally.check("and the session closes", h.session(h.a).stdinEnabled, false);
             h.end(h.a, 0);
-            check("nothing comes back", h.session(h.a), null);
+            tally.check("nothing comes back", h.session(h.a), null);
             svc.wearPause = true;
-            check("option on again: it opens again", h.session(h.a) !== null, true);
+            tally.check("option on again: it opens again", h.session(h.a) !== null, true);
             h.say(h.a, h.ready(true));
             svc.active = false;
-            check("Noise control off: the wearing session closes too", h.session(h.a).stdinEnabled, false);
+            tally.check("Noise control off: the wearing session closes too", h.session(h.a).stdinEnabled, false);
             h.end(h.a, 0);
-            check("and none is left", [h.session(h.a), h.session(h.b)], [null, null]);
+            tally.check("and none is left", [h.session(h.a), h.session(h.b)], [null, null]);
             svc.active = true;
         }, () => {
             h.say(h.a, h.ready(true));
@@ -184,11 +180,11 @@ Item {
                 "status": "error",
                 "error": "link lost"
             });
-            check("a late line after the disconnection leaves no state behind", svc.snapshots[h.a], undefined);
+            tally.check("a late line after the disconnection leaves no state behind", svc.snapshots[h.a], undefined);
             h.end(h.a, 1);
             h.headsets.a.connected = true;
             h.settle();
-            check("and the headset gets its session back when it returns", h.session(h.a) !== null, true);
+            tally.check("and the headset gets its session back when it returns", h.session(h.a) !== null, true);
         }]
     property int i: 0
     // A step that throws is a failure, not a test that never ends
@@ -200,12 +196,11 @@ Item {
             try {
                 h.steps[h.i++]();
             } catch (e) {
-                h.failures++;
+                tally.failures++;
                 print("FAIL step " + h.i + " threw: " + e);
             }
             if (h.i >= h.steps.length) {
-                print(h.failures ? h.failures + " failure(s)" : "all passed");
-                Qt.exit(h.failures ? 1 : 0);
+                tally.finish();
             }
         }
     }

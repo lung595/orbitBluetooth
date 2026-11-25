@@ -82,7 +82,7 @@ Item {
     // name, with a view open; the route is asked what it makes of each
     function outputSteps(view) {
         const ask = what => () => {
-                check(view + ": " + what, [realRoute.current?.address, realRoute.find("")?.address], [h.headset, h.headset]);
+                tally.check(view + ": " + what, [realRoute.current?.address, realRoute.find("")?.address], [h.headset, h.headset]);
             };
         return [
             {
@@ -104,7 +104,7 @@ Item {
             {
                 "then": 250,
                 "run": () => {
-                    check(view + ": no default output, no current device", [realRoute.current, realRoute.pcNode(null)], [null, null]);
+                    tally.check(view + ": no default output, no current device", [realRoute.current, realRoute.pcNode(null)], [null, null]);
                     Pipewire.defaultAudioSink = Pipewire.headset;
                 }
             },
@@ -121,7 +121,7 @@ Item {
             {
                 "then": 250,
                 "run": () => {
-                    check(view + ": an output with no name is no device", [realRoute.current, realRoute.pcNode(null).name], [null, ""]);
+                    tally.check(view + ": an output with no name is no device", [realRoute.current, realRoute.pcNode(null).name], [null, ""]);
                     Pipewire.defaultAudioSink = null;
                 }
             }
@@ -131,12 +131,8 @@ Item {
         return scene.world.bodyList().find(b => b.address === address) ?? null;
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
 
     property var phones: null
@@ -156,14 +152,14 @@ Item {
             "then": 300,
             "run": () => {
                 // The detail card of the headset is open
-                check("both devices are drawn", [!!h.body(h.headset), !!h.body(h.one)], [true, true]);
+                tally.check("both devices are drawn", [!!h.body(h.headset), !!h.body(h.one)], [true, true]);
                 scene.focusOn(h.body(h.headset));
             }
         },
         {
             "then": 300,
             "run": () => {
-                check("the detail card is open on the headset", [scene.detailOpen, scene.focusBody?.address], [true, h.headset]);
+                tally.check("the detail card is open on the headset", [scene.detailOpen, scene.focusBody?.address], [true, h.headset]);
             }
         },
         ...outputSteps("card open"),
@@ -193,7 +189,7 @@ Item {
             "then": 600,
             "run": () => {
                 // The body fades out before it is dropped; the card follows it
-                check("the headset that is gone is leaving the sky", h.body(h.headset)?.leaving, true);
+                tally.check("the headset that is gone is leaving the sky", h.body(h.headset)?.leaving, true);
                 scene.clearFocus();
                 // The radar of a group, on the headset
                 h.phones = h.make(h.headset, "WH-1000XM6", "audio-headphones", 0.54);
@@ -204,14 +200,14 @@ Item {
         {
             "then": 600,
             "run": () => {
-                check("the group is formed", [scene.centre.grouped, scene.centre.members.length], [true, 2]);
+                tally.check("the group is formed", [scene.centre.grouped, scene.centre.members.length], [true, 2]);
                 scene.radar.show(h.headset);
             }
         },
         {
             "then": 300,
             "run": () => {
-                check("the radar is open on the headset", [scene.radar.open, scene.radar.heroId], [true, h.headset]);
+                tally.check("the radar is open on the headset", [scene.radar.open, scene.radar.heroId], [true, h.headset]);
             }
         },
         ...outputSteps("radar open"),
@@ -239,7 +235,7 @@ Item {
         {
             "then": 600,
             "run": () => {
-                check("the radar is not left on a headset that is gone", scene.radar.heroId !== h.headset, true);
+                tally.check("the radar is not left on a headset that is gone", scene.radar.heroId !== h.headset, true);
                 // The group ends under an open radar, and the other device goes too
                 scene.radar.show("");
                 route.sharing = [];
@@ -251,7 +247,7 @@ Item {
         {
             "then": 600,
             "run": () => {
-                check("no group, no radar", [scene.radar.open, scene.centre.grouped], [false, false]);
+                tally.check("no group, no radar", [scene.radar.open, scene.centre.grouped], [false, false]);
             }
         }
     ]
@@ -271,15 +267,14 @@ Item {
     }
     function next() {
         if (step >= steps.length) {
-            print(failures ? failures + " failure(s)" : "all passed");
-            Qt.exit(failures ? 1 : 0);
+            tally.finish();
             return;
         }
         const s = steps[step++];
         try {
             s.run();
         } catch (e) {
-            failures++;
+            tally.failures++;
             print("FAIL step " + step + " threw: " + e);
         }
         clock.interval = s.then;

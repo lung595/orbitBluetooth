@@ -59,12 +59,8 @@ Item {
         }
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
     // The first item below `from` that `test` accepts, looking everywhere
     function find(from, test) {
@@ -119,34 +115,33 @@ Item {
     }
 
     function run() {
-        check("the parts are there", [title !== null, description !== null, toggle !== null, forget !== null, count !== null], [true, true, true, true, true]);
+        tally.check("the parts are there", [title !== null, description !== null, toggle !== null, forget !== null, count !== null], [true, true, true, true, true]);
 
         // --- The layout: nothing spills over its neighbours ---------------------------------
-        check("in a narrow page the description wraps onto several lines", description.lineCount > 2, true);
-        check("the title is not above the row", topOf(title) >= 0, true);
-        check("the description ends inside the row's first line of controls", bottomOf(description) <= topOf(count), true);
-        check("the groups line and the button sit under the whole text", topOf(count) >= bottomOf(description) && topOf(forget) >= bottomOf(description), true);
-        check("the whole row ends with the button", Math.abs(bottomOf(forget) - row.height) < 1, true);
-        check("the switch is centred on the text", Math.abs((topOf(toggle) + bottomOf(toggle)) / 2 - (topOf(title) + bottomOf(description)) / 2) < 1, true);
+        tally.check("in a narrow page the description wraps onto several lines", description.lineCount > 2, true);
+        tally.check("the title is not above the row", topOf(title) >= 0, true);
+        tally.check("the description ends inside the row's first line of controls", bottomOf(description) <= topOf(count), true);
+        tally.check("the groups line and the button sit under the whole text", topOf(count) >= bottomOf(description) && topOf(forget) >= bottomOf(description), true);
+        tally.check("the whole row ends with the button", Math.abs(bottomOf(forget) - row.height) < 1, true);
+        tally.check("the switch is centred on the text", Math.abs((topOf(toggle) + bottomOf(toggle)) / 2 - (topOf(title) + bottomOf(description)) / 2) < 1, true);
 
         // --- What is saved ---------------------------------------------------------------------
-        check("it reads what is saved: learning off, two groups", [row.learning, toggle.checked, row.remembered, count.text], [false, false, 2, "2 groups remembered"]);
-        check("nothing is saved while it loads", saved(), []);
-        check("each part has its link to the guide", row.children.length > 0 && links, ["learn-my-groups", "forget-what-orbit-learned"]);
+        tally.check("it reads what is saved: learning off, two groups", [row.learning, toggle.checked, row.remembered, count.text], [false, false, 2, "2 groups remembered"]);
+        tally.check("nothing is saved while it loads", saved(), []);
+        tally.check("each part has its link to the guide", row.children.length > 0 && links, ["learn-my-groups", "forget-what-orbit-learned"]);
 
         // --- The switch ------------------------------------------------------------------------
         toggle.toggled(true);
-        check("the switch saves once, as it is now", [saved(), row.learning], [[["learnHabits", true]], true]);
+        tally.check("the switch saves once, as it is now", [saved(), row.learning], [[["learnHabits", true]], true]);
 
         // --- Forgetting ------------------------------------------------------------------------
         forget.clicked();
-        check("forgetting saves an empty memory", saved()[1], ["togetherHabits",
+        tally.check("forgetting saves an empty memory", saved()[1], ["togetherHabits",
             {}
         ]);
-        check("and the line that counted them goes", [row.remembered, count.visible && count.parent.visible], [0, false]);
-        check("without touching the switch", [saved().length, row.learning], [2, true]);
+        tally.check("and the line that counted them goes", [row.remembered, count.visible && count.parent.visible], [0, false]);
+        tally.check("without touching the switch", [saved().length, row.learning], [2, true]);
 
-        print(failures ? failures + " failure(s)" : "all passed");
-        Qt.exit(failures ? 1 : 0);
+        tally.finish();
     }
 }

@@ -36,12 +36,8 @@ Item {
         body: fake
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
 
     // The arc's colour for a level, copied: QML hands a colour property out by
@@ -65,24 +61,23 @@ Item {
 
     Component.onCompleted: {
         const red = tones.error, amber = tones.warning, green = tones.success;
-        check("the three tones are told apart", [apart(red, amber) > 0.2, apart(amber, green) > 0.2], [true, true]);
+        tally.check("the three tones are told apart", [apart(red, amber) > 0.2, apart(amber, green) > 0.2], [true, true]);
 
-        check("a full battery is the theme's green", same(tint(100), green), true);
-        check("15 % and down is the theme's red", [15, 8, 0].map(l => same(tint(l), red)), [true, true, true]);
-        check("35 % is the theme's amber", same(tint(35), amber), true);
+        tally.check("a full battery is the theme's green", same(tint(100), green), true);
+        tally.check("15 % and down is the theme's red", [15, 8, 0].map(l => same(tint(l), red)), [true, true, true]);
+        tally.check("35 % is the theme's amber", same(tint(35), amber), true);
 
         const between = tint(25);
-        check("25 % is neither red nor amber but between them", [same(between, red), same(between, amber), apart(between, red) < apart(red, amber), apart(between, amber) < apart(red, amber)], [false, false, true, true]);
-        check("from red to amber it moves away from red all the way", climbs([15, 20, 25, 30, 35].map(l => apart(tint(l), red))), true);
-        check("from amber to full it moves toward green all the way", climbs([100, 85, 70, 50, 35].map(l => apart(tint(l), green))), true);
-        check("a point of level moves the colour", [apart(tint(60), tint(61)) > 0, apart(tint(20), tint(21)) > 0], [true, true]);
-        check("it never passes through a colour of the other side (no jump at 35 %)", apart(tint(35), tint(36)) < 0.05, true);
+        tally.check("25 % is neither red nor amber but between them", [same(between, red), same(between, amber), apart(between, red) < apart(red, amber), apart(between, amber) < apart(red, amber)], [false, false, true, true]);
+        tally.check("from red to amber it moves away from red all the way", climbs([15, 20, 25, 30, 35].map(l => apart(tint(l), red))), true);
+        tally.check("from amber to full it moves toward green all the way", climbs([100, 85, 70, 50, 35].map(l => apart(tint(l), green))), true);
+        tally.check("a point of level moves the colour", [apart(tint(60), tint(61)) > 0, apart(tint(20), tint(21)) > 0], [true, true]);
+        tally.check("it never passes through a colour of the other side (no jump at 35 %)", apart(tint(35), tint(36)) < 0.05, true);
 
-        check("charging: a colour of its own, whatever the level", [100, 50, 5].map(l => same(tint(l, true), tones.charging)), [true, true, true]);
-        check("and not the green of a full battery", same(tint(100, true), green), false);
-        check("a device that stops charging gets its level's colour back", same(tint(100), green), true);
+        tally.check("charging: a colour of its own, whatever the level", [100, 50, 5].map(l => same(tint(l, true), tones.charging)), [true, true, true]);
+        tally.check("and not the green of a full battery", same(tint(100, true), green), false);
+        tally.check("a device that stops charging gets its level's colour back", same(tint(100), green), true);
 
-        print(h.failures ? h.failures + " failure(s)" : "all passed");
-        Qt.exit(h.failures ? 1 : 0);
+        tally.finish();
     }
 }

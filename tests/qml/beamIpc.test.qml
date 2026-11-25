@@ -9,12 +9,8 @@ import "components/scene"
 Item {
     id: h
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
 
     // Stand-in for the scene: only what the daemon data reads
@@ -43,24 +39,23 @@ Item {
     }
 
     Component.onCompleted: {
-        check("no IPC value: the saved setting", daemon.beamStyle, "pulse");
+        tally.check("no IPC value: the saved setting", daemon.beamStyle, "pulse");
         ipc("filament");
-        check("the IPC value wins over the setting", daemon.beamStyle, "filament");
+        tally.check("the IPC value wins over the setting", daemon.beamStyle, "filament");
         ipc("");
-        check("reset (empty): the setting is back", daemon.beamStyle, "pulse");
+        tally.check("reset (empty): the setting is back", daemon.beamStyle, "pulse");
         ipc("nonsense");
-        check("an IPC value that names no style is Filament", daemon.beamStyle, "filament");
+        tally.check("an IPC value that names no style is Filament", daemon.beamStyle, "filament");
         PluginService.globalVars = {};
         fakeScene.prefs = {
             "pluginId": "orbitTest",
             "chargeBeamStyle": "nonsense"
         };
-        check("a saved setting that names no style is Filament", daemon.beamStyle, "filament");
+        tally.check("a saved setting that names no style is Filament", daemon.beamStyle, "filament");
         fakeScene.prefs = {
             "pluginId": "orbitTest"
         };
-        check("no setting at all is Filament", daemon.beamStyle, "filament");
-        print(failures ? failures + " failure(s)" : "all passed");
-        Qt.exit(failures ? 1 : 0);
+        tally.check("no setting at all is Filament", daemon.beamStyle, "filament");
+        tally.finish();
     }
 }

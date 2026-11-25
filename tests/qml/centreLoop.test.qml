@@ -40,12 +40,8 @@ Item {
         audioRoute: route
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
     function at(address) {
         const b = scene.centre.bodyOf(address);
@@ -119,13 +115,13 @@ Item {
         {
             "then": 400,
             "run": () => {
-                check("Reduce motion: the group has landed", [scene.centre.grouping, scene.centre.shown], [1, true]);
-                check("the source is in the middle", h.at(h.headset), [scene.cx, scene.cy]);
+                tally.check("Reduce motion: the group has landed", [scene.centre.grouping, scene.centre.shown], [1, true]);
+                tally.check("the source is in the middle", h.at(h.headset), [scene.cx, scene.cy]);
                 settleProbe.stop();
-                check("the scene's loop has stopped", h.settledSeen, true);
+                tally.check("the scene's loop has stopped", h.settledSeen, true);
                 const host = scene.centre.host, near = h.outside(host.x, host.y), mid = h.outside(scene.cx, scene.cy);
-                check("Reduce motion: the sun stays at its rest spot, the source is as big as the core", [scene.centre.sunPhase, scene.centre.bodyOf(h.headset).roleDiameter], [Sun.REST, scene.coreSize]);
-                check("the devices outside the group live around the sun, not the middle (counter-proof: the middle)", [near.n > 0, near.mean < mid.mean], [true, true]);
+                tally.check("Reduce motion: the sun stays at its rest spot, the source is as big as the core", [scene.centre.sunPhase, scene.centre.bodyOf(h.headset).roleDiameter], [Sun.REST, scene.coreSize]);
+                tally.check("the devices outside the group live around the sun, not the middle (counter-proof: the middle)", [near.n > 0, near.mean < mid.mean], [true, true]);
                 h.seen = scene.orbitTime;
             }
         },
@@ -135,7 +131,7 @@ Item {
                 // The source's click zone is its disc, as big as it is drawn, not the square around it
                 const z = scene.centre.bodyOf(h.headset).pointer;
                 const mid = z.width / 2;
-                check("the disc answers the click, the corner of its square does not", [z.contains(Qt.point(mid, mid)), z.contains(Qt.point(mid + mid - 2, mid)), z.contains(Qt.point(3, 3))], [true, true, false]);
+                tally.check("the disc answers the click, the corner of its square does not", [z.contains(Qt.point(mid, mid)), z.contains(Qt.point(mid + mid - 2, mid)), z.contains(Qt.point(3, 3))], [true, true, false]);
             }
         },
         {
@@ -148,22 +144,22 @@ Item {
                 const level = () => Math.round(route.shared.audio.volume * 100);
                 route.writeLevel(route.shared, 0.9);
                 ring.press(...at(0.1));
-                check("a click on the track jumps there, not to where the level was", level(), 10);
+                tally.check("a click on the track jumps there, not to where the level was", level(), 10);
                 ring.press(...at(0.95));
                 ring.drag(...gap(90));
-                check("held, crossing the gap stays at the end it came from", level(), 100);
+                tally.check("held, crossing the gap stays at the end it came from", level(), 100);
                 ring.drag(...at(0.9));
-                check("and coming back follows the pointer", level(), 90);
+                tally.check("and coming back follows the pointer", level(), 90);
                 ring.press(...gap(60));
-                check("a press in the gap picks the nearer end (the end)", level(), 100);
+                tally.check("a press in the gap picks the nearer end (the end)", level(), 100);
                 ring.press(...gap(120));
-                check("and the other (the start)", level(), 0);
+                tally.check("and the other (the start)", level(), 0);
             }
         },
         {
             "then": 800,
             "run": () => {
-                check("and the orbit clock does not run", scene.orbitTime, h.seen);
+                tally.check("and the orbit clock does not run", scene.orbitTime, h.seen);
                 // Motion back on: the loop runs again (counter-proof)
                 SettingsData.reduceMotion = false;
                 scene.wake();
@@ -172,8 +168,8 @@ Item {
         {
             "then": 300,
             "run": () => {
-                check("motion on: the loop runs, the orbit turns", [scene.settled, scene.orbitTime > h.seen], [false, true]);
-                check("motion on: the sun turns, the group stays in the middle", [scene.centre.sunPhase > Sun.REST, h.at(h.headset)], [true, [scene.cx, scene.cy]]);
+                tally.check("motion on: the loop runs, the orbit turns", [scene.settled, scene.orbitTime > h.seen], [false, true]);
+                tally.check("motion on: the sun turns, the group stays in the middle", [scene.centre.sunPhase > Sun.REST, h.at(h.headset)], [true, [scene.cx, scene.cy]]);
             }
         },
         {
@@ -189,9 +185,9 @@ Item {
                     "x": src.px,
                     "y": src.py
                 });
-                check("an unconnected device over the group is taken as a drop", scene.togetherDrop === src, true);
+                tally.check("an unconnected device over the group is taken as a drop", scene.togetherDrop === src, true);
                 scene.endDrag();
-                check("released there, it is told to connect first", scene.note ? scene.note.title.endsWith(" is not connected") : null, true);
+                tally.check("released there, it is told to connect first", scene.note ? scene.note.title.endsWith(" is not connected") : null, true);
                 scene.note = null;
             }
         },
@@ -201,8 +197,8 @@ Item {
                 // A member cannot be hidden: it would play on out of sight; it is told to leave first (value 10)
                 const two = scene.centre.bodyOf(h.two);
                 scene.hideBody(two);
-                check("hiding a member says why, with the way to the guide", scene.note ? [scene.note.title.endsWith(" listens together"), scene.note.anchor] : null, [true, "hiding-devices-the-black-hole"]);
-                check("and nothing moved: it is still there and in the group", [two.swallowing, route.sharing], [false, [h.headset, h.one, h.two]]);
+                tally.check("hiding a member says why, with the way to the guide", scene.note ? [scene.note.title.endsWith(" listens together"), scene.note.anchor] : null, [true, "hiding-devices-the-black-hole"]);
+                tally.check("and nothing moved: it is still there and in the group", [two.swallowing, route.sharing], [false, [h.headset, h.one, h.two]]);
                 scene.note = null;
             }
         },
@@ -219,10 +215,10 @@ Item {
                     "x": scene.cx + scene.rx * 1.4,
                     "y": scene.cy
                 });
-                check("pulled far from the group, the member is armed", one.armed, true);
+                tally.check("pulled far from the group, the member is armed", one.armed, true);
                 scene.endDrag();
-                check("released there, it leaves the group", route.sharing, [h.headset, h.two]);
-                check("and it is not disconnected", one.phase !== "disconnecting", true);
+                tally.check("released there, it leaves the group", route.sharing, [h.headset, h.two]);
+                tally.check("and it is not disconnected", one.phase !== "disconnecting", true);
             }
         },
         {
@@ -235,14 +231,14 @@ Item {
         {
             "then": 400,
             "run": () => {
-                check("locked: the loop stops", scene.settled, true);
+                tally.check("locked: the loop stops", scene.settled, true);
                 h.seen = scene.orbitTime;
             }
         },
         {
             "then": 400,
             "run": () => {
-                check("locked: the orbit clock does not run", scene.orbitTime, h.seen);
+                tally.check("locked: the orbit clock does not run", scene.orbitTime, h.seen);
                 SessionService.locked = false;
                 scene.wake();
             }
@@ -250,7 +246,7 @@ Item {
         {
             "then": 300,
             "run": () => {
-                check("unlocked: it runs again", [scene.settled, scene.orbitTime > h.seen], [false, true]);
+                tally.check("unlocked: it runs again", [scene.settled, scene.orbitTime > h.seen], [false, true]);
             }
         },
         {
@@ -269,25 +265,25 @@ Item {
             "then": 0,
             "run": () => {
                 sampler.stop();
-                check("a new source: the old one is now the second", [scene.centre.source, scene.centre.bodyOf(h.headset).role, scene.centre.bodyOf(h.two).role], [h.two, "copy", "source"]);
+                tally.check("a new source: the old one is now the second", [scene.centre.source, scene.centre.bodyOf(h.headset).role, scene.centre.bodyOf(h.two).role], [h.two, "copy", "source"]);
                 const shrunk = h.sampled(h.oldSource), grown = h.sampled(h.newSource);
-                check("the old source only shrinks across the swap", [shrunk.total < -0.1, shrunk.down], [true, true]);
-                check("the new source only grows across the swap", [grown.total > 0.1, grown.up], [true, true]);
-                check("and neither pops: no step is a big share of the change", [shrunk.biggest < -shrunk.total / 4, grown.biggest < grown.total / 4], [true, true]);
+                tally.check("the old source only shrinks across the swap", [shrunk.total < -0.1, shrunk.down], [true, true]);
+                tally.check("the new source only grows across the swap", [grown.total > 0.1, grown.up], [true, true]);
+                tally.check("and neither pops: no step is a big share of the change", [shrunk.biggest < -shrunk.total / 4, grown.biggest < grown.total / 4], [true, true]);
             }
         },
         {
             // With motion on the new source is carried to the middle by its spring, not put there
             "then": 1500,
             "run": () => {
-                check("motion on: the new source is still on its way, off the middle", Math.hypot(...h.at(h.two).map((v, i) => v - [scene.cx, scene.cy][i])) > 3, true);
+                tally.check("motion on: the new source is still on its way, off the middle", Math.hypot(...h.at(h.two).map((v, i) => v - [scene.cx, scene.cy][i])) > 3, true);
             }
         },
         {
             "then": 0,
             "run": () => {
                 const [x, y] = h.at(h.two);
-                check("motion on: the spring has brought the new source to the middle", Math.hypot(x - scene.cx, y - scene.cy) < 3, true);
+                tally.check("motion on: the spring has brought the new source to the middle", Math.hypot(x - scene.cx, y - scene.cy) < 3, true);
             }
         },
         {
@@ -300,8 +296,8 @@ Item {
         {
             "then": 0,
             "run": () => {
-                check("the group ends: the parts unload", [scene.centre.shown, scene.centre.members], [false, []]);
-                check("the host is back in the middle", [scene.centre.host.scale, scene.centre.hostAway], [1, false]);
+                tally.check("the group ends: the parts unload", [scene.centre.shown, scene.centre.members], [false, []]);
+                tally.check("the host is back in the middle", [scene.centre.host.scale, scene.centre.hostAway], [1, false]);
             }
         }
     ]
@@ -321,8 +317,7 @@ Item {
     }
     function next() {
         if (step >= steps.length) {
-            print(failures ? failures + " failure(s)" : "all passed");
-            Qt.exit(failures ? 1 : 0);
+            tally.finish();
             return;
         }
         const s = steps[step++];

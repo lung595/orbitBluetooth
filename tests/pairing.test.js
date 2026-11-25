@@ -1,4 +1,4 @@
-// Accent colours (lifted, grey, two kept apart) and the input-device guard of pairing.
+// Accent colours (grey, two kept apart) and the input-device guard of pairing.
 // Run from the plugin root: gjs tests/pairing.test.js (or every file: sh tests/run.sh)
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
@@ -7,7 +7,6 @@ const Palette = load("Palette.js");
 const Guard = load("Guard.js");
 
 const hex = h => ({ r: parseInt(h.slice(1, 3), 16) / 255, g: parseInt(h.slice(3, 5), 16) / 255, b: parseInt(h.slice(5, 7), 16) / 255 });
-eq("lift", Math.round(Palette.toHsl(Palette.lift(hex("#4B6818"), 0.66)).l * 100), 66);
 eq("grey", Palette.isGrey(hex("#BDBDBD")), true);
 
 // Two accents never pass for each other (D270): a pink and a salmon (the

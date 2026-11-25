@@ -37,12 +37,8 @@ Item {
     readonly property string dongle: "alsa_output.usb-Acme_Dongle-00.analog-stereo"
     readonly property string studio: "alsa_output.usb-Acme_Studio-00.analog-stereo"
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
 
     // --- PipeWire's side ---------------------------------------------------------------------
@@ -272,70 +268,70 @@ Item {
 
     function alone() {
         const session = () => daemon.item;
-        check("nothing plays: no proposal", [ghost.offered, ghost.shown, ghost.key], [false, false, ""]);
+        tally.check("nothing plays: no proposal", [ghost.offered, ghost.shown, ghost.key], [false, false, ""]);
 
         // The sound goes to a wired output
         wire(h.dongle, "Dongle Stereo", true);
         h.pipewire(dongleNode, [dongleNode]);
-        check("a wired output and no Bluetooth device: nothing to put it with", ghost.offered, false);
+        tally.check("a wired output and no Bluetooth device: nothing to put it with", ghost.offered, false);
         plug(h.headset, "Pulse BT");
-        check("a Bluetooth device is connected: the ghost is offered", ghost.offered, true);
-        check("the output in use comes first", ghost.proposal.members, [h.dongle, h.headset]);
-        check("the key is the set: the same whatever the order", ghost.key, [h.headset, h.dongle].join(","));
-        check("a wired output is read from PipeWire's names, not from a command", runnerOf(ghost).running, false);
+        tally.check("a Bluetooth device is connected: the ghost is offered", ghost.offered, true);
+        tally.check("the output in use comes first", ghost.proposal.members, [h.dongle, h.headset]);
+        tally.check("the key is the set: the same whatever the order", ghost.key, [h.headset, h.dongle].join(","));
+        tally.check("a wired output is read from PipeWire's names, not from a command", runnerOf(ghost).running, false);
 
         // What the engine would refuse is not proposed
         inCall(h.headset, true);
-        check("counter-proof: a headset in call mode is left out, so nothing is promised", ghost.offered, false);
+        tally.check("counter-proof: a headset in call mode is left out, so nothing is promised", ghost.offered, false);
         inCall(h.headset, false);
-        check("back on music it is offered again", ghost.offered, true);
+        tally.check("back on music it is offered again", ghost.offered, true);
         unplug(h.headset);
-        check("counter-proof: the Bluetooth device goes away, the ghost goes", ghost.offered, false);
+        tally.check("counter-proof: the Bluetooth device goes away, the ghost goes", ghost.offered, false);
         plug(h.headset, "Pulse BT");
         h.pipewire(virtualNode, [virtualNode]);
-        check("counter-proof: the output in use is neither wired nor Bluetooth: no ghost", [ghost.offered, ghost.key], [false, ""]);
+        tally.check("counter-proof: the output in use is neither wired nor Bluetooth: no ghost", [ghost.offered, ghost.key], [false, ""]);
         h.pipewire(dongleNode, [dongleNode]);
-        check("and with the wired output back it returns", ghost.offered, true);
+        tally.check("and with the wired output back it returns", ghost.offered, true);
 
         // The setting and the group at the centre
         solo.prefs = {
             "togetherCentre": false
         };
-        check("the group at the centre is off: no ghost, it would have no place", ghost.offered, false);
+        tally.check("the group at the centre is off: no ghost, it would have no place", ghost.offered, false);
         solo.prefs = {
             "togetherCentre": true
         };
         soloCentre.grouped = true;
-        check("a group has the centre: no ghost", ghost.offered, false);
+        tally.check("a group has the centre: no ghost", ghost.offered, false);
         soloCentre.grouped = false;
-        check("counter-proof: both back, it is offered", ghost.offered, true);
+        tally.check("counter-proof: both back, it is offered", ghost.offered, true);
 
         // The fade is stepped by the scene's loop, a few tenths of a second
-        check("it has not arrived yet: nothing is drawn", [ghost.presence, ghost.shown, ghost.fading], [0, true, true]);
+        tally.check("it has not arrived yet: nothing is drawn", [ghost.presence, ghost.shown, ghost.fading], [0, true, true]);
         ghost.advance(0.1);
-        check("it comes in ...", [ghost.presence, ghost.fading], [0.4, true]);
+        tally.check("it comes in ...", [ghost.presence, ghost.fading], [0.4, true]);
         run(ghost, 0.2);
-        check("... in a quarter of a second", [ghost.presence, ghost.fading], [1, false]);
+        tally.check("... in a quarter of a second", [ghost.presence, ghost.fading], [1, false]);
         solo.motion = false;
         ghost.decline();
         ghost.advance(0.001);
-        check("Reduce motion: it goes at once, no fade", [ghost.presence, ghost.shown], [0, false]);
+        tally.check("Reduce motion: it goes at once, no fade", [ghost.presence, ghost.shown], [0, false]);
         solo.motion = true;
         plug(h.one, "Pulse Two");
-        check("counter-proof: a third output changes nothing without a memory: still the pair that was turned down", [ghost.offered, ghost.proposal.members], [false, [h.dongle, h.headset]]);
+        tally.check("counter-proof: a third output changes nothing without a memory: still the pair that was turned down", [ghost.offered, ghost.proposal.members], [false, [h.dongle, h.headset]]);
         const learned = Habits.record({}, [h.dongle, h.headset, h.one], Date.now());
         solo.prefs = {
             "togetherCentre": true,
             "learnHabits": true,
             "togetherHabits": learned
         };
-        check("a learned group is a different set: refused is not forgotten for it, and it is proposed whole", [ghost.offered, ghost.proposal.members], [true, [h.dongle, h.headset, h.one]]);
+        tally.check("a learned group is a different set: refused is not forgotten for it, and it is proposed whole", [ghost.offered, ghost.proposal.members], [true, [h.dongle, h.headset, h.one]]);
         solo.prefs = {
             "togetherCentre": true,
             "learnHabits": false,
             "togetherHabits": learned
         };
-        check("counter-proof: learning is off, the memory is not used: the pair again", [ghost.offered, ghost.proposal.members], [false, [h.dongle, h.headset]]);
+        tally.check("counter-proof: learning is off, the memory is not used: the pair again", [ghost.offered, ghost.proposal.members], [false, [h.dongle, h.headset]]);
         solo.prefs = {
             "togetherCentre": true,
             "learnHabits": true,
@@ -344,38 +340,38 @@ Item {
                 [h.one]: "Pulse Two"
             }
         };
-        check("a hidden output is left out of the learned group: the pair", [ghost.offered, ghost.proposal.members], [false, [h.dongle, h.headset]]);
+        tally.check("a hidden output is left out of the learned group: the pair", [ghost.offered, ghost.proposal.members], [false, [h.dongle, h.headset]]);
         solo.prefs = {
             "togetherCentre": true
         };
         unplug(h.one);
 
         // A refusal
-        check("turned down: not offered, though the set still stands", [ghost.offered, ghost.key !== ""], [false, true]);
-        check("the session remembers it by the set", Object.keys(session().declined), [ghost.key]);
-        check("while it lasts the ghost is still on its way out", ghost.shown, false);
-        check("counter-proof: a nonsense key is not remembered", [session().isDeclined(""), session().isDeclined("nonsense")], [false, false]);
+        tally.check("turned down: not offered, though the set still stands", [ghost.offered, ghost.key !== ""], [false, true]);
+        tally.check("the session remembers it by the set", Object.keys(session().declined), [ghost.key]);
+        tally.check("while it lasts the ghost is still on its way out", ghost.shown, false);
+        tally.check("counter-proof: a nonsense key is not remembered", [session().isDeclined(""), session().isDeclined("nonsense")], [false, false]);
         daemon.active = false;
-        check("the shell ends: no session, no ghost", ghost.offered, false);
+        tally.check("the shell ends: no session, no ghost", ghost.offered, false);
         daemon.active = true;
-        check("a new shell starts with no refusal: the ghost is back", [ghost.offered, Object.keys(session().declined)], [true, []]);
+        tally.check("a new shell starts with no refusal: the ghost is back", [ghost.offered, Object.keys(session().declined)], [true, []]);
 
         // Never during a session
         ghost.advance(0.1);
-        check("a click: the group is started with exactly what was shown", [ghost.accept(), session().members, solo.sounds.played], [undefined, [h.dongle, h.headset], ["connect"]]);
-        check("a session is on: the ghost goes, whatever it would put together", [ghost.offered, session().active], [false, true]);
+        tally.check("a click: the group is started with exactly what was shown", [ghost.accept(), session().members, solo.sounds.played], [undefined, [h.dongle, h.headset], ["connect"]]);
+        tally.check("a session is on: the ghost goes, whatever it would put together", [ghost.offered, session().active], [false, true]);
         run(ghost, 0.5);
-        check("and it is gone, not fading", [ghost.shown, ghost.presence], [false, 0]);
-        check("a group the user ended is not proposed again at once", [session().end("ended", ""), session().isDeclined(ghost.key), ghost.offered], [true, true, false]);
+        tally.check("and it is gone, not fading", [ghost.shown, ghost.presence], [false, 0]);
+        tally.check("a group the user ended is not proposed again at once", [session().end("ended", ""), session().isDeclined(ghost.key), ghost.offered], [true, true, false]);
 
         // ... but one that ended by itself may be
         daemon.active = false;
         daemon.active = true;
-        check("(a new shell)", ghost.offered, true);
+        tally.check("(a new shell)", ghost.offered, true);
         ghost.accept();
-        check("a session again", session().active, true);
+        tally.check("a session again", session().active, true);
         session().end("member-left", h.headset);
-        check("counter-proof: a group that ended because a device left is not turned down", [session().isDeclined(ghost.key), ghost.offered], [false, true]);
+        tally.check("counter-proof: a group that ended because a device left is not turned down", [session().isDeclined(ghost.key), ghost.offered], [false, true]);
 
         // Where it sits and what it looks like
         ghost.place({
@@ -383,26 +379,26 @@ Item {
             "y": 80,
             "depth": -1
         });
-        check("on the far side of the ring it is small, faint and behind the host's core", [ghost.px, ghost.py, ghost.depth, ghost.diameter, ghost.haze, ghost.stack], [120, 80, -1, 26.25, 0.9, 10.8]);
+        tally.check("on the far side of the ring it is small, faint and behind the host's core", [ghost.px, ghost.py, ghost.depth, ghost.diameter, ghost.haze, ghost.stack], [120, 80, -1, 26.25, 0.9, 10.8]);
         ghost.place({
             "x": 120,
             "y": 300,
             "depth": 1
         });
-        check("on the near side it is the group's size, in front, sorted by height", [ghost.diameter, ghost.haze, ghost.stack], [52.5, 1, 400]);
-        check("it is placed once the step laid the ring out ...", ghost.placed, true);
+        tally.check("on the near side it is the group's size, in front, sorted by height", [ghost.diameter, ghost.haze, ghost.stack], [52.5, 1, 400]);
+        tally.check("it is placed once the step laid the ring out ...", ghost.placed, true);
         ghost.decline();
         run(ghost, 0.5);
-        check("... and not any more once it is gone, so it never shows at the corner", [ghost.shown, ghost.placed], [false, false]);
+        tally.check("... and not any more once it is gone, so it never shows at the corner", [ghost.shown, ghost.placed], [false, false]);
 
         // A click the engine refuses is told, never left silent (value 10)
         solo.sounds.played = [];
         refused.advance(1);
-        check("a session that will refuse still gets its proposal shown", refused.offered, true);
+        tally.check("a session that will refuse still gets its proposal shown", refused.offered, true);
         refused.accept();
-        check("the click was passed on, with the list shown", refusing.started, [[h.dongle, h.headset]]);
-        check("it is said why, with the way to the guide", solo.note ? [solo.note.title, solo.note.anchor] : null, ["Pulse BT is not connected", "listen-together"]);
-        check("no sound of a connection", solo.sounds.played, []);
+        tally.check("the click was passed on, with the list shown", refusing.started, [[h.dongle, h.headset]]);
+        tally.check("it is said why, with the way to the guide", solo.note ? [solo.note.title, solo.note.anchor] : null, ["Pulse BT is not connected", "listen-together"]);
+        tally.check("no sound of a connection", solo.sounds.played, []);
         solo.note = null;
     }
 
@@ -417,42 +413,42 @@ Item {
         h.pipewire(null, []);
         soloRoute.current = soloRoute.devices[h.headset];
         const reader = runnerOf(ghost);
-        check("the sound goes to Bluetooth: the plugged outputs are asked for, once", [reader.running, reader.command], [true, ["pactl", "--format=json", "list", "sinks"]]);
-        check("(nothing is proposed until they are known)", ghost.offered, false);
+        tally.check("the sound goes to Bluetooth: the plugged outputs are asked for, once", [reader.running, reader.command], [true, ["pactl", "--format=json", "list", "sinks"]]);
+        tally.check("(nothing is proposed until they are known)", ghost.offered, false);
         finish(ghost, 0, listing([h.dongle]));
-        check("a wired output is plugged in: the ghost is offered, the output in use first", [ghost.offered, ghost.proposal.members], [true, [h.headset, h.dongle]]);
-        check("it is the same set as the other way round", ghost.key, [h.headset, h.dongle].join(","));
-        check("nothing runs between two changes", reader.running, false);
+        tally.check("a wired output is plugged in: the ghost is offered, the output in use first", [ghost.offered, ghost.proposal.members], [true, [h.headset, h.dongle]]);
+        tally.check("it is the same set as the other way round", ghost.key, [h.headset, h.dongle].join(","));
+        tally.check("nothing runs between two changes", reader.running, false);
         h.pipewire(null, [studioNode]);
-        check("a wired output appears among PipeWire's nodes: the list is read again", reader.running, true);
+        tally.check("a wired output appears among PipeWire's nodes: the list is read again", reader.running, true);
         finish(ghost, 0, listing([h.dongle, h.studio]));
-        check("a pair only: the output in use and the first of them", ghost.proposal.members, [h.headset, h.dongle]);
+        tally.check("a pair only: the output in use and the first of them", ghost.proposal.members, [h.headset, h.dongle]);
         solo.prefs = {
             "togetherCentre": true,
             "learnHabits": true,
             "togetherHabits": Habits.record({}, [h.headset, h.dongle, h.studio], Date.now())
         };
-        check("a learned group is proposed whole, the output in use first", ghost.proposal.members, [h.headset, h.dongle, h.studio]);
+        tally.check("a learned group is proposed whole, the output in use first", ghost.proposal.members, [h.headset, h.dongle, h.studio]);
         solo.prefs = {
             "togetherCentre": true
         };
         finish(ghost, 0, "[]");
-        check("counter-proof: everything is unplugged: no ghost", ghost.offered, false);
+        tally.check("counter-proof: everything is unplugged: no ghost", ghost.offered, false);
 
         // A closed orbit reads nothing and runs nothing
         reader.running = false;
         finish(ghost, 0, listing([h.dongle]));
         run(ghost, 0.5);
-        check("plugged again: it is offered, and it is there", [ghost.offered, ghost.presence], [true, 1]);
+        tally.check("plugged again: it is offered, and it is there", [ghost.offered, ghost.presence], [true, 1]);
         solo.active = false;
         solo.awake = false;
-        check("the orbit is closed: the reader is off and the list dropped", [watchOf(ghost).active, watchOf(ghost).outputs, ghost.offered], [false, [], false]);
-        check("and no ghost is left behind", [ghost.shown, ghost.presence], [false, 0]);
+        tally.check("the orbit is closed: the reader is off and the list dropped", [watchOf(ghost).active, watchOf(ghost).outputs, ghost.offered], [false, [], false]);
+        tally.check("and no ghost is left behind", [ghost.shown, ghost.presence], [false, 0]);
         h.pipewire(null, [studioNode, dongleNode]);
-        check("counter-proof: a change while it is closed runs nothing", reader.running, false);
+        tally.check("counter-proof: a change while it is closed runs nothing", reader.running, false);
         solo.active = true;
         solo.awake = true;
-        check("opened again: the list is read again", reader.running, true);
+        tally.check("opened again: the list is read again", reader.running, true);
         solo.sounds.played = [];
 
         h.pipewire(null, []);
@@ -567,8 +563,8 @@ Item {
             "until": () => h.settledSeen,
             "run": () => {
                 h.before = h.ringGaps();
-                check("no proposal: no ghost, the connected ring is evenly spaced", [scene.ghost.shown, h.before.n, h.even(h.before, h.before.n)], [false, 5, true]);
-                check("and nothing is loaded for it", scene.world.ghostView.item, null);
+                tally.check("no proposal: no ghost, the connected ring is evenly spaced", [scene.ghost.shown, h.before.n, h.even(h.before, h.before.n)], [false, 5, true]);
+                tally.check("and nothing is loaded for it", scene.world.ghostView.item, null);
                 h.pipewire(dongleNode, [dongleNode]);
                 route.audio = [route.headset];
                 h.settledSeen = false;
@@ -579,28 +575,28 @@ Item {
             "wait": 100,
             "run": () => {
                 const g = scene.ghost, gaps = h.ringGaps();
-                check("a wired output plays and a Bluetooth device is connected: the ghost is offered", [g.offered, g.shown, g.proposal.members], [true, true, [h.dongle, h.headset]]);
-                check("it is drawn and was put on its slot", [h.view() !== null, h.view().visible, g.placed], [true, true, true]);
-                check("a slot is kept for it on the ring, as for the group (counter-proof: before, the ring was even)", h.reserved(gaps, h.before.n), true);
+                tally.check("a wired output plays and a Bluetooth device is connected: the ghost is offered", [g.offered, g.shown, g.proposal.members], [true, true, [h.dongle, h.headset]]);
+                tally.check("it is drawn and was put on its slot", [h.view() !== null, h.view().visible, g.placed], [true, true, true]);
+                tally.check("a slot is kept for it on the ring, as for the group (counter-proof: before, the ring was even)", h.reserved(gaps, h.before.n), true);
                 const slot = Physics.ringSlot(scene, 0, h.before.n + 1, scene.orbitTime * 0.11 - Math.PI / 2);
-                check("it sits on the slot the real group would take", [Math.round(g.px), Math.round(g.py)], [Math.round(slot.x), Math.round(slot.y)]);
-                check("it is as big as the group would be there", Math.round(g.diameter * 100), Math.round(scene.coreSize * 0.7 * (0.75 + 0.25 * slot.depth) * 100));
-                check("Reduce motion: it was there at once, no fade", g.presence, 1);
+                tally.check("it sits on the slot the real group would take", [Math.round(g.px), Math.round(g.py)], [Math.round(slot.x), Math.round(slot.y)]);
+                tally.check("it is as big as the group would be there", Math.round(g.diameter * 100), Math.round(scene.coreSize * 0.7 * (0.75 + 0.25 * slot.depth) * 100));
+                tally.check("Reduce motion: it was there at once, no fade", g.presence, 1);
                 settleProbe.stop();
-                check("the scene's loop settled with the ghost on the ring", h.settledSeen, true);
+                tally.check("the scene's loop settled with the ghost on the ring", h.settledSeen, true);
                 const z = h.view().pointer, mid = z.width / 2;
-                check("its click zone is its disc: the centre answers, the corner of its square does not", [z.contains(Qt.point(mid, mid)), z.contains(Qt.point(3, 3))], [true, false]);
+                tally.check("its click zone is its disc: the centre answers, the corner of its square does not", [z.contains(Qt.point(mid, mid)), z.contains(Qt.point(3, 3))], [true, false]);
                 const c = h.view().cross;
-                check("the cross is clear of the planet's centre (far away the planet is hardly bigger than the cross)", c.contains(c.mapFromItem(scene, g.px, g.py)), false);
-                check("a card or the hidden list open: it does not answer", [h.view().live, (scene.hiddenOpen = true, h.view().live), (scene.hiddenOpen = false, h.view().live)], [true, false, true]);
+                tally.check("the cross is clear of the planet's centre (far away the planet is hardly bigger than the cross)", c.contains(c.mapFromItem(scene, g.px, g.py)), false);
+                tally.check("a card or the hidden list open: it does not answer", [h.view().live, (scene.hiddenOpen = true, h.view().live), (scene.hiddenOpen = false, h.view().live)], [true, false, true]);
                 // Who it would put together is said in icons, never in words: one disc per member, the
                 // output in use first, clear of the planet; the names and the click's meaning come with the pointer
                 const icons = h.view().children.find(c => "glyphOf" in c);
                 const at = icons.mapToItem(scene, 0, 0);
                 const dx = Math.max(at.x - g.px, 0, g.px - (at.x + icons.width)), dy = Math.max(at.y - g.py, 0, g.py - (at.y + icons.height));
-                check("its icons: one disc per member in order, no name, clear of the planet", [icons.shown, h.texts(icons), Math.hypot(dx, dy) > g.diameter / 2], [[h.dongle, h.headset], 0, true]);
+                tally.check("its icons: one disc per member in order, no name, clear of the planet", [icons.shown, h.texts(icons), Math.hypot(dx, dy) > g.diameter / 2], [[h.dongle, h.headset], 0, true]);
                 icons.named = true;
-                check("the pointer on it: the names, one line each, and what a click does", [h.texts(icons), icons.note], [3, "Listen together"]);
+                tally.check("the pointer on it: the names, one line each, and what a click does", [h.texts(icons), icons.note], [3, "Listen together"]);
                 icons.named = false;
             }
         },
@@ -610,13 +606,13 @@ Item {
             "run": () => {
                 h.key = scene.ghost.key;
                 h.clickGhost(Qt.RightButton);
-                check("a right click turns it down", [route.together.isDeclined(h.key), scene.ghost.offered, route.sharing], [true, false, []]);
+                tally.check("a right click turns it down", [route.together.isDeclined(h.key), scene.ghost.offered, route.sharing], [true, false, []]);
             }
         },
         {
             "until": () => scene.settled,
             "run": () => {
-                check("it is gone: nothing is loaded and the ring is even again", [scene.world.ghostView.item, h.even(h.ringGaps(), 5)], [null, true]);
+                tally.check("it is gone: nothing is loaded and the ring is even again", [scene.world.ghostView.item, h.even(h.ringGaps(), 5)], [null, true]);
                 // The same set stays turned down, another set is a new proposal
                 route.audio = [route.headset, route.known(h.one)];
             }
@@ -625,15 +621,15 @@ Item {
             "until": () => scene.settled,
             "run": () => {
                 const g = scene.ghost;
-                check("counter-proof: a third device is connected, and the pair that was turned down stays down", [g.offered, g.proposal.members], [false, [h.dongle, h.headset]]);
+                tally.check("counter-proof: a third device is connected, and the pair that was turned down stays down", [g.offered, g.proposal.members], [false, [h.dongle, h.headset]]);
                 h.learn([h.dongle, h.headset, h.one]);
-                check("a learned group is another set: it is proposed whole, the output in use first", [g.offered, g.proposal.members], [true, [h.dongle, h.headset, h.one]]);
-                check("(its own key)", g.key !== h.key, true);
+                tally.check("a learned group is another set: it is proposed whole, the output in use first", [g.offered, g.proposal.members], [true, [h.dongle, h.headset, h.one]]);
+                tally.check("(its own key)", g.key !== h.key, true);
                 const key = g.key;
                 route.audio = [route.known(h.one), route.headset];
-                check("the same devices in another order are the same proposal", [g.key, g.proposal.members], [key, [h.dongle, h.headset, h.one]]);
+                tally.check("the same devices in another order are the same proposal", [g.key, g.proposal.members], [key, [h.dongle, h.headset, h.one]]);
                 route.audio = [route.headset];
-                check("counter-proof: back to the set that was turned down, it stays down", [g.key, g.offered], [h.key, false]);
+                tally.check("counter-proof: back to the set that was turned down, it stays down", [g.key, g.offered], [h.key, false]);
                 route.audio = [route.headset, route.known(h.one)];
             }
         },
@@ -644,7 +640,7 @@ Item {
                 // Read before the click: once it is turned down the best learned group leaves nothing to propose
                 const shown = scene.ghost.key;
                 h.clickCross();
-                check("the cross turns it down, and starts nothing", [shown !== "", route.together.isDeclined(shown), scene.ghost.offered, route.sharing], [true, true, false, []]);
+                tally.check("the cross turns it down, and starts nothing", [shown !== "", route.together.isDeclined(shown), scene.ghost.offered, route.sharing], [true, true, false, []]);
                 route.audio = [route.headset, route.known(h.one), route.known(h.two)];
                 h.learn([h.dongle, h.headset, h.one, h.two]);
             }
@@ -654,27 +650,27 @@ Item {
             "until": () => scene.settled,
             "run": () => {
                 const g = scene.ghost;
-                check("a fresh set is offered", [g.offered, g.proposal.members], [true, [h.dongle, h.headset, h.one, h.two]]);
+                tally.check("a fresh set is offered", [g.offered, g.proposal.members], [true, [h.dongle, h.headset, h.one, h.two]]);
                 scene.hiddenOpen = true;
                 h.clickGhost(Qt.LeftButton);
-                check("counter-proof: with the hidden list open a click starts nothing", route.sharing, []);
+                tally.check("counter-proof: with the hidden list open a click starts nothing", route.sharing, []);
                 scene.hiddenOpen = false;
                 h.clickGhost(Qt.LeftButton);
-                check("a click starts the group with what the ghost showed", route.sharing, [h.dongle, h.headset, h.one, h.two]);
-                check("the ghost is no longer offered", g.offered, false);
+                tally.check("a click starts the group with what the ghost showed", route.sharing, [h.dongle, h.headset, h.one, h.two]);
+                tally.check("the ghost is no longer offered", g.offered, false);
             }
         },
         {
             "until": () => scene.settled,
             "run": () => {
-                check("never during a session: the group has the centre and nothing is left of the ghost", [scene.centre.grouped, scene.ghost.shown, scene.world.ghostView.item], [true, false, null]);
+                tally.check("never during a session: the group has the centre and nothing is left of the ghost", [scene.centre.grouped, scene.ghost.shown, scene.world.ghostView.item], [true, false, null]);
                 route.sharing = [];
             }
         },
         {
             "wait": 100,
             "run": () => {
-                check("the session is over and nothing turned it down: it is proposed again", [scene.centre.grouped, scene.ghost.offered, scene.ghost.shown], [false, true, true]);
+                tally.check("the session is over and nothing turned it down: it is proposed again", [scene.centre.grouped, scene.ghost.offered, scene.ghost.shown], [false, true, true]);
             }
         },
         {
@@ -687,7 +683,7 @@ Item {
         {
             "until": () => scene.ghost.placed,
             "run": () => {
-                check("the orbit is closed: no ghost, nothing loaded", [scene.ghost.offered, scene.ghost.shown, scene.world.ghostView.item], [false, false, null]);
+                tally.check("the orbit is closed: no ghost, nothing loaded", [scene.ghost.offered, scene.ghost.shown, scene.world.ghostView.item], [false, false, null]);
                 scene.active = true;
             }
         },
@@ -695,7 +691,7 @@ Item {
             // The orbit turns for a moment
             "until": () => scene.orbitTime > h.orbit + 0.3,
             "run": () => {
-                check("opened again: it is back", [scene.ghost.offered, scene.world.ghostView.item !== null], [true, true]);
+                tally.check("opened again: it is back", [scene.ghost.offered, scene.world.ghostView.item !== null], [true, true]);
                 // Motion on: the ghost rides the ring with the others, and the loop runs
                 h.orbit = scene.orbitTime;
                 h.before = {
@@ -711,7 +707,7 @@ Item {
             "until": () => h.settledSeen,
             "run": () => {
                 const g = scene.ghost;
-                check("motion on: the loop runs and the ghost goes round with the ring", [scene.settled, scene.orbitTime > h.orbit, Math.hypot(g.px - h.before.x, g.py - h.before.y) > 0.5], [false, true, true]);
+                tally.check("motion on: the loop runs and the ghost goes round with the ring", [scene.settled, scene.orbitTime > h.orbit, Math.hypot(g.px - h.before.x, g.py - h.before.y) > 0.5], [false, true, true]);
                 SettingsData.reduceMotion = true;
                 scene.wake();
                 h.settledSeen = false;
@@ -722,7 +718,7 @@ Item {
             "wait": 0,
             "run": () => {
                 settleProbe.stop();
-                check("Reduce motion again: the ring stops and so does the loop", [h.settledSeen, scene.ghost.offered], [true, true]);
+                tally.check("Reduce motion again: the ring stops and so does the loop", [h.settledSeen, scene.ghost.offered], [true, true]);
             }
         },
         {
@@ -733,19 +729,19 @@ Item {
                 h.key = p.key;
                 mouse.mousePress(scene, p.px, p.py);
                 mouse.wait(250);
-                check("held 250 ms: the ring is filling, nothing decided yet", [z.children.find(c => "fired" in c).active, p.offered, route.together.isDeclined(h.key)], [true, true, false]);
+                tally.check("held 250 ms: the ring is filling, nothing decided yet", [z.children.find(c => "fired" in c).active, p.offered, route.together.isDeclined(h.key)], [true, true, false]);
                 mouse.mouseMove(scene, p.px + 12, p.py);
                 const hold = z.children.find(c => "fired" in c);
                 mouse.wait(450);
                 // Let go well outside the disc, so that no click follows
                 mouse.mouseMove(scene, p.px + 200, p.py);
                 mouse.mouseRelease(scene, p.px + 200, p.py);
-                check("counter-proof: moved past the threshold, the hold is cancelled and nothing is turned down", [hold.active, p.offered, route.together.isDeclined(h.key)], [false, true, false]);
+                tally.check("counter-proof: moved past the threshold, the hold is cancelled and nothing is turned down", [hold.active, p.offered, route.together.isDeclined(h.key)], [false, true, false]);
                 mouse.mousePress(scene, p.px, p.py);
                 mouse.wait(650);
-                check("held 500 ms: it is turned down, like a right click", [route.together.isDeclined(h.key), p.offered], [true, false]);
+                tally.check("held 500 ms: it is turned down, like a right click", [route.together.isDeclined(h.key), p.offered], [true, false]);
                 mouse.mouseRelease(scene, p.px, p.py);
-                check("the release after the long press starts no group", route.sharing, []);
+                tally.check("the release after the long press starts no group", route.sharing, []);
             }
         }
     ]
@@ -773,8 +769,7 @@ Item {
     function next() {
         clock.stop();
         if (step >= steps.length) {
-            print(failures ? failures + " failure(s)" : "all passed");
-            Qt.exit(failures ? 1 : 0);
+            tally.finish();
             return;
         }
         steps[step++].run();

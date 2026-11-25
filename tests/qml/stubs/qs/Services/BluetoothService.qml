@@ -4,21 +4,16 @@ import QtQuick
 QtObject {
     property var adapter: QtObject {
         property bool discovering: false
-        property bool enabled: true
     }
     property bool enabled: true
     property bool available: true
     property bool discovering: false
     property var log: []
-    property bool failPair: false
     function pairDevice(d, cb) {
         log.push("pair " + d.name);
         Qt.callLater(() => {
-            if (!failPair)
-                d.paired = true;
-            cb(failPair ? {
-                error: "rejected"
-            } : {});
+            d.paired = true;
+            cb({});
         });
     }
     function connectDeviceWithTrust(d) {

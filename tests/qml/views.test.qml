@@ -108,12 +108,8 @@ Item {
         menu: QtObject {}
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
     // The scene's step, as OrbitPhysics calls it: `seconds` of 0.1 s steps
     function run(seconds) {
@@ -132,28 +128,28 @@ Item {
     }
 
     function canRecall() {
-        check("no group: there is nothing to step back from", [centreItem.wanted, centreItem.canRecall], [false, false]);
+        tally.check("no group: there is nothing to step back from", [centreItem.wanted, centreItem.canRecall], [false, false]);
         route.sharing = [h.headset, h.one, h.two];
-        check("a group has the centre: it can step back (counter-proof)", [centreItem.wanted, centreItem.recalled, centreItem.canRecall], [true, false, true]);
+        tally.check("a group has the centre: it can step back (counter-proof)", [centreItem.wanted, centreItem.recalled, centreItem.canRecall], [true, false, true]);
         centreItem.recall();
-        check("stepped back: it cannot step back again", [centreItem.recalled, centreItem.canRecall], [true, false]);
+        tally.check("stepped back: it cannot step back again", [centreItem.recalled, centreItem.canRecall], [true, false]);
         centreItem.release();
-        check("let back to the centre: it can step back again", [centreItem.recalled, centreItem.canRecall], [false, true]);
+        tally.check("let back to the centre: it can step back again", [centreItem.recalled, centreItem.canRecall], [false, true]);
     }
 
     function recall() {
         reset();
         const woken = stub.wakes;
         centreItem.recall();
-        check("no group: the recall does nothing and wakes nothing", [centreItem.recalled, stub.wakes], [false, woken]);
+        tally.check("no group: the recall does nothing and wakes nothing", [centreItem.recalled, stub.wakes], [false, woken]);
         route.sharing = [h.headset, h.one, h.two];
         run(1);
         const before = stub.wakes;
         centreItem.recall();
-        check("a group: the recall is set and the loop is woken", [centreItem.recalled, stub.wakes > before], [true, true]);
-        check("the stage is on its way, not there yet", [centreItem.stage, centreItem.travelling], [0, true]);
+        tally.check("a group: the recall is set and the loop is woken", [centreItem.recalled, stub.wakes > before], [true, true]);
+        tally.check("the stage is on its way, not there yet", [centreItem.stage, centreItem.travelling], [0, true]);
         run(1);
-        check("then the group is at the back", [centreItem.stage, centreItem.travelling], [1, false]);
+        tally.check("then the group is at the back", [centreItem.stage, centreItem.travelling], [1, false]);
     }
 
     // A popout that closes (a click outside it does that) opens again on the
@@ -165,26 +161,26 @@ Item {
         route.sharing = [h.headset, h.one, h.two];
         run(1);
         stub.active = false;
-        check("closed on the group's view: it keeps the centre", [centreItem.recalled, centreItem.stage], [false, 0]);
+        tally.check("closed on the group's view: it keeps the centre", [centreItem.recalled, centreItem.stage], [false, 0]);
         stub.active = true;
-        check("opened again: still the group's view", [centreItem.recalled, centreItem.stage], [false, 0]);
+        tally.check("opened again: still the group's view", [centreItem.recalled, centreItem.stage], [false, 0]);
 
         // Stepped back to Fedora's view before closing: it opens on that view
         centreItem.recall();
         run(1);
         stub.active = false;
         stub.active = true;
-        check("closed on Fedora's view: it opens on Fedora's view", [centreItem.recalled, centreItem.stage], [true, 1]);
+        tally.check("closed on Fedora's view: it opens on Fedora's view", [centreItem.recalled, centreItem.stage], [true, 1]);
 
         // The group ends: the next one starts at the centre again
         route.sharing = [];
         run(1);
-        check("the group ends: the recall is forgotten", [centreItem.recalled, centreItem.canRecall], [false, false]);
+        tally.check("the group ends: the recall is forgotten", [centreItem.recalled, centreItem.canRecall], [false, false]);
 
         // No group: closing and opening leave the centre as it is
         stub.active = false;
         stub.active = true;
-        check("no group: nothing is recalled", [centreItem.recalled, centreItem.stage], [false, 0]);
+        tally.check("no group: nothing is recalled", [centreItem.recalled, centreItem.stage], [false, 0]);
     }
 
     function stepBack() {
@@ -195,16 +191,16 @@ Item {
             "leaving": false
         };
         focusCtl.stepBack();
-        check("a card is open: the click closes it first", [stub.focusBody, centreItem.recalled], [null, false]);
+        tally.check("a card is open: the click closes it first", [stub.focusBody, centreItem.recalled], [null, false]);
         focusCtl.stepBack();
-        check("the next click steps back to Fedora's view", [stub.focusBody, centreItem.recalled], [null, true]);
+        tally.check("the next click steps back to Fedora's view", [stub.focusBody, centreItem.recalled], [null, true]);
         centreItem.release();
 
         // The hidden list is a level too, and goes before the group's view
         stub.hiddenOpen = true;
         const closed = stub.hiddenClosed;
         focusCtl.stepBack();
-        check("the hidden list is open: the click closes it, not the group's view", [stub.hiddenOpen, stub.hiddenClosed - closed, centreItem.recalled], [false, 1, false]);
+        tally.check("the hidden list is open: the click closes it, not the group's view", [stub.hiddenOpen, stub.hiddenClosed - closed, centreItem.recalled], [false, 1, false]);
 
         // With no group there is only the card to step back from
         stub.focusBody = {
@@ -214,7 +210,7 @@ Item {
         run(1);
         focusCtl.stepBack();
         focusCtl.stepBack();
-        check("no group: the card closes, and the next click does nothing", [stub.focusBody, centreItem.recalled], [null, false]);
+        tally.check("no group: the card closes, and the next click does nothing", [stub.focusBody, centreItem.recalled], [null, false]);
     }
 
     // --- The real scene, with real mouse events ---------------------------------------
@@ -256,21 +252,21 @@ Item {
         {
             "then": 100,
             "run": () => {
-                check("no group: nothing to step back from", scene.canStepBack, false);
+                tally.check("no group: nothing to step back from", scene.canStepBack, false);
                 h.clickSky();
-                check("so a click on the sky falls through to what is below", [h.fellThrough, scene.centre.recalled], [1, false]);
+                tally.check("so a click on the sky falls through to what is below", [h.fellThrough, scene.centre.recalled], [1, false]);
                 route.sharing = [h.headset, h.one, h.two];
             }
         },
         {
             "then": 800,
             "run": () => {
-                check("a group has the centre: the sky can step back", [scene.centre.shown, scene.canStepBack], [true, true]);
+                tally.check("a group has the centre: the sky can step back", [scene.centre.shown, scene.canStepBack], [true, true]);
                 h.clickSky();
-                check("a click on the sky steps back to Fedora's view, and the click stays here", [scene.centre.recalled, h.fellThrough], [true, 1]);
-                check("stepped back: the sky has nothing more to step back from", scene.canStepBack, false);
+                tally.check("a click on the sky steps back to Fedora's view, and the click stays here", [scene.centre.recalled, h.fellThrough], [true, 1]);
+                tally.check("stepped back: the sky has nothing more to step back from", scene.canStepBack, false);
                 h.clickSky();
-                check("so the next click falls through", [h.fellThrough, scene.centre.recalled], [2, true]);
+                tally.check("so the next click falls through", [h.fellThrough, scene.centre.recalled], [2, true]);
             }
         },
         {
@@ -281,11 +277,11 @@ Item {
                 // member opens its radar (tests/qml/radar.test.qml)
                 scene.centre.release();
                 scene.focusOn(scene.centre.bodyOf(h.headset), true);
-                check("a card is open over the group", [!!scene.focusBody, scene.centre.recalled], [true, false]);
+                tally.check("a card is open over the group", [!!scene.focusBody, scene.centre.recalled], [true, false]);
                 h.clickSky();
-                check("a click on the sky closes the card, and Fedora's view stays away", [scene.focusBody, scene.centre.recalled, h.fellThrough], [null, false, 2]);
+                tally.check("a click on the sky closes the card, and Fedora's view stays away", [scene.focusBody, scene.centre.recalled, h.fellThrough], [null, false, 2]);
                 h.clickSky();
-                check("the next click steps back to Fedora's view", [scene.centre.recalled, h.fellThrough], [true, 2]);
+                tally.check("the next click steps back to Fedora's view", [scene.centre.recalled, h.fellThrough], [true, 2]);
             }
         }
     ]
@@ -305,8 +301,7 @@ Item {
     }
     function next() {
         if (step >= steps.length) {
-            print(failures ? failures + " failure(s)" : "all passed");
-            Qt.exit(failures ? 1 : 0);
+            tally.finish();
             return;
         }
         const s = steps[step++];

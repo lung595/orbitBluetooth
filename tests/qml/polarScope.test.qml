@@ -21,12 +21,8 @@ Item {
         motion: true
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
     function at(r) {
         return Qt.point(scope.cx, scope.cy - r);
@@ -48,24 +44,24 @@ Item {
     }
 
     Component.onCompleted: {
-        check("top of the outer half is the device", scope.pointer.partAt(at(scope.outer)), "device");
-        check("top of the inner half is this PC", scope.pointer.partAt(at(scope.inner)), "pc");
-        check("between them: nothing", scope.pointer.partAt(at((scope.outer + scope.inner) / 2)), "");
-        check("the top is half way", scope.pointer.valueAt("pc", at(scope.inner)), 0.5);
-        check("a notch on the outer arc's icon scrolls the device", (notchAtFoot(scope.outer), h.lastMove), ["device", 0.65]);
-        check("a notch on this PC's icon scrolls this PC", (notchAtFoot(scope.inner), h.lastMove), ["pc", 0.45]);
+        tally.check("top of the outer half is the device", scope.pointer.partAt(at(scope.outer)), "device");
+        tally.check("top of the inner half is this PC", scope.pointer.partAt(at(scope.inner)), "pc");
+        tally.check("between them: nothing", scope.pointer.partAt(at((scope.outer + scope.inner) / 2)), "");
+        tally.check("the top is half way", scope.pointer.valueAt("pc", at(scope.inner)), 0.5);
+        tally.check("a notch on the outer arc's icon scrolls the device", (notchAtFoot(scope.outer), h.lastMove), ["device", 0.65]);
+        tally.check("a notch on this PC's icon scrolls this PC", (notchAtFoot(scope.inner), h.lastMove), ["pc", 0.45]);
         h.moves = 0;
         scope.pointer.turn("device", 60);
         scope.pointer.turn("pc", 60);
-        check("half notches on two levels do not add up", h.moves, 0);
-        check("at rest the clock is stopped", scope.animating, false);
+        tally.check("half notches on two levels do not add up", h.moves, 0);
+        tally.check("at rest the clock is stopped", scope.animating, false);
 
         // A level step (once every item is ready) eases on the scope's
         // clock, which stops alone
         Qt.callLater(() => {
             scope.pcLevel = 0.7;
-            check("a level step starts the clock", scope.animating, true);
-            check("the shown level eases, it does not jump", scope._pc < 0.7, true);
+            tally.check("a level step starts the clock", scope.animating, true);
+            tally.check("the shown level eases, it does not jump", scope._pc < 0.7, true);
         });
 
         // Frames from a feed move the shared picture; when they stop, the
@@ -74,8 +70,8 @@ Item {
             "l": [0.8, 0.5],
             "r": [0.6, 0.7]
         });
-        check("a frame lights dots", model.alive > 0, true);
-        check("the dots fade on their own clock", model.animating, true);
+        tally.check("a frame lights dots", model.alive > 0, true);
+        tally.check("the dots fade on their own clock", model.animating, true);
         settle.start();
     }
     // A made-up ScopeFeed
@@ -98,16 +94,16 @@ Item {
         id: settle
         interval: 1500
         onTriggered: {
-            check("the level clock stopped once settled", scope.animating, false);
-            check("the level reached its value", scope._pc, 0.7);
-            check("the fade stops by itself once the dots are gone", model.animating, false);
-            check("nothing left alive", model.alive, 0);
+            tally.check("the level clock stopped once settled", scope.animating, false);
+            tally.check("the level reached its value", scope._pc, 0.7);
+            tally.check("the fade stops by itself once the dots are gone", model.animating, false);
+            tally.check("nothing left alive", model.alive, 0);
             feed.push({
                 "l": [0.8],
                 "r": [0.8]
             });
             feed.active = false;
-            check("feed off: the picture clears at once", [model.alive, model.animating], [0, false]);
+            tally.check("feed off: the picture clears at once", [model.alive, model.animating], [0, false]);
             feed.active = true;
             h.nextStyle();
         }
@@ -127,14 +123,14 @@ Item {
             "l": [0.9, 0.6, 0.3],
             "r": [0.5, 0.7, 0.2]
         });
-        check(model.style + ": sound starts the fade", model.animating, true);
+        tally.check(model.style + ": sound starts the fade", model.animating, true);
         styleSettle.start();
     }
     Timer {
         id: styleSettle
         interval: 2500
         onTriggered: {
-            check(model.style + ": the fade stops by itself", model.animating, false);
+            tally.check(model.style + ": the fade stops by itself", model.animating, false);
             h.nextStyle();
         }
     }
@@ -161,7 +157,7 @@ Item {
             if (--left > 0)
                 return;
             stop();
-            h.check("a late frame gets no blank step before it", h.pictures, 10);
+            tally.check("a late frame gets no blank step before it", h.pictures, 10);
             silenceSettle.start();
         }
     }
@@ -176,9 +172,8 @@ Item {
                     "l": [0],
                     "r": [0]
                 });
-            h.check("silence on a blank picture paints nothing", [h.pictures, model.animating], [0, false]);
-            print(h.failures ? h.failures + " failure(s)" : "all passed");
-            Qt.exit(h.failures ? 1 : 0);
+            tally.check("silence on a blank picture paints nothing", [h.pictures, model.animating], [0, false]);
+            tally.finish();
         }
     }
 }

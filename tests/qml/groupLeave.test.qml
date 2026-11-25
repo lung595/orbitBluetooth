@@ -41,12 +41,8 @@ Item {
         bodyCount: 3
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
 
     function disc(address) {
@@ -101,7 +97,7 @@ Item {
         {
             "then": 100,
             "run": () => {
-                check("the group of four: the headset is the source", [scene.centre.source, scene.centre.wired.count], [h.headset, 3]);
+                tally.check("the group of four: the headset is the source", [scene.centre.source, scene.centre.wired.count], [h.headset, 3]);
                 // The source leaves by the menu's "Remove from group"
                 scene.together.leave(h.headset);
             }
@@ -110,10 +106,10 @@ Item {
             "then": 100,
             "run": () => {
                 const hs = scene.centre.bodyOf(h.headset);
-                check("three remain: the group goes on, a wired output is its source now", [scene.together.count(), scene.centre.members, scene.centre.source], [3, [h.dac, h.screen, h.jack], h.dac]);
-                check("the wired source takes the source's role", [h.disc(h.dac).role, h.disc(h.screen).role, h.disc(h.jack).role], ["source", "copy", "copy"]);
-                check("the headset is a planet of the ring again", [hs.role, scene.centre.holds(hs)], ["", false]);
-                check("nothing is stuck", h.idle(), [true, true, true]);
+                tally.check("three remain: the group goes on, a wired output is its source now", [scene.together.count(), scene.centre.members, scene.centre.source], [3, [h.dac, h.screen, h.jack], h.dac]);
+                tally.check("the wired source takes the source's role", [h.disc(h.dac).role, h.disc(h.screen).role, h.disc(h.jack).role], ["source", "copy", "copy"]);
+                tally.check("the headset is a planet of the ring again", [hs.role, scene.centre.holds(hs)], ["", false]);
+                tally.check("nothing is stuck", h.idle(), [true, true, true]);
             }
         },
         {
@@ -129,19 +125,19 @@ Item {
             "then": 300,
             "until": () => h.landed,
             "run": () => {
-                check("Fedora's view", [scene.centre.recalled, scene.centre.stage], [true, 1]);
+                tally.check("Fedora's view", [scene.centre.recalled, scene.centre.stage], [true, 1]);
                 const hs = scene.centre.bodyOf(h.headset);
-                check("the headset is held in the group", scene.centre.holds(hs), true);
+                tally.check("the headset is held in the group", scene.centre.holds(hs), true);
                 const armed = h.dragTo(hs, hs.px + 200, hs.py + 160);
-                check("pulled out, it is armed to leave", armed, true);
+                tally.check("pulled out, it is armed to leave", armed, true);
             }
         },
         {
             "then": 100,
             "run": () => {
                 const hs = scene.centre.bodyOf(h.headset);
-                check("Fedora's view: three remain, a wired source", [scene.together.count(), scene.centre.source, scene.centre.recalled], [3, h.dac, true]);
-                check("Fedora's view: nothing is stuck", h.idle(), [true, true, true]);
+                tally.check("Fedora's view: three remain, a wired source", [scene.together.count(), scene.centre.source, scene.centre.recalled], [3, h.dac, true]);
+                tally.check("Fedora's view: nothing is stuck", h.idle(), [true, true, true]);
                 // Every Bluetooth body can still be picked up and moved
                 const others = scene.world.bodyList().filter(b => !b.wired);
                 const moved = others.map(b => {
@@ -152,8 +148,8 @@ Item {
                     scene.endDrag();
                     return ok;
                 });
-                check("Fedora's view: every Bluetooth body can be dragged", moved.every(x => x), true);
-                check("Fedora's view: nothing is stuck after", h.idle(), [true, true, true]);
+                tally.check("Fedora's view: every Bluetooth body can be dragged", moved.every(x => x), true);
+                tally.check("Fedora's view: nothing is stuck after", h.idle(), [true, true, true]);
             }
         },
         {
@@ -164,10 +160,10 @@ Item {
                 scene.beginDrag(w, Qt.point(w.px, w.py));
                 const x0 = w.px;
                 scene.updateDrag(Qt.point(w.px + 220, w.py + 180));
-                check("a wired member follows the pointer and is armed to leave", [w.dragging, w.px > x0 + 100, w.armed, w.hideArmed, hint.text], [true, true, true, false, "Release to leave the group"]);
+                tally.check("a wired member follows the pointer and is armed to leave", [w.dragging, w.px > x0 + 100, w.armed, w.hideArmed, hint.text], [true, true, true, false, "Release to leave the group"]);
                 scene.endDrag();
-                check("released, it leaves and the others go on", [scene.together.count(), scene.together.isMember(h.jack)], [n - 1, false]);
-                check("nothing is stuck after a wired member left", h.idle(), [true, true, true]);
+                tally.check("released, it leaves and the others go on", [scene.together.count(), scene.together.isMember(h.jack)], [n - 1, false]);
+                tally.check("nothing is stuck after a wired member left", h.idle(), [true, true, true]);
             }
         },
         {
@@ -175,12 +171,12 @@ Item {
             "run": () => {
                 // The wired source too: two remain, and once one more leaves the group ends
                 const w = h.disc(h.dac), n = scene.together.count();
-                check("the wired source can be picked up", [!!w, w ? w.role : ""], [true, "source"]);
+                tally.check("the wired source can be picked up", [!!w, w ? w.role : ""], [true, "source"]);
                 scene.beginDrag(w, Qt.point(w.px, w.py));
                 scene.updateDrag(Qt.point(w.px - 220, w.py - 150));
                 scene.endDrag();
-                check("pulled out, the wired source leaves and the group goes on or ends", [scene.together.count(), scene.together.isMember(h.dac)], [n - 1 < 2 ? 0 : n - 1, false]);
-                check("nothing is stuck once the group ended", h.idle(), [true, true, true]);
+                tally.check("pulled out, the wired source leaves and the group goes on or ends", [scene.together.count(), scene.together.isMember(h.dac)], [n - 1 < 2 ? 0 : n - 1, false]);
+                tally.check("nothing is stuck once the group ended", h.idle(), [true, true, true]);
             }
         }
     ]
@@ -210,8 +206,7 @@ Item {
         }
         waited = 0;
         if (step >= steps.length) {
-            print(failures ? failures + " failure(s)" : "all passed");
-            Qt.exit(failures ? 1 : 0);
+            tally.finish();
             return;
         }
         const s = steps[step++];

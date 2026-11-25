@@ -174,7 +174,7 @@ Item {
         const node = which === "device" ? deviceNode(dev) : pcNode(dev);
         if (!node || !node.audio)
             return which === "device" ? (dev ? "no-own-volume" : "no-device") : "no-pc-level";
-        const a = String(arg === undefined || arg === null ? "" : arg).trim().toLowerCase();
+        const a = String(arg ?? "").trim().toLowerCase();
         if (a === "up" || a === "down") {
             if (!together.active)
                 touchLevel(which, dev);

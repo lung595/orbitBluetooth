@@ -83,22 +83,18 @@ Item {
         return h.errors.filter(l => /ORB-E003 tool=pw_loopback/.test(l));
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
 
     // --- The PC-level filter ----------------------------------------------------------------
     function step1() {
-        check("the node a loopback makes is read from its capture end", [Together.nodeOf(Route.filterArgs(h.mac, deviceSink.name, "Buds")), Together.nodeOf(Route.wiredFilterArgs(h.wired, "")), Together.nodeOf(null), Together.nodeOf(["bash"])], [Route.virtualName(h.mac), Route.wiredFilterName(h.wired), "", ""]);
+        tally.check("the node a loopback makes is read from its capture end", [Together.nodeOf(Route.filterArgs(h.mac, deviceSink.name, "Buds")), Together.nodeOf(Route.wiredFilterArgs(h.wired, "")), Together.nodeOf(null), Together.nodeOf(["bash"])], [Route.virtualName(h.mac), Route.wiredFilterName(h.wired), "", ""]);
         Pipewire.extraSinks = [deviceSink];
         dev.absolute = 1;
-        check("a device with its own volume: the filter's process runs", [!!filterProcess(), filterProcess() && filterProcess().running], [true, true]);
+        tally.check("a device with its own volume: the filter's process runs", [!!filterProcess(), filterProcess() && filterProcess().running], [true, true]);
         Pipewire.extraSinks = [deviceSink, pcNode];
-        check("its filter shows up", dev.pc === pcNode, true);
+        tally.check("its filter shows up", dev.pc === pcNode, true);
         // Gone for less than 2 s: a node list being rebuilt, nothing more
         Pipewire.extraSinks = [deviceSink];
         wait(500);
@@ -108,30 +104,30 @@ Item {
         wait(2200);
     }
     function step3() {
-        check("back within 2 s: still running, nothing logged", [filterProcess().running, e003().length], [true, 0]);
+        tally.check("back within 2 s: still running, nothing logged", [filterProcess().running, e003().length], [true, 0]);
         // PipeWire restarted: the device's sink came back, the filter did not
         Pipewire.extraSinks = [deviceSink];
         wait(2300);
     }
     function step4() {
-        check("missing for 2 s while running: stopped and logged", [filterProcess() ? filterProcess().running : false, e003()], [false, ["ORB-E003 tool=pw_loopback code=-1"]]);
+        tally.check("missing for 2 s while running: stopped and logged", [filterProcess() ? filterProcess().running : false, e003()], [false, ["ORB-E003 tool=pw_loopback code=-1"]]);
         wait(1200);
     }
     function step5() {
-        check("a moment later it starts again by itself", [!!filterProcess() && filterProcess().running], [true]);
+        tally.check("a moment later it starts again by itself", [!!filterProcess() && filterProcess().running], [true]);
         // The new one never makes its node: it is left alone, no loop
         wait(2500);
     }
     function step6() {
-        check("a filter never seen is never stopped", [filterProcess().running, e003().length], [true, 1]);
+        tally.check("a filter never seen is never stopped", [filterProcess().running, e003().length], [true, 1]);
         Pipewire.extraSinks = [deviceSink, pcNode];
         dev.absolute = 0;
-        check("not wanted: stopped", filterProcess() ? filterProcess().running : false, false);
+        tally.check("not wanted: stopped", filterProcess() ? filterProcess().running : false, false);
         Pipewire.extraSinks = [deviceSink];
         wait(2300);
     }
     function step7() {
-        check("a filter not running is not watched", e003().length, 1);
+        tally.check("a filter not running is not watched", e003().length, 1);
 
         // --- Listen together ------------------------------------------------------------------
         Pipewire.extraSinks = [];
@@ -145,24 +141,24 @@ Item {
                 "command": Together.args(h.tap, 0)
             }
         ];
-        check("the copy and the wired filter run", [linkProcess(h.other).running, linkProcess(Together.FILTER_KEY).running], [true, true]);
+        tally.check("the copy and the wired filter run", [linkProcess(h.other).running, linkProcess(Together.FILTER_KEY).running], [true, true]);
         Pipewire.extraSinks = [copyNode];
         Pipewire.extraSinks = [];
         wait(2300);
     }
     function step8() {
-        check("the copy's node gone for 2 s: it is lost, and stopped", [h.lost, linkProcess(h.other).running], [[h.other], false]);
-        check("the wired filter, never seen, runs on", linkProcess(Together.FILTER_KEY).running, true);
+        tally.check("the copy's node gone for 2 s: it is lost, and stopped", [h.lost, linkProcess(h.other).running], [[h.other], false]);
+        tally.check("the wired filter, never seen, runs on", linkProcess(Together.FILTER_KEY).running, true);
         linkProcess(h.other).exited(0);
-        check("its exit afterwards is not lost twice", h.lost, [h.other]);
+        tally.check("its exit afterwards is not lost twice", h.lost, [h.other]);
         Pipewire.extraSinks = [wiredNode];
         Pipewire.extraSinks = [];
         wait(2300);
     }
     function step9() {
-        check("the wired filter's node gone for 2 s: lost too", h.lost, [h.other, Together.FILTER_KEY]);
+        tally.check("the wired filter's node gone for 2 s: lost too", h.lost, [h.other, Together.FILTER_KEY]);
         link.copies = [];
-        check("nothing is left running", ProcessLog.live.filter(p => p.command[0] === "bash" && p.running && Together.nodeOf(p.command) !== Route.virtualName(h.mac)).length, 0);
+        tally.check("nothing is left running", ProcessLog.live.filter(p => p.command[0] === "bash" && p.running && Together.nodeOf(p.command) !== Route.virtualName(h.mac)).length, 0);
     }
 
     property var steps: [step1, step2, step3, step4, step5, step6, step7, step8, step9]
@@ -181,8 +177,7 @@ Item {
                 return;
             if (h.next >= h.steps.length) {
                 stepper.stop();
-                print(h.failures ? h.failures + " failure(s)" : "all passed");
-                Qt.exit(h.failures ? 1 : 0);
+                tally.finish();
                 return;
             }
             h.steps[h.next++]();

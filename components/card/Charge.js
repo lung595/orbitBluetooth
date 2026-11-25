@@ -243,7 +243,7 @@ function levelColor(level) {
             const a = RAMP[i - 1], b = RAMP[i];
             const t = b[0] === a[0] ? 0 : (l - a[0]) / (b[0] - a[0]);
             const c = a[1].map((v, k) => Math.round(v + (b[1][k] - v) * t));
-            return "#" + c.map(v => (v < 16 ? "0" : "") + v.toString(16)).join("");
+            return "#" + c.map(v => v.toString(16).padStart(2, "0")).join("");
         }
     }
     return "#5cf2c4";

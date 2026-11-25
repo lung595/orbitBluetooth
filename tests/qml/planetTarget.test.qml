@@ -57,12 +57,8 @@ Item {
         scene: scene
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
     function wheel() {
         for (const o of planet.data)
@@ -72,12 +68,12 @@ Item {
 
     Component.onCompleted: {
         wheel();
-        check("no group: the level moves", route.steps, 1);
-        check("no group: nothing is touched", route.touched, "");
+        tally.check("no group: the level moves", route.steps, 1);
+        tally.check("no group: nothing is touched", route.touched, "");
         together.active = true;
         wheel();
-        check("in a group: the level moves", route.steps, 2);
-        check("in a group: the member is touched", route.touched, "AA:01");
-        Qt.exit(failures === 0 ? 0 : 1);
+        tally.check("in a group: the level moves", route.steps, 2);
+        tally.check("in a group: the member is touched", route.touched, "AA:01");
+        Qt.exit(tally.failures === 0 ? 0 : 1);
     }
 }

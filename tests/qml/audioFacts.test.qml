@@ -36,12 +36,8 @@ Item {
         }
     ])
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
 
     // The command runner inside AudioFacts: the only child that has a command
@@ -60,36 +56,35 @@ Item {
     }
 
     Component.onCompleted: {
-        check("a runner exists", runner() !== null, true);
-        check("nobody looks: nothing runs", runner().running, false);
+        tally.check("a runner exists", runner() !== null, true);
+        tally.check("nobody looks: nothing runs", runner().running, false);
         facts.refresh();
-        check("asking while nobody looks runs nothing", runner().running, false);
+        tally.check("asking while nobody looks runs nothing", runner().running, false);
 
         facts.active = true;
-        check("looked at: the listing is asked for", runner().running, true);
-        check("the command is fixed", runner().command, ["pactl", "--format=json", "list", "sinks"]);
+        tally.check("looked at: the listing is asked for", runner().running, true);
+        tally.check("the command is fixed", runner().command, ["pactl", "--format=json", "list", "sinks"]);
         finish(0, listing);
-        check("the output's facts arrive", [facts.facts.connection, facts.facts.rate, facts.facts.bits], ["USB", 192000, 32]);
-        check("no PC filter, no PC facts", facts.pcFacts, null);
+        tally.check("the output's facts arrive", [facts.facts.connection, facts.facts.rate, facts.facts.bits], ["USB", 192000, 32]);
+        tally.check("no PC filter, no PC facts", facts.pcFacts, null);
 
         facts.pcSink = "alsa_output.pci-0000_01_00.1.hdmi-stereo";
-        check("a new sink to describe asks again", runner().running, true);
+        tally.check("a new sink to describe asks again", runner().running, true);
         finish(0, listing);
-        check("the filter's facts arrive too", facts.pcFacts.connection, "HDMI");
+        tally.check("the filter's facts arrive too", facts.pcFacts.connection, "HDMI");
 
         facts.active = false;
-        check("nobody looks any more: the listing is dropped", [facts.facts, facts.pcFacts], [null, null]);
-        check("and nothing runs", runner().running, false);
+        tally.check("nobody looks any more: the listing is dropped", [facts.facts, facts.pcFacts], [null, null]);
+        tally.check("and nothing runs", runner().running, false);
 
         facts.active = true;
         finish(1, "garbage");
-        check("a failed command gives nothing", [facts.facts, facts.pcFacts], [null, null]);
+        tally.check("a failed command gives nothing", [facts.facts, facts.pcFacts], [null, null]);
 
         facts.sink = "";
         facts.refresh();
-        check("no sink named: nothing is asked", runner().running, false);
+        tally.check("no sink named: nothing is asked", runner().running, false);
 
-        print(failures ? failures + " failure(s)" : "all passed");
-        Qt.exit(failures ? 1 : 0);
+        tally.finish();
     }
 }

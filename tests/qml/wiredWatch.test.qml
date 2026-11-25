@@ -52,12 +52,8 @@ Item {
         }
     ])
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
 
     // The command runner inside WiredWatch: the only child that has a command
@@ -79,37 +75,36 @@ Item {
     }
 
     Component.onCompleted: {
-        check("a runner exists", runner() !== null, true);
-        check("nobody needs the list: nothing runs", runner().running, false);
+        tally.check("a runner exists", runner() !== null, true);
+        tally.check("nobody needs the list: nothing runs", runner().running, false);
         watch.refresh();
-        check("asking while nobody needs it runs nothing", runner().running, false);
+        tally.check("asking while nobody needs it runs nothing", runner().running, false);
 
         watch.active = true;
-        check("needed: the listing is asked for", runner().running, true);
-        check("the command is fixed", runner().command, ["pactl", "--format=json", "list", "sinks"]);
-        check("while it is read, the list is not ready", watch.ready, false);
+        tally.check("needed: the listing is asked for", runner().running, true);
+        tally.check("the command is fixed", runner().command, ["pactl", "--format=json", "list", "sinks"]);
+        tally.check("while it is read, the list is not ready", watch.ready, false);
         finish(0, listing);
-        check("only what is plugged in and wired is listed", sinks(), ["alsa_output.usb-Maker_Interface-00.analog-stereo"]);
-        check("read: the list is ready", watch.ready, true);
+        tally.check("only what is plugged in and wired is listed", sinks(), ["alsa_output.usb-Maker_Interface-00.analog-stereo"]);
+        tally.check("read: the list is ready", watch.ready, true);
 
         const first = watch.outputs;
         watch.refresh();
         finish(0, listing);
-        check("the same listing again keeps the same list", watch.outputs === first, true);
+        tally.check("the same listing again keeps the same list", watch.outputs === first, true);
 
         watch.refresh();
         finish(0, "[]");
-        check("an output unplugged leaves the list", sinks(), []);
+        tally.check("an output unplugged leaves the list", sinks(), []);
 
         watch.active = false;
-        check("nobody needs it any more: the list is dropped", watch.outputs, []);
-        check("it is not ready any more, and nothing runs", [watch.ready, runner().running], [false, false]);
+        tally.check("nobody needs it any more: the list is dropped", watch.outputs, []);
+        tally.check("it is not ready any more, and nothing runs", [watch.ready, runner().running], [false, false]);
 
         watch.active = true;
         finish(1, listing);
-        check("a failed command gives nothing, and it was read", [watch.outputs, watch.ready], [[], true]);
+        tally.check("a failed command gives nothing, and it was read", [watch.outputs, watch.ready], [[], true]);
 
-        print(failures ? failures + " failure(s)" : "all passed");
-        Qt.exit(failures ? 1 : 0);
+        tally.finish();
     }
 }

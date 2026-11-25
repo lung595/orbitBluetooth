@@ -52,12 +52,8 @@ Item {
         p.exited(0);
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
 
     property double holdUntil: 0
@@ -67,31 +63,31 @@ Item {
     readonly property var steps: [
         () => {
             Pipewire.extraSinks = [deviceSink];
-            check("the sound output shows up: the probe runs", !!tree() && tree().running, true);
+            tally.check("the sound output shows up: the probe runs", !!tree() && tree().running, true);
             noTransport();
-            check("no transport: the device follows this PC", dev.absolute, 0);
+            tally.check("no transport: the device follows this PC", dev.absolute, 0);
             // Gone before the retry: the next connection starts afresh
             Pipewire.extraSinks = [];
-            check("disconnected: unknown again", dev.absolute, -1);
+            tally.check("disconnected: unknown again", dev.absolute, -1);
             // Long enough for the first connection's retry to have passed
             wait(4300);
         },
         () => {
             Pipewire.extraSinks = [deviceSink];
-            check("connected again: a new probe", tree().running, true);
+            tally.check("connected again: a new probe", tree().running, true);
             noTransport();
             wait(4300);
         },
         () => {
-            check("the second connection gets its retry too", tree().running, true);
+            tally.check("the second connection gets its retry too", tree().running, true);
             // Gone while the probe runs: its late answer is dropped
             Pipewire.extraSinks = [];
             noTransport();
-            check("a late answer leaves it unknown", dev.absolute, -1);
+            tally.check("a late answer leaves it unknown", dev.absolute, -1);
         },
         () => {
             Pipewire.extraSinks = [deviceSink];
-            check("so the next connection probes again", tree().running, true);
+            tally.check("so the next connection probes again", tree().running, true);
             noTransport();
             Pipewire.extraSinks = [];
         }
@@ -107,8 +103,7 @@ Item {
                 return;
             if (h.next >= h.steps.length) {
                 stop();
-                print(h.failures ? h.failures + " failure(s)" : "all passed");
-                Qt.exit(h.failures ? 1 : 0);
+                tally.finish();
                 return;
             }
             h.steps[h.next++]();

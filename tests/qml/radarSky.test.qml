@@ -32,12 +32,8 @@ Item {
         audioRoute: route
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
     function find(item, test) {
         for (const child of item.children) {
@@ -91,11 +87,11 @@ Item {
             "then": 100,
             "until": () => h.landed && scene.centre.members.length === 4,
             "run": () => {
-                check("at rest there is no sky", h.find(scene, c => "actionsY" in c), null);
+                tally.check("at rest there is no sky", h.find(scene, c => "actionsY" in c), null);
                 h.radar.show("");
                 // The view is made as the radar opens, before its first frame
                 h.sky = h.find(scene, c => "actionsY" in c);
-                check("opening the radar makes its sky", !!h.sky, true);
+                tally.check("opening the radar makes its sky", !!h.sky, true);
             }
         },
         {
@@ -104,9 +100,9 @@ Item {
                 // The card's header settles in the first frame (the scene's glyph overlap grows
                 // from 66 to 107 px while the card is still transparent), so the sky may
                 // be painted a second time then, and never again
-                check("the sky is painted as the radar opens, twice at most", h.paints >= 1 && h.paints <= 2, true);
-                check("it takes no click and says nothing to a screen reader", [h.sky.enabled, h.sky.Accessible.ignored], [false, true]);
-                check("it has a place for every small dial and an orbit around the hero", [h.sky.places.satellites.length, h.sky.side > 100], [4, true]);
+                tally.check("the sky is painted as the radar opens, twice at most", h.paints >= 1 && h.paints <= 2, true);
+                tally.check("it takes no click and says nothing to a screen reader", [h.sky.enabled, h.sky.Accessible.ignored], [false, true]);
+                tally.check("it has a place for every small dial and an orbit around the hero", [h.sky.places.satellites.length, h.sky.side > 100], [4, true]);
                 h.paints = 0;
                 h.radar.show(h.one);
             }
@@ -114,7 +110,7 @@ Item {
         {
             "then": 300,
             "run": () => {
-                check("a new hero does not repaint it", [h.radar.heroId, h.paints], [h.one, 0]);
+                tally.check("a new hero does not repaint it", [h.radar.heroId, h.paints], [h.one, 0]);
                 h.radar.setLevel(h.one, 0.2);
                 h.radar.toggleMute(h.one);
             }
@@ -122,29 +118,29 @@ Item {
         {
             "then": 300,
             "run": () => {
-                check("a level and a mute do not repaint it", h.paints, 0);
+                tally.check("a level and a mute do not repaint it", h.paints, 0);
                 Theme.isLightMode = true;
             }
         },
         {
             "then": 300,
             "run": () => {
-                check("a light theme repaints it once", h.paints, 1);
+                tally.check("a light theme repaints it once", h.paints, 1);
                 const ms = h.paintMs();
                 h.paints = 0;
                 print("paint, light, 360 px, 4 small dials: " + ms + " ms (median of 20)");
-                check("a paint takes at most 5 ms, light", ms <= 5, true);
+                tally.check("a paint takes at most 5 ms, light", ms <= 5, true);
                 Theme.isLightMode = false;
             }
         },
         {
             "then": 300,
             "run": () => {
-                check("back to dark repaints it once more", h.paints, 1);
+                tally.check("back to dark repaints it once more", h.paints, 1);
                 h.paints = 0;
                 const ms = h.paintMs();
                 print("paint, dark, 360 px, 4 small dials: " + ms + " ms (median of 20)");
-                check("a paint takes at most 5 ms, dark", ms <= 5, true);
+                tally.check("a paint takes at most 5 ms, dark", ms <= 5, true);
                 h.paints = 0;
                 // Narrower than the card's 360 px
                 h.width = 300;
@@ -153,7 +149,7 @@ Item {
         {
             "then": 300,
             "run": () => {
-                check("a new size repaints it once", h.paints, 1);
+                tally.check("a new size repaints it once", h.paints, 1);
                 h.radar.close();
             }
         }
@@ -184,8 +180,7 @@ Item {
         }
         waited = 0;
         if (step >= steps.length) {
-            print(failures ? failures + " failure(s)" : "all passed");
-            Qt.exit(failures ? 1 : 0);
+            tally.finish();
             return;
         }
         const s = steps[step++];

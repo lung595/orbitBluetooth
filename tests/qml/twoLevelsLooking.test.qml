@@ -29,12 +29,8 @@ Item {
         prefs: prefs
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
     // The facts reader (the only child with a `pcSink`)
     function facts() {
@@ -45,20 +41,19 @@ Item {
     }
 
     Component.onCompleted: {
-        check("the facts reader exists", facts() !== null, true);
-        check("hidden: nothing is read", facts().active, false);
+        tally.check("the facts reader exists", facts() !== null, true);
+        tally.check("hidden: nothing is read", facts().active, false);
 
         // The pop-up is up and the scope listens, but a burst of keys holds
         // the rest back (an owner sets looking from its settle timer)
         levels.listening = true;
         levels.looking = false;
-        check("listening alone starts no read", facts().active, false);
+        tally.check("listening alone starts no read", facts().active, false);
         levels.looking = true;
-        check("looking, with a fact chosen: the facts are read", facts().active, true);
+        tally.check("looking, with a fact chosen: the facts are read", facts().active, true);
         levels.looking = false;
-        check("the burst starts again: the reading stops", facts().active, false);
+        tally.check("the burst starts again: the reading stops", facts().active, false);
 
-        print(failures ? failures + " failure(s)" : "all passed");
-        Qt.exit(failures ? 1 : 0);
+        tally.finish();
     }
 }

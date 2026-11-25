@@ -61,12 +61,8 @@ Item {
     readonly property string w1: "alsa_output.test_one"
     readonly property string w2: "alsa_output.test_two"
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
 
     // What the notes would have been told: the name asked for at the moment each
@@ -136,73 +132,72 @@ Item {
         wire(w2, "Desk‮ Speakers");
 
         // A name is one clean line, as short as a card shows it
-        check("a wired output's name is cleaned", [session.nameOf(w1), session.nameOf(w2)], ["Studio Interface", "Desk Speakers"]);
+        tally.check("a wired output's name is cleaned", [session.nameOf(w1), session.nameOf(w2)], ["Studio Interface", "Desk Speakers"]);
         plug("Head\u001b[31mset‮\u0007 " + "x".repeat(60));
-        check("a device's name is cleaned and cut too", session.nameOf(phones), "Head [31mset " + "x".repeat(27));
-        check("a name that is not there is nothing", [session.nameOf("alsa_output.test_gone"), session.nameOf("AA:BB:CC:DD:EE:99")], ["", ""]);
+        tally.check("a device's name is cleaned and cut too", session.nameOf(phones), "Head [31mset " + "x".repeat(27));
+        tally.check("a name that is not there is nothing", [session.nameOf("alsa_output.test_gone"), session.nameOf("AA:BB:CC:DD:EE:99")], ["", ""]);
         plug("Headset");
 
         // --- Two members: the wired one is unplugged, the session ends with it -----------------
-        check("start with a wired output and a Bluetooth one", session.start([w1, phones]), null);
+        tally.check("start with a wired output and a Bluetooth one", session.start([w1, phones]), null);
         unwire(w1);
-        check("unplugged but still a member: it is still named", session.nameOf(w1), "Studio Interface");
+        tally.check("unplugged but still a member: it is still named", session.nameOf(w1), "Studio Interface");
         wait();
     }
 
     function step1() {
-        check("the session ended with it, and the note could name it", [session.active, h.heard], [false, [["ended", "member-left", "Studio Interface"]]]);
-        check("the scene says it was unplugged, in its words", h.said, [["Studio Interface was unplugged", "Listening together ended with it", "wired-outputs"]]);
-        check("the session is over: nothing is kept", session.nameOf(w1), "");
+        tally.check("the session ended with it, and the note could name it", [session.active, h.heard], [false, [["ended", "member-left", "Studio Interface"]]]);
+        tally.check("the scene says it was unplugged, in its words", h.said, [["Studio Interface was unplugged", "Listening together ended with it", "wired-outputs"]]);
+        tally.check("the session is over: nothing is kept", session.nameOf(w1), "");
         h.said = [];
 
         // --- Three members: one wired output is unplugged, the others go on --------------------
         h.heard = [];
         wire(w1, "Studio Interface");
-        check("start with two wired outputs and a Bluetooth one", session.start([w1, phones, w2]), null);
+        tally.check("start with two wired outputs and a Bluetooth one", session.start([w1, phones, w2]), null);
         unwire(w2);
         wait();
     }
 
     function step2() {
-        check("the others go on, and the note could name the one that left", [session.active, session.members, h.heard], [true, [w1, phones], [["left", "Desk Speakers"]]]);
-        check("the scene says it was unplugged and that the others go on", h.said, [["Desk Speakers was unplugged", "The others keep listening together", "wired-outputs"]]);
-        check("it left: its name is not kept any longer", session.nameOf(w2), "");
-        check("the one that stays is named", session.nameOf(w1), "Studio Interface");
+        tally.check("the others go on, and the note could name the one that left", [session.active, session.members, h.heard], [true, [w1, phones], [["left", "Desk Speakers"]]]);
+        tally.check("the scene says it was unplugged and that the others go on", h.said, [["Desk Speakers was unplugged", "The others keep listening together", "wired-outputs"]]);
+        tally.check("it left: its name is not kept any longer", session.nameOf(w2), "");
+        tally.check("the one that stays is named", session.nameOf(w1), "Studio Interface");
 
         // --- One joins after the session began -------------------------------------------------
         wire(w2, "Desk Speakers");
-        check("a wired output joins", session.add([w2]), null);
+        tally.check("a wired output joins", session.add([w2]), null);
         unwire(w2);
-        check("it is kept from when it joined", session.nameOf(w2), "Desk Speakers");
+        tally.check("it is kept from when it joined", session.nameOf(w2), "Desk Speakers");
         session.remove(w2);
-        check("it leaves by the user's request: not kept", session.nameOf(w2), "");
+        tally.check("it leaves by the user's request: not kept", session.nameOf(w2), "");
 
         // --- The user ends it ------------------------------------------------------------------
         unwire(w1);
         h.said = [];
         session.end("ended", "");
-        check("what the user asked for needs no note", h.said, []);
+        tally.check("what the user asked for needs no note", h.said, []);
         wait();
     }
 
     function step3() {
-        check("nothing is kept once the session is over", [session.nameOf(w1), session.nameOf(w2)], ["", ""]);
+        tally.check("nothing is kept once the session is over", [session.nameOf(w1), session.nameOf(w2)], ["", ""]);
 
         // --- A drop that cannot be done says so in the output's words ---------------------------
         h.said = [];
         wire(w1, "Studio Interface");
         plug("Headset");
-        check("an output that is gone is not plugged in, even with no name to give", together.hint({
+        tally.check("an output that is gone is not plugged in, even with no name to give", together.hint({
             "address": w1
         }, {
             "address": "alsa_output.test_gone"
         }), "This output is not plugged in");
-        check("a Bluetooth device that is gone is not connected", together.hint({
+        tally.check("a Bluetooth device that is gone is not connected", together.hint({
             "address": phones
         }, {
             "address": "AA:BB:CC:DD:EE:99"
         }), "This device is not connected");
-        print(h.failures ? h.failures + " failure(s)" : "all passed");
-        Qt.exit(h.failures ? 1 : 0);
+        tally.finish();
     }
 }

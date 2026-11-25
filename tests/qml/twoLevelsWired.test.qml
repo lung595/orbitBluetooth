@@ -113,24 +113,20 @@ Item {
         dev: route.known(h.phones)
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
 
     Component.onCompleted: {
-        check("start with a headset, a USB interface and the HDMI output", session.start([h.phones, h.usbOut, h.hdmiOut]), null);
-        check("split, in the order they joined", [levels.split, levels.members.map(m => m.part), levels.members.map(m => m.address)], [true, ["m0", "m1", "m2"], [h.phones, h.usbOut, h.hdmiOut]]);
-        check("each is at the level of its own output", levels.members.map(m => m.level), [0.4, 0.7, 0.9]);
-        check("a wired output is drawn by its connection, never by a Bluetooth picture", levels.members.map(m => m.icon), ["headphones", "usb", "settings_input_hdmi"]);
-        check("and named as the session names it, one clean line", levels.members.map(m => m.label), ["Headset", "Acme Studio 2x2", "Built-in HDMI"]);
+        tally.check("start with a headset, a USB interface and the HDMI output", session.start([h.phones, h.usbOut, h.hdmiOut]), null);
+        tally.check("split, in the order they joined", [levels.split, levels.members.map(m => m.part), levels.members.map(m => m.address)], [true, ["m0", "m1", "m2"], [h.phones, h.usbOut, h.hdmiOut]]);
+        tally.check("each is at the level of its own output", levels.members.map(m => m.level), [0.4, 0.7, 0.9]);
+        tally.check("a wired output is drawn by its connection, never by a Bluetooth picture", levels.members.map(m => m.icon), ["headphones", "usb", "settings_input_hdmi"]);
+        tally.check("and named as the session names it, one clean line", levels.members.map(m => m.label), ["Headset", "Acme Studio 2x2", "Built-in HDMI"]);
 
         // One whose properties say nothing is told by its name
-        check("the sound card's jack is analog, by its name", session.add([h.jackOut]), null);
-        check("it has the analog picture, and the group still shows four arcs", [levels.members.length, levels.members[3].icon, levels.members[3].label], [4, "cable", "Built-in Audio"]);
+        tally.check("the sound card's jack is analog, by its name", session.add([h.jackOut]), null);
+        tally.check("it has the analog picture, and the group still shows four arcs", [levels.members.length, levels.members[3].icon, levels.members[3].label], [4, "cable", "Built-in Audio"]);
         session.remove(h.jackOut);
 
         // The general level (the shared PC half) and a member's own level each
@@ -140,17 +136,16 @@ Item {
         levels.stepLevel("pc", 1);
         levels.setLevel("m1", 0.3);
         levels.stepLevel("m1", 1);
-        check("in a group the general level is written to the PC half's node, by drag and by wheel", route.writes.slice(0, 2).map(n => !!n && n === levels._pcNode), [true, true]);
-        check("a wired member's own level is written to its sink", route.writes.slice(2).map(n => n === usbSink), [true, true]);
+        tally.check("in a group the general level is written to the PC half's node, by drag and by wheel", route.writes.slice(0, 2).map(n => !!n && n === levels._pcNode), [true, true]);
+        tally.check("a wired member's own level is written to its sink", route.writes.slice(2).map(n => n === usbSink), [true, true]);
         route.writes = [];
         session.end("test");
         levels.setLevel("pc", 0.3);
         levels.stepLevel("pc", 1);
-        check("outside a group the PC half is written to its node", route.writes.map(n => !!n && n === levels._pcNode), [true, true]);
+        tally.check("outside a group the PC half is written to its node", route.writes.map(n => !!n && n === levels._pcNode), [true, true]);
 
         // Not Bluetooth: the device card of a wired output is not split by this
-        check("a wired output is not a Bluetooth device, so no device to split on", route.known(h.usbOut), null);
-        print(h.failures ? h.failures + " failure(s)" : "all passed");
-        Qt.exit(h.failures ? 1 : 0);
+        tally.check("a wired output is not a Bluetooth device, so no device to split on", route.known(h.usbOut), null);
+        tally.finish();
     }
 }

@@ -65,12 +65,8 @@ Item {
         return connections.resources.find(o => o.interval === 60000);
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
     // A new headset that also exposes the classic keyboard profile
     function typingHeadset(name) {
@@ -90,31 +86,30 @@ Item {
     property var steps: [() => {
             h.b = typingHeadset("Jabra Elite");
             connections.startConnect(h.b);
-            check("first drag pairs", h.b.phase, "connecting");
+            tally.check("first drag pairs", h.b.phase, "connecting");
         }, () => {
-            check("held for the user's answer", connections._confirm, h.b.device);
-            check("still blocked", h.b.device.blocked, true);
-            check("the toast says why, with the guide", ToastService.log, ["pairing-safety"]);
-            check("no second note on top of the toast", scene.notes, []);
-            check("back out of the belt", [h.b.phase, h.b.shakes, scene.played], ["idle", 1, ["error"]]);
-            check("the one-minute wait runs", confirmWait().running, true);
-            check("not connected yet", BluetoothService.log.slice(-1), ["pair Jabra Elite"]);
+            tally.check("held for the user's answer", connections._confirm, h.b.device);
+            tally.check("still blocked", h.b.device.blocked, true);
+            tally.check("the toast says why, with the guide", ToastService.log, ["pairing-safety"]);
+            tally.check("no second note on top of the toast", scene.notes, []);
+            tally.check("back out of the belt", [h.b.phase, h.b.shakes, scene.played], ["idle", 1, ["error"]]);
+            tally.check("the one-minute wait runs", confirmWait().running, true);
+            tally.check("not connected yet", BluetoothService.log.slice(-1), ["pair Jabra Elite"]);
             connections.startConnect(h.b);
         }, () => {
-            check("second drag: unblocked", h.b.device.blocked, false);
-            check("second drag: question closed", [connections._confirm, confirmWait().running], [null, false]);
-            check("second drag: connects", BluetoothService.log.slice(-1), ["connect Jabra Elite"]);
-            check("second drag: kept", h.b.device.forgotten, false);
+            tally.check("second drag: unblocked", h.b.device.blocked, false);
+            tally.check("second drag: question closed", [connections._confirm, confirmWait().running], [null, false]);
+            tally.check("second drag: connects", BluetoothService.log.slice(-1), ["connect Jabra Elite"]);
+            tally.check("second drag: kept", h.b.device.forgotten, false);
             h.b = typingHeadset("Jabra Evolve");
             connections.startConnect(h.b);
         }, () => {
-            check("asked again for a new one", connections._confirm, h.b.device);
+            tally.check("asked again for a new one", connections._confirm, h.b.device);
             confirmWait().triggered();
-            check("no answer within the minute: forgotten", [h.b.device.forgotten, h.b.device.trusted, h.b.device.blocked], [true, false, false]);
-            check("no answer: question closed", connections._confirm, null);
+            tally.check("no answer within the minute: forgotten", [h.b.device.forgotten, h.b.device.trusted, h.b.device.blocked], [true, false, false]);
+            tally.check("no answer: question closed", connections._confirm, null);
         }, () => {
-            print(h.failures ? h.failures + " failure(s)" : "all passed");
-            Qt.exit(h.failures ? 1 : 0);
+            tally.finish();
         }]
     property int i: 0
     Timer {

@@ -44,12 +44,8 @@ Item {
         body: fake
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
 
     // WCAG contrast of a colour on the night sky: how well it reads there
@@ -103,27 +99,26 @@ Item {
         const stock = [["lime (the preview's default)", false, "#C5E66A", "#BFCBAD", true], ["Blue dark", false, "#42a5f5", "#8ab4f8", false], ["Blue light", true, "#1976d2", "#42a5f5", false], ["Cyan dark", false, "#00bcd4", "#4dd0e1", false], ["Cyan light", true, "#0097a7", "#00bcd4", false]];
         for (const [name, light, primary, secondary, own] of stock) {
             theme(light, primary, secondary);
-            check(name + ": the arc, the beam and the card's bolt share one tone (the card's bolt and beam read the theme's own)", [arcs.tint === tones.charging, beam.endColor === tones.charging, find(trio, c => c.name === "bolt")?.color === trio.night.chargingTheme, find(trio, c => c.whiteCore !== undefined)?.endColor === trio.night.chargingTheme], [true, true, true, true]);
-            check(name + ": the charge reads on the night sky (contrast >= 3)", contrastOnSky(tones.charging) >= 3, true);
-            check(name + ": a tone of its own is told from the primary: " + own, tones.chargingApart, own);
-            check(name + ": the bolt marker shows only where the tone is not its own", marker() !== null, !own);
-            check(name + ": the marker reads on the sky too", contrastOnSky(arcs.tint) >= 3, true);
+            tally.check(name + ": the arc, the beam and the card's bolt share one tone (the card's bolt and beam read the theme's own)", [arcs.tint === tones.charging, beam.endColor === tones.charging, find(trio, c => c.name === "bolt")?.color === trio.night.chargingTheme, find(trio, c => c.whiteCore !== undefined)?.endColor === trio.night.chargingTheme], [true, true, true, true]);
+            tally.check(name + ": the charge reads on the night sky (contrast >= 3)", contrastOnSky(tones.charging) >= 3, true);
+            tally.check(name + ": a tone of its own is told from the primary: " + own, tones.chargingApart, own);
+            tally.check(name + ": the bolt marker shows only where the tone is not its own", marker() !== null, !own);
+            tally.check(name + ": the marker reads on the sky too", contrastOnSky(arcs.tint) >= 3, true);
         }
 
         theme(false, "#42a5f5", "#8ab4f8");
         fake.charging = false;
-        check("not charging: no marker, even in Blue", marker() !== null, false);
+        tally.check("not charging: no marker, even in Blue", marker() !== null, false);
         fake.charging = true;
         fake.focused = true;
-        check("a focused device draws no ring and no marker", marker() !== null, false);
+        tally.check("a focused device draws no ring and no marker", marker() !== null, false);
         fake.focused = false;
-        check("the marker keeps its own size (a sized Loader would stretch it)", marker().width, 13);
+        tally.check("the marker keeps its own size (a sized Loader would stretch it)", marker().width, 13);
         fake.battery = 25;
         const lowAngle = marker().angle;
         fake.battery = 75;
-        check("the marker rides the head of the level arc (25 % to 75 % is half a turn)", Math.round((marker().angle - lowAngle) / Math.PI * 180), 180);
+        tally.check("the marker rides the head of the level arc (25 % to 75 % is half a turn)", Math.round((marker().angle - lowAngle) / Math.PI * 180), 180);
 
-        print(h.failures ? h.failures + " failure(s)" : "all passed");
-        Qt.exit(h.failures ? 1 : 0);
+        tally.finish();
     }
 }

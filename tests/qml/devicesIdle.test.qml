@@ -25,12 +25,8 @@ Item {
         audioRoute: route
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
     // How many times the scene woke from rest since `watching` was set
     property bool watching: false
@@ -53,14 +49,14 @@ Item {
         {
             "then": 4000,
             "run": () => {
-                check("Reduce motion: the scene is at rest, the poll runs", [scene.settled, scene.awake], [true, true]);
+                tally.check("Reduce motion: the scene is at rest, the poll runs", [scene.settled, scene.awake], [true, true]);
                 h.watching = true;
             }
         },
         {
             "then": 1000,
             "run": () => {
-                check("nothing changed for 4 s: the poll never woke it", h.wakes, 0);
+                tally.check("nothing changed for 4 s: the poll never woke it", h.wakes, 0);
                 // A device more: the next poll or the model's signal wakes it
                 scene.previewDevices = Devices.list(false, 1);
             }
@@ -68,7 +64,7 @@ Item {
         {
             "then": 0,
             "run": () => {
-                check("a new device still wakes it", h.wakes > 0, true);
+                tally.check("a new device still wakes it", h.wakes > 0, true);
             }
         }
     ]
@@ -79,8 +75,7 @@ Item {
     }
     function next() {
         if (at >= steps.length) {
-            print(failures ? failures + " failure(s)" : "all passed");
-            Qt.exit(failures ? 1 : 0);
+            tally.finish();
             return;
         }
         const step = steps[at++];

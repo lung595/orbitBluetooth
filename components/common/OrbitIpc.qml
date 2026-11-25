@@ -64,6 +64,13 @@ Scope {
     function _delayNote(why) {
         return Phrase.note(why) + " · " + Guide.url("disconnect-after-a-delay");
     }
+    // "OK", or why a level was refused, then the guide section that explains it
+    function _level(why, anchor) {
+        return why ? Guide.levelNote(why) + " · " + Guide.url(anchor || "the-two-volumes") : "OK";
+    }
+    function _noHeadset() {
+        return "No supported headset connected · " + Guide.url("noise-control");
+    }
 
     IpcHandler {
         target: "orbitBluetooth"
@@ -92,7 +99,7 @@ Scope {
         function anc(mode: string): string {
             const address = ipc.ancService.primary();
             if (!address)
-                return "No supported headset connected · " + Guide.url("noise-control");
+                return ipc._noHeadset();
             if (Anc.ORDER.indexOf(mode) < 0)
                 return "Modes: " + Anc.ORDER.join(", ") + " · " + Guide.url("noise-control");
             ipc.ancService.send(address, "mode", mode);
@@ -103,7 +110,7 @@ Scope {
         function ancCycle(): string {
             const address = ipc.ancService.primary();
             if (!address)
-                return "No supported headset connected · " + Guide.url("noise-control");
+                return ipc._noHeadset();
             ipc.ancService.cycle(address);
             return "OK";
         }
@@ -145,20 +152,20 @@ Scope {
         // The level inside the Bluetooth device in use (absolute volume)
         function deviceVolume(level: string): string {
             const why = ipc.route.setLevel("device", level, "");
-            return why ? Guide.levelNote(why) + " · " + Guide.url("the-two-volumes") : "OK";
+            return ipc._level(why);
         }
 
         // What this PC sends to it (or to the current output with no device)
         function pcVolume(level: string): string {
             const why = ipc.route.setLevel("pc", level, "");
-            return why ? Guide.levelNote(why) + " · " + Guide.url("the-two-volumes") : "OK";
+            return ipc._level(why);
         }
 
         // The group's general level (the ring around the center): every output
         // moves and the gaps between them are kept
         function togetherVolume(level: string): string {
             const why = group.setLevel(level);
-            return why ? Guide.levelNote(why) + " · " + Guide.url("the-volume-at-the-center") : "OK";
+            return ipc._level(why, "the-volume-at-the-center");
         }
 
         // Binds the volume keys to Orbit's smart steps ("on"), gives them
@@ -188,7 +195,7 @@ Scope {
             if (d !== "up" && d !== "down")
                 return "Use: volume up | down · " + Guide.url("smart-volume-steps");
             const why = ipc.route.stepHeard(d === "up" ? 1 : -1);
-            return why ? Guide.levelNote(why) + " · " + Guide.url("the-two-volumes") : "OK";
+            return ipc._level(why);
         }
 
         // Names of the devices hidden in the black hole, one per line (a name
@@ -295,7 +302,7 @@ Scope {
             const address = ipc.ancService.primary();
             const s = ipc.ancService.snapshots[address];
             if (!address)
-                return "No supported headset connected · " + Guide.url("noise-control");
+                return ipc._noHeadset();
             if (!s || !s.state)
                 return "Unknown (open the headset card once, or use the always-connected engine) · " + Guide.url("noise-control");
             return JSON.stringify(s.state);

@@ -55,37 +55,33 @@ Item {
     }
 
     property var verdicts: ({})
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
 
     readonly property var steps: [
         () => {
             guard.check(headset, "headset", v => h.verdicts.headset = v);
             guard.check(typer, "headset", v => h.verdicts.typer = v);
-            check("one busctl at a time, the first device's", busctl().command[5], headset.dbusPath);
+            tally.check("one busctl at a time, the first device's", busctl().command[5], headset.dbusPath);
             answer(audio);
-            check("the first device gets its own verdict", [h.verdicts.headset, h.verdicts.typer], ["ok", undefined]);
+            tally.check("the first device gets its own verdict", [h.verdicts.headset, h.verdicts.typer], ["ok", undefined]);
         },
         () => {
-            check("then the second is read", [busctl().running, busctl().command[5]], [true, typer.dbusPath]);
+            tally.check("then the second is read", [busctl().running, busctl().command[5]], [true, typer.dbusPath]);
             answer(keys);
-            check("and its key presses are caught", [h.verdicts.typer, typer.blocked, typer.trusted], ["input", true, false]);
-            check("the first was left as it was", [headset.blocked, headset.forgotten], [false, false]);
+            tally.check("and its key presses are caught", [h.verdicts.typer, typer.blocked, typer.trusted], ["input", true, false]);
+            tally.check("the first was left as it was", [headset.blocked, headset.forgotten], [false, false]);
             // busctl cannot be started (Quickshell then sends no exit at all)
             guard.check(third, "headset", v => h.verdicts.third = v);
             guard.check(headset, "headset", v => h.verdicts.again = v);
             busctl().running = false;
-            check("a busctl that never started: refused, not trusted", [h.verdicts.third, third.forgotten], ["refused", true]);
+            tally.check("a busctl that never started: refused, not trusted", [h.verdicts.third, third.forgotten], ["refused", true]);
         },
         () => {
-            check("and the next check still runs", [busctl().running, busctl().command[5]], [true, headset.dbusPath]);
+            tally.check("and the next check still runs", [busctl().running, busctl().command[5]], [true, headset.dbusPath]);
             answer(audio);
-            check("with its own answer", h.verdicts.again, "ok");
+            tally.check("with its own answer", h.verdicts.again, "ok");
             // Removed by BlueZ while busctl runs (forgotten, adapter gone)
             const gone = fakeDevice.createObject(h, {
                 "dbusPath": "/org/bluez/hci0/dev_AA_BB_CC_DD_EE_44"
@@ -95,7 +91,7 @@ Item {
         },
         () => {
             answer(keys);
-            check("a device gone meanwhile: refused, and nothing throws", h.verdicts.gone, "refused");
+            tally.check("a device gone meanwhile: refused, and nothing throws", h.verdicts.gone, "refused");
         },
         () => {
             // A check that comes after an answer but before the Qt.callLater
@@ -123,12 +119,12 @@ Item {
             p.stdout.text = audio;
             p.running = false;
             p.exited(0);
-            check("a check between an answer and its callLater: its own verdict, the next one waits", [h.verdicts.late, h.verdicts.typing, h.late.forgotten], ["ok", undefined, false]);
+            tally.check("a check between an answer and its callLater: its own verdict, the next one waits", [h.verdicts.late, h.verdicts.typing, h.late.forgotten], ["ok", undefined, false]);
         },
         () => {
-            check("and the next device is read on its own call", [busctl().running, busctl().command[5]], [true, h.typing.dbusPath]);
+            tally.check("and the next device is read on its own call", [busctl().running, busctl().command[5]], [true, h.typing.dbusPath]);
             answer(keys);
-            check("so its key presses are caught", [h.verdicts.typing, h.typing.blocked, h.typing.trusted], ["input", true, false]);
+            tally.check("so its key presses are caught", [h.verdicts.typing, h.typing.blocked, h.typing.trusted], ["input", true, false]);
         }
     ]
     property QtObject late: null
@@ -141,8 +137,7 @@ Item {
         onTriggered: {
             if (h.next >= h.steps.length) {
                 stop();
-                print(h.failures ? h.failures + " failure(s)" : "all passed");
-                Qt.exit(h.failures ? 1 : 0);
+                tally.finish();
                 return;
             }
             h.steps[h.next++]();

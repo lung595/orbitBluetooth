@@ -77,12 +77,8 @@ Item {
         when: false
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
     // The rail entry of a category
     function entryOf(id) {
@@ -107,18 +103,18 @@ Item {
             "run": () => {
                 SettingsData.reduceMotion = false;
                 // Nine since the Pop-up category left with Orbit's OSD (0c73f6a), ten with Getting started
-                h.check("ten categories on the rail", rail.view.categories.length, 10);
-                h.check("no Orbit widget placed: Getting started is open", [view.current, h.entryOf("start").on], ["start", true]);
-                h.check("no page of another category shows", [sounds.visible, look.visible], [false, false]);
-                h.check("narrow? no: the rail is 172 px", rail.width, 172);
+                tally.check("ten categories on the rail", rail.view.categories.length, 10);
+                tally.check("no Orbit widget placed: Getting started is open", [view.current, h.entryOf("start").on], ["start", true]);
+                tally.check("no page of another category shows", [sounds.visible, look.visible], [false, false]);
+                tally.check("narrow? no: the rail is 172 px", rail.width, 172);
                 input.mouseClick(h.entryOf("sounds"), 80, 20);
             }
         },
         {
             "then": 50,
             "run": () => {
-                h.check("a click on a category opens it, and only it", [view.current, sounds.visible, look.visible], ["sounds", true, false]);
-                h.check("it is the planet in focus now", [h.entryOf("sounds").on, h.entryOf("orbit").on], [true, false]);
+                tally.check("a click on a category opens it, and only it", [view.current, sounds.visible, look.visible], ["sounds", true, false]);
+                tally.check("it is the planet in focus now", [h.entryOf("sounds").on, h.entryOf("orbit").on], [true, false]);
                 input.mouseClick(search, 100, 20);
                 input.keyClick("s");
                 input.keyClick("n");
@@ -129,20 +125,20 @@ Item {
         {
             "then": 150,
             "run": () => {
-                h.check("typing sets the query", view.query, "snap");
-                h.check("the page is a filter now", [view.filtering, view.hasResults], [true, true]);
-                h.check("the sounds page shows its match and hides the other setting", [sounds.visible, effects.visible, loudness.visible], [true, true, false]);
-                h.check("the page with no match is gone", look.visible, false);
-                h.check("the rail counts per category", [h.entryOf("sounds").badge > 0, h.entryOf("look").badge], [true, 0]);
-                h.check("no planet while filtering, no match fades", [h.entryOf("sounds").on, h.entryOf("look").dim], [false, true]);
+                tally.check("typing sets the query", view.query, "snap");
+                tally.check("the page is a filter now", [view.filtering, view.hasResults], [true, true]);
+                tally.check("the sounds page shows its match and hides the other setting", [sounds.visible, effects.visible, loudness.visible], [true, true, false]);
+                tally.check("the page with no match is gone", look.visible, false);
+                tally.check("the rail counts per category", [h.entryOf("sounds").badge > 0, h.entryOf("look").badge], [true, 0]);
+                tally.check("no planet while filtering, no match fades", [h.entryOf("sounds").on, h.entryOf("look").dim], [false, true]);
                 input.keyClick(Qt.Key_Escape);
             }
         },
         {
             "then": 150,
             "run": () => {
-                h.check("Esc clears the text and gives the page back", [view.query, view.filtering, view.current], ["", false, "sounds"]);
-                h.check("and the settings all show again", [sounds.visible, look.visible, effects.visible, loudness.visible], [true, false, true, true]);
+                tally.check("Esc clears the text and gives the page back", [view.query, view.filtering, view.current], ["", false, "sounds"]);
+                tally.check("and the settings all show again", [sounds.visible, look.visible, effects.visible, loudness.visible], [true, false, true, true]);
                 input.keyClick("x");
                 input.keyClick("y");
                 input.keyClick("z");
@@ -153,7 +149,7 @@ Item {
         {
             "then": 100,
             "run": () => {
-                h.check("a query with no match: nothing shows, rail stays", [view.filtering, view.hasResults, sounds.visible, look.visible], [true, false, false, false]);
+                tally.check("a query with no match: nothing shows, rail stays", [view.filtering, view.hasResults, sounds.visible, look.visible], [true, false, false, false]);
                 input.keyClick(Qt.Key_Escape);
                 input.keyClick("s");
                 input.keyClick("n");
@@ -165,14 +161,14 @@ Item {
         {
             "then": 900,
             "run": () => {
-                h.check("Enter opens the best match's category and leaves the search", [view.query, view.current, view.litKey], ["", "sounds", view.litKey]);
-                h.check("the match is lit at once", h.frameOf(sounds).opacity, 1);
+                tally.check("Enter opens the best match's category and leaves the search", [view.query, view.current, view.litKey], ["", "sounds", view.litKey]);
+                tally.check("the match is lit at once", h.frameOf(sounds).opacity, 1);
             }
         },
         {
             "then": 900,
             "run": () => {
-                h.check("the light fades once, after 300 ms of holding, and is gone", h.frameOf(sounds).opacity, 0);
+                tally.check("the light fades once, after 300 ms of holding, and is gone", h.frameOf(sounds).opacity, 0);
                 SettingsData.reduceMotion = true;
                 view.open("sounds", "soundVolume");
             }
@@ -180,14 +176,14 @@ Item {
         {
             "then": 900,
             "run": () => {
-                h.check("Reduce motion: it stays lit, no fade", h.frameOf(sounds).opacity, 1);
+                tally.check("Reduce motion: it stays lit, no fade", h.frameOf(sounds).opacity, 1);
                 input.mouseClick(sounds, 10, 10);
             }
         },
         {
             "then": 100,
             "run": () => {
-                h.check("a click on the page puts it out", h.frameOf(sounds).opacity, 0);
+                tally.check("a click on the page puts it out", h.frameOf(sounds).opacity, 0);
                 SettingsData.reduceMotion = false;
                 input.mouseClick(search, 100, 20);
                 for (const c of "star")
@@ -197,14 +193,14 @@ Item {
         {
             "then": 150,
             "run": () => {
-                h.check("'star' matches the shooting stars", [view.hits.shootingStars, view.counts.look >= 1], [true, true]);
+                tally.check("'star' matches the shooting stars", [view.hits.shootingStars, view.counts.look >= 1], [true, true]);
                 input.mouseClick(h.entryOf("look"), 80, 20);
             }
         },
         {
             "then": 100,
             "run": () => {
-                h.check("a click on a category with a match opens it at its best match", [view.query, view.current, view.litKey], ["", "look", "shootingStars"]);
+                tally.check("a click on a category with a match opens it at its best match", [view.query, view.current, view.litKey], ["", "look", "shootingStars"]);
                 SettingsData.controlCenterWidgets = [{ "id": "plugin_orbitBluetooth", "enabled": true }];
                 later.active = true;
             }
@@ -212,9 +208,9 @@ Item {
         {
             "then": 50,
             "run": () => {
-                h.check("the view knows where Orbit is placed", [view.placed.cc, view.placed.bar, view.placed.any], [true, false, true]);
-                h.check("Orbit in the Control Center: the settings open on Orbit", later.item.current, "orbit");
-                h.check("a widget added while the page is open does not move it", view.current, "look");
+                tally.check("the view knows where Orbit is placed", [view.placed.cc, view.placed.bar, view.placed.any], [true, false, true]);
+                tally.check("Orbit in the Control Center: the settings open on Orbit", later.item.current, "orbit");
+                tally.check("a widget added while the page is open does not move it", view.current, "look");
                 SettingsData.controlCenterWidgets = [];
                 later.active = false;
             }
@@ -237,8 +233,7 @@ Item {
     }
     function next() {
         if (step >= steps.length) {
-            print(failures ? failures + " failure(s)" : "all passed");
-            Qt.exit(failures ? 1 : 0);
+            tally.finish();
             return;
         }
         const s = steps[step++];

@@ -34,12 +34,8 @@ Item {
         audioRoute: route
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
     function disc(address) {
         return scene.world.wiredMembers.list().find(b => b.address === address) ?? null;
@@ -109,22 +105,22 @@ Item {
             "then": 100,
             "until": () => h.landed && h.disc(h.dac),
             "run": () => {
-                check("at rest nothing of the radar exists", [h.radar.open, h.view(scene)], [false, null]);
-                check("the group is the headset, a Bluetooth copy and a wired one", [scene.centre.source, scene.centre.members.length], [h.headset, 3]);
+                tally.check("at rest nothing of the radar exists", [h.radar.open, h.view(scene)], [false, null]);
+                tally.check("the group is the headset, a Bluetooth copy and a wired one", [scene.centre.source, scene.centre.members.length], [h.headset, 3]);
                 h.radar.show("");
             }
         },
         {
             "then": 100,
             "run": () => {
-                check("a tap on the group's icons: the radar on the group's level", [h.radar.open, h.radar.heroId, h.radar.kindOf(h.radar.heroId)], [true, "group", "group"]);
-                check("its dials are the group's, then each member's", h.radar.ids, ["group", h.headset, h.one, h.dac]);
-                check("it is drawn, with a dial for each", [!!h.view(scene), h.view(scene).children.length > 4], [true, true]);
-                check("Escape's way back sees it", scene.canStepBack, true);
-                check("the group has no planet to fly: the card carries its picture, and the sky steps back as for any card", [scene.focusBody, scene.detailOpen, scene.cardOpen], [null, false, true]);
-                check("the group's actions", [Radar.chips("group").map(c => c.id)], [["add", "stop"]]);
+                tally.check("a tap on the group's icons: the radar on the group's level", [h.radar.open, h.radar.heroId, h.radar.kindOf(h.radar.heroId)], [true, "group", "group"]);
+                tally.check("its dials are the group's, then each member's", h.radar.ids, ["group", h.headset, h.one, h.dac]);
+                tally.check("it is drawn, with a dial for each", [!!h.view(scene), h.view(scene).children.length > 4], [true, true]);
+                tally.check("Escape's way back sees it", scene.canStepBack, true);
+                tally.check("the group has no planet to fly: the card carries its picture, and the sky steps back as for any card", [scene.focusBody, scene.detailOpen, scene.cardOpen], [null, false, true]);
+                tally.check("the group's actions", [Radar.chips("group").map(c => c.id)], [["add", "stop"]]);
                 h.radar.close();
-                check("closed: the radar is not open, and the sky is back", [h.radar.open, scene.cardOpen], [false, false]);
+                tally.check("closed: the radar is not open, and the sky is back", [h.radar.open, scene.cardOpen], [false, false]);
             },
             // The card slides down and fades like the detail card's, and is made only until it has
             "until": () => !h.view(scene)
@@ -132,14 +128,14 @@ Item {
         {
             "then": 100,
             "run": () => {
-                check("gone again once it has slid away", [h.radar.open, h.view(scene)], [false, null]);
+                tally.check("gone again once it has slid away", [h.radar.open, h.view(scene)], [false, null]);
                 h.radar.show("");
                 scene.explain({
                     "title": "A note",
                     "hint": "Said over the veil",
                     "anchor": ""
                 });
-                check("a guided note is drawn over the open radar, above its veil", h.noteOver(), true);
+                tally.check("a guided note is drawn over the open radar, above its veil", h.noteOver(), true);
                 h.radar.close();
                 scene.focusOn(scene.centre.bodyOf(h.one));
             }
@@ -147,8 +143,8 @@ Item {
         {
             "then": 100,
             "run": () => {
-                check("a click on a Bluetooth member: the radar on its level, no detail card", [h.radar.open, h.radar.heroId, h.radar.kindOf(h.radar.heroId), scene.detailOpen], [true, h.one, "bluetooth", false]);
-                check("its planet flies to the card, like a device's", [scene.focusBody && scene.focusBody.address, scene.focusBody && scene.focusBody.focused, scene.world.cardSlide === scene.world.radarCard.parent], [h.one, true, true]);
+                tally.check("a click on a Bluetooth member: the radar on its level, no detail card", [h.radar.open, h.radar.heroId, h.radar.kindOf(h.radar.heroId), scene.detailOpen], [true, h.one, "bluetooth", false]);
+                tally.check("its planet flies to the card, like a device's", [scene.focusBody && scene.focusBody.address, scene.focusBody && scene.focusBody.focused, scene.world.cardSlide === scene.world.radarCard.parent], [h.one, true, true]);
             },
             // The planet rises to the card and grows, as a device's does
             "until": () => {
@@ -160,11 +156,11 @@ Item {
             "then": 100,
             "run": () => {
                 const slide = scene.world.cardSlide;
-                check("the planet sits on the card's top edge, the glyph's size", [Math.abs(scene.focusBody.py - slide.y - scene.focusGlyphLift) < 3, Math.round(scene.focusBody.width * scene.focusBody.focusScale)], [true, Math.round(scene.focusGlyphSize)]);
-                check("the card is the detail card's: narrow, centred, glued to the bottom", [slide.width <= 360, slide.width === scene.focusCardWidth, Math.round(slide.x * 2 + slide.width), Math.round(slide.y + slide.height + 12)], [true, true, Math.round(scene.width), Math.round(scene.height)]);
-                check("the detail card stays down: it is not the radar's", [scene.world.focusCard.parent.visible, scene.world.cardSlide !== scene.world.focusCard.parent], [false, true]);
+                tally.check("the planet sits on the card's top edge, the glyph's size", [Math.abs(scene.focusBody.py - slide.y - scene.focusGlyphLift) < 3, Math.round(scene.focusBody.width * scene.focusBody.focusScale)], [true, Math.round(scene.focusGlyphSize)]);
+                tally.check("the card is the detail card's: narrow, centred, glued to the bottom", [slide.width <= 360, slide.width === scene.focusCardWidth, Math.round(slide.x * 2 + slide.width), Math.round(slide.y + slide.height + 12)], [true, true, Math.round(scene.width), Math.round(scene.height)]);
+                tally.check("the detail card stays down: it is not the radar's", [scene.world.focusCard.parent.visible, scene.world.cardSlide !== scene.world.focusCard.parent], [false, true]);
                 const other = scene.centre.bodyOf(h.headset);
-                check("the other planets, the host and the hint step back as for a detail card", [other.opacity < 0.5, other.hovered, scene.world.dim], [true, false, 0.12]);
+                tally.check("the other planets, the host and the hint step back as for a detail card", [other.opacity < 0.5, other.hovered, scene.world.dim], [true, false, 0.12]);
                 h.radar.close();
                 scene.focusOn(h.disc(h.dac));
             }
@@ -172,20 +168,20 @@ Item {
         {
             "then": 100,
             "run": () => {
-                check("a click on a wired member: the radar on its level, no planet flies", [h.radar.open, h.radar.heroId, h.radar.kindOf(h.radar.heroId), scene.focusBody], [true, h.dac, "wired", null]);
+                tally.check("a click on a wired member: the radar on its level, no planet flies", [h.radar.open, h.radar.heroId, h.radar.kindOf(h.radar.heroId), scene.focusBody], [true, h.dac, "wired", null]);
                 // The gestures on the wired member's own level
                 const before = scene.centre.volume.ownLevel(h.dac);
                 h.radar.step(h.dac, 1);
-                check("the wheel raises its own level", scene.centre.volume.ownLevel(h.dac) > before, true);
+                tally.check("the wheel raises its own level", scene.centre.volume.ownLevel(h.dac) > before, true);
                 h.radar.setLevel(h.dac, 0.3);
-                check("a drag sets its level", h.near(scene.centre.volume.ownLevel(h.dac), 0.3), true);
+                tally.check("a drag sets its level", h.near(scene.centre.volume.ownLevel(h.dac), 0.3), true);
                 h.radar.toggleMute(h.dac);
-                check("the speaker mutes it", scene.centre.volume.ownNode(h.dac).audio.muted, true);
+                tally.check("the speaker mutes it", scene.centre.volume.ownNode(h.dac).audio.muted, true);
                 h.radar.toggleMute(h.dac);
-                check("and lets it speak again", scene.centre.volume.ownNode(h.dac).audio.muted, false);
+                tally.check("and lets it speak again", scene.centre.volume.ownNode(h.dac).audio.muted, false);
                 // The group's level
                 h.radar.setLevel("group", 0.5);
-                check("a drag on the group's dial sets the general level", h.near(scene.centre.volume.level, 0.5), true);
+                tally.check("a drag on the group's dial sets the general level", h.near(scene.centre.volume.level, 0.5), true);
                 h.radar.close();
                 scene.focusOn(scene.centre.bodyOf(h.one));
             }
@@ -193,9 +189,9 @@ Item {
         {
             "then": 100,
             "run": () => {
-                check("a Bluetooth hero offers Disconnect, Remove from group, Hide, Details", Radar.chips(h.radar.kindOf(h.radar.heroId)).map(c => c.id), ["disconnect", "leave", "hide", "details"]);
+                tally.check("a Bluetooth hero offers Disconnect, Remove from group, Hide, Details", Radar.chips(h.radar.kindOf(h.radar.heroId)).map(c => c.id), ["disconnect", "leave", "hide", "details"]);
                 h.radar.choose("details");
-                check("Details closes the radar and opens the detail card", [h.radar.open, !!scene.focusBody && scene.focusBody.address], [false, h.one]);
+                tally.check("Details closes the radar and opens the detail card", [h.radar.open, !!scene.focusBody && scene.focusBody.address], [false, h.one]);
                 scene.clearFocus();
                 h.radar.show(h.one);
             }
@@ -204,10 +200,10 @@ Item {
             "then": 100,
             "run": () => {
                 h.radar.choose("leave");
-                check("Remove from group: it is out and the others stay", [scene.together.members().includes(h.one), scene.together.count()], [false, 2]);
-                check("the radar goes back to the group's level", [h.radar.open, h.radar.heroId], [true, "group"]);
+                tally.check("Remove from group: it is out and the others stay", [scene.together.members().includes(h.one), scene.together.count()], [false, 2]);
+                tally.check("the radar goes back to the group's level", [h.radar.open, h.radar.heroId], [true, "group"]);
                 scene.stepBack();
-                check("Escape's way back closes it, the planet comes back, and the group's view is left alone", [h.radar.open, scene.focusBody, scene.centre.recalled], [false, null, false]);
+                tally.check("Escape's way back closes it, the planet comes back, and the group's view is left alone", [h.radar.open, scene.focusBody, scene.centre.recalled], [false, null, false]);
                 h.radar.show("");
             }
         },
@@ -215,7 +211,7 @@ Item {
             "then": 100,
             "run": () => {
                 h.radar.choose("add");
-                check("Add a device… closes the radar and opens the group chooser, the menu's entries out of the way", [h.radar.open, scene.menuOpen, h.menu(scene).choosing], [false, true, true]);
+                tally.check("Add a device… closes the radar and opens the group chooser, the menu's entries out of the way", [h.radar.open, scene.menuOpen, h.menu(scene).choosing], [false, true, true]);
                 h.menu(scene).close();
                 h.radar.show("");
             }
@@ -238,12 +234,12 @@ Item {
             "then": 100,
             "run": () => {
                 const v = h.view(scene);
-                check("with motion the entrance has run its course and the clock has stopped", [v.motion, v.entering, v.clock.running], [true, false, false]);
-                check("every drawn level has landed on the real one", v.levelsMoving, false);
+                tally.check("with motion the entrance has run its course and the clock has stopped", [v.motion, v.entering, v.clock.running], [true, false, false]);
+                tally.check("every drawn level has landed on the real one", v.levelsMoving, false);
                 h.radar.setLevel("group", 0.2);
-                check("a level that moves wakes the clock", v.clock.running, true);
+                tally.check("a level that moves wakes the clock", v.clock.running, true);
                 h.radar.show(h.headset);
-                check("a hero swap starts the morph, on the clock", [v.morphing, v.clock.running], [true, true]);
+                tally.check("a hero swap starts the morph, on the clock", [v.morphing, v.clock.running], [true, true]);
             },
             "until": () => {
                 const v = h.view(scene);
@@ -254,7 +250,7 @@ Item {
             "then": 100,
             "run": () => {
                 const v = h.view(scene);
-                check("the morph ended exactly on the slots and the clock has stopped again", [v.morphing, v.levelsMoving, v.clock.running, JSON.stringify(v.slotOf(h.headset)) === JSON.stringify(v.targets[h.headset])], [false, false, false, true]);
+                tally.check("the morph ended exactly on the slots and the clock has stopped again", [v.morphing, v.levelsMoving, v.clock.running, JSON.stringify(v.slotOf(h.headset)) === JSON.stringify(v.targets[h.headset])], [false, false, false, true]);
                 SettingsData.reduceMotion = true;
                 h.radar.close();
                 h.radar.show("");
@@ -264,9 +260,9 @@ Item {
             "then": 100,
             "run": () => {
                 const v = h.view(scene);
-                check("with Reduce motion the clock never runs", [v.motion, v.entering, v.clock.running], [false, false, false]);
+                tally.check("with Reduce motion the clock never runs", [v.motion, v.entering, v.clock.running], [false, false, false]);
                 h.radar.show(h.headset);
-                check("and a hero swap is instant", [v.morphing, v.clock.running, JSON.stringify(v.slotOf(h.headset)) === JSON.stringify(v.targets[h.headset])], [false, false, true]);
+                tally.check("and a hero swap is instant", [v.morphing, v.clock.running, JSON.stringify(v.slotOf(h.headset)) === JSON.stringify(v.targets[h.headset])], [false, false, true]);
                 h.radar.show("");
             }
         },
@@ -308,9 +304,9 @@ Item {
             "then": 100,
             "run": () => {
                 h.counting = false;
-                check("the planet has landed on the open radar, not on a detail card", [h.radar.open, !!scene.focusBody && scene.focusBody.focused, scene.detailOpen], [true, true, false]);
+                tally.check("the planet has landed on the open radar, not on a detail card", [h.radar.open, !!scene.focusBody && scene.focusBody.focused, scene.detailOpen], [true, true, false]);
                 print("steps in 1 s with the radar open: " + h.stepsCounted);
-                check("an open radar steps at the slow rate (the 16 ms one is the detail card's)", [h.stepsCounted > 0, h.stepsCounted < 40], [true, true]);
+                tally.check("an open radar steps at the slow rate (the 16 ms one is the detail card's)", [h.stepsCounted > 0, h.stepsCounted < 40], [true, true]);
                 h.radar.show("");
             }
         },
@@ -322,7 +318,7 @@ Item {
                 } catch (e) {
                     // The stubbed session has no end(): the radar was closed before it was asked
                 }
-                check("Stop group closes the radar (the session's end is the daemon's, not stubbed here)", h.radar.open, false);
+                tally.check("Stop group closes the radar (the session's end is the daemon's, not stubbed here)", h.radar.open, false);
             }
         }
     ]
@@ -352,8 +348,7 @@ Item {
         }
         waited = 0;
         if (step >= steps.length) {
-            print(failures ? failures + " failure(s)" : "all passed");
-            Qt.exit(failures ? 1 : 0);
+            tally.finish();
             return;
         }
         const s = steps[step++];

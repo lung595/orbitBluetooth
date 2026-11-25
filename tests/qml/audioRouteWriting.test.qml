@@ -38,30 +38,26 @@ Item {
         prefs: prefs
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
 
     Component.onCompleted: {
         route.writeLevel(a, 0.8);
-        check("a level is written, unmuted", [a.audio.volume, a.audio.muted], [0.8, false]);
-        check("and only to its node", [b.audio.volume, b.audio.muted], [0.5, true]);
+        tally.check("a level is written, unmuted", [a.audio.volume, a.audio.muted], [0.8, false]);
+        tally.check("and only to its node", [b.audio.volume, b.audio.muted], [0.5, true]);
 
         route.writeLevels([a, b], [0.2, 0.3]);
-        check("a level per output: each has its own", [a.audio.volume, b.audio.volume], [0.2, 0.3]);
-        check("and each is unmuted", [a.audio.muted, b.audio.muted], [false, false]);
+        tally.check("a level per output: each has its own", [a.audio.volume, b.audio.volume], [0.2, 0.3]);
+        tally.check("and each is unmuted", [a.audio.muted, b.audio.muted], [false, false]);
 
         route.stepNode(a, 1);
-        check("a step moves up by 5 %", Math.round(a.audio.volume * 100), 25);
+        tally.check("a step moves up by 5 %", Math.round(a.audio.volume * 100), 25);
 
         route.writeMuted(a, true);
-        check("a mute moves no level", [a.audio.muted, Math.round(a.audio.volume * 100)], [true, 25]);
+        tally.check("a mute moves no level", [a.audio.muted, Math.round(a.audio.volume * 100)], [true, 25]);
 
-        print(failures === 0 ? "PASS" : "FAILURES: " + failures);
-        Qt.exit(failures === 0 ? 0 : 1);
+        print(tally.failures === 0 ? "PASS" : "FAILURES: " + tally.failures);
+        Qt.exit(tally.failures === 0 ? 0 : 1);
     }
 }

@@ -2,7 +2,8 @@ import QtQuick
 
 // A mouse wheel or touchpad counted in whole notches: touchpads send small
 // deltas, which are added up until they make a notch. One place for it, so
-// every volume gesture counts the same way.
+// the volume gestures count the same way (the scope's wheel, PolarGestures.turn,
+// keeps its own so a notch left from one level never counts toward the other).
 WheelHandler {
     id: wheel
 

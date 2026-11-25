@@ -33,12 +33,8 @@ Item {
         audioRoute: route
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
     function body(address) {
         return scene.world.bodyList().find(b => b.address === address);
@@ -49,7 +45,7 @@ Item {
         {
             "then": 1500,
             "run": () => {
-                check("at rest nothing is created", h.invitation.item, null);
+                tally.check("at rest nothing is created", h.invitation.item, null);
             }
         },
         {
@@ -65,8 +61,8 @@ Item {
                     "x": b.px + 3,
                     "y": b.py
                 });
-                check("carried, it is invited to the two others", h.invitation.item ? h.invitation.item.targets.map(o => o.address).sort() : null, [h.one, h.two]);
-                check("the invitation shows", h.invitation.item ? h.invitation.item.showing : null, true);
+                tally.check("carried, it is invited to the two others", h.invitation.item ? h.invitation.item.targets.map(o => o.address).sort() : null, [h.one, h.two]);
+                tally.check("the invitation shows", h.invitation.item ? h.invitation.item.showing : null, true);
             }
         },
         {
@@ -78,7 +74,7 @@ Item {
                     "x": o.px,
                     "y": o.py
                 });
-                check("over a device it could join, the thread is whole", [scene.togetherDrop === o, h.invitation.item.locked], [true, true]);
+                tally.check("over a device it could join, the thread is whole", [scene.togetherDrop === o, h.invitation.item.locked], [true, true]);
             }
         },
         {
@@ -89,20 +85,20 @@ Item {
                     "x": scene.cx + scene.rx * 1.4,
                     "y": scene.cy
                 });
-                check("torn off, the invitation hides", h.invitation.item.showing, false);
+                tally.check("torn off, the invitation hides", h.invitation.item.showing, false);
                 const o = h.body(h.two);
                 scene.updateDrag({
                     "x": o.px,
                     "y": o.py
                 });
                 scene.endDrag();
-                check("let go over a device, the group starts", route.sharing, [h.headset, h.two]);
+                tally.check("let go over a device, the group starts", route.sharing, [h.headset, h.two]);
             }
         },
         {
             "then": 200,
             "run": () => {
-                check("let go, nothing is left of the invitation", h.invitation.item, null);
+                tally.check("let go, nothing is left of the invitation", h.invitation.item, null);
                 route.sharing = [];
             }
         },
@@ -119,7 +115,7 @@ Item {
                     "x": b.px + 3,
                     "y": b.py
                 });
-                check("a device that is not connected is not invited", h.invitation.item, null);
+                tally.check("a device that is not connected is not invited", h.invitation.item, null);
                 scene.endDrag();
             }
         }
@@ -140,8 +136,7 @@ Item {
     }
     function next() {
         if (step >= steps.length) {
-            print(failures ? failures + " failure(s)" : "all passed");
-            Qt.exit(failures ? 1 : 0);
+            tally.finish();
             return;
         }
         const s = steps[step++];

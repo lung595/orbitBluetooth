@@ -141,6 +141,12 @@ function group(name) {
     return "node.link-group=" + name + " ";
 }
 
+// The capture end of one of Orbit's smart filters: the virtual sink `name`,
+// shown as `label`, that WirePlumber slips in front of the sink `target`
+function smartCapture(name, label, target) {
+    return "media.class=Audio/Sink node.name=" + name + " node.description=\"" + label + "\" filter.smart=true filter.smart.name=" + name + " filter.smart.target={ node.name = \"" + target + "\" }";
+}
+
 // The PC-level filter: a WirePlumber smart filter, a virtual sink that
 // WirePlumber itself slips between every app and the device. The default
 // output stays the device, so nothing in WirePlumber's saved state changes,
@@ -150,7 +156,7 @@ function filterArgs(address, master, deviceName) {
     const name = virtualName(address);
     if (!name || !isDeviceSink(master))
         return null;
-    const capture = "media.class=Audio/Sink node.name=" + name + " node.description=\"" + description(deviceName) + "\"" + " filter.smart=true filter.smart.name=" + name + " filter.smart.target={ node.name = \"" + master + "\" }";
+    const capture = smartCapture(name, description(deviceName), master);
     const playback = "node.name=" + name + ".out node.passive=true";
     return loopbackArgs(group(name) + capture, group(name) + playback);
 }
@@ -195,7 +201,7 @@ function wiredFilterArgs(sink, delaySeconds, deviceName) {
     const waits = delay !== "";
     if (!name || (waits && (!DELAY_SECONDS.test(delay) || Number(delay) <= 0 || Number(delay) * 1000 > MAX_DELAY_MS)))
         return null;
-    const capture = "media.class=Audio/Sink node.name=" + name + " node.description=\"" + description(deviceName, "Wired output") + "\"" + " filter.smart=true filter.smart.name=" + name + " filter.smart.target={ node.name = \"" + sink + "\" }";
+    const capture = smartCapture(name, description(deviceName, "Wired output"), sink);
     const playback = "node.name=" + name + ".out node.passive=true node.dont-fallback=true";
     return loopbackArgs(group(name) + capture, group(name) + playback, delay);
 }
@@ -231,7 +237,7 @@ function writeMuted(shared, node, muted) {
 // "+10", "-5", "40" or "40%", capped to 0..1.
 // Returns -1 for anything else (value 11: checked and capped).
 function ipcLevel(arg, current) {
-    const a = String(arg === undefined || arg === null ? "" : arg).trim().toLowerCase();
+    const a = String(arg ?? "").trim().toLowerCase();
     if (a.length === 0 || a.length > 5)
         return -1;
     const now = Math.max(0, Math.min(1, Number(current) || 0));

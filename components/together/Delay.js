@@ -41,7 +41,7 @@ function fineText(ms) {
 // unchanged). null for anything else, so the caller says how to use it without
 // echoing what it was given (value 11).
 function fineFrom(arg, current) {
-    const a = String(arg === undefined || arg === null ? "" : arg).trim().toLowerCase();
+    const a = String(arg ?? "").trim().toLowerCase();
     if (a.length === 0 || a.length > 6)
         return null;
     const now = cleanFine(current);

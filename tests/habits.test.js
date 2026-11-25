@@ -37,7 +37,7 @@ eq("each use adds one and moves the day", Object.values(many), [{ "n": 3, "d": D
 for (let i = 0; i < Habits.MAX_USES + 20; i++)
     many = used(many, [A, B], DAY);
 eq("the count stops at its cap of 999", [Habits.MAX_USES, Object.values(many)[0].n], [999, 999]);
-const sets = n => Array.from({ "length": n }, (_, i) => [A, "AA:BB:CC:DD:FF:" + ("0" + i).slice(-2).toUpperCase()]);
+const sets = n => Array.from({ "length": n }, (_, i) => [A, "AA:BB:CC:DD:FF:" + String(i).padStart(2, "0")]);
 let bounded = {};
 for (const pair of sets(Habits.MAX_SETS + 5))
     bounded = used(bounded, pair, DAY);
@@ -45,7 +45,6 @@ eq("at most eight groups are kept", [Habits.MAX_SETS, Object.keys(bounded).lengt
 let full = {};
 for (const pair of sets(Habits.MAX_SETS))
     full = used(used(full, pair, DAY), pair, DAY);
-const strong = Habits.keyOf(sets(1)[0]);
 full = used(full, [B, C], DAY);
 eq("the new group makes room by dropping one of the lowest score, never itself", [Object.keys(full).length, !!full[Habits.keyOf([B, C])]], [8, true]);
 const old = used(used({}, [A, B], DAY - 200), [A, B], DAY - 200);

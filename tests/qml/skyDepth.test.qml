@@ -136,12 +136,8 @@ Item {
         return watchers.map(w => w.n);
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
     property var stars: null
 
@@ -149,54 +145,54 @@ Item {
         {
             "then": 200,
             "run": () => {
-                check("sharp: nothing exists, the source is untouched", [depthOf.copied, depthOf.frozen, sky.opacity], [false, false, 0.8]);
+                tally.check("sharp: nothing exists, the source is untouched", [depthOf.copied, depthOf.frozen, sky.opacity], [false, false, 0.8]);
                 // No Bluetooth, no black hole: its copy must not appear (the live part is not shown either)
-                check("a source that is not shown has a copy that is not shown", h.copyOf(hiddenDepth).visible, false);
-                check("and a shown source's copy is shown", h.copyOf(depthOf).visible, true);
+                tally.check("a source that is not shown has a copy that is not shown", h.copyOf(hiddenDepth).visible, false);
+                tally.check("and a shown source's copy is shown", h.copyOf(depthOf).visible, true);
                 depthOf.depth = 0.3;
             }
         },
         {
             "then": 300,
             "run": () => {
-                check("a little depth: the copy exists, not frozen, the source still drawn", [depthOf.copied, depthOf.frozen, sky.opacity], [true, false, 0.8]);
-                check("the copy is two textures (the grab, the kept blur), neither ever live: rendered once, then kept", h.neverLive(depthOf), [2, true]);
-                check("and it follows the source's place and size", [depthOf.width, depthOf.height], [300, 200]);
+                tally.check("a little depth: the copy exists, not frozen, the source still drawn", [depthOf.copied, depthOf.frozen, sky.opacity], [true, false, 0.8]);
+                tally.check("the copy is two textures (the grab, the kept blur), neither ever live: rendered once, then kept", h.neverLive(depthOf), [2, true]);
+                tally.check("and it follows the source's place and size", [depthOf.width, depthOf.height], [300, 200]);
                 depthOf.depth = 1;
             }
         },
         {
             "then": 600,
             "run": () => {
-                check("full depth, copy rendered: the live source is switched off (not drawn)", [depthOf.ready, depthOf.frozen, sky.opacity], [true, true, 0]);
+                tally.check("full depth, copy rendered: the live source is switched off (not drawn)", [depthOf.ready, depthOf.frozen, sky.opacity], [true, true, 0]);
                 depthOf.hold = true;
             }
         },
         {
             "then": 600,
             "run": () => {
-                check("a gesture needs the live part: it is back, the copy faded out", [depthOf.frozen, sky.opacity, depthOf.mix], [false, 0.8, 0]);
+                tally.check("a gesture needs the live part: it is back, the copy faded out", [depthOf.frozen, sky.opacity, depthOf.mix], [false, 0.8, 0]);
                 depthOf.hold = false;
             }
         },
         {
             "then": 600,
             "run": () => {
-                check("the gesture is over: the copy covers it again", [depthOf.frozen, sky.opacity], [true, 0]);
+                tally.check("the gesture is over: the copy covers it again", [depthOf.frozen, sky.opacity], [true, 0]);
                 depthOf.depth = 0.5;
             }
         },
         {
             "then": 100,
             "run": () => {
-                check("leaving full depth: the source's own look is back (counter-proof: not forced to 1)", [depthOf.frozen, sky.opacity], [false, 0.8]);
+                tally.check("leaving full depth: the source's own look is back (counter-proof: not forced to 1)", [depthOf.frozen, sky.opacity], [false, 0.8]);
                 depthOf.depth = 0;
             }
         },
         {
             "then": 100,
             "run": () => {
-                check("sharp again: the copy is gone, nothing is left behind", [depthOf.copied, depthOf.frozen, sky.opacity], [false, false, 0.8]);
+                tally.check("sharp again: the copy is gone, nothing is left behind", [depthOf.copied, depthOf.frozen, sky.opacity], [false, false, 0.8]);
                 depthOf.motion = false;
                 depthOf.depth = 0.4;
             }
@@ -204,14 +200,14 @@ Item {
         {
             "then": 100,
             "run": () => {
-                check("Reduce motion: under half way it is still sharp, no copy", [depthOf.shown, depthOf.copied], [0, false]);
+                tally.check("Reduce motion: under half way it is still sharp, no copy", [depthOf.shown, depthOf.copied], [0, false]);
                 depthOf.depth = 0.6;
             }
         },
         {
             "then": 600,
             "run": () => {
-                check("Reduce motion: past half way it is blurred at once, no dissolve", [depthOf.shown, depthOf.copied, depthOf.frozen, sky.opacity], [1, true, true, 0]);
+                tally.check("Reduce motion: past half way it is blurred at once, no dissolve", [depthOf.shown, depthOf.copied, depthOf.frozen, sky.opacity], [1, true, true, 0]);
                 depthOf.depth = 0;
                 depthOf.motion = true;
             }
@@ -222,17 +218,17 @@ Item {
             "then": 2500,
             "run": () => {
                 h.stars = h.find(scene, "shootingStars");
-                check("no group: the starfield twinkles and is drawn", [!!h.stars, h.stars.animate, h.stars.opacity], [true, true, 1]);
-                check("no group: no atmosphere, no veil between the host and the group, the host's orbits whole", h.farState(), [false, false, 1]);
+                tally.check("no group: the starfield twinkles and is drawn", [!!h.stars, h.stars.animate, h.stars.opacity], [true, true, 1]);
+                tally.check("no group: no atmosphere, no veil between the host and the group, the host's orbits whole", h.farState(), [false, false, 1]);
                 route.sharing = ["02:00:00:00:10:06", "02:00:00:00:20:01"];
             }
         },
         {
             "then": 1500,
             "run": () => {
-                check("a group has the centre: the sky is at full depth", scene.centre.presence, 1);
-                check("and the live starfield rests behind its copy: not drawn, not twinkling", [h.stars.opacity, h.stars.animate], [0, false]);
-                check("and the group stands in its atmosphere, the host's system far behind a veil, its orbits faded", h.farState(), [true, true, Depth.farOpacity(1)]);
+                tally.check("a group has the centre: the sky is at full depth", scene.centre.presence, 1);
+                tally.check("and the live starfield rests behind its copy: not drawn, not twinkling", [h.stars.opacity, h.stars.animate], [0, false]);
+                tally.check("and the group stands in its atmosphere, the host's system far behind a veil, its orbits faded", h.farState(), [true, true, Depth.farOpacity(1)]);
                 // From here on every render of the copy is counted
                 h.watch(h.decorOver(scene, h.stars));
             }
@@ -240,7 +236,7 @@ Item {
         {
             "then": 600,
             "run": () => {
-                check("at rest the blur is not rendered again: the kept texture was not updated", h.updates(), [0]);
+                tally.check("at rest the blur is not rendered again: the kept texture was not updated", h.updates(), [0]);
                 // Counter-proof: a retake that is asked for is seen by the counters
                 h.copyOf(h.decorOver(scene, h.stars)).item.retake();
             }
@@ -249,7 +245,7 @@ Item {
             // Long enough for the host to come back (Centre.RECALL, 0.5 s)
             "then": 1500,
             "run": () => {
-                check("a retake renders the blur once (the counter does see renders)", h.updates(), [1]);
+                tally.check("a retake renders the blur once (the counter does see renders)", h.updates(), [1]);
                 // Back on Fedora's view: the group still exists, the camera is on the host
                 scene.centre.recall();
             }
@@ -257,24 +253,24 @@ Item {
         {
             "then": 1500,
             "run": () => {
-                check("Fedora's view: the sky is sharp again though the group still exists", [scene.centre.wanted, scene.centre.away, h.stars.opacity, h.stars.animate], [true, 0, 1, true]);
-                check("and the host's system is back: no atmosphere, no veil, its orbits whole", h.farState(), [false, false, 1]);
+                tally.check("Fedora's view: the sky is sharp again though the group still exists", [scene.centre.wanted, scene.centre.away, h.stars.opacity, h.stars.animate], [true, 0, 1, true]);
+                tally.check("and the host's system is back: no atmosphere, no veil, its orbits whole", h.farState(), [false, false, 1]);
                 scene.centre.release();
             }
         },
         {
             "then": 1500,
             "run": () => {
-                check("back on the group: the sky is behind its copy again (counter-proof)", [scene.centre.away, h.stars.opacity, h.stars.animate], [1, 0, false]);
-                check("and the host's system is far again (counter-proof)", h.farState(), [true, true, Depth.farOpacity(1)]);
+                tally.check("back on the group: the sky is behind its copy again (counter-proof)", [scene.centre.away, h.stars.opacity, h.stars.animate], [1, 0, false]);
+                tally.check("and the host's system is far again (counter-proof)", h.farState(), [true, true, Depth.farOpacity(1)]);
                 route.sharing = [];
             }
         },
         {
             "then": 0,
             "run": () => {
-                check("the group ended: the starfield is back, sharp and alive", [h.stars.opacity, h.stars.animate], [1, true]);
-                check("and nothing of the atmosphere or the veil is left", h.farState().slice(0, 2), [false, false]);
+                tally.check("the group ended: the starfield is back, sharp and alive", [h.stars.opacity, h.stars.animate], [1, true]);
+                tally.check("and nothing of the atmosphere or the veil is left", h.farState().slice(0, 2), [false, false]);
             }
         }
     ]
@@ -294,8 +290,7 @@ Item {
     }
     function next() {
         if (step >= steps.length) {
-            print(failures ? failures + " failure(s)" : "all passed");
-            Qt.exit(failures ? 1 : 0);
+            tally.finish();
             return;
         }
         const s = steps[step++];

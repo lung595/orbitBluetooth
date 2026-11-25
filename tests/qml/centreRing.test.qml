@@ -110,12 +110,8 @@ Item {
         }
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
 
     // The item called `name` somewhere under `item`
@@ -140,9 +136,9 @@ Item {
     }
 
     function atRest() {
-        check("created: nothing is written out, reading the level is no change", [ring.recent, ring.reading], [false, "40%"]);
+        tally.check("created: nothing is written out, reading the level is no change", [ring.recent, ring.reading], [false, "40%"]);
         // The arc starts at the bottom left (135 degrees), 60 px from the disc's middle
-        check("the speaker sits where the arc starts, on the disc and not on the group, whoever sizes the ring", [speakerAt(h, ring), speakerAt(sceneHost, filled.item)], [
+        tally.check("the speaker sits where the arc starts, on the disc and not on the group, whoever sizes the ring", [speakerAt(h, ring), speakerAt(sceneHost, filled.item)], [
             {
                 "x": 147.57,
                 "y": 247.43
@@ -158,7 +154,7 @@ Item {
             "diameter": 40,
             "baseScale": 0.5
         };
-        check("and follows the disc as it moves and shrinks", speakerAt(sceneHost, filled.item), {
+        tally.check("and follows the disc as it moves and shrinks", speakerAt(sceneHost, filled.item), {
             "x": 128.79,
             "y": 141.21
         });
@@ -168,7 +164,7 @@ Item {
             "y": 120,
             "scale": 0.5
         };
-        check("a wired source has no body: it follows the group's rule, the same place", speakerAt(sceneHost, filled.item), {
+        tally.check("a wired source has no body: it follows the group's rule, the same place", speakerAt(sceneHost, filled.item), {
             "x": 128.79,
             "y": 141.21
         });
@@ -184,41 +180,41 @@ Item {
             "diameter": 40,
             "baseScale": 1
         };
-        check("the speaker follows the level", [ring.glyph, (fake.level = 0, ring.glyph), (fake.level = 0.8, ring.glyph)], ["volume_down", "volume_mute", "volume_up"]);
-        check("the thumb sits on the arc's end once it has left the speaker", [ring.thumbSize, (fake.level = 0.01, ring.thumbSize)], [12, 0]);
+        tally.check("the speaker follows the level", [ring.glyph, (fake.level = 0, ring.glyph), (fake.level = 0.8, ring.glyph)], ["volume_down", "volume_mute", "volume_up"]);
+        tally.check("the thumb sits on the arc's end once it has left the speaker", [ring.thumbSize, (fake.level = 0.01, ring.thumbSize)], [12, 0]);
         fake.level = 0.4;
     }
 
     // Each change writes the level out, and the timer, not running before, ends it
     function changes() {
-        check("the last change is over: nothing is written out", ring.recent, false);
+        tally.check("the last change is over: nothing is written out", ring.recent, false);
         fake.level = 0.5;
-        check("a change writes the level out", [ring.recent, ring.reading], [true, "50%"]);
+        tally.check("a change writes the level out", [ring.recent, ring.reading], [true, "50%"]);
         fake.muted = true;
-        check("muted: it says so and the speaker is crossed out", [ring.reading, ring.glyph, ring.recent], ["Muted", "volume_off", true]);
+        tally.check("muted: it says so and the speaker is crossed out", [ring.reading, ring.glyph, ring.recent], ["Muted", "volume_off", true]);
     }
 
     function afterwards() {
-        check("it stops by itself", ring.recent, false);
+        tally.check("it stops by itself", ring.recent, false);
         fake.muted = false;
-        check("unmuted: the level is written out again", [ring.recent, ring.reading], [true, "50%"]);
+        tally.check("unmuted: the level is written out again", [ring.recent, ring.reading], [true, "50%"]);
     }
 
     // Reading the sound for the first time is not a change (a group that has just formed)
     function firstReading() {
-        check("it stopped again", ring.recent, false);
+        tally.check("it stopped again", ring.recent, false);
         fake.ready = false;
-        check("no sound to read: nothing is said", ring.reading, "");
+        tally.check("no sound to read: nothing is said", ring.reading, "");
         fake.level = 0.3;
         fake.ready = true;
-        check("the first reading is no change", [ring.recent, ring.reading], [false, "30%"]);
+        tally.check("the first reading is no change", [ring.recent, ring.reading], [false, "30%"]);
         fake.level = 0.35;
-        check("the next one is (counter-proof)", ring.recent, true);
+        tally.check("the next one is (counter-proof)", ring.recent, true);
         // The ring of a group that is already speaking, as the scene makes it
         late.active = true;
-        check("created with the sound already there: nothing is written out", [late.item.recent, late.item.reading], [false, "35%"]);
+        tally.check("created with the sound already there: nothing is written out", [late.item.recent, late.item.reading], [false, "35%"]);
         fake.level = 0.6;
-        check("and its first change counts", late.item.recent, true);
+        tally.check("and its first change counts", late.item.recent, true);
     }
 
     // Each step waits for the timer of the one before to have ended
@@ -236,8 +232,7 @@ Item {
             } else if (round === 3) {
                 h.firstReading();
             } else {
-                print(h.failures ? h.failures + " failure(s)" : "all passed");
-                Qt.exit(h.failures ? 1 : 0);
+                tally.finish();
             }
         }
     }

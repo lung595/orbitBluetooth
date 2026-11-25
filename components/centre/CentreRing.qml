@@ -132,7 +132,6 @@ Item {
     // Where the arc starts: the speaker, which follows the level and mutes
     // the group. Above the ring's grab, so a press on it is not a drag to zero.
     Rectangle {
-        id: chip
         objectName: "speaker"
         readonly property var start: Gauge.pointAt(ring.width / 2, ring.height / 2, ring.radius, 0)
         width: ring.chipSize
@@ -162,7 +161,6 @@ Item {
     // The reading beside the thumb, pushed outward past the marks and far
     // enough that the chip clears the gauge whichever side the thumb is on
     Rectangle {
-        id: tag
         objectName: "reading"
         readonly property real turn: Gauge.angleOf(ring.volume.level)
         readonly property real push: ring.lineWidth / 2 + 14 + Math.abs(Math.cos(turn)) * width / 2 + Math.abs(Math.sin(turn)) * height / 2

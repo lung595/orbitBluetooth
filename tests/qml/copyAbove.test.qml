@@ -36,12 +36,8 @@ Item {
         audioRoute: route
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
 
     // What a press at a scene point reaches: the body whose zone holds it and
@@ -77,17 +73,17 @@ Item {
             "run": () => {
                 const src = scene.centre.bodyOf(h.headset), copy = scene.centre.bodyOf(h.one);
                 const over = Math.hypot(copy.px - src.px, copy.py - src.py) < src.diameter * src.baseScale / 2;
-                check("the Bluetooth copy is at the far end of its orbit, over the source's disc", [copy.depth < -0.9, over], [true, true]);
-                check("it is drawn over the source", copy.z > src.z, true);
-                check("a press at its middle reaches it, not the source", pressReaches(copy.px, copy.py) === copy, true);
-                check("with the old stacking (far copies behind the source) the source got it (counter-proof)", src.z > scene.centre.groupZ + copy.depth, true);
-                check("a press on the source's side, away from both copies, still reaches the source", pressReaches(src.px - src.diameter * src.baseScale * 0.4, src.py) === src, true);
-                check("it is only a dashed outline there (its disc has gone), and the outline is shown", [copy.solid, copy.outline.active, copy.outline.item.visible, copy.outline.item.opacity], [0, true, true, 1]);
-                check("the source itself is whole and has no outline", [src.solid, src.outline.active], [1, false]);
-                check("the cables and beams stay under every member", [scene.world.beams.z < src.z, scene.world.beams.z < copy.z], [true, true]);
+                tally.check("the Bluetooth copy is at the far end of its orbit, over the source's disc", [copy.depth < -0.9, over], [true, true]);
+                tally.check("it is drawn over the source", copy.z > src.z, true);
+                tally.check("a press at its middle reaches it, not the source", pressReaches(copy.px, copy.py) === copy, true);
+                tally.check("with the old stacking (far copies behind the source) the source got it (counter-proof)", src.z > scene.centre.groupZ + copy.depth, true);
+                tally.check("a press on the source's side, away from both copies, still reaches the source", pressReaches(src.px - src.diameter * src.baseScale * 0.4, src.py) === src, true);
+                tally.check("it is only a dashed outline there (its disc has gone), and the outline is shown", [copy.solid, copy.outline.active, copy.outline.item.visible, copy.outline.item.opacity], [0, true, true, 1]);
+                tally.check("the source itself is whole and has no outline", [src.solid, src.outline.active], [1, false]);
+                tally.check("the cables and beams stay under every member", [scene.world.beams.z < src.z, scene.world.beams.z < copy.z], [true, true]);
                 // The wired copy, now at the near end: whole and in front
                 const w = wired(h.dac);
-                check("the wired copy, on the near side, is whole (no outline drawn) and over the source too", [w.depth > 0.9, w.solid, w.outline.item.visible, w.z > src.z], [true, 1, false, true]);
+                tally.check("the wired copy, on the near side, is whole (no outline drawn) and over the source too", [w.depth > 0.9, w.solid, w.outline.item.visible, w.z > src.z], [true, 1, false, true]);
                 // The orbit turns half way round: the wired copy goes behind the source
                 scene.orbitTime = 9.375;
                 scene.wake();
@@ -98,10 +94,10 @@ Item {
             "run": () => {
                 const src = scene.centre.bodyOf(h.headset), w = wired(h.dac);
                 const over = Math.hypot(w.px - src.px, w.py - src.py) < src.diameter * src.baseScale / 2;
-                check("the wired copy is at the far end of its orbit, over the source's disc", [w.depth < -0.9, over], [true, true]);
-                check("it is drawn over the source as a dashed outline", [w.z > src.z, w.solid, w.outline.item.visible], [true, 0, true]);
-                check("a press at its middle reaches it, not the source", pressReaches(w.px, w.py) === w, true);
-                check("the cable stays under it", scene.world.beams.z < w.z, true);
+                tally.check("the wired copy is at the far end of its orbit, over the source's disc", [w.depth < -0.9, over], [true, true]);
+                tally.check("it is drawn over the source as a dashed outline", [w.z > src.z, w.solid, w.outline.item.visible], [true, 0, true]);
+                tally.check("a press at its middle reaches it, not the source", pressReaches(w.px, w.py) === w, true);
+                tally.check("the cable stays under it", scene.world.beams.z < w.z, true);
             }
         }
     ]
@@ -132,8 +128,7 @@ Item {
         }
         waited = 0;
         if (step >= steps.length) {
-            print(failures ? failures + " failure(s)" : "all passed");
-            Qt.exit(failures ? 1 : 0);
+            tally.finish();
             return;
         }
         const s = steps[step++];

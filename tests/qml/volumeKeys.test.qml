@@ -59,12 +59,8 @@ Item {
         p.exited(0);
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
 
     FakePrefs {
@@ -79,59 +75,59 @@ Item {
     readonly property var steps: [
         {
             "run": () => {
-                check("a fresh start reads nothing before it is asked", [keys.keys, h.shower().running], ["unknown", false]);
+                tally.check("a fresh start reads nothing before it is asked", [keys.keys, h.shower().running], ["unknown", false]);
                 keys.claim();
-                check("the first start reads the keys once", h.shower().running, true);
-                check("and remembers that it did", [prefs.keysReturned, prefs.saved.keysOrbit], [true, undefined]);
+                tally.check("the first start reads the keys once", h.shower().running, true);
+                tally.check("and remembers that it did", [prefs.keysReturned, prefs.saved.keysOrbit], [true, undefined]);
                 // An older version had taken them by itself
                 h.answer(h.shower(), h.listing(KeyBinds.action("up", 5), KeyBinds.action("down", 5)));
-                check("keys taken by an older version: the up key goes back to DMS with its step", h.setter().command[5], h.dmsUp);
+                tally.check("keys taken by an older version: the up key goes back to DMS with its step", h.setter().command[5], h.dmsUp);
                 h.answer(h.setter(), '{"success":true}');
-                check("and the down key", h.setter().command[5], h.dmsDown);
+                tally.check("and the down key", h.setter().command[5], h.dmsDown);
                 h.answer(h.setter(), '{"success":true}');
                 h.answer(h.shower(), h.listing(h.dmsUp, h.dmsDown));
-                check("DMS's keys again, nothing failed", [keys.keys, keys.failed], ["dms", false]);
+                tally.check("DMS's keys again, nothing failed", [keys.keys, keys.failed], ["dms", false]);
             }
         },
         {
             "run": () => {
                 keys.claim();
-                check("a later start reads nothing, binds nothing", [h.shower().running, h.setter().running, keys.keys], [false, false, "dms"]);
+                tally.check("a later start reads nothing, binds nothing", [h.shower().running, h.setter().running, keys.keys], [false, false, "dms"]);
             }
         },
         {
             "run": () => {
                 keys.enable();
-                check("the user asks for smart steps: remembered", [prefs.saved.keysOrbit, prefs.keysOrbit], [true, true]);
+                tally.check("the user asks for smart steps: remembered", [prefs.saved.keysOrbit, prefs.keysOrbit], [true, true]);
                 h.answer(h.shower(), h.listing(h.dmsUp, h.dmsDown));
-                check("DMS's default keys: the up key is set to Orbit", [h.setter().running, h.setter().command.slice(0, 5)], [true, ["dms", "keybinds", "set", "niri", "XF86AudioRaiseVolume"]]);
-                check("with Orbit's action and DMS's own step as the fallback", h.setter().command[5], KeyBinds.action("up", 5));
+                tally.check("DMS's default keys: the up key is set to Orbit", [h.setter().running, h.setter().command.slice(0, 5)], [true, ["dms", "keybinds", "set", "niri", "XF86AudioRaiseVolume"]]);
+                tally.check("with Orbit's action and DMS's own step as the fallback", h.setter().command[5], KeyBinds.action("up", 5));
                 h.answer(h.setter(), '{"success":true}');
-                check("then the down key", h.setter().command[4], "XF86AudioLowerVolume");
+                tally.check("then the down key", h.setter().command[4], "XF86AudioLowerVolume");
                 h.answer(h.setter(), '{"success":true}');
                 h.answer(h.shower(), h.listing(KeyBinds.action("up", 5), KeyBinds.action("down", 5)));
-                check("the keys are Orbit's, nothing failed", [keys.keys, keys.failed], ["orbit", false]);
+                tally.check("the keys are Orbit's, nothing failed", [keys.keys, keys.failed], ["orbit", false]);
             }
         },
         {
             "run": () => {
                 keys.claim();
-                check("asked for: a restart binds them again", h.shower().running, true);
+                tally.check("asked for: a restart binds them again", h.shower().running, true);
                 h.answer(h.shower(), h.listing(KeyBinds.action("up", 5), KeyBinds.action("down", 5)));
-                check("already Orbit's: nothing to set", h.setter().running, false);
+                tally.check("already Orbit's: nothing to set", h.setter().running, false);
             }
         },
         {
             "run": () => {
                 keys.disable();
-                check("giving back is remembered", [prefs.saved.keysOrbit, prefs.keysOrbit], [false, false]);
+                tally.check("giving back is remembered", [prefs.saved.keysOrbit, prefs.keysOrbit], [false, false]);
                 h.answer(h.shower(), h.listing(KeyBinds.action("up", 5), KeyBinds.action("down", 5)));
-                check("the up key goes back to DMS's own action with its step", h.setter().command[5], h.dmsUp);
+                tally.check("the up key goes back to DMS's own action with its step", h.setter().command[5], h.dmsUp);
                 h.answer(h.setter(), '{"success":true}');
-                check("and the down key", h.setter().command[5], h.dmsDown);
+                tally.check("and the down key", h.setter().command[5], h.dmsDown);
                 h.answer(h.setter(), '{"success":true}');
                 h.answer(h.shower(), h.listing(h.dmsUp, h.dmsDown));
-                check("DMS's keys again", keys.keys, "dms");
+                tally.check("DMS's keys again", keys.keys, "dms");
             }
         },
         {
@@ -139,7 +135,7 @@ Item {
                 keys.enable();
                 h.answer(h.shower(), h.listing(h.dmsUp, h.dmsDown));
                 h.answer(h.setter(), '{"success":false}');
-                check("a refusal of DMS stops there and is said", [keys.failed, h.setter().running], [true, false]);
+                tally.check("a refusal of DMS stops there and is said", [keys.failed, h.setter().running], [true, false]);
                 h.answer(h.shower(), h.listing(KeyBinds.action("up", 5), h.dmsDown));
             }
         },
@@ -147,7 +143,7 @@ Item {
             "run": () => {
                 keys.claim();
                 h.answer(h.shower(), h.listing("spawn pamixer -i 5", h.dmsDown));
-                check("the user's own shortcut is left alone", [keys.keys, h.setter().running], ["custom", false]);
+                tally.check("the user's own shortcut is left alone", [keys.keys, h.setter().running], ["custom", false]);
             }
         },
         {
@@ -158,11 +154,11 @@ Item {
                 // `volumeKeys status` from the command line while the read runs
                 keys.refresh();
                 h.answer(h.shower(), h.listing(h.dmsUp, h.dmsDown));
-                check("a status read meanwhile does not cancel the bind", [h.setter().running, h.setter().command[4]], [true, "XF86AudioRaiseVolume"]);
+                tally.check("a status read meanwhile does not cancel the bind", [h.setter().running, h.setter().command[4]], [true, "XF86AudioRaiseVolume"]);
                 h.answer(h.setter(), '{"success":true}');
                 h.answer(h.setter(), '{"success":true}');
                 h.answer(h.shower(), h.listing(KeyBinds.action("up", 5), KeyBinds.action("down", 5)));
-                check("and the keys end up Orbit's", keys.keys, "orbit");
+                tally.check("and the keys end up Orbit's", keys.keys, "orbit");
             }
         }
     ]
@@ -174,8 +170,7 @@ Item {
     }
     function next() {
         if (at >= steps.length) {
-            print(failures ? failures + " failure(s)" : "all passed");
-            Qt.exit(failures ? 1 : 0);
+            tally.finish();
             return;
         }
         steps[at++].run();

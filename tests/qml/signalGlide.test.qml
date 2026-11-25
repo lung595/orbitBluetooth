@@ -37,12 +37,8 @@ Item {
         audioRoute: route
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
     function body() {
         return scene.centre.bodyOf(h.address);
@@ -88,22 +84,22 @@ Item {
         {
             "then": 3000,
             "run": () => {
-                check("Reduce motion: the scene has settled", [h.settledSeen, !!body()], [true, true]);
+                tally.check("Reduce motion: the scene has settled", [h.settledSeen, !!body()], [true, true]);
                 h.armed = true;
             }
         },
         {
             "then": 1500,
             "run": () => {
-                check("a new RSSI wakes the settled scene", [h.armed, h.woke], [false, true]);
-                check("Reduce motion: the signal is there at once", Math.round(body().signal * 100), 80);
+                tally.check("a new RSSI wakes the settled scene", [h.armed, h.woke], [false, true]);
+                tally.check("Reduce motion: the signal is there at once", Math.round(body().signal * 100), 80);
                 h.settledSeen = false;
             }
         },
         {
             "then": 2000,
             "run": () => {
-                check("and the scene settles again", h.settledSeen, true);
+                tally.check("and the scene settles again", h.settledSeen, true);
                 probe.stop();
                 SettingsData.reduceMotion = false;
                 h.changes = 0;
@@ -113,13 +109,13 @@ Item {
         {
             "then": 0,
             "run": () => {
-                check("with motion it glides: many values on its way", h.changes > 5, true);
+                tally.check("with motion it glides: many values on its way", h.changes > 5, true);
             }
         },
         {
             "then": 0,
             "run": () => {
-                check("and arrives", Math.round(body().signal * 100), 20);
+                tally.check("and arrives", Math.round(body().signal * 100), 20);
             }
         }
     ]
@@ -130,8 +126,7 @@ Item {
     }
     function next() {
         if (at >= steps.length) {
-            print(failures ? failures + " failure(s)" : "all passed");
-            Qt.exit(failures ? 1 : 0);
+            tally.finish();
             return;
         }
         const step = steps[at++];

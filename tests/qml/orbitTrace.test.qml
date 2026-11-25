@@ -38,12 +38,8 @@ Item {
         audioRoute: route
     }
 
-    property int failures: 0
-    function check(what, got, want) {
-        const ok = JSON.stringify(got) === JSON.stringify(want);
-        if (!ok)
-            failures++;
-        print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "  got " + JSON.stringify(got) + " want " + JSON.stringify(want)));
+    Tally {
+        id: tally
     }
     // Within half a pixel (or a thousandth)
     function near(a, b, tol = 0.5) {
@@ -69,8 +65,8 @@ Item {
             "then": 200,
             "until": () => h.landed,
             "run": () => {
-                check("no group, no trajectory: nothing is created before it is needed", [scene.world.farOrbit.active, scene.world.nearOrbit.active], [false, false]);
-                check("a device outside any group has no outline either", scene.centre.bodyOf(h.one).outline.active, false);
+                tally.check("no group, no trajectory: nothing is created before it is needed", [scene.world.farOrbit.active, scene.world.nearOrbit.active], [false, false]);
+                tally.check("a device outside any group has no outline either", scene.centre.bodyOf(h.one).outline.active, false);
                 SettingsData.reduceMotion = true;
                 route.sharing = [h.headset, h.one, h.dac];
             }
@@ -89,23 +85,23 @@ Item {
             "run": () => {
                 const c = scene.centre, z = c.sizes, src = c.bodyOf(h.headset), copy = c.bodyOf(h.one), w = wired(h.dac);
                 const R = z.radius;
-                check("the orbit is 40 % wider than a tight ring (the ring, a gap, half a copy)", [Centre.ORBIT_SPREAD, near(R, Centre.ORBIT_SPREAD * (z.ring + 12 + z.copy / 2), 0.001)], [1.4, true]);
-                check("a copy sits on that orbit: on the horizon it is a radius from the source, level with it", [near(copy.px - src.px, R), near(copy.py, src.py)], [true, true]);
-                check("while the group has the centre the copies orbit at 1.4 times the tight radius, from the source", [Centre.spreadAt(c.stage), near(copy.px - src.px, Centre.ORBIT_SPREAD * Centre.sizes(scene, 1).radius)], [Centre.ORBIT_SPREAD, true]);
-                check("the wired copy is on the other side of it, as far", [near(src.px - w.px, R), near(w.py, src.py)], [true, true]);
-                check("the orbit fits the scene: the farthest copy is inside its width", [copy.px + z.copy / 2 < scene.width, w.px - z.copy / 2 > 0], [true, true]);
-                check("on the horizon a copy is half way between whole and its outline", [near(copy.solid, 0.5, 0.001), near(w.solid, 0.5, 0.001), near(copy.outline.item.opacity, 0.5, 0.001), near(w.outline.item.opacity, 0.5, 0.001)], [true, true, true, true]);
+                tally.check("the orbit is 40 % wider than a tight ring (the ring, a gap, half a copy)", [Centre.ORBIT_SPREAD, near(R, Centre.ORBIT_SPREAD * (z.ring + 12 + z.copy / 2), 0.001)], [1.4, true]);
+                tally.check("a copy sits on that orbit: on the horizon it is a radius from the source, level with it", [near(copy.px - src.px, R), near(copy.py, src.py)], [true, true]);
+                tally.check("while the group has the centre the copies orbit at 1.4 times the tight radius, from the source", [Centre.spreadAt(c.stage), near(copy.px - src.px, Centre.ORBIT_SPREAD * Centre.sizes(scene, 1).radius)], [Centre.ORBIT_SPREAD, true]);
+                tally.check("the wired copy is on the other side of it, as far", [near(src.px - w.px, R), near(w.py, src.py)], [true, true]);
+                tally.check("the orbit fits the scene: the farthest copy is inside its width", [copy.px + z.copy / 2 < scene.width, w.px - z.copy / 2 > 0], [true, true]);
+                tally.check("on the horizon a copy is half way between whole and its outline", [near(copy.solid, 0.5, 0.001), near(w.solid, 0.5, 0.001), near(copy.outline.item.opacity, 0.5, 0.001), near(w.outline.item.opacity, 0.5, 0.001)], [true, true, true, true]);
 
                 const far = scene.world.farOrbit, nearHalf = scene.world.nearOrbit;
-                check("both halves of the trajectory exist now there is a group", [far.active, nearHalf.active], [true, true]);
+                tally.check("both halves of the trajectory exist now there is a group", [far.active, nearHalf.active], [true, true]);
                 const e = far.item.ellipse;
-                check("the ellipse is centred on the group, as wide as the copies' orbit and as tall as its tilt says", [near(e.x + e.width / 2, c.group.x), near(e.y + e.height / 2, c.group.y), near(e.width, 2 * (R + 1)), near(e.height, 2 * (R * Centre.TILT + 1))], [true, true, true, true]);
-                check("the near half is the same ellipse", [nearHalf.item.ellipse.x, nearHalf.item.ellipse.y, nearHalf.item.ellipse.width], [e.x, e.y, e.width]);
-                check("it is dashed and light, the far half paler than the near one", [far.item.trail.strokeStyle === ShapePath.DashLine, nearHalf.item.trail.strokeStyle === ShapePath.DashLine, far.item.trail.strokeColor.a < nearHalf.item.trail.strokeColor.a, nearHalf.item.trail.strokeColor.a < 0.3], [true, true, true, true]);
-                check("the far half is behind the source and the near half in front of it", [far.z < src.z, nearHalf.z > src.z], [true, true]);
+                tally.check("the ellipse is centred on the group, as wide as the copies' orbit and as tall as its tilt says", [near(e.x + e.width / 2, c.group.x), near(e.y + e.height / 2, c.group.y), near(e.width, 2 * (R + 1)), near(e.height, 2 * (R * Centre.TILT + 1))], [true, true, true, true]);
+                tally.check("the near half is the same ellipse", [nearHalf.item.ellipse.x, nearHalf.item.ellipse.y, nearHalf.item.ellipse.width], [e.x, e.y, e.width]);
+                tally.check("it is dashed and light, the far half paler than the near one", [far.item.trail.strokeStyle === ShapePath.DashLine, nearHalf.item.trail.strokeStyle === ShapePath.DashLine, far.item.trail.strokeColor.a < nearHalf.item.trail.strokeColor.a, nearHalf.item.trail.strokeColor.a < 0.3], [true, true, true, true]);
+                tally.check("the far half is behind the source and the near half in front of it", [far.z < src.z, nearHalf.z > src.z], [true, true]);
                 // Angles run clockwise from 3 o'clock on screen: 180..360 is the top half
-                check("the far half is the upper arc and the near half the lower one", [far.item.arc.startAngle, far.item.arc.sweepAngle, nearHalf.item.arc.startAngle, nearHalf.item.arc.sweepAngle], [180, 180, 0, 180]);
-                check("it is as strong as the group is there", far.item.opacity, c.presence);
+                tally.check("the far half is the upper arc and the near half the lower one", [far.item.arc.startAngle, far.item.arc.sweepAngle, nearHalf.item.arc.startAngle, nearHalf.item.arc.sweepAngle], [180, 180, 0, 180]);
+                tally.check("it is as strong as the group is there", far.item.opacity, c.presence);
                 // Where the copy and the wired one are now: one at the far end, one at the near end
                 scene.orbitTime = 21.875;
                 scene.wake();
@@ -116,9 +112,9 @@ Item {
             "run": () => {
                 const c = scene.centre, src = c.bodyOf(h.headset), copy = c.bodyOf(h.one), w = wired(h.dac);
                 const nearHalf = scene.world.nearOrbit;
-                check("a copy at the far end is an outline, the other at the near end whole", [copy.depth < -0.9, copy.solid, w.depth > 0.9, w.solid], [true, 0, true, 1]);
-                check("the far end is above the source and the near end below it: where the two arcs are", [copy.py < src.py - 1, w.py > src.py + 1], [true, true]);
-                check("the near half stays under every copy, even the farthest one (counter-proof: over it a copy would be drawn under the line)", [nearHalf.z < copy.z, nearHalf.z < w.z, nearHalf.z > src.z], [true, true, true]);
+                tally.check("a copy at the far end is an outline, the other at the near end whole", [copy.depth < -0.9, copy.solid, w.depth > 0.9, w.solid], [true, 0, true, 1]);
+                tally.check("the far end is above the source and the near end below it: where the two arcs are", [copy.py < src.py - 1, w.py > src.py + 1], [true, true]);
+                tally.check("the near half stays under every copy, even the farthest one (counter-proof: over it a copy would be drawn under the line)", [nearHalf.z < copy.z, nearHalf.z < w.z, nearHalf.z > src.z], [true, true, true]);
                 // The group steps back onto this computer's ring: the trajectory goes with it, smaller
                 h.widths = [];
                 c.recall();
@@ -129,7 +125,7 @@ Item {
             "until": () => scene.centre.stage === 1 && !scene.centre.travelling,
             "run": () => {
                 const c = scene.centre, e = scene.world.farOrbit.item.ellipse;
-                check("stepped back, the group is smaller and the trajectory follows it: its centre and its scale", [c.group.scale < 1, near(e.x + e.width / 2, c.group.x), near(e.y + e.height / 2, c.group.y), near(e.scale, c.group.scale, 0.001)], [true, true, true, true]);
+                tally.check("stepped back, the group is smaller and the trajectory follows it: its centre and its scale", [c.group.scale < 1, near(e.x + e.width / 2, c.group.x), near(e.y + e.height / 2, c.group.y), near(e.scale, c.group.scale, 0.001)], [true, true, true, true]);
                 // The copies back on the horizon, to measure the orbit there
                 scene.orbitTime = 3.125;
                 scene.wake();
@@ -140,13 +136,13 @@ Item {
             "run": () => {
                 const c = scene.centre, z = c.sizes, src = c.bodyOf(h.headset), copy = c.bodyOf(h.one), w = wired(h.dac), e = scene.world.farOrbit.item.ellipse;
                 const tight = Centre.sizes(scene, 1).radius, k = c.group.scale;
-                check("stepped back, the orbit is the tight ring again, not the wide one", [Centre.spreadAt(c.stage), near(z.radius, tight, 0.001)], [1, true]);
-                check("the copies hug the source as they did before: a tight radius at the group's size, each side", [near(copy.px - src.px, tight * k), near(src.px - w.px, tight * k), near(copy.py, src.py)], [true, true, true]);
-                check("the trajectory is that tight ring: its width, once scaled with the group", [near(e.width * e.scale, 2 * (tight + 1) * k)], [true]);
-                check("no copy overlaps the volume ring: the nearest edge of a copy is clear of it", [copy.px - src.px - copy.diameter * copy.baseScale / 2 >= z.ring * k - 0.5, src.px - w.px - w.diameter * w.baseScale / 2 >= z.ring * k - 0.5], [true, true]);
+                tally.check("stepped back, the orbit is the tight ring again, not the wide one", [Centre.spreadAt(c.stage), near(z.radius, tight, 0.001)], [1, true]);
+                tally.check("the copies hug the source as they did before: a tight radius at the group's size, each side", [near(copy.px - src.px, tight * k), near(src.px - w.px, tight * k), near(copy.py, src.py)], [true, true, true]);
+                tally.check("the trajectory is that tight ring: its width, once scaled with the group", [near(e.width * e.scale, 2 * (tight + 1) * k)], [true]);
+                tally.check("no copy overlaps the volume ring: the nearest edge of a copy is clear of it", [copy.px - src.px - copy.diameter * copy.baseScale / 2 >= z.ring * k - 0.5, src.px - w.px - w.diameter * w.baseScale / 2 >= z.ring * k - 0.5], [true, true]);
                 // It left the wide orbit by a smooth way: it only narrowed, from the wide width to the tight one
                 const wide = 2 * (Centre.ORBIT_SPREAD * tight + 1), seen = h.widths, range = wide - 2 * (tight + 1);
-                check("the trajectory went through the sizes in between, narrowing, none missed (no step over a third of the way)", [seen.length > 4, seen.every((v, i) => i === 0 || v <= seen[i - 1]), near(seen[0], wide, 12), near(seen[seen.length - 1], 2 * (tight + 1), 0.001), seen.every((v, i) => i === 0 || seen[i - 1] - v < range / 3)], [true, true, true, true, true]);
+                tally.check("the trajectory went through the sizes in between, narrowing, none missed (no step over a third of the way)", [seen.length > 4, seen.every((v, i) => i === 0 || v <= seen[i - 1]), near(seen[0], wide, 12), near(seen[seen.length - 1], 2 * (tight + 1), 0.001), seen.every((v, i) => i === 0 || seen[i - 1] - v < range / 3)], [true, true, true, true, true]);
                 c.release();
             }
         },
@@ -163,8 +159,8 @@ Item {
             "run": () => {
                 const c = scene.centre, z = c.sizes, src = c.bodyOf(h.headset), copy = c.bodyOf(h.one), w = wired(h.dac), e = scene.world.farOrbit.item.ellipse;
                 const tight = Centre.sizes(scene, 1).radius;
-                check("released, the group has the centre back and the copies orbit wide again: 1.4 times the tight radius, each side", [Centre.spreadAt(c.stage), near(copy.px - src.px, Centre.ORBIT_SPREAD * tight), near(src.px - w.px, Centre.ORBIT_SPREAD * tight)], [Centre.ORBIT_SPREAD, true, true]);
-                check("the trajectory is wide again with them, at the group's full size", [near(e.width, 2 * (Centre.ORBIT_SPREAD * tight + 1)), near(e.scale, 1, 0.001)], [true, true]);
+                tally.check("released, the group has the centre back and the copies orbit wide again: 1.4 times the tight radius, each side", [Centre.spreadAt(c.stage), near(copy.px - src.px, Centre.ORBIT_SPREAD * tight), near(src.px - w.px, Centre.ORBIT_SPREAD * tight)], [Centre.ORBIT_SPREAD, true, true]);
+                tally.check("the trajectory is wide again with them, at the group's full size", [near(e.width, 2 * (Centre.ORBIT_SPREAD * tight + 1)), near(e.scale, 1, 0.001)], [true, true]);
                 route.sharing = [];
             }
         },
@@ -172,7 +168,7 @@ Item {
             "then": 200,
             "until": () => !scene.centre.shown,
             "run": () => {
-                check("the group is gone: the trajectory is gone with it", [scene.world.farOrbit.active, scene.world.nearOrbit.active], [false, false]);
+                tally.check("the group is gone: the trajectory is gone with it", [scene.world.farOrbit.active, scene.world.nearOrbit.active], [false, false]);
             }
         }
     ]
@@ -203,8 +199,7 @@ Item {
         }
         waited = 0;
         if (step >= steps.length) {
-            print(failures ? failures + " failure(s)" : "all passed");
-            Qt.exit(failures ? 1 : 0);
+            tally.finish();
             return;
         }
         const s = steps[step++];
