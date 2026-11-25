@@ -19,6 +19,7 @@ const entries = [
     { id: "e", label: "Écran d’accueil", help: "Début de la journée", keywords: [] },
     { id: "f", label: "Pause when you take the headset off", help: "Resumes when you put it back", keywords: ["wear", "sensor"] }
 ];
+const pristine = JSON.stringify(entries);
 
 // --- Matching ------------------------------------------------------------------
 eq("a label word is found", ids(entries, "noise"), ["a"]);
@@ -76,7 +77,7 @@ eq("broken entries are skipped", ids([null, { id: 1, label: "x" }, { id: "ok", l
 eq("an entry without help or keywords works", ids([{ id: "x", label: "Lonely" }], "lonely"), ["x"]);
 eq("not a list is nothing", [ids(null, "a"), ids({}, "a"), ids("abc", "a")], [[], [], []]);
 eq("prepared entries give the same answer", S.search(S.prepare(entries), "sound"), S.search(entries, "sound"));
-eq("entries are not changed", JSON.stringify(entries).length, JSON.stringify(entries.map(e => Object.assign({}, e))).length);
+eq("entries are not changed", JSON.stringify(entries), pristine);
 
 // --- The real index ------------------------------------------------------------
 eq("the real index finds the sounds' volume with 'sound'", ids(Index.ENTRIES, "sound").includes("soundVolume"), true);
