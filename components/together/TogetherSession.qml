@@ -80,24 +80,9 @@ Item {
     function _facts(who) {
         if (Member.isWired(who)) {
             const n = route.wiredSink(who);
-            return n ? {
-                "connected": true,
-                "sink": n.name,
-                "profile": ""
-            } : null;
-        }
-        const d = route.known(who);
-        return d ? {
-            "connected": d.connected,
-            "sink": d.sink ? d.sink.name : "",
-            "profile": _profile(d)
-        } : null;
-    }
-    function _sound(who) {
-        if (Member.isWired(who)) {
-            const n = route.wiredSink(who);
             const f = route.wiredFilter(who);
             return n ? {
+                "connected": true,
                 "sink": n.name,
                 "pc": f ? f.name : "",
                 "profile": ""
@@ -105,6 +90,7 @@ Item {
         }
         const d = route.known(who);
         return d ? {
+            "connected": d.connected,
             "sink": d.sink ? d.sink.name : "",
             "pc": d.pc ? d.pc.name : "",
             "profile": _profile(d)
@@ -243,7 +229,7 @@ Item {
     // --- Where the sound comes from ----------------------------------------------------
     // The output in use, if it is a member: it is the source. Otherwise the
     // first member that has an output. Read again when the default output changes.
-    readonly property var plan: active ? Together.plan(members, _sound, Pipewire.defaultAudioSink ? Pipewire.defaultAudioSink.name : "") : null
+    readonly property var plan: active ? Together.plan(members, _facts, Pipewire.defaultAudioSink ? Pipewire.defaultAudioSink.name : "") : null
     readonly property string source: plan ? plan.source : ""
 
     // --- How long each output waits (D298) -------------------------------------------------

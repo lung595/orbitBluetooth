@@ -28,7 +28,6 @@ Item {
         width: parent.width - Theme.spacingM * 2
         horizontalAlignment: Text.AlignHCenter
         text: nameBox.card.body?.name ?? ""
-        elide: Text.ElideRight
         color: nameBox.card.ink
         font.pixelSize: Theme.fontSizeLarge
         font.weight: Font.DemiBold

@@ -162,7 +162,6 @@ Item {
         width: parent.width - x - 8
         anchors.verticalCenter: parent.verticalCenter
         text: entry.modelData.name
-        elide: Text.ElideRight
         wrapMode: Text.NoWrap
         font.pixelSize: Theme.fontSizeMedium
         font.weight: entry.on ? Font.DemiBold : Font.Normal

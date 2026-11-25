@@ -128,7 +128,6 @@ BodyState {
 
     Behavior on opacity {
         NumberAnimation {
-            id: fadeAnim
             duration: 380
             easing.type: Easing.OutCubic
         }

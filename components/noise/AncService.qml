@@ -122,9 +122,7 @@ Item {
     }
 
     function _syncAll() {
-        const list = Bluetooth.devices.values;
-        for (let i = 0; i < list.length; i++)
-            _sync(list[i].address);
+        Bluetooth.devices.values.forEach(d => _sync(d.address));
     }
 
     function watch(address, on) {

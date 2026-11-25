@@ -107,10 +107,7 @@ Item {
 
     // Connected devices that play sound, the one in use first
     function audioDevices() {
-        const list = [];
-        for (const a in _devices)
-            if (_devices[a].sink)
-                list.push(_devices[a]);
+        const list = Object.values(_devices).filter(d => d.sink);
         const def = Pipewire.defaultAudioSink;
         list.sort((x, y) => ((y.sink === def || y.pc === def) ? 1 : 0) - ((x.sink === def || x.pc === def) ? 1 : 0));
         return list;
@@ -120,12 +117,7 @@ Item {
     // virtual sink), or null: the pop-up then shows this PC's level only
     readonly property var current: {
         const def = Pipewire.defaultAudioSink;
-        for (const a in _devices) {
-            const d = _devices[a];
-            if (d.sink && def && (d.sink === def || d.pc === def))
-                return d;
-        }
-        return null;
+        return Object.values(_devices).find(d => d.sink && def && (d.sink === def || d.pc === def)) ?? null;
     }
 
     // A Bluetooth device Orbit sees, with or without a sound output

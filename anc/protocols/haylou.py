@@ -6,9 +6,8 @@ carries the battery level; the headphones cannot be asked for their
 noise-control mode, so it stays unknown until Orbit sets one.
 """
 
-from .base import Protocol
+from .base import Protocol, SPP
 
-SPP = "00001101-0000-1000-8000-00805f9b34fb"
 HEAD, TAIL = bytes.fromhex("aabbccc0"), bytes.fromhex("ddeeff")
 HANDSHAKE = bytes.fromhex("020005000000000f")
 MODE_TO_BYTE = {"off": 0, "nc": 1, "ambient": 2}

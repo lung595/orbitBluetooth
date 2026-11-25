@@ -71,8 +71,6 @@ eq("a window without layout yet does not count", Cover.covered(spaces, [{ worksp
     eq("not idle: a body to add", Orbit.idle(Orbit.plan([], { a: a }, {}), {}, [a], ""), false);
     eq("not idle: the first refresh", Orbit.idle(same, { a: a }, [a], "\u0000"), false);
     eq("an unknown leaving entry is not resolved", Object.keys(Orbit.plan([{ address: "z", leaving: true }], {}, {}).devices), []);
-    eq("changes: what to start and stop, in order", Orbit.changes(["a", "b", "c"], ["d", "c", "a", "e"]), { added: ["d", "e"], removed: ["b"] });
-    eq("changes: same set in another order, nothing", Orbit.changes(["a", "b"], ["b", "a"]), { added: [], removed: [] });
 }
 
 // Orbit physics: a 200x100 scene, ring at 0.5, black hole far away

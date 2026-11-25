@@ -15,11 +15,11 @@ and whenever something changes; battery comes in 0x60 updates.
 
 import re
 
-from .base import Protocol
+from .base import Protocol, SPP
 from .checksums import crc16_xmodem
 
 UUIDS = ["2e73a4ad-332d-41fc-90e2-16bef06523f2",   # Buds2 and later
-         "00001101-0000-1000-8000-00805f9b34fb",   # Buds+, Live, Pro (SPP)
+         SPP,   # Buds+, Live, Pro (SPP)
          "00001102-0000-1000-8000-00805f9b34fd"]   # Galaxy Buds (2019)
 
 STATUS, EXTENDED_STATUS = 0x60, 0x61

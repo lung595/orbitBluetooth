@@ -1,7 +1,7 @@
 import QtQuick
 import qs.Services
 import "../noise/Anc.js" as Anc
-import "Orbit.js" as Orbit
+import "../wear/Wear.js" as Wear
 
 // The scene's side of noise control (the daemon runs the helper, see
 // AncService): what a headset reports, whether it can be controlled, the
@@ -40,7 +40,7 @@ Item {
                     want.push(b.address);
             }
         }
-        const c = Orbit.changes(_viewing, want);
+        const c = Wear.changes(_viewing, want);
         if (!c.added.length && !c.removed.length)
             return;
         c.added.forEach(a => watch(a, true));

@@ -17,10 +17,9 @@ read their mode at connection; the others learn it from the first change.
 
 import re
 
-from .base import Protocol
+from .base import Protocol, SPP
 from .checksums import sum8
 
-SPP = "00001101-0000-1000-8000-00805f9b34fb"
 OUT, IN = bytes.fromhex("08ee000000"), bytes.fromhex("09ff000001")
 
 REQUEST_STATE, BATTERY_LEVEL, BATTERY_CHARGING = b"\x01\x01", b"\x01\x03", b"\x01\x04"

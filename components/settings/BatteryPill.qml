@@ -51,11 +51,8 @@ Flow {
     StyledText {
         width: pill.room >= 160 ? pill.room : pill.width
         height: Math.max(implicitHeight, chip.height)
-        verticalAlignment: Text.AlignVCenter
         text: pill.info?.why ?? ""
-        wrapMode: Text.WordWrap
         maximumLineCount: 2
-        elide: Text.ElideRight
         font.pixelSize: Theme.fontSizeSmall
         color: Theme.surfaceVariantText
     }

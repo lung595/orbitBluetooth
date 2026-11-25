@@ -82,7 +82,6 @@ Item {
         StyledText {
             width: parent.width
             horizontalAlignment: Text.AlignHCenter
-            elide: Text.ElideRight
             text: card.title
             color: card.paper.ink
             font.pixelSize: Theme.fontSizeLarge
@@ -91,7 +90,6 @@ Item {
         StyledText {
             width: parent.width
             horizontalAlignment: Text.AlignHCenter
-            elide: Text.ElideRight
             text: card.subtitle
             color: card.paper.fg(0.42)
             font.pixelSize: Theme.fontSizeSmall

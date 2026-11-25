@@ -36,7 +36,6 @@ Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             text: offer.device ? Catalog.deviceName(offer.device) + " can be paired" : ""
             color: offer.scene.night.ink(0.85)
-            elide: Text.ElideRight
             width: Math.min(implicitWidth, offer.scene.width * 0.5)
             font.pixelSize: Theme.fontSizeSmall - 1
         }

@@ -26,7 +26,6 @@ Row {
     StyledText {
         width: parent.width - (keysButton.visible ? keysButton.width + parent.spacing : 0) - keysLink.width - parent.spacing
         anchors.verticalCenter: parent.verticalCenter
-        wrapMode: Text.WordWrap
         font.pixelSize: Theme.fontSizeSmall
         color: keyBinder.failed ? Theme.error : Theme.surfaceVariantText
         text: {

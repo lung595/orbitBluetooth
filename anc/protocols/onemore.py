@@ -5,9 +5,8 @@ copied). The few packets needed are fixed byte strings (their checksums
 never change); answers start with 01 01 00 and byte 3 names the command.
 """
 
-from .base import Protocol
+from .base import Protocol, SPP
 
-SPP = "00001101-0000-1000-8000-00805f9b34fb"
 GET_INFO = bytes.fromhex("1101004e0000001c42")
 GET_NOISE = bytes.fromhex("1101005f0000000c43")
 SET_NOISE = bytes.fromhex("1101005e000100135c")   # + mode byte

@@ -48,7 +48,6 @@ Item {
         fillMode: Image.PreserveAspectFit
         sourceSize.width: Math.ceil(root.width * 2)
         sourceSize.height: Math.ceil(root.height * 2)
-        smooth: true
         mipmap: true
     }
 }

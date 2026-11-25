@@ -85,7 +85,6 @@ Item {
     // above it on the far side of the ring (as a device's: the core is behind it
     // there), and never cut off by the scene's edge.
     GroupGlyphs {
-        id: glyphs
         readonly property bool far: view.ghost.py < view.scene.centre.host.y
         scene: view.scene
         session: view.ghost.session
@@ -158,7 +157,6 @@ Item {
 
     // The cross: not this group again until the shell ends
     Rectangle {
-        id: badge
         readonly property real span: Math.max(16, Math.round(view.ghost.diameter * 0.34))
         // On the upper right of the disc's click zone, mostly outside it: far away on the
         // ring the planet is hardly bigger than the cross, and a click in the middle of

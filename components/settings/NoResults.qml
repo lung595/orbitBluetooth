@@ -23,7 +23,6 @@ Column {
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.Wrap
         maximumLineCount: 2
-        elide: Text.ElideRight
         text: "Nothing matches “" + none.query.trim() + "”"
         font.pixelSize: Theme.fontSizeMedium
         font.weight: Font.Medium

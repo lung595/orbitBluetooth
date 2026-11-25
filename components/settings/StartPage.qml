@@ -18,7 +18,6 @@ CategoryPage {
         width: parent.width
         visible: page.shown("gettingStarted")
         text: "Orbit does not replace DMS's Bluetooth by itself: it shows up where you add its widget. Pick one place, or several."
-        wrapMode: Text.WordWrap
         color: Theme.surfaceText
         font.pixelSize: Theme.fontSizeMedium
     }
@@ -72,7 +71,6 @@ CategoryPage {
         StyledText {
             width: parent.width - btIcon.width - Theme.spacingS
             text: "DMS's own Bluetooth widget stays as it is: both live side by side, and you may remove DMS's if you like."
-            wrapMode: Text.WordWrap
             color: Theme.surfaceVariantText
             font.pixelSize: Theme.fontSizeSmall
         }
@@ -140,7 +138,6 @@ CategoryPage {
                 StyledText {
                     width: parent.width
                     text: way.steps
-                    wrapMode: Text.WordWrap
                     color: Theme.surfaceVariantText
                     font.pixelSize: Theme.fontSizeSmall
                 }

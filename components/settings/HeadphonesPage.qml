@@ -1,11 +1,10 @@
 import QtQuick
 import qs.Modules.Plugins
 
-// Noise control and the opt-in device pictures (D234).
+// Noise control, the headset link and the wearing sensor.
 CategoryPage {
     id: page
     category: "headphones"
-    required property PluginSettings settings
 
     // --- Headphones --------------------------------------------------------------
 

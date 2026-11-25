@@ -13,10 +13,8 @@ is (level, mode) with mode 0 off, 1 cancelling, 2 awareness.
 import re
 import time
 
-from .base import Protocol
+from .base import Protocol, SPP
 from .checksums import crc16_xmodem
-
-SPP = "00001101-0000-1000-8000-00805f9b34fb"
 
 ANC_READ, ANC_SET, ANC_CHANGED_LEGACY = b"\x2b\x2a", b"\x2b\x04", b"\x2b\x03"
 BATTERY_READ, BATTERY_NOTIFY = b"\x01\x08", b"\x01\x27"

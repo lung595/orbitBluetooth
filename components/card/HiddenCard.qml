@@ -125,7 +125,6 @@ Item {
                 visible: card.addresses.length === 0
                 topPadding: Theme.spacingXS
                 bottomPadding: Theme.spacingXS
-                wrapMode: Text.WordWrap
                 horizontalAlignment: Text.AlignHCenter
                 text: "Nothing hidden yet.\nDrag a device into the black hole, or right-click it, to keep it out of the orbit. Hidden devices stay connected."
                 color: card.muted

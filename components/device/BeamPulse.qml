@@ -30,7 +30,6 @@ Item {
     Repeater {
         model: 3
         delegate: Rectangle {
-            id: capsule
             required property int index
             readonly property real at: Motion.pulseAt(pulse.time, pulse.running, index, pulse.offset)
             x: at * Math.max(0, pulse.width - pulse.capsuleLength)

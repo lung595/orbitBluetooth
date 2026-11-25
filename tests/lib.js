@@ -47,6 +47,13 @@ function read(path) {
     return new TextDecoder().decode(bytes);
 }
 
+// A repo folder's file names ending in ext (all files when ext is omitted), sorted
+function list(dir, ext = "") {
+    const d = GLib.Dir.open(root + "/" + dir, 0), names = [];
+    for (let n; (n = d.read_name()) !== null;) if (n.endsWith(ext)) names.push(n);
+    return names.sort();
+}
+
 // GUIDE.md's section anchors, as GitHub builds them from the ## and ### headings
 function guideAnchors() {
     return read("docs/GUIDE.md").split("\n").filter(l => /^#{2,3} /.test(l)).map(l => l.replace(/^#+ /, "").toLowerCase().replace(/[^a-z0-9 -]/g, "").replace(/ /g, "-"));

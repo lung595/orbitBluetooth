@@ -50,7 +50,6 @@ Item {
         }
 
         Rectangle {
-            id: disc
             anchors.fill: parent
             radius: width / 2
             opacity: face.body.focused ? 0 : 1

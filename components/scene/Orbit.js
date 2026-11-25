@@ -86,12 +86,3 @@ function idle(step, previous, list, before) {
 function signature(list) {
     return list.map(d => d.address + (d.connected ? "+" : "-") + (d.paired || d.bonded ? "p" : "")).join(" ");
 }
-
-// What changed between two address lists: the addresses to start (in
-// `want` only) and to stop (in `had` only), each in its list's order
-function changes(had, want) {
-    return {
-        "added": want.filter(a => had.indexOf(a) < 0),
-        "removed": had.filter(a => want.indexOf(a) < 0)
-    };
-}

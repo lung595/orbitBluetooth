@@ -1,7 +1,7 @@
 // The settings search (SettingsSearch.js) and the index it searches
 // (SettingsIndex.js). Run from the plugin root: gjs tests/settingsSearch.test.js
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
-const { load, eq, done, root, GLib, read } = imports.lib;
+const { load, eq, done, GLib, read, list } = imports.lib;
 
 const S = load("SettingsSearch.js");
 const Index = load("SettingsIndex.js");
@@ -86,21 +86,13 @@ eq("the real index forgives a typo", first(Index.ENTRIES, "vizualizer"), "scopeS
 
 // --- The index follows the real pages -------------------------------------------
 // The QML files of the settings page: pages and their rows
-function qmlFiles(path) {
-    const d = GLib.Dir.open(path, 0);
-    const names = [];
-    let n;
-    while ((n = d.read_name()) !== null)
-        if (n.endsWith(".qml"))
-            names.push(n);
-    return names.sort();
-}
+const settingsQml = list("components/settings", ".qml");
 const pageOf = file => { const m = /^(\w+)Page\.qml$/.exec(file); return m && m[1] !== "Category" ? m[1].toLowerCase() : null; };
 const inIndex = new Map(Index.ENTRIES.map(e => [e.id, e]));
 
 eq("every index id is unique", inIndex.size, Index.ENTRIES.length);
 const used = new Set(["volumeKeys", "report", "gettingStarted"]);
-for (const name of qmlFiles(root + "/components/settings")) {
+for (const name of settingsQml) {
     const src = read("components/settings/" + name);
     const keys = [...src.matchAll(/settingKey: "(\w+)"\s*\n/g)].map(m => m[1]).concat([...src.matchAll(/saveValue\("(\w+)"/g)].map(m => m[1]));
     for (const k of keys) {
@@ -118,7 +110,7 @@ eq("the keyless rows exist in the pages", [/VolumeKeysRow \{/.test(read("compone
 eq("every entry has a label, a help line and keywords", Index.ENTRIES.filter(e => !e.label || !e.help || !e.keywords.length).map(e => e.id), []);
 eq("every help is one short line", Index.ENTRIES.filter(e => e.help.length > 100).map(e => e.id), []);
 // Label and help are worded once, in the index: a page that spells its own would drift from what a search matches
-eq("pages take label and help from the index", qmlFiles(root + "/components/settings").filter(n => pageOf(n) && /^\s*(label|description): "/m.test(read("components/settings/" + n).replace(/\{[^{}]*\bvalue:[^{}]*\}/g, ""))), []);
+eq("pages take label and help from the index", settingsQml.filter(n => pageOf(n) && /^\s*(label|description): "/m.test(read("components/settings/" + n).replace(/\{[^{}]*\bvalue:[^{}]*\}/g, ""))), []);
 // The rows that are not settings widgets word themselves from the index too
 for (const [file, keys] of [["HabitsRow.qml", ["learnHabits", "togetherHabits"]], ["FineDelayRow.qml", ["togetherFineDelay"]]]) {
     const src = read("components/settings/" + file);
@@ -134,13 +126,13 @@ eq("ten categories, each with an icon, a name and a help line", [cats.length, In
 eq("Getting started comes first", cats[0], "start");
 eq("every entry sits in a known category", Index.ENTRIES.filter(e => !cats.includes(e.category)).map(e => e.id), []);
 eq("every category has entries", cats.filter(c => !Index.ENTRIES.some(e => e.category === c)), []);
-eq("every category has its page file", cats.filter(c => !qmlFiles(root + "/components/settings").includes(c[0].toUpperCase() + c.slice(1) + "Page.qml")), []);
+eq("every category has its page file", cats.filter(c => !settingsQml.includes(c[0].toUpperCase() + c.slice(1) + "Page.qml")), []);
 eq("entries are listed in the order of the rail", Index.ENTRIES.map(e => cats.indexOf(e.category)).every((n, i, a) => i === 0 || a[i - 1] <= n), true);
 
-const where = View.categoryOf(Index.ENTRIES);
+const where = View.byId(Index.ENTRIES);
 const g = View.group(S.search(Index.ENTRIES, "sound"), where);
 eq("a search groups its matches by category", [g.ids.soundVolume, g.counts.sounds >= 2, g.first.category], [true, true, "sounds"]);
-eq("each category names its best match", [g.firsts.sounds, Object.keys(g.firsts).every(c => g.counts[c] > 0)], [S.search(Index.ENTRIES, "sound").find(r => where[r.id] === "sounds").id, true]);
+eq("each category names its best match", [g.firsts.sounds, Object.keys(g.firsts).every(c => g.counts[c] > 0)], [S.search(Index.ENTRIES, "sound").find(r => where[r.id]?.category === "sounds").id, true]);
 eq("the first match is the best ranked", g.first.id, S.search(Index.ENTRIES, "sound")[0].id);
 eq("no match gives empty groups", View.group(S.search(Index.ENTRIES, "zzzzqq"), where), { ids: {}, counts: {}, firsts: {}, first: null });
 eq("junk results are ignored", View.group([{ id: "nope" }, null].filter(Boolean), where).first, null);

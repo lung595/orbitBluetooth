@@ -11,10 +11,9 @@ pdu 3 reads the mode as an index (0 normal, 1 cancelling, 2 transparency),
 pdu 4 sets it as a mask (1, 2, 4).
 """
 
-from .base import Protocol
+from .base import Protocol, SPP
 
 GAIA = "00001107-d102-11e1-9b23-00025b00a5a5"
-SPP = "00001101-0000-1000-8000-00805f9b34fb"
 VENDOR = 0x001D
 CURATION, GET_MODE, SET_MODE = 0x08, 0x03, 0x04
 COMMAND, NOTIFICATION, RESPONSE, ERROR = 0, 1, 2, 3

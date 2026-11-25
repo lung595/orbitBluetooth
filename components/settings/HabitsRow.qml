@@ -68,7 +68,6 @@ Column {
             }
             StyledText {
                 width: parent.width
-                wrapMode: Text.WordWrap
                 text: row.owner.help("learnHabits")
                 font.pixelSize: Theme.fontSizeSmall
                 color: Theme.surfaceVariantText

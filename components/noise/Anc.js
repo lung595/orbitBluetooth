@@ -25,12 +25,8 @@ var FAMILIES = [
 
 // Returns the protocol family for a device name, or "" when unknown.
 function family(name) {
-    if (!name)
-        return "";
-    for (var i = 0; i < FAMILIES.length; i++)
-        if (FAMILIES[i][1].test(name))
-            return FAMILIES[i][0];
-    return "";
+    const f = name ? FAMILIES.find(e => e[1].test(name)) : null;
+    return f ? f[0] : "";
 }
 
 var SHORT = {

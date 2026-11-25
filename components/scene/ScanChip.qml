@@ -33,7 +33,6 @@ Rectangle {
         anchors.centerIn: parent
         spacing: Theme.spacingXS
         Rectangle {
-            id: scanDot
             width: Theme.spacingXS + 2
             height: width
             radius: width / 2

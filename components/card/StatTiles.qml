@@ -36,7 +36,6 @@ Row {
                     horizontalAlignment: Text.AlignHCenter
                     text: modelData.label
                     color: tiles.muted
-                    elide: Text.ElideRight
                     font.pixelSize: Math.max(9, Theme.fontSizeSmall - 2)
                     font.letterSpacing: 0.4
                 }
@@ -45,7 +44,6 @@ Row {
                     horizontalAlignment: Text.AlignHCenter
                     text: modelData.value
                     color: tiles.ink
-                    elide: Text.ElideRight
                     font.family: "monospace"
                     font.pixelSize: Theme.fontSizeSmall
                     font.weight: Font.Medium

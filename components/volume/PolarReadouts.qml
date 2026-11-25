@@ -127,7 +127,6 @@ Item {
             font.pixelSize: Math.max(10, Math.round(parent.size * 0.4))
             color: parent.lit ? parent.tint : scope.mutedColor
             width: Math.min(implicitWidth, scope.sideRoom)
-            elide: Text.ElideRight
         }
     }
     SideNumber {

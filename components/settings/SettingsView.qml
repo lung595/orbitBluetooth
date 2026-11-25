@@ -29,11 +29,10 @@ QtObject {
     property int litCount: 0
 
     readonly property var _entries: View.byId(Index.ENTRIES)
-    readonly property var _categoryOf: View.categoryOf(Index.ENTRIES)
 
     readonly property bool filtering: query.trim() !== ""
     // Searching the 70-odd entries takes well under a millisecond: nothing is kept
-    readonly property var found: filtering ? View.group(Search.search(Index.ENTRIES, query), _categoryOf) : View.group([], {})
+    readonly property var found: filtering ? View.group(Search.search(Index.ENTRIES, query), _entries) : View.group([], {})
     readonly property var hits: found.ids
     readonly property var counts: found.counts
     readonly property var firsts: found.firsts

@@ -45,7 +45,6 @@ Item {
         }
     }
     Timer {
-        id: primeTimer
         interval: 3000
         running: offer.scene.active
         onTriggered: {

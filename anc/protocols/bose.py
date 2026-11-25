@@ -15,10 +15,10 @@ Three noise-control families:
 
 import re
 
-from .base import Protocol
+from .base import Protocol, SPP
 
 UUIDS = ["00000000-deca-fade-deca-deafdecacaff",   # BMAP
-         "00001101-0000-1000-8000-00805f9b34fb"]   # SPP
+         SPP]   # SPP
 # CSR chips (QC35, QC45) listen on 8, QCC chips (QC Ultra 2nd gen) on 2
 CHANNELS = [8, 2]
 

@@ -10,9 +10,8 @@ Answers carry the command with bit 0x8000 set; their payload is
 the mode is changed on the earbuds.
 """
 
-from .base import Protocol
+from .base import Protocol, SPP
 
-SPP = "00001101-0000-1000-8000-00805f9b34fb"
 VENDOR = 0x000A
 
 SET_MODE, GET_MODE = 0x0314, 0x0315

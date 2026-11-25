@@ -111,7 +111,6 @@ PluginSettings {
                         }
                         HeadphonesPage {
                             view: view
-                            settings: root
                         }
                         VolumePage {
                             view: view

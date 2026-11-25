@@ -16,7 +16,6 @@ Shape {
     height: wave.geo.ringCy * 2
     preferredRendererType: Shape.CurveRenderer
     opacity: 0
-    transformOrigin: Item.Center
 
     function fire(out) {
         outward = out;

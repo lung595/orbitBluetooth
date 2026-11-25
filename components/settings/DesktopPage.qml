@@ -28,7 +28,6 @@ CategoryPage {
         width: parent.width
         visible: !page.desktopInstance && !page.view.filtering
         text: "Add Orbit Bluetooth in Settings → Desktop Widgets to choose its displays"
-        wrapMode: Text.WordWrap
         color: Theme.surfaceVariantText
         font.pixelSize: Theme.fontSizeSmall
     }

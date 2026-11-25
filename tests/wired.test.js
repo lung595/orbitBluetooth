@@ -1,12 +1,12 @@
 // Wired outputs for Listen together: which sinks are plugged in, how each is labelled and drawn.
 // Run from the plugin root: gjs tests/wired.test.js (or every file: sh tests/run.sh)
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
-const { load, eq, done, root, GLib } = imports.lib;
+const { load, eq, done, read } = imports.lib;
 
 const Wired = load("Wired.js");
 
 // Made-up listings in tests/fixtures: one sink each, shaped like `pactl --format=json list sinks`
-const fixture = name => new TextDecoder().decode(GLib.file_get_contents(root + "/tests/fixtures/pactl-sinks-" + name + ".json")[1]);
+const fixture = name => read("tests/fixtures/pactl-sinks-" + name + ".json");
 // Several fixtures as one listing, the way a whole desk looks
 const desk = (...names) => JSON.stringify([].concat(...names.map(n => JSON.parse(fixture(n)))));
 const sinksOf = text => Wired.parse(text).map(e => e.sink);

@@ -2,7 +2,7 @@
 // output reports and the quantum (Codecs.js, AudioGraph.js).
 // Run from the plugin root: gjs tests/audiograph.test.js (or every file: sh tests/run.sh)
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
-const { load, eq, done, root, GLib } = imports.lib;
+const { load, eq, done, read } = imports.lib;
 
 const Codecs = load("Codecs.js");
 const Graph = load("AudioGraph.js");
@@ -54,8 +54,7 @@ eq("a reader that timed out printed nothing: nothing is known", Graph.parseDump(
 // destroys nothing, touches no file and takes no argument (wpexec hands a
 // script its arguments as the chunk's `...`, so that is banned too), and it
 // always ends
-const [, luaBytes] = GLib.file_get_contents(root + "/graph/orbit_graph.lua");
-const lua = new TextDecoder().decode(luaBytes).replace(/--[^\n]*/g, "");
+const lua = read("graph/orbit_graph.lua").replace(/--[^\n]*/g, "");
 eq("the graph reader writes nothing and reads no argument", ["Link(", "Node(", "SessionItem", "set_param", "request_destroy", "os.", "io.", "arg", "...", "Core.require_api", "load("].filter(word => lua.includes(word)), []);
 eq("the graph reader always ends", [lua.includes("Core.timeout_add"), lua.includes("Core.quit")], [true, true]);
 

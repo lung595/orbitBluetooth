@@ -254,13 +254,8 @@ function ipcLevel(arg, current) {
 function transportPath(tree, devicePath) {
     if (!Address.isDevicePath(devicePath))
         return "";
-    const lines = String(tree || "").split("\n");
-    for (let i = 0; i < lines.length; i++) {
-        const p = lines[i].trim();
-        if (p.indexOf(devicePath + "/") === 0 && /^(\/sep[0-9]+)?\/fd[0-9]+$/.test(p.slice(devicePath.length)))
-            return p;
-    }
-    return "";
+    return String(tree || "").split("\n").map(l => l.trim())
+        .find(p => p.indexOf(devicePath + "/") === 0 && /^(\/sep[0-9]+)?\/fd[0-9]+$/.test(p.slice(devicePath.length))) || "";
 }
 
 // `busctl --json=short get-property ... Volume` -> 0..127, or -1

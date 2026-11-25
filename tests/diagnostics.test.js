@@ -3,9 +3,7 @@
 // the leak ones: whatever goes in, none of it may come out.
 // Run from the plugin root: gjs tests/diagnostics.test.js (or every file: sh tests/run.sh)
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
-const { load, eq, done, root, read } = imports.lib;
-const GLib = imports.gi.GLib;
-const Gio = imports.gi.Gio;
+const { load, eq, done, read, list } = imports.lib;
 
 const Allow = load("Allow.js");
 const Redact = load("Redact.js");
@@ -354,13 +352,9 @@ eq("a numeric setting is reported, not shown as ?", Allow.pick(Codes.SETTINGS, {
 // Three behaviour flags live in Prefs.qml without a settings control of their own
 const KEPT_PREFS = ["keysOrbit", "keysReturned", "learnHabits"];
 const OMITTED = ["imageFolder", "factCard_", "factMore_"];
-const settingsDir = root + "/components/settings";
 const keysFound = {};
-const dirEnum = Gio.File.new_for_path(settingsDir).enumerate_children("standard::name", 0, null);
-for (let info = dirEnum.next_file(null); info; info = dirEnum.next_file(null)) {
-    if (!/\.qml$/.test(info.get_name()))
-        continue;
-    const qml = new TextDecoder().decode(GLib.file_get_contents(settingsDir + "/" + info.get_name())[1]);
+for (const n of list("components/settings", ".qml")) {
+    const qml = read("components/settings/" + n);
     qml.split(/\n(?=\s*[A-Z]\w+ \{)/).forEach(block => {
         const key = /(?:settingKey|settingKey: string): "(\w+)"|settingKey: "(\w+)"/.exec(block);
         if (key)
@@ -388,13 +382,11 @@ eq("Codes.SETTINGS holds no key the pages no longer have", Object.keys(Codes.SET
 
 // The QML engine of Quickshell rejects lookbehind patterns that gjs accepts, which broke
 // Redact.js the first time QML loaded it: no diagnostics file may use one.
-const diagDir = root + "/diagnostics";
 const lookbehind = [];
-const diagEnum = Gio.File.new_for_path(diagDir).enumerate_children("standard::name", 0, null);
-for (let info = diagEnum.next_file(null); info; info = diagEnum.next_file(null)) {
-    const code = new TextDecoder().decode(GLib.file_get_contents(diagDir + "/" + info.get_name())[1]);
+for (const n of list("diagnostics")) {
+    const code = read("diagnostics/" + n);
     if (code.indexOf("(?<" + "!") >= 0 || code.indexOf("(?<" + "=") >= 0)
-        lookbehind.push(info.get_name());
+        lookbehind.push(n);
 }
 eq("no diagnostics file uses a regular expression lookbehind (QML cannot parse it)", lookbehind, []);
 

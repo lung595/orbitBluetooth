@@ -142,7 +142,6 @@ Item {
     // Shooting star: a head and a tail of short segments laid along its last
     // positions, so the trail really follows the path when it bends
     Item {
-        id: meteor
         anchors.fill: parent
         visible: meteorAnim.running
 

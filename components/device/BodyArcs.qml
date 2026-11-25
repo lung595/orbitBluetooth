@@ -131,7 +131,6 @@ Item {
 
     // Charging: the level arc breathes (0.15 ↔ 1 every 1.8 s, effects clock)
     Shape {
-        id: chargeGlow
         anchors.centerIn: parent
         width: parent.width + 7
         height: width

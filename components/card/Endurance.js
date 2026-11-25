@@ -55,10 +55,7 @@ var KINDS = {
 // Noise cancelling (and adaptive, ambient) costs power; "off" or no noise
 // control data uses the longer figure only when the mode is known to be off.
 function ratedHours(name, kind, ancMode) {
-    var pair = null;
-    for (var i = 0; i < MODELS.length && !pair; i++)
-        if (MODELS[i][0].test(name || ""))
-            pair = MODELS[i];
+    var pair = MODELS.find(m => m[0].test(name || ""));
     var hours = pair ? [pair[1], pair[2]] : KINDS[kind];
     if (!hours)
         return 0;

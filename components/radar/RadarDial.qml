@@ -180,7 +180,6 @@ Item {
         width: Math.max(72, dial.radius * 3)
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.NoWrap
-        elide: Text.ElideRight
         text: dial.info.name
         color: dial.paper.fg(dial.hovered ? 0.9 : 0.62)
         font.pixelSize: 11

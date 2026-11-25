@@ -110,7 +110,6 @@ Item {
     opacity: centre.presence * scene.world.dim
 
     Item {
-        id: visual
         anchors.fill: parent
         scale: (0.7 + 0.3 * body.arrive) * body.popScale * body.hoverScale
         // Darker on the far side of the orbit, as small as it is dark

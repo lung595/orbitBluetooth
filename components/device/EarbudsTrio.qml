@@ -150,7 +150,6 @@ Item {
         readonly property var info: trio.parts[part] ?? null
 
         x: centerX - width / 2
-        y: 0
         width: Math.max(size, 72)
         height: trio.stageH + 44
 
@@ -190,7 +189,6 @@ Item {
         }
 
         Item {
-            id: floater
             anchors.horizontalCenter: parent.horizontalCenter
             // Floats 4 px up and back, one way per `piece.period` (effects clock)
             y: trio.cy - piece.size / 2 - (trio.animate ? 2 - 2 * Math.cos(trio.time * 1000 * Math.PI / piece.period) : 0)

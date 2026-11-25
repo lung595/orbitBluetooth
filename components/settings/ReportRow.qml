@@ -35,7 +35,6 @@ Row {
     StyledText {
         width: parent.width - button.width - link.width - parent.spacing * 2
         anchors.verticalCenter: parent.verticalCenter
-        wrapMode: Text.WordWrap
         font.pixelSize: Theme.fontSizeSmall
         color: copier.result === "none" ? Theme.error : Theme.surfaceVariantText
         text: row.note.title + ". " + row.note.hint

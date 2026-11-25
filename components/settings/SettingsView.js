@@ -4,21 +4,13 @@
 // settings matched, how many per category, and the first match (the one Enter
 // opens). Pure, so the page only binds to it and the test can read it.
 
-// Settings key → category id, from the index entries
-function categoryOf(entries) {
-    const map = {};
-    for (const e of Array.isArray(entries) ? entries : [])
-        map[e.id] = e.category;
-    return map;
-}
-
-// `results` come from SettingsSearch.search(), best first. `categories` is
-// the map made by categoryOf(). The first match is the best-ranked one;
+// `results` come from SettingsSearch.search(), best first. `entries` is
+// the map made by byId(). The first match is the best-ranked one;
 // `firsts` names the best-ranked match of each category.
-function group(results, categories) {
+function group(results, entries) {
     const out = { "ids": {}, "counts": {}, "firsts": {}, "first": null };
     for (const r of Array.isArray(results) ? results : []) {
-        const category = categories[r.id];
+        const category = entries[r.id]?.category;
         if (!category)
             continue;
         out.ids[r.id] = true;
