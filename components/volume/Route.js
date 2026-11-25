@@ -48,24 +48,14 @@ function deviceSink(nodes, address) {
     const key = Address.key(address);
     if (!key || !nodes)
         return null;
-    for (let i = 0; i < nodes.length; i++) {
-        const n = nodes[i];
-        if (n && n.isSink && !n.isStream && sinkKey(n.name) === key)
-            return n;
-    }
-    return null;
+    return nodes.find(n => n && n.isSink && !n.isStream && sinkKey(n.name) === key) ?? null;
 }
 
 // The sink node called `name` among PipeWire's nodes (never a stream), or null
 function sinkNamed(nodes, name) {
     if (!name || !nodes)
         return null;
-    for (let i = 0; i < nodes.length; i++) {
-        const n = nodes[i];
-        if (n && n.isSink && !n.isStream && n.name === name)
-            return n;
-    }
-    return null;
+    return nodes.find(n => n && n.isSink && !n.isStream && n.name === name) ?? null;
 }
 
 function virtualSink(nodes, address) {
@@ -238,7 +228,7 @@ function writeMuted(shared, node, muted) {
 }
 
 // The level asked by `dms ipc call orbitBluetooth deviceVolume|pcVolume <arg>`:
-// "up", "down", "+10", "-5", "40" or "40%". Steps of 5 %, capped to 0..1.
+// "+10", "-5", "40" or "40%", capped to 0..1.
 // Returns -1 for anything else (value 11: checked and capped).
 function ipcLevel(arg, current) {
     const a = String(arg === undefined || arg === null ? "" : arg).trim().toLowerCase();
@@ -246,10 +236,6 @@ function ipcLevel(arg, current) {
         return -1;
     const now = Math.max(0, Math.min(1, Number(current) || 0));
     const snap = v => Math.max(0, Math.min(1, Math.round(v * 100) / 100));
-    if (a === "up")
-        return snap(Math.round(now * 20 + 1) / 20);
-    if (a === "down")
-        return snap(Math.round(now * 20 - 1) / 20);
     const m = /^([+-]?)([0-9]{1,3})%?$/.exec(a);
     if (!m)
         return -1;

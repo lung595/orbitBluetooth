@@ -29,7 +29,6 @@ Item {
         y: above ? caption.body.height / 2 - gap - height : caption.body.height / 2 + gap
         width: Math.min(implicitWidth, caption.body.diameter * 2.1)
         horizontalAlignment: Text.AlignHCenter
-        elide: Text.ElideRight
         text: caption.body.name
         color: caption.body.night.ink(0.95)
         font.pixelSize: Math.max(9, Math.round(caption.body.diameter * 0.2))

@@ -44,7 +44,6 @@ Item {
             width: Math.min(implicitWidth, caption.body.diameter * 2.1)
             horizontalAlignment: Text.AlignHCenter
             text: caption.body.name
-            elide: Text.ElideRight
             color: Qt.rgba(1, 1, 1, caption.body.connected || caption.body.hovered ? 0.95 : caption.body.scene.anyConnected ? 0.68 : 0.85)
             font.pixelSize: Math.max(9, Math.round(caption.body.diameter * 0.2))
             font.weight: caption.body.connected ? Font.Medium : Font.Normal

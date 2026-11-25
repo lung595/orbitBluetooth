@@ -57,7 +57,6 @@ Rectangle {
         anchors.verticalCenter: parent.verticalCenter
         text: item.row.label
         wrapMode: Text.NoWrap
-        elide: Text.ElideRight
         opacity: item.dim
         color: item.added ? Theme.primary : item.paper.ink
         font.pixelSize: Theme.fontSizeSmall

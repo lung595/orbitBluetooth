@@ -113,7 +113,6 @@ def edit(path, change):
     unreadable file is left alone. What it returns says what was written:
     a file that could not be written gives the unchanged answer, so that
     what depends on it (the desktop widgets' positions) is kept too."""
-    unchanged = (False, [])
     try:
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
@@ -122,6 +121,7 @@ def edit(path, change):
     result = change(data)
     if not (result[0] if isinstance(result, tuple) else result):
         return result
+    failed = (False, []) if isinstance(result, tuple) else False
     # A settings file kept as a link (stow, home-manager...) stays a link:
     # the new content goes to the file it points to, not over the link
     path = os.path.realpath(path)
@@ -131,7 +131,7 @@ def edit(path, change):
     try:
         fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path), prefix=".orbit-")
     except OSError:
-        return unchanged if isinstance(result, tuple) else False
+        return failed
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             # Same layout as the shell's JSON.stringify(data, null, 2)
@@ -143,7 +143,7 @@ def edit(path, change):
             os.unlink(tmp)
         except OSError:
             pass
-        return unchanged if isinstance(result, tuple) else False
+        return failed
     return result
 
 

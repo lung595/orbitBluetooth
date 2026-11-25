@@ -93,7 +93,7 @@ class Bose(Protocol):
         if self.kind == "anr":
             self.send(frame(*ANR, SET, bytes([1 if mode == "nc" else 0])))
         elif self.kind == "cnc":
-            payload = bytes([10 - (10 if mode == "nc" else 0), 1])
+            payload = bytes([0 if mode == "nc" else 10, 1])
             for _ in range(3):
                 self.send(frame(*CNC, SET, payload))
         else:

@@ -289,8 +289,7 @@ function rayAngles(count) {
 // instead of jumping from one cava frame to the next
 function follow(prev, target, dt) {
     const p = clamp01(prev), t = clamp01(target);
-    const rate = t >= p ? 18 : 6;
-    return p + (t - p) * (1 - Math.exp(-dt * rate));
+    return ease(p, t, dt, t >= p ? 18 : 6);
 }
 
 // A value eased toward another, the same at any frame rate

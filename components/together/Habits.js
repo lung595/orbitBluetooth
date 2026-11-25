@@ -101,7 +101,7 @@ function record(habits, members, nowMs) {
     if (!key)
         return next;
     next[key] = { "n": Math.min(MAX_USES, (next[key] ? next[key].n : 0) + 1), "d": today };
-    for (const old of ranked(next, today).filter(s => s.key !== key).slice(Math.max(0, MAX_SETS - 1)))
+    for (const old of ranked(next, today).filter(s => s.key !== key).slice(MAX_SETS - 1))
         delete next[old.key];
     return next;
 }

@@ -78,7 +78,7 @@ QtObject {
     function setLevel(arg) {
         if (!ready)
             return "no-group";
-        const a = String(arg === undefined || arg === null ? "" : arg).trim().toLowerCase();
+        const a = String(arg ?? "").trim().toLowerCase();
         if (a === "up" || a === "down") {
             step(a === "up" ? 1 : -1);
             return "";

@@ -34,10 +34,7 @@ NO_TWS = re.compile(r"Studio|FreeLace", re.I)
 
 
 def tlv(params):
-    out = b""
-    for ptype, value in params:
-        out += bytes([ptype, len(value)]) + value
-    return out
+    return b"".join(bytes([ptype, len(value)]) + value for ptype, value in params)
 
 
 def encode(command, params):

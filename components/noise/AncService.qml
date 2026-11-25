@@ -55,11 +55,7 @@ Item {
     readonly property string _helper: Paths.strip(Qt.resolvedUrl("../../anc/orbit_anc.py"))
 
     function deviceFor(address) {
-        const list = Bluetooth.devices.values;
-        for (let i = 0; i < list.length; i++)
-            if (list[i].address === address)
-                return list[i];
-        return null;
+        return Bluetooth.devices.values.find(d => d.address === address) ?? null;
     }
 
     function familyFor(device) {

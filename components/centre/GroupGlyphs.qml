@@ -90,7 +90,6 @@ Item {
                         required property string modelData
                         width: Math.min(implicitWidth, glyphs.scene.width * 0.5)
                         horizontalAlignment: Text.AlignHCenter
-                        elide: Text.ElideRight
                         text: glyphs.scene.together.nameOf(modelData)
                         color: glyphs.night.ink(0.92)
                         font.pixelSize: Math.max(9, Math.round(glyphs.scene.coreSize * 0.17))

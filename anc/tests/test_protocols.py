@@ -8,8 +8,8 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from protocols import FAMILIES, huawei, nothing, oppo, soundcore, xiaomi, sony  # noqa: E402
-from protocols import earfun, moondrop, safer  # noqa: E402
+from protocols import FAMILIES, huawei, nothing, soundcore, xiaomi, sony  # noqa: E402
+from protocols import earfun, safer  # noqa: E402
 from protocols.checksums import sum8  # noqa: E402
 from tests.helpers import h, make  # noqa: E402
 
@@ -180,7 +180,7 @@ class Soundcore(unittest.TestCase):
         self.assertEqual(sent[-1], soundcore.encode(h("06 81"), h("02 02 01 00")))
 
     def test_space_q45_adaptive(self):
-        proto, sent = make("soundcore", "Soundcore Space Q45")
+        proto, _ = make("soundcore", "Soundcore Space Q45")
         self.assertIn("adaptive", proto.features["modes"])
         proto.receive(soundcore_reply(h("06 01"), h("00 51 01 01 00 03")))
         self.assertEqual(proto.state["mode"], "adaptive")

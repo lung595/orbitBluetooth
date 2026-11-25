@@ -4,6 +4,7 @@ end in "no answer" or a clean error, never a traceback (audit 2026-11)."""
 import os
 import sys
 import unittest
+from unittest import mock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -117,13 +118,8 @@ class SdpReplies(unittest.TestCase):
             def close(self):
                 pass
 
-        real = sdp.socket.socket
-        sdp.socket.socket = Sock
-        try:
-            with self.assertRaises(sdp.SdpError):
-                sdp.find_rfcomm_channel("00:00:00:00:00:00", "00000000-0000-0000-0000-000000000000")
-        finally:
-            sdp.socket.socket = real
+        with mock.patch.object(sdp.socket, "socket", Sock), self.assertRaises(sdp.SdpError):
+            sdp.find_rfcomm_channel("00:00:00:00:00:00", "00000000-0000-0000-0000-000000000000")
 
 
 if __name__ == "__main__":

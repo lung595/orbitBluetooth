@@ -54,9 +54,8 @@ class Samsung(Protocol):
         self.gen = generation(name)
         self.legacy = self.gen == "legacy"
         self.greeted = False
-        modes = {"legacy": ["ambient", "off"], "plus": ["ambient", "off"],
-                 "live": ["nc", "off"], "modern": ["nc", "ambient", "off"]}[self.gen]
-        self.features["modes"] = modes
+        self.features["modes"] = {"legacy": ["ambient", "off"], "plus": ["ambient", "off"],
+                                  "live": ["nc", "off"], "modern": ["nc", "ambient", "off"]}[self.gen]
         # Ambient volume steps (Buds (2019): 4; Buds Pro: 3; others: 2)
         if self.gen != "live":
             self.features["ambientMax"] = 4 if self.legacy else 3 if re.search(r"Buds Pro\b", name) else 2

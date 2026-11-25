@@ -366,7 +366,6 @@ Rectangle {
             leftPadding: 10
             rightPadding: 10
             bottomPadding: 8
-            wrapMode: Text.WordWrap
             text: chooser.words.empty
             color: chooser.paper.fg(0.6)
             font.pixelSize: Theme.fontSizeSmall - 1

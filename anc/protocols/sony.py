@@ -159,7 +159,7 @@ class Sony(SonyExtras, Protocol):
         batteries += [FN_BATTERY_DUAL[c] for c in FN_BATTERY_DUAL if c in codes][:1]
         batteries += [FN_BATTERY_CASE[c] for c in FN_BATTERY_CASE if c in codes][:1]
         if 0x21 in codes or 0x29 in codes:
-            batteries.remove(batteries[0])  # earbuds report left/right, not a single level
+            del batteries[0]  # earbuds report left/right, not a single level
         for kind in batteries:
             self._queue(bytes([0x22, kind]))
         if FN_SPEAK_TO_CHAT in codes:
@@ -265,7 +265,7 @@ class Sony(SonyExtras, Protocol):
             return bytes([0x68, 0x19, 0x01, on, ambient, voice, level, auto, self.sensitivity])
         return bytes([0x68, self.nc_type, 0x01, on, ambient, voice, level])
 
-    def _send_noise(self, mode):
+    def set_mode(self, mode):
         if self.nc_type is None:
             return
         if mode == "adaptive":
@@ -275,19 +275,16 @@ class Sony(SonyExtras, Protocol):
         self._queue(self._noise_payload(mode))
         self.state["mode"] = mode
 
-    def set_mode(self, mode):
-        self._send_noise(mode)
-
     def set_ambient(self, level):
         self.level = level
         self.state["ambient"] = level
         # The level lives in the ambient command: entering ambient if needed
-        self._send_noise(self.state["mode"] if self.state["mode"] in ("ambient", "adaptive") else "ambient")
+        self.set_mode(self.state["mode"] if self.state["mode"] in ("ambient", "adaptive") else "ambient")
 
     def set_voice(self, enabled):
         self.voice = enabled
         self.state["voice"] = enabled
-        self._send_noise(self.state["mode"] if self.state["mode"] in ("ambient", "adaptive") else "ambient")
+        self.set_mode(self.state["mode"] if self.state["mode"] in ("ambient", "adaptive") else "ambient")
 
     def set_chat(self, enabled):
         if self.version == 2:

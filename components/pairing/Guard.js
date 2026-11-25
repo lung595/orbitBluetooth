@@ -8,22 +8,13 @@
 // HID over classic Bluetooth (0x1124) and over Bluetooth LE (0x1812).
 var inputUuids = ["00001124-0000-1000-8000-00805f9b34fb", "00001812-0000-1000-8000-00805f9b34fb"];
 
-function hasInput(uuids) {
-    if (!uuids || !uuids.length)
-        return false;
-    for (let k = 0; k < uuids.length; k++)
-        if (inputUuids.indexOf(String(uuids[k]).toLowerCase()) >= 0)
-            return true;
-    return false;
-}
-
 // A device shown as anything but an input device (headset, speaker, phone…)
 // that also exposes a keyboard/mouse profile is refused: it was not what the
 // user agreed to pair. Real keyboards and mice keep working.
 function refused(family, uuids) {
     if (family === "keyboard" || family === "pointer" || family === "gaming")
         return false;
-    return hasInput(uuids);
+    return !!uuids && uuids.some(u => inputUuids.indexOf(String(u).toLowerCase()) >= 0);
 }
 
 // busctl --json=short get-property … UUIDs  →  {"type":"as","data":[…]}

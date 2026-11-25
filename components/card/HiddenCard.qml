@@ -23,10 +23,7 @@ Item {
 
     function deviceOf(address) {
         const list = scene.adapter?.devices?.values ?? [];
-        for (let i = 0; i < list.length; i++)
-            if (list[i].address === address)
-                return list[i];
-        return scene.previewDevices.find(d => d.address === address) ?? null;
+        return list.find(d => d.address === address) ?? scene.previewDevices.find(d => d.address === address) ?? null;
     }
     function nameOf(address) {
         return Catalog.deviceName(deviceOf(address)) || hidden[address] || address;
