@@ -8,9 +8,8 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from protocols import FAMILIES  # noqa: E402
 from protocols.sony_frame import T_ACK, T_DATA, T_DATA2, decode, encode  # noqa: E402
-from tests.helpers import h  # noqa: E402
+from tests.helpers import h, make  # noqa: E402
 
 PROTOCOL_INFO = "01 00 00 00 02 00 00 {t2}"
 FUNCTIONS = "07 00 {n:02x} {codes}"
@@ -20,10 +19,8 @@ class Headset:
     """Plays the headset: acknowledges what the helper sends, answers on request."""
 
     def __init__(self, table2=True, codes=(0x6D, 0xFC, 0xF1)):
-        self.sent = []
-        self.proto = FAMILIES["sony"](self.sent.append, "WH-1000XM6")
+        self.proto, self.sent = make("sony", "WH-1000XM6")
         self.seq = 0
-        self.proto.start()
         self.drain()
         self.reply(T_DATA, PROTOCOL_INFO.format(t2="00" if table2 else "01"))
         pairs = " ".join("%02x 00" % c for c in codes)

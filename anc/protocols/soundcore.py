@@ -54,7 +54,7 @@ class Soundcore(Protocol):
         self.features["modes"] = ["nc", "adaptive", "ambient", "off"] if self.v2 else ["nc", "ambient", "off"]
 
     def start(self):
-        self.send(encode(REQUEST_STATE))
+        self.refresh()
 
     def frames(self):
         while True:

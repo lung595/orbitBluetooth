@@ -37,7 +37,7 @@ class Moondrop(Protocol):
         self.features["modes"] = ["nc", "ambient", "off"]
 
     def start(self):
-        self.send(encode(CURATION, GET_MODE))
+        self.refresh()
 
     def frames(self):
         while True:

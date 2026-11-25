@@ -45,9 +45,6 @@ Item {
     }
     readonly property var deviceAudio: _audioOf(_deviceNode)
     readonly property var pcAudio: _audioOf(_pcNode)
-    // Every audio whose level or mute a gesture or a key can move, for the
-    // caller to watch
-    readonly property var audios: [deviceAudio, pcAudio].concat(_memberNodes.map(_audioOf)).filter(a => !!a)
 
     function _iconOf(d) {
         return d ? Route.iconFor(Catalog.resolve(d.device, prefs ? prefs.glyphOverrides : ({}))) : "speaker";

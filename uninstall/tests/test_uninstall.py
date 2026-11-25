@@ -99,7 +99,6 @@ class SweepTest(unittest.TestCase):
         os.remove(self.shell.manifest)
         self.assertTrue(self.shell.run())
         self.assertFalse(os.path.exists(self.shell.cache))
-        self.assertFalse(os.path.exists(os.path.join(self.shell.cache, "battery", "history.json")))
         self.assertEqual(read(self.shell.plugin_settings), {"abyss": {"enabled": True}})
         s = read(self.shell.settings)
         self.assertEqual(s["barConfigs"][0]["rightWidgets"], [{"id": "battery"}])

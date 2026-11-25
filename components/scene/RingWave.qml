@@ -9,7 +9,7 @@ Shape {
     required property var scene
     // The orbit's geometry (the scene's, or the profile view's, flatter)
     property var geo: wave.scene
-    property bool busy: anim.running
+    readonly property bool busy: anim.running
     property bool outward: true
     // Centered on the ring (not the scene), so it grows from the ring's middle
     width: parent.width

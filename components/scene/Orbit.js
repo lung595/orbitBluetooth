@@ -8,19 +8,15 @@
 // maxDevices. opts: { isHidden(address), isUnnamed(device), showUnnamed,
 // maxDevices }
 function pick(all, opts) {
-    const list = [];
-    for (let i = 0; i < all.length; i++) {
-        const d = all[i];
+    const list = all.filter(d => {
         if (!d || d.blocked || opts.isHidden(d.address))
-            continue;
+            return false;
         if (!opts.showUnnamed && opts.isUnnamed(d) && !d.connected)
-            continue;
+            return false;
         // Quickshell does not expose RSSI (signalStrength is undefined), so
         // anything BlueZ lists while discovering is treated as in range.
-        if (!(d.connected || d.paired || d.bonded || d.signalStrength === undefined || d.signalStrength > 0))
-            continue;
-        list.push(d);
-    }
+        return d.connected || d.paired || d.bonded || d.signalStrength === undefined || d.signalStrength > 0;
+    });
     list.sort((x, y) => {
         if (x.connected !== y.connected)
             return x.connected ? -1 : 1;

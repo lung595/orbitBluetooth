@@ -57,7 +57,6 @@ Item {
         check("each has its own name, shown", levels.members.map(m => m.label), ["Headset", "Speaker 1", "Speaker 2"]);
         check("each has its own icon", levels.members.map(m => m.icon), ["headphones", "speaker", "speaker"]);
         check("the device has no level of its own any more; this PC's is the shared one", [levels.deviceLevel, levels.pcLevel], [-1, 0.85]);
-        check("watched: this PC's and each member's audio", levels.audios.length, 4);
         check("heard as the loudest member is", near(levels.heardLevel, 0.8 * 0.85), true);
 
         route.sharing = [h.headset, h.one, h.two, h.three];

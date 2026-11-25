@@ -125,9 +125,7 @@ Item {
         }
 
         NotchWheel {
-            onTurned: notches => {
-                ring.volume.step(notches > 0 ? 1 : -1);
-            }
+            onTurned: notches => ring.volume.step(notches > 0 ? 1 : -1)
         }
     }
 

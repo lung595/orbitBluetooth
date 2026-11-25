@@ -72,7 +72,7 @@ def open_socket(address, transport):
         sock = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
         target = (address, transport[1])
     else:
-        # ("rfcomm", [uuid, ...], fallback channel(s): one, a list or None)
+        # ("rfcomm", [uuid, ...], fallback channels: a list or None)
         channels = []
         for service in transport[1]:
             try:
@@ -83,8 +83,7 @@ def open_socket(address, transport):
             if channel:
                 channels.append(channel)
                 break
-        fallback = transport[2]
-        for channel in fallback if isinstance(fallback, (list, tuple)) else [fallback]:
+        for channel in transport[2] or []:
             if channel and channel not in channels:
                 channels.append(channel)
         if not channels:

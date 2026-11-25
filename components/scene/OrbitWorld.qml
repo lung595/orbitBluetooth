@@ -44,8 +44,7 @@ Item {
     // A ring wave from the connected orbit: outward when a device connects,
     // inward when one leaves. Two waves, so a quick second edge still shows.
     function emitWave(outward) {
-        const w = waveA.busy ? waveB : waveA;
-        w.fire(outward);
+        (waveA.busy ? waveB : waveA).fire(outward);
     }
 
     function pulseCore() {
@@ -55,13 +54,7 @@ Item {
     // Every body a device can be dropped on, as a plain array: the devices,
     // then the wired outputs listening together
     function bodyList() {
-        const all = [];
-        for (let i = 0; i < bodyRepeater.count; i++) {
-            const b = bodyRepeater.itemAt(i);
-            if (b)
-                all.push(b);
-        }
-        return all.concat(wiredRepeater.list());
+        return Array.from({ length: bodyRepeater.count }, (_, i) => bodyRepeater.itemAt(i)).filter(b => b).concat(wiredRepeater.list());
     }
 
     // A body drawn under this scene point, if any (devices passing behind

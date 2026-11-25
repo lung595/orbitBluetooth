@@ -28,16 +28,14 @@ Item {
     // charging state for headphones, and waiting for the level to rise is slow
     readonly property var ancInfo: scene.ancFor(address)
     readonly property bool ancFresh: !!ancInfo && (ancInfo.live || scene.now - (ancInfo.at || 0) < 600000)
+    readonly property var _ancParts: ancFresh ? ancInfo.state?.battery : null
     // The headset itself or an earbud charging (a charging case alone does
     // not make the earbuds "charging")
-    readonly property bool headsetCharging: {
-        const parts = ancFresh ? ancInfo.state?.battery : null;
-        return !!parts && ["single", "left", "right"].some(k => parts[k]?.charging);
-    }
+    readonly property bool headsetCharging: !!_ancParts && ["single", "left", "right"].some(k => _ancParts[k]?.charging)
     // Level from the headset's report when BlueZ has none (e.g. some earbuds):
     // the headphones, or the lower earbud
     readonly property int ancLevel: {
-        const parts = ancFresh ? ancInfo.state?.battery : null;
+        const parts = _ancParts;
         if (!parts)
             return -1;
         if (parts.single)
@@ -61,7 +59,7 @@ Item {
     // Noise control, when the headset speaks a known vendor protocol
     readonly property bool ancCapable: scene.ancCapable(body)
     onAncCapableChanged: Qt.callLater(scene.ancSyncViews)
-    readonly property string ancMode: ancCapable ? (scene.ancFor(address)?.state?.mode ?? "") : ""
+    readonly property string ancMode: ancCapable ? (ancInfo?.state?.mode ?? "") : ""
     readonly property real rawSignal: (device?.signalStrength ?? 0) > 0 ? device.signalStrength / 100 : 0
     // Only remembered devices can be out of range; discovered ones are nearby
     readonly property bool dormant: !connected && paired && rawSignal <= 0

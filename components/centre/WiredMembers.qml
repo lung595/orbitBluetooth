@@ -18,13 +18,7 @@ Repeater {
 
     // Every wired member drawn, as a plain array
     function list() {
-        const all = [];
-        for (let i = 0; i < members.count; i++) {
-            const b = members.itemAt(i);
-            if (b)
-                all.push(b);
-        }
-        return all;
+        return Array.from({ length: members.count }, (_, i) => members.itemAt(i)).filter(b => b);
     }
 
     // The wired member drawn under this scene point, if any, on its own shape

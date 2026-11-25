@@ -87,8 +87,7 @@ def split_response(pdu):
     """Returns (attribute list bytes, continuation state) of one response PDU."""
     if len(pdu) < 5:
         raise SdpError("truncated SDP reply")
-    pdu_id, _transaction, _length = struct.unpack(">BHH", pdu[:5])
-    if pdu_id != PDU_SEARCH_ATTR_RESPONSE:
+    if pdu[0] != PDU_SEARCH_ATTR_RESPONSE:
         raise SdpError("SDP error response")
     if len(pdu) < 7:
         raise SdpError("truncated SDP reply")

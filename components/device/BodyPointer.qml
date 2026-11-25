@@ -53,7 +53,7 @@ MouseArea {
         // button held 500 ms does the same (D368), for a mouse without a right
         // button and for touch
         if (m.button === Qt.RightButton)
-            pointer.body.scene.openMenu(body, menuPoint);
+            pointer.body.scene.openMenu(pointer.body, menuPoint);
         else
             hold.begin();
     }
@@ -63,7 +63,7 @@ MouseArea {
         const p = worldPoint(m);
         if (!pointer.body.dragging && Hold.moved(pressPoint, p)) {
             hold.cancel();
-            pointer.body.scene.beginDrag(body, p);
+            pointer.body.scene.beginDrag(pointer.body, p);
         }
         if (pointer.body.dragging)
             pointer.body.scene.updateDrag(p);
@@ -83,7 +83,7 @@ MouseArea {
         // Released before the hold fired is a click, up to the very moment the
         // menu would open: one threshold (Hold.HOLD_MS), so no gap does nothing
         else if (!Hold.done(Date.now() - pressTime))
-            pointer.body.scene.focusOn(body);
+            pointer.body.scene.focusOn(pointer.body);
     }
     onCanceled: {
         hold.cancel();

@@ -9,7 +9,7 @@
 // The general level when the members have no shared one: the loudest, so that
 // the master can always reach 100 % without anyone passing it
 function general(levels) {
-    return levels.reduce((top, v) => Math.max(top, v), 0);
+    return Math.max(0, ...levels);
 }
 
 // The highest the master may go from `from` before the loudest member would

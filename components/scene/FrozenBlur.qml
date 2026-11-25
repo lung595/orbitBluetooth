@@ -36,13 +36,10 @@ Item {
     }
 
     // A burst of changes (a window being resized) makes one retake, after it
-    function _soon() {
-        settle.restart();
-    }
-    onWidthChanged: _soon()
-    onHeightChanged: _soon()
-    onRadiusChanged: _soon()
-    onTokenChanged: _soon()
+    onWidthChanged: settle.restart()
+    onHeightChanged: settle.restart()
+    onRadiusChanged: settle.restart()
+    onTokenChanged: settle.restart()
     Component.onCompleted: retake()
 
     Timer {

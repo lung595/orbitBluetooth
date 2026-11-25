@@ -45,9 +45,7 @@ class Sony(unittest.TestCase):
 
 class Apple(unittest.TestCase):
     def _silent(self, name):
-        sent = []
-        proto = FAMILIES["apple"](sent.append, name)
-        proto.start()
+        proto, sent = make("apple", name)
         proto.tick(0.0)
         proto.receive(h("01 00 04 00 00 00 00 00"))      # handshake answered
         proto.receive(h("04 00 04 00 2b 00 00"))         # features acknowledged
