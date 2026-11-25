@@ -5,6 +5,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## Unreleased
 
+## 2.1.1 - 2026-11-26
+
+### Fixed
+
+- **A time left just under the hour read badly.** The card rounded the minutes after splitting off the hours, so 119.7 min read "1 h 60" (or "1h60") and 59.7 min read "60 min". It now rounds first, then splits (`formatMinutes`, `formatShort`).
+- The settings-search test that checks a search never changes the entries compared the list with a shallow copy of itself, so it could not fail. It now compares with a snapshot taken before any search.
+
+### Changed
+
+- A cleanup pass over the whole repository, with no change to behaviour or looks: unused code, ids, imports and helpers removed (about 650 lines fewer), shorter equivalent expressions, one shared counter (`tests/qml/Tally.qml`) for the QML tests, and comments and docs brought up to date.
+
 ## 2.1.0 - 2026-11-12
 
 ### Added
