@@ -8,15 +8,9 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import sdp  # noqa: E402
-from protocols import FAMILIES, xiaomi  # noqa: E402
+from protocols import xiaomi  # noqa: E402
 from protocols.sony_frame import T_DATA, encode as sony_encode  # noqa: E402
-
-
-def make(family, name=""):
-    sent = []
-    proto = FAMILIES[family](sent.append, name)
-    proto.start()
-    return proto, sent
+from tests.helpers import make  # noqa: E402
 
 
 class SonyFrames(unittest.TestCase):
@@ -40,8 +34,7 @@ class XiaomiRecords(unittest.TestCase):
     def test_info_reply_with_empty_record(self):
         proto, _ = make("xiaomi")
         body = b"\x00\x01" + b"\x00\x07"   # status, seq, then a 0-length record
-        length = len(body)
-        frame = xiaomi.HEAD + bytes([xiaomi.RESPONSE, xiaomi.OP_INFO]) + length.to_bytes(2, "big") + body + bytes([xiaomi.TAIL])
+        frame = xiaomi.HEAD + bytes([xiaomi.RESPONSE, xiaomi.OP_INFO]) + len(body).to_bytes(2, "big") + body + bytes([xiaomi.TAIL])
         proto.receive(frame)
 
 

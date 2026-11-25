@@ -10,10 +10,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from protocols import safer, samsung, sony, soundcore, nothing  # noqa: E402
 from protocols.apple import control  # noqa: E402
 from protocols.checksums import crc16_modbus, crc16_xmodem  # noqa: E402
-
-
-def h(text):
-    return bytes.fromhex(text.replace(" ", ""))
+from tests.helpers import h  # noqa: E402
 
 
 class Checksums(unittest.TestCase):

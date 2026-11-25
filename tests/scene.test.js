@@ -3,9 +3,9 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const Cover = load("Cover.js", ["covered"]);
-const Orbit = load("Orbit.js", ["pick", "plan", "changes", "idle", "signature"]);
-const Physics = load("Physics.js", ["spring", "norm", "ringSlot", "beltSlot", "beltRadius", "dragTarget", "dragArm", "HIT_MIN", "hitDiameter", "dropRadius", "dropOnto", "separate", "moving"]);
+const Cover = load("Cover.js");
+const Orbit = load("Orbit.js");
+const Physics = load("Physics.js");
 
 // Ambient motion pauses on a screen hidden behind windows (P123).
 // Made-up layout: three screens, sizes in logical pixels.

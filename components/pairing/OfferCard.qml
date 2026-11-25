@@ -35,9 +35,9 @@ Rectangle {
         StyledText {
             anchors.verticalCenter: parent.verticalCenter
             text: offer.device ? Catalog.deviceName(offer.device) + " can be paired" : ""
-            color: scene.night.ink(0.85)
+            color: offer.scene.night.ink(0.85)
             elide: Text.ElideRight
-            width: Math.min(implicitWidth, scene.width * 0.5)
+            width: Math.min(implicitWidth, offer.scene.width * 0.5)
             font.pixelSize: Theme.fontSizeSmall - 1
         }
         Rectangle {
@@ -45,12 +45,12 @@ Rectangle {
             width: connectText.implicitWidth + Theme.spacingL
             height: Theme.fontSizeSmall + Theme.spacingM
             radius: height / 2
-            color: connectArea.containsMouse ? Theme.withAlpha(scene.night.primary, 0.4) : Theme.withAlpha(scene.night.primary, 0.25)
+            color: connectArea.containsMouse ? Theme.withAlpha(offer.scene.night.primary, 0.4) : Theme.withAlpha(offer.scene.night.primary, 0.25)
             StyledText {
                 id: connectText
                 anchors.centerIn: parent
                 text: "Connect"
-                color: scene.night.primary
+                color: offer.scene.night.primary
                 font.pixelSize: Theme.fontSizeSmall - 1
                 font.weight: Font.Medium
             }
@@ -59,19 +59,19 @@ Rectangle {
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onClicked: scene.acceptOffer()
+                onClicked: offer.scene.acceptOffer()
             }
         }
         DankIcon {
             anchors.verticalCenter: parent.verticalCenter
             name: "close"
             size: 15
-            color: scene.night.ink(0.55)
+            color: offer.scene.night.ink(0.55)
             MouseArea {
                 anchors.fill: parent
                 anchors.margins: -4
                 cursorShape: Qt.PointingHandCursor
-                onClicked: scene.dismissOffer()
+                onClicked: offer.scene.dismissOffer()
             }
         }
     }

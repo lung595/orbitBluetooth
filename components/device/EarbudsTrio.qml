@@ -12,8 +12,8 @@ import "Earbuds.js" as Earbuds
 // and right buds on either end, all three floating gently, one battery bar
 // each. A bud charging in its case glides toward it, then an energy beam
 // appears between them.
-// Motion runs on the render thread and only while `animate` is true
-// (detail card open, Reduce motion off).
+// Motion follows the scene's effects clock (`time`) and runs only while
+// `animate` is true (detail card open, Reduce motion off).
 Item {
     id: trio
     readonly property PaperColors paper: PaperColors {}

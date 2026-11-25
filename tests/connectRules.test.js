@@ -3,7 +3,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const R = load("ConnectRules.js", ["STORM_MS"]);
+const R = load("ConnectRules.js");
 const ADDR = "AA:BB:CC:DD:EE:01";
 const SALT = "s3cret";
 const key = R.keyOf(ADDR, SALT);

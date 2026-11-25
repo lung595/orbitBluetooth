@@ -143,7 +143,7 @@ Item {
     // Starts a session with exactly these devices (replacing the current one,
     // whose copies that still fit keep running)
     function start(list) {
-        const r = Together.refusal(list, _facts);
+        const r = check(list);
         if (r)
             return r;
         _begin(list.map(Together.member));

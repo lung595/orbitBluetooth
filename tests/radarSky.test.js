@@ -3,9 +3,9 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const S = load("RadarSky.js", ["SEED", "FLOOR", "FADE", "top", "starCount", "clearings", "isClear", "stars", "orbitAlpha", "dashes"]);
+const S = load("RadarSky.js");
 const G = load("RadarRandom.js");
-const R = load("Radar.js", ["layout", "ORBIT", "ACTIONS"]);
+const R = load("Radar.js");
 
 const near = v => Math.round(v * 1000) / 1000;
 const side = 300, w = 360, header = 120, cx = w / 2, cy = 260;

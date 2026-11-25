@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Shapes
 import qs.Common
 import qs.Widgets
-import "../device"
 import "../scene"
 import "../scene/Hold.js" as Hold
 import "../scene/Physics.js" as Physics

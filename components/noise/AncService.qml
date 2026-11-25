@@ -90,6 +90,7 @@ Item {
     function _open(address) {
         if (_sessions[address] || !supported(address))
             return _sessions[address] || null;
+        const d = deviceFor(address);
         const proc = sessionComponent.createObject(root, {
             "address": address,
             // -E -s: ignore PYTHON* variables and user packages. The name
@@ -97,15 +98,15 @@ Item {
             // argv is readable by every user in /proc for the whole
             // session, a device name can be a person's name and an address
             // identifies the headset
-            "command": ["python3", "-E", "-s", _helper, "-", familyFor(deviceFor(address))],
+            "command": ["python3", "-E", "-s", _helper, "-", familyFor(d)],
             "environment": {
                 "ORBIT_ANC_ADDRESS": address,
-                "ORBIT_ANC_NAME": deviceFor(address).deviceName || deviceFor(address).name || ""
+                "ORBIT_ANC_NAME": d.deviceName || d.name || ""
             }
         });
         _sessions = Snapshot.put(_sessions, address, proc);
         // The helper starts the reports once the headset has said it can
-        if (Wear.eligible(wearPause, familyFor(deviceFor(address))))
+        if (Wear.eligible(wearPause, familyFor(d)))
             proc.write("set wear on\n");
         return proc;
     }

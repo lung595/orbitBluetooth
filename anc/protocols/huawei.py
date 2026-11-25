@@ -74,7 +74,7 @@ class Huawei(Protocol):
 
     def start(self):
         if self.features["modes"]:
-            self.send(encode(ANC_READ, [(1, b""), (2, b"")]))
+            self.refresh()
         self.send(encode(BATTERY_READ, [(1, b""), (2, b""), (3, b"")]))
 
     def frames(self):

@@ -37,13 +37,12 @@ Item {
     // came meanwhile, which reads again
     function _over(figures) {
         latencies = figures;
-        if (!_again)
-            measured();
         // Through the timer: the process is surely over by then
         if (_again) {
             _again = false;
             settle.restart();
-        }
+        } else
+            measured();
     }
 
     Component.onCompleted: settle.restart()

@@ -3,8 +3,8 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done, guideAnchors } = imports.lib;
 
-const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNote", "stuckNote", "copyLevelNote", "levelNote"]);
-const Address = load("Address.js", ["key", "colon", "find", "isDevicePath"]);
+const Guide = load("Guide.js");
+const Address = load("Address.js");
 
 // Address forms and BlueZ paths, in one place (Address.js)
 eq("address key: either form, any case", [Address.key("aa:bb:cc:dd:ee:01"), Address.key("AA_BB_CC_DD_EE_01")], ["AA_BB_CC_DD_EE_01", "AA_BB_CC_DD_EE_01"]);

@@ -3,8 +3,8 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done, guideAnchors } = imports.lib;
 
-const Radio = load("Radio.js", ["playing", "sharedKey", "outputCount", "due"]);
-const Guide = load("Guide.js", ["radioNote"]);
+const Radio = load("Radio.js");
+const Guide = load("Guide.js");
 
 // Made-up devices: a headset, a receiver, a speaker on another adapter
 const XM = "AA:BB:CC:DD:EE:01", AV = "AA:BB:CC:DD:EE:02", ELSEWHERE = "AA:BB:CC:DD:EE:09";

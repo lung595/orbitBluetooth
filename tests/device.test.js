@@ -3,8 +3,8 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const Anc = load("Anc.js", ["family", "nextMode", "ordered"]);
-const Catalog = load("DeviceCatalog.js", ["deviceName", "modelName", "resolve"]);
+const Anc = load("Anc.js");
+const Catalog = load("DeviceCatalog.js");
 
 // Rename: the alias is shown, but the device is still recognized by its own
 // name (icon, noise control family)

@@ -127,7 +127,7 @@ function analyze(samples, level, up, now, ratedHours) {
             }
         }
         // Nothing measured yet: level x rated life (always shown with "≈")
-        if (!(out.minutesLeft > 0) && ratedHours > 0 && level > 0 && out.state !== "charging") {
+        if (!(out.minutesLeft > 0) && ratedHours > 0 && level > 0) {
             out.minutesLeft = level / 100 * ratedHours * 60;
             if (out.source === "none")
                 out.source = "rated";

@@ -226,11 +226,3 @@ function text(value) {
         s = s.slice(0, _shared(s, _clean(all.slice(0, MAX_INPUT + MAX_NAME))));
     return s.length > MAX_LINE ? s.slice(0, MAX_LINE - 1) + "…" : s;
 }
-
-// A command line reduced to the program's name: its arguments carry paths,
-// names and secrets. Takes the text of a line or the argument array of a started program.
-function command(line) {
-    var first = Array.isArray(line) ? line[0] : String(line === null || line === undefined ? "" : line).trim().split(/\s+/)[0];
-    var name = String(first === undefined || first === null ? "" : first).split("/").pop();
-    return /^[A-Za-z0-9._+-]{1,32}$/.test(name) ? name : "<cmd>";
-}

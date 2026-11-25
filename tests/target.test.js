@@ -1,7 +1,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const Target = load("Target.js", ["resolve", "resolveAlone", "marked", "PC", "SETTLE_MS", "expect", "isEcho", "fromHeadset", "settled", "GROUP_KEYS", "groupKeysOf", "resolveGroup"]);
+const Target = load("Target.js");
 
 const members = ["AA:01", "AA:02", "alsa_output.usb"];
 const all = () => true;

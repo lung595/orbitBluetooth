@@ -105,7 +105,7 @@ Item {
         if (!sink)
             return;
         absolute = value;
-        if (value === 0 && !_retried && sink) {
+        if (value === 0 && !_retried) {
             _retried = true;
             retry.restart();
         }

@@ -3,7 +3,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const Invite = load("Invite.js", ["DOTS", "RUN", "breath", "strength", "dotAt", "dotAlpha", "thread", "nearest"]);
+const Invite = load("Invite.js");
 
 // A halo breathes between 0 and 1, and two targets are not in step
 eq("breath stays within 0..1", [0, 0.3, 1.7, 9].every(t => [0, 1, 2].every(i => Invite.breath(t, i) >= 0 && Invite.breath(t, i) <= 1)), true);

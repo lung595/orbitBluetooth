@@ -3,7 +3,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const Menu = load("MenuEntries.js", ["list", "isTogether", "ruled"]);
+const Menu = load("MenuEntries.js");
 
 const ids = f => Menu.list(f).map(e => e.id);
 const labels = f => Menu.list(f).map(e => e.label);

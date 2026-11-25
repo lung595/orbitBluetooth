@@ -14,7 +14,6 @@ var ATMOSPHERE = 0.16;  // alpha of the soft glow of the sky's own colour behind
 var VEIL = 0.75;        // share of the desktop veil's missing strength it gains at full depth
 var FAR_VEIL = 0.5;     // alpha of the veil laid between the host's system and the group, at full depth
 var FAR_KEEP = 0.5;     // share of its opacity what is not the group keeps at full depth (the host's orbits and waves)
-var FAR_LABEL_KEEP = 0.3;   // the same for the names, lighter still: small text is what stays readable the longest
 var FOCUS_DIM_KEEP = 0.25;  // share of the focus dim a solid sky keeps at full depth: the blur already darkens it
 var MIN_BLUR = 12;      // px, the blur radius on the smallest part (the black hole and its name)
 var MAX_BLUR = 64;      // px, the most MultiEffect's blur can spread
@@ -75,11 +74,6 @@ function farVeilAlpha(shown) {
 // FAR_KEEP of it at full depth
 function farOpacity(shown) {
     return 1 - (1 - FAR_KEEP) * clamp01(shown);
-}
-
-// The same for names (the host's, the hole's): lighter still
-function farLabelOpacity(shown) {
-    return 1 - (1 - FAR_LABEL_KEEP) * clamp01(shown);
 }
 
 // The dimming laid over a solid sky while a card is open: softer under a

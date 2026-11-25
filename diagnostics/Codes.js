@@ -44,7 +44,7 @@ var CODES = {
 };
 
 // The surfaces a report may list as active (popup only in 1.x reports)
-var SURFACES = ["widget", "desktop", "daemon", "settings", "popup"];
+var SURFACES = FIELDS.surface;
 
 // The settings a report may show: the ones that choose a behaviour. Anything
 // that can hold a name, a path or a number of the user's own is left out.

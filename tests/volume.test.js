@@ -3,12 +3,12 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const Guide = load("Guide.js", ["url", "connectNote", "blockedNote", "noVolumeNote", "stuckNote", "levelNote"]);
-const Polar = load("Polar.js", ["LEFT", "TOP", "RIGHT", "slices", "sliceAt", "partOf", "indexOf", "arc", "end", "point", "angleOf", "valueAt", "zone", "wheelPart", "iconSpot", "legendSpot", "parseFrame", "loudness", "spawn", "cavaConfig", "styleOf", "emptyLevels", "levelAt", "reach", "rayAngles", "follow", "heardLevel", "scaleFor", "ease"]);
-const Steps = load("Steps.js", ["SPEEDS", "speedOf", "stepAt", "next", "apply", "fixedStep"]);
-const Keys = load("Keys.js", ["KEYS", "action", "setArgs", "backArgs", "dmsAction", "isOrbit", "classify", "succeeded"]);
-const Route = load("Route.js", ["virtualName", "isVirtual", "isDeviceSink", "addressOfSink", "deviceSink", "virtualSink", "wiredFilterName", "isWiredFilter", "description", "loopbackArgs", "filterArgs", "wiredFilterArgs", "muteTarget", "levelNodes", "writeLevel", "writeMuted", "ipcLevel", "transportPath", "transportVolume", "iconFor", "shownLevels"]);
-const Together = load("Together.js", ["args"]);
+const Guide = load("Guide.js");
+const Polar = load("Polar.js");
+const Steps = load("Steps.js");
+const Keys = load("Keys.js");
+const Route = load("Route.js");
+const Together = load("Together.js");
 
 // Two volumes (D249, D255): this PC's level lives on a virtual sink in front of
 // the device. Made-up address and names.

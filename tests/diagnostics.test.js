@@ -202,8 +202,6 @@ for (const what in more) {
 }
 eq("what is not an address stays readable", Redact.text("12:03:41 ready, A.qml[4:1], 2026-10-08, Qt 6.11.2, Basic settings, x ~ y"), "12:03:41 ready, A.qml[4:1], 2026-10-08, Qt 6.11.2, Basic settings, x ~ y");
 
-eq("a command is reduced to its program", [Redact.command("/usr/bin/wl-copy --sensitive hunter2"), Redact.command(["/usr/bin/pw-play", "\x2fhome/jdoe/a.wav"]), Redact.command("dms ipc call")], ["wl-copy", "pw-play", "dms"]);
-eq("an odd command becomes <cmd>", [Redact.command(""), Redact.command(["x y"]), Redact.command(null), Redact.command(["\x2fhome/jdoe/my tool"])], ["<cmd>", "<cmd>", "<cmd>", "<cmd>"]);
 
 // --- Codes.js: the declarations are consistent -------------------------------------
 const wordOk = /^[A-Za-z0-9_.-]{1,24}$/;

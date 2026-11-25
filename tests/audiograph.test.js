@@ -4,8 +4,8 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done, root, GLib } = imports.lib;
 
-const Codecs = load("Codecs.js", ["name", "profile", "bitrate"]);
-const Graph = load("AudioGraph.js", ["parseDump", "parseTop", "latencyText", "quantumText"]);
+const Codecs = load("Codecs.js");
+const Graph = load("AudioGraph.js");
 
 // --- Codecs: names, profiles, bit rates ------------------------------------------
 eq("codec names", [Codecs.name("ldac"), Codecs.name("aptx_hd"), Codecs.name("msbc"), Codecs.name("newcodec"), Codecs.name("")], ["LDAC", "aptX HD", "mSBC", "NEWCODEC", ""]);

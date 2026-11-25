@@ -11,17 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from protocols import FAMILIES, huawei, nothing, oppo, soundcore, xiaomi, sony  # noqa: E402
 from protocols import earfun, moondrop, safer  # noqa: E402
 from protocols.checksums import sum8  # noqa: E402
-
-
-def h(text):
-    return bytes.fromhex(text.replace(" ", ""))
-
-
-def make(family, name=""):
-    sent = []
-    proto = FAMILIES[family](sent.append, name)
-    proto.start()
-    return proto, sent
+from tests.helpers import h, make  # noqa: E402
 
 
 class Sony(unittest.TestCase):

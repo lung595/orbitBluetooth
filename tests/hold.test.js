@@ -3,7 +3,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const H = load("Hold.js", ["HOLD_MS", "SLOP", "RING_AFTER_MS", "progress", "done", "ringVisible", "moved"]);
+const H = load("Hold.js", ["HOLD_MS", "SLOP", "RING_AFTER_MS"]);
 
 eq("the hold is half a second (D368)", H.HOLD_MS, 500);
 eq("progress: 0 at the press, half way, full, never beyond", [H.progress(0), H.progress(250), H.progress(500), H.progress(900), H.progress(-5)], [0, 0.5, 1, 1, 0]);

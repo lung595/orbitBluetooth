@@ -1,5 +1,4 @@
 .pragma library
-.import "../common/Address.js" as Address
 .import "../volume/Route.js" as Route
 .import "Member.js" as Member
 
@@ -36,12 +35,6 @@ var NAME = "orbit_together_";
 
 // The longest text of a command line that can hold the members of a session
 var MAX_LIST_LENGTH = MAX_MEMBERS * (Member.MAX_LENGTH + 1);
-
-// "AA:BB:CC:DD:EE:FF" -> the address, or "" when it is anything else (a wired
-// output is not an address: see member)
-function address(text) {
-    return Address.colon(typeof text === "string" && text.length <= 17 ? text : "");
-}
 
 // A member of a session, Bluetooth or wired: its token, or "" for anything
 // else. The one way every function below reads a member.

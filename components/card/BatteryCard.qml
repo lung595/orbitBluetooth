@@ -6,8 +6,8 @@ import "Charge.js" as Charge
 // Battery card: status line, the level with the time left under it
 // beside a matte pill gauge colored by the aurora ramp (red -> aqua) with
 // light-speed streaks, a session sparkline and a row of stat tiles.
-// While charging the streaks flow like a warp jump. Only render-thread
-// animators are used, and they stop whenever `animate` is false.
+// While charging the streaks flow like a warp jump. They follow the scene's
+// effects clock (`time`) and stand still whenever `animate` is false.
 Rectangle {
     id: root
     readonly property PaperColors paper: PaperColors {}
@@ -99,7 +99,6 @@ Rectangle {
                 spacing: 0
 
                 StyledText {
-                    id: bigLevel
                     text: Math.round(root.level) + "%"
                     color: root.levelColor
                     font.pixelSize: root.bigFontPx
@@ -199,7 +198,6 @@ Rectangle {
                     model: [[0.07, 0.12, 0.3, 0.3, 2], [0.3, 0.1, 0.18, 0.55, 2], [0.42, 0.34, 0.26, 0.4, 1.5], [0.5, 0.03, 0.1, 0.3, 1.5], [0.58, 0.22, 0.34, 0.45, 2], [0.66, 0.66, 0.14, 0.3, 1.5], [0.8, 0.52, 0.2, 0.4, 2], [0.94, 0.26, 0.42, 0.26, 2.5], [0.22, 0.74, 0.12, 0.25, 1.5]]
 
                     Rectangle {
-                        id: streak
                         readonly property real len: gauge.width * modelData[2]
                         // Charging: flows left to right, one pass per `dur` (effects clock)
                         readonly property real dur: 1.1 + (index % 4) * 0.38

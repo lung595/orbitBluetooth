@@ -4,8 +4,8 @@ imports.searchPath.unshift(imports.system.programPath ? imports.system.programPa
 const { load, eq, done, guideAnchors } = imports.lib;
 
 const Together = load("Together.js");
-const Guide = load("Guide.js", ["url", "togetherNote"]);
-const Polar = load("Polar.js", ["slices", "indexOf"]);
+const Guide = load("Guide.js");
+const Polar = load("Polar.js");
 
 // Made-up devices: a headset, a receiver, two speakers, a fifth output, a keyboard
 // with no sound, a call-mode headset and one that is not connected
@@ -39,7 +39,6 @@ eq("every member is checked, the first one too", Together.refusal([KB, AV, SP1],
 eq("a headset in its call profile", Together.refusal([XM, AV, CALL], known), { "why": "in-call", "address": CALL });
 eq("call profiles", [Together.inCall("headset-head-unit"), Together.inCall("headset-head-unit-msbc"), Together.inCall("hfp"), Together.inCall("a2dp-sink"), Together.inCall(""), Together.inCall(undefined)], [true, true, true, false, false, false]);
 eq("a sink that is not a Bluetooth output", why([XM, AV].map(a => a)) === "" && Together.refusal([XM, AV], a => ({ "connected": true, "sink": "alsa_output.pci-0000", "profile": "" })).why, "no-audio");
-eq("address helper", [Together.address(XM.toLowerCase()), Together.address("AA_BB_CC_DD_EE_01"), Together.address(5), Together.address("A".repeat(40))], [XM, XM, "", ""]);
 
 // --- Joining a session that exists ------------------------------------------------
 eq("a connected output joins", joinWhy([XM, AV], [SP1]), "");
@@ -177,7 +176,6 @@ eq("a bad newcomer", joinWhyAll([XM, AV], ["alsa_output.x y"]), "bad-address");
 eq("a wired member that is unplugged does not block a join (it stays a member)", joinWhyAll([XM, WOFF], [W1]), "");
 
 eq("member helper", [Together.member(W1), Together.member(XM.toLowerCase()), Together.member("alsa_output.x; y"), Together.member(5)], [W1, XM, "", ""]);
-eq("the address helper stays Bluetooth only", [Together.address(W1), Together.address(XM)], ["", XM]);
 eq("a drop joins a wired output to a Bluetooth one, either order", [Together.merge([XM, AV], W1, AV), Together.merge([XM, AV], AV, W1), Together.merge([], W1, XM), Together.merge([XM, W1], W1, XM)], [[XM, AV, W1], [XM, AV, W1], [W1, XM], [XM, W1]]);
 eq("a bad drop adds nothing", Together.merge([XM, AV], "alsa_output.x; y", W1), [XM, AV, W1]);
 eq("a wired member leaves", [Together.without([XM, W1, AV], W1), Together.without([XM, W1], "alsa_output.x; y")], [[XM, AV], [XM, W1]]);

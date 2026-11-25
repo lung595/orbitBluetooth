@@ -3,7 +3,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const Anc = load("Anc.js", ["family", "nextMode", "ordered", "chatEndsIndex", "CHAT_ENDS"]);
+const Anc = load("Anc.js");
 
 // Brand detection by Bluetooth name
 const names = {
@@ -38,7 +38,7 @@ eq("next with only on/off", Anc.nextMode(["nc", "off"], "nc"), "off");
 
 
 // Helper reports merged into the snapshot (AncSnapshot.js)
-const Snap = load("AncSnapshot.js", ["merge", "withSetting", "put"]);
+const Snap = load("AncSnapshot.js");
 const prev = { state: { mode: "nc", ambient: 5, voice: false, chat: true }, battery: 1 };
 const line = (o) => JSON.stringify(o);
 eq("merge: not JSON", Snap.merge(prev, "oops", false, 1), null);

@@ -3,7 +3,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const M = load("RadarMotion.js", ["ENTRANCE", "STAGGER", "MORPH", "RIPPLE", "GLIDE", "SNAP", "clamp", "ease", "mix", "phase", "follow", "slotMix"]);
+const M = load("RadarMotion.js");
 
 const near = v => Math.round(v * 1000) / 1000;
 

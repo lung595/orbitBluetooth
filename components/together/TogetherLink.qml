@@ -79,7 +79,7 @@ Item {
             // it runs is taken as an exit. A node never seen is left alone.
             // Only Quickshell's own node list is read, and only while a
             // session runs: nothing polls.
-            readonly property string node: Together.nodeOf(JSON.parse(commandJson))
+            readonly property string node: Together.nodeOf(command)
             readonly property bool present: running && node !== "" && Pipewire.nodes.values.some(n => !!n && n.name === node)
             property bool _seen: false
             // Stopped by the watch: its exit, if one comes, is not lost twice

@@ -3,7 +3,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const Audiophile = load("Audiophile.js", ["INFOS", "connectionOf", "factsOf", "parse", "kilohertz", "chainOf", "textOf", "line", "rows", "merge", "needs"]);
+const Audiophile = load("Audiophile.js");
 
 const sinks = JSON.stringify([
     { name: "alsa_output.usb-X.HiFi__Line1__sink", sample_specification: "s32le 2ch 192000Hz", properties: { "device.bus": "usb", "device.api": "alsa", "api.alsa.path": "hw:Gen" } },

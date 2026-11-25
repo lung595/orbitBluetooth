@@ -100,9 +100,6 @@ class Apple(Protocol):
     def receive(self, data):
         self.handle(bytes(data))
 
-    def frames(self):
-        return []
-
     def _advance(self, now=None):
         if self._step == 1:
             self.send(FEATURES)

@@ -130,13 +130,7 @@ function textOf(key, facts, pc) {
 
 // The card's line: the chosen facts, in order, "Bluetooth · LDAC · 96 kHz"
 function line(facts, chosen, pc) {
-    const parts = [];
-    for (const info of INFOS) {
-        const t = chosen[info.key] ? textOf(info.key, facts, pc) : "";
-        if (t)
-            parts.push(t);
-    }
-    return parts.join(" · ");
+    return rows(facts, chosen, pc).map(r => r.text).join(" · ");
 }
 
 // The detail view: [{ label, text }] for the chosen facts that exist

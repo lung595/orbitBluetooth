@@ -56,7 +56,7 @@ Rectangle {
         color: Theme.surfaceText
         selectionColor: Theme.primary
         selectedTextColor: Theme.primaryText
-        // Long queries are cut: a search of 70 settings never needs more
+        // Long queries are cut: a search of some 60 settings never needs more
         maximumLength: 80
         Accessible.role: Accessible.EditableText
         Accessible.name: "Search settings"

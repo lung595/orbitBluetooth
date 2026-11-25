@@ -1,3 +1,5 @@
+"""Tests for the uninstall cleanup: what it removes once the plugin folder is gone, and what it keeps."""
+
 import json
 import os
 import tempfile
@@ -85,6 +87,8 @@ class SweepTest(unittest.TestCase):
         self.addCleanup(self.shell.tmp.cleanup)
 
     def test_nothing_happens_while_the_plugin_is_installed(self):
+        # Also an update that re-clones during the grace period: plugin.json exists again when checked
+        # Counter-proof of test_uninstalled_plugin_forgets_what_it_learned: only the missing plugin.json erases the memory
         before = [read(p) for p in (self.shell.settings, self.shell.plugin_settings, self.shell.session)]
         self.assertFalse(self.shell.run())
         after = [read(p) for p in (self.shell.settings, self.shell.plugin_settings, self.shell.session)]
@@ -115,16 +119,6 @@ class SweepTest(unittest.TestCase):
                 text = f.read()
             self.assertNotIn(HABIT_TAGS, text)
             self.assertNotIn("togetherHabits", text)
-
-    def test_the_memory_stays_while_the_plugin_is_installed(self):
-        # Counter-proof of the test above: only the missing plugin.json erases it
-        self.assertFalse(self.shell.run())
-        self.assertEqual(read(self.shell.plugin_settings)[ID]["togetherHabits"], {HABIT_TAGS: {"n": 3, "d": 20000}})
-
-    def test_folder_cloned_back_during_the_grace_period_keeps_everything(self):
-        # Same as an update that re-clones: plugin.json exists again when checked
-        self.assertFalse(self.shell.run())
-        self.assertIn(ID, read(self.shell.plugin_settings))
 
     def test_untouched_files_are_not_rewritten(self):
         os.remove(self.shell.manifest)

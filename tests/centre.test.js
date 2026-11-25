@@ -4,9 +4,9 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const C = load("Centre.js", ["PERIOD", "MAX_SHIFT", "GROUP_SIZE", "TILT", "clamp01", "ease", "approach", "grow", "sizes", "glyphsOffset", "glyphDisc", "glyphSpacing", "GLYPH_MIN", "groupAt", "bodyZ", "solidity", "inkOf", "COPY_LIFT", "ORBIT_SPREAD", "spreadAt", "BEHIND_SPAN", "BEHIND_INK", "away", "phaseAt", "copySlot", "depthSize", "parallax", "copiesOf", "roleOf", "pulse"]);
+const C = load("Centre.js");
 const V = load("MasterVolume.js");
-const P = load("Perspective.js", ["FLAT", "size"]);
+const P = load("Perspective.js");
 
 const near = (v, d) => Math.round(v * 1000) / 1000;
 const round = list => list.map(near);

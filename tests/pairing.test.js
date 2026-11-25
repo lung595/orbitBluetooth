@@ -3,8 +3,8 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const Palette = load("Palette.js", ["lift", "isGrey", "toHsl", "apart"]);
-const Guard = load("Guard.js", ["hasInput", "refused", "parseUuids"]);
+const Palette = load("Palette.js");
+const Guard = load("Guard.js");
 
 const hex = h => ({ r: parseInt(h.slice(1, 3), 16) / 255, g: parseInt(h.slice(3, 5), 16) / 255, b: parseInt(h.slice(5, 7), 16) / 255 });
 eq("lift", Math.round(Palette.toHsl(Palette.lift(hex("#4B6818"), 0.66)).l * 100), 66);

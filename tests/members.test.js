@@ -4,10 +4,10 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const Palette = load("Palette.js", ["fromHsl", "toHsl", "isGrey", "apart"]);
-const Polar = load("Polar.js", ["heardLevel", "scaleFor"]);
-const Members = load("Members.js", ["heardOf", "scales", "scaleAt", "easeAll", "settled", "sectors"]);
-const MemberColors = load("MemberColors.js", ["pick"]);
+const Palette = load("Palette.js");
+const Polar = load("Polar.js");
+const Members = load("Members.js");
+const MemberColors = load("MemberColors.js");
 
 const m = (level, muted) => ({ "level": level, "muted": !!muted });
 const round2 = v => Math.round(v * 100) / 100;

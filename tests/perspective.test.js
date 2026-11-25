@@ -4,7 +4,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const P = load("Perspective.js", ["PITCH", "FLAT", "REACH", "MID", "FIELDS", "lerp", "copy", "distance", "size", "haze", "lean", "beltRy", "leanAt", "depthAt", "flat"]);
+const P = load("Perspective.js");
 
 const near = v => Math.round(v * 1000) / 1000;
 

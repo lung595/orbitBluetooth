@@ -75,7 +75,8 @@ class Samsung(Protocol):
         pass   # the buds speak first
 
     def frames(self):
-        som, eom, head = (0xFE, 0xEE, 3) if self.legacy else (0xFD, 0xDD, 3)
+        som, eom = (0xFE, 0xEE) if self.legacy else (0xFD, 0xDD)
+        head = 3
         while True:
             start = self.buffer.find(som)
             if start < 0:

@@ -6,8 +6,8 @@ imports.searchPath.unshift(imports.system.programPath ? imports.system.programPa
 const { load, eq, done } = imports.lib;
 
 const S = load("WiredSign.js");
-const C = load("Centre.js", ["TILT", "sizes", "copySlot", "depthSize", "place", "phaseAt"]);
-const G = load("Glyphs.js", ["paths", "order", "path", "wired"]);
+const C = load("Centre.js");
+const G = load("Glyphs.js");
 
 const near = v => Math.round(v * 1000) / 1000;
 

@@ -78,11 +78,9 @@ function _build(info) {
     var now = typeof i.now === "number" ? i.now : Date.now();
     // The account and the machine, hidden wherever a line writes them
     Redact.identity(i.user, i.host);
-    var active = [];
-    for (var s = 0; s < Codes.SURFACES.length; s++) {
-        if (i.surfaces && i.surfaces[Codes.SURFACES[s]] === true)
-            active.push(Codes.SURFACES[s]);
-    }
+    var active = Codes.SURFACES.filter(function (s) {
+        return !!i.surfaces && i.surfaces[s] === true;
+    });
     var out = [
         Codes.PLUGIN + " diagnostic report (anonymous: versions, states and codes only)",
         "Created      : " + _stamp(now),

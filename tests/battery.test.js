@@ -3,9 +3,9 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const Charge = load("Charge.js", ["analyze", "formatShort", "timeText", "levelText", "statItems", "footnote", "levelColor"]);
-const Endurance = load("Endurance.js", ["ratedHours"]);
-const Battery = load("Battery.js", ["CRITICAL_MAX", "LOW_AT", "stretch", "along", "hueMix"]);
+const Charge = load("Charge.js");
+const Endurance = load("Endurance.js");
+const Battery = load("Battery.js");
 
 // Time left: rated life at first, then the measured drain takes over
 const now = Date.UTC(2026, 8, 26, 12, 0, 0);

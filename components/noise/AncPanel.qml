@@ -258,7 +258,6 @@ Column {
         visible: panel.showVoice || panel.showChat
 
         Chip {
-            id: voiceChip
             visible: panel.showVoice
             icon: "record_voice_over"
             label: "Voice focus"
@@ -266,7 +265,6 @@ Column {
             onToggled: panel.scene.ancSend(panel.address, "voice", checked ? "off" : "on")
         }
         Chip {
-            id: chatChip
             visible: panel.showChat
             icon: "forum"
             label: "Conversation"

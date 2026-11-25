@@ -3,9 +3,9 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const Style = load("BeamStyle.js", ["STYLES", "DEFAULT", "parse"]);
-const Horizon = load("HorizonShape.js", ["bend", "pointAt", "controlAt", "grain", "ringRadius", "ringPoint", "knotAlpha", "tailAt", "GRAINS", "TAIL", "CAP", "RING_SCALE", "BEND_MAX"]);
-const Motion = load("BeamMotion.js", ["pulseAt", "pulseAlpha", "deviceOffset", "chainWindow", "grainFront", "knotAngle", "PULSE_PERIOD", "PULSE_STILL", "CHAIN_STILL", "HORIZON_STILL_GRAIN", "HORIZON_STILL_KNOT", "HORIZON_FALL", "HORIZON_TURN"]);
+const Style = load("BeamStyle.js");
+const Horizon = load("HorizonShape.js");
+const Motion = load("BeamMotion.js");
 
 eq("the four styles, in the order of the setting", Style.STYLES, ["pulse", "filament", "chain", "horizon"]);
 eq("every listed style parses to itself", Style.STYLES.map(Style.parse), Style.STYLES);

@@ -1,8 +1,10 @@
 .pragma library
 
-// Which level the volume keys and `dms ipc call orbitBluetooth volume` move
-// while a Listen together group plays (NAK-9): the member whose own level was
-// touched last, else the group. Pure, tested in tests/target.test.js.
+// Which level the volume keys and `dms ipc call orbitBluetooth volume` move:
+// while a Listen together group plays (NAK-9), the member whose own level was
+// touched last, else the group; outside a group, a device's own level or this
+// PC's (resolveAlone). Also tells the headset's own buttons from Orbit's
+// writes (expect, isEcho, fromHeadset). Pure, tested in tests/target.test.js.
 
 // The id of the member to move, or "" for the group. `touched` is the last
 // member touched ("" once the group's level was); `members` the group's ids;

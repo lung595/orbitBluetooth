@@ -5,7 +5,7 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const D = load("Depth.js", ["MIN_BLUR", "MAX_BLUR", "DIM", "ATMOSPHERE", "FAR_VEIL", "FAR_KEEP", "FAR_LABEL_KEEP", "FOCUS_DIM_KEEP", "clamp01", "level", "needsCopy", "covered", "blurRadius", "veilStrength", "atmosphereAlpha", "farVeilAlpha", "farOpacity", "farLabelOpacity", "focusDim"]);
+const D = load("Depth.js");
 
 // --- the depth shown -------------------------------------------------------------
 eq("level: with motion it follows the camera, kept in 0..1", [D.level(0, true), D.level(0.3, true), D.level(1, true), D.level(-2, true), D.level(5, true)], [0, 0.3, 1, 0, 1]);
@@ -33,7 +33,6 @@ eq("sky light: the blur conserves it, so little is taken away on top (a heavy di
 eq("far veil: none on Fedora's view, the full veil at full depth", [D.farVeilAlpha(0), D.farVeilAlpha(1), D.farVeilAlpha(9)], [0, D.FAR_VEIL, D.FAR_VEIL]);
 eq("far: what is not the group keeps its opacity on Fedora's view and half of it at full depth", [D.farOpacity(0), D.farOpacity(1), D.farOpacity(2)], [1, D.FAR_KEEP, D.FAR_KEEP]);
 eq("far: it fades step by step with the camera, and is restored on the way back", [1, 0.75, 0.5, 0.25, 0].map(d => D.farOpacity(d)).every((v, i, all) => i === 0 || v > all[i - 1]), true);
-eq("far: the names are lighter still than the shapes, at every depth but none", [0.1, 0.5, 1].every(d => D.farLabelOpacity(d) < D.farOpacity(d)) && D.farLabelOpacity(0) === 1, true);
 eq("focus dim: whole outside a group, softer under it, never gone", [D.focusDim(0.4, 0), D.focusDim(0.4, 1) < 0.4, D.focusDim(0.4, 1) > 0, D.focusDim(0.4, 1)], [0.4, true, true, 0.4 * D.FOCUS_DIM_KEEP]);
 
 done();

@@ -237,10 +237,9 @@ Item {
     // made in one cannot apply to the other.
     property string touched: ""
     function touch(address) {
-        if (touched !== address)
-            touched = address;
+        touched = address;
         // The member the "last single device" choice keeps (NAK-258)
-        if (together.active && address && lastMember !== address)
+        if (together.active && address)
             lastMember = address;
     }
     // The member touched last in this group, kept when the group's level is

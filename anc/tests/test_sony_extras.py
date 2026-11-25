@@ -10,13 +10,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from protocols import FAMILIES  # noqa: E402
 from protocols.sony_frame import T_ACK, T_DATA, T_DATA2, decode, encode  # noqa: E402
+from tests.helpers import h  # noqa: E402
 
 PROTOCOL_INFO = "01 00 00 00 02 00 00 {t2}"
 FUNCTIONS = "07 00 {n:02x} {codes}"
-
-
-def h(text):
-    return bytes.fromhex(text.replace(" ", ""))
 
 
 class Headset:
@@ -37,6 +34,10 @@ class Headset:
         # Acknowledge until nothing is in flight: every queued packet goes out
         while self.proto.inflight is not None:
             self.proto.receive(encode(T_ACK, 1 - self.proto.seq, b""))
+
+    def wear_on(self):
+        self.proto.set("wear", "on")
+        self.drain()
 
     def reply(self, table, payload):
         self.seq = 1 - self.seq
@@ -65,21 +66,18 @@ class Wear(unittest.TestCase):
 
     def test_enabling_sends_the_documented_sequence(self):
         headset = Headset()
-        headset.proto.set("wear", "on")
-        headset.drain()
+        headset.wear_on()
         self.assertEqual(headset.packets()[-3:], [(T_DATA, "c4 01 00"), (T_DATA2, "06 00"), (T_DATA2, "f2 00")])
 
     def test_unsupported_headset_ignores_the_request(self):
         headset = Headset(table2=False)
         count = len(headset.packets())
-        headset.proto.set("wear", "on")
-        headset.drain()
+        headset.wear_on()
         self.assertEqual(len(headset.packets()), count)
 
     def test_reply_and_notification_set_the_status(self):
         headset = Headset()
-        headset.proto.set("wear", "on")
-        headset.drain()
+        headset.wear_on()
         headset.reply(T_DATA2, "f3 00 00")
         self.assertEqual(headset.proto.state["wearing"], 0)
         headset.reply(T_DATA2, "f5 00 04")
@@ -88,8 +86,7 @@ class Wear(unittest.TestCase):
 
     def test_unknown_status_or_other_type_is_ignored(self):
         headset = Headset()
-        headset.proto.set("wear", "on")
-        headset.drain()
+        headset.wear_on()
         headset.reply(T_DATA2, "f3 00 00")
         headset.reply(T_DATA2, "f3 00 09")
         headset.reply(T_DATA2, "f3 01 04")
@@ -103,8 +100,7 @@ class Wear(unittest.TestCase):
 
     def test_sensor_log_entries_ask_for_the_status_again(self):
         headset = Headset()
-        headset.proto.set("wear", "on")
-        headset.drain()
+        headset.wear_on()
         before = headset.packets().count((T_DATA2, "f2 00"))
         for key in (b"unitRemove", b"unitWear"):
             headset.reply(T_DATA, "c9 01 %02x %s" % (len(key), key.hex()))
@@ -113,8 +109,7 @@ class Wear(unittest.TestCase):
 
     def test_other_log_entries_and_malformed_ones_do_nothing(self):
         headset = Headset()
-        headset.proto.set("wear", "on")
-        headset.drain()
+        headset.wear_on()
         before = len(headset.packets())
         remove = b"unitRemove".hex()
         for payload in ("c9 01 04 74 61 70 73", "c9 01", "c9 01 40 756e69745265", "c9 00 0a " + remove, "c9 01 00"):
@@ -124,8 +119,7 @@ class Wear(unittest.TestCase):
 
     def test_a_burst_of_log_entries_queues_one_request(self):
         headset = Headset()
-        headset.proto.set("wear", "on")
-        headset.drain()
+        headset.wear_on()
         before = headset.packets().count((T_DATA2, "f2 00"))
         key = b"unitWear".hex()
         # Frames arrive faster than the headset acknowledges: nothing piles up
@@ -143,8 +137,7 @@ class Wear(unittest.TestCase):
 
     def test_disabling_forgets_the_status(self):
         headset = Headset()
-        headset.proto.set("wear", "on")
-        headset.drain()
+        headset.wear_on()
         headset.reply(T_DATA2, "f3 00 04")
         headset.proto.set("wear", "off")
         self.assertIsNone(headset.proto.state["wearing"])

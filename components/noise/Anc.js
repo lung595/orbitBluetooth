@@ -33,13 +33,6 @@ function family(name) {
     return "";
 }
 
-var LABELS = {
-    "nc": "Noise cancelling",
-    "ambient": "Ambient",
-    "off": "Off",
-    "adaptive": "Adaptive"
-};
-
 var SHORT = {
     "nc": "Silence",
     "ambient": "Ambient",

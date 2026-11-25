@@ -3,8 +3,8 @@
 imports.searchPath.unshift(imports.system.programPath ? imports.system.programPath.replace(/\/[^\/]*$/, "") : "tests");
 const { load, eq, done } = imports.lib;
 
-const Charge = load("Charge.js", ["levelText"]);
-const CardStatus = load("CardStatus.js", ["kindLine", "statusIcon", "statusText", "detailText"]);
+const Charge = load("Charge.js");
+const CardStatus = load("CardStatus.js");
 
 // Battery estimates the lines are built from (same shapes as tests/battery.test.js)
 const now = Date.UTC(2026, 8, 26, 12, 0, 0);
