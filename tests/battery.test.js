@@ -21,6 +21,8 @@ eq("a 10% step 10 min in stays close to the rated life", early.minutesLeft > 18 
 const late = Charge.analyze([[now - 180 * 60000, 90], [now, 60]], 60, null, now, rated);
 eq("after 3 h the measure wins", Charge.formatShort(late.minutesLeft), "6h00");
 eq("days", Charge.formatShort(3 * 1440), "3d");
+// Rounded before the split into hours: never "1 h 60" or "60 min"
+eq("rounds up to the next hour", [Charge.formatMinutes(119.7), Charge.formatShort(119.7), Charge.formatMinutes(59.7), Charge.formatShort(59.7)], ["2 h", "2h00", "1 h", "1h00"]);
 
 // The card's lines and tiles: "≈" only on an estimate, nothing made up
 const drain = { source: "rated", minutesLeft: 90, ratePerHour: -12, health: 0 };

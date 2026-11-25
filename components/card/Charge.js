@@ -141,9 +141,10 @@ function formatMinutes(m) {
         return "";
     if (m < 1)
         return "< 1 min";
-    if (m < 60)
-        return Math.round(m) + " min";
-    const h = Math.floor(m / 60), r = Math.round(m % 60);
+    const t = Math.round(m);
+    if (t < 60)
+        return t + " min";
+    const h = Math.floor(t / 60), r = t % 60;
     return r > 0 ? h + " h " + (r < 10 ? "0" : "") + r : h + " h";
 }
 
@@ -153,9 +154,10 @@ function formatShort(m) {
     // Days for long-lasting devices (mice, controllers): "3d"
     if (m >= 48 * 60)
         return Math.round(m / 1440) + "d";
-    if (m < 60)
-        return Math.max(1, Math.round(m)) + "m";
-    const h = Math.floor(m / 60), r = Math.round(m % 60);
+    const t = Math.round(m);
+    if (t < 60)
+        return Math.max(1, t) + "m";
+    const h = Math.floor(t / 60), r = t % 60;
     return h + "h" + (r < 10 ? "0" : "") + r;
 }
 
